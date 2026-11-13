@@ -36,7 +36,7 @@ import { getSupplyDashboardSuppliers } from '../../supply-ukraine-orders/api/sup
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getSupplyDashboardCharts } from '../api/procurementApi'
 import { summarizeProcurementCharts } from '../procureDashboardModel'
-import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
+import { formatDashboardQuantity, procurementQuantityFormat as qtyFormatter, quantityByUnit } from '../procurementQuantityFormat'
 import { formatSuggestedQtyByUnit, topItemPosition, topItemShortage } from '../procurementTotals'
 import type {
   ProcurementCharts,
@@ -243,6 +243,7 @@ function ProcureDashboardTabContent() {
   )
 
   const summary = useMemo(() => summarizeProcurementCharts(charts), [charts])
+  const topSuggestedByUnit = useMemo(() => quantityByUnit(charts?.top_items ?? [], item => item.measure_unit, item => item.suggested_qty), [charts])
   const producerOptions = useMemo(
     () =>
       producers.map((producer) => ({
@@ -314,12 +315,12 @@ function ProcureDashboardTabContent() {
       ['suggested_qty', 'Рекомендовано'], ['on_hand', 'В наявності'], ['reorder_point', 'Точка замовлення'],
     ] as const).map(([key, label]) => ({
       id: key, header: t(label), accessor: (item: ProcurementTopItem) => item[key],
-      cell: (item: ProcurementTopItem) => <span className="procurement-dashboard__number">{qtyFormatter.format(item[key])}</span>,
+      cell: (item: ProcurementTopItem) => <span className="procurement-dashboard__number">{formatDashboardQuantity(item[key], item.measure_unit)}</span>,
       width: 145, align: 'right' as const,
     })),
     {
       id: 'shortage', header: t('Бракує до точки'), accessor: (item) => topItemShortage(item),
-      cell: (item) => <span className="procurement-dashboard__number" title={t('Точка замовлення мінус доступно з урахуванням резервів і замовленого')}>{qtyFormatter.format(topItemShortage(item))}</span>, width: 135, align: 'right',
+      cell: (item) => <span className="procurement-dashboard__number" title={t('Точка замовлення мінус доступно з урахуванням резервів і замовленого')}>{formatDashboardQuantity(topItemShortage(item), item.measure_unit)}</span>, width: 135, align: 'right',
     },
   ], [hasProducerData, t])
 
@@ -352,11 +353,11 @@ function ProcureDashboardTabContent() {
           : t('Повний обсяг рекомендованої кількості та покриття вартості в цьому зрізі не надано.')}</Text>
         <Text size="sm" c="dimmed">{t('Зріз попиту')}: {formatAsOfDate(charts?.as_of_date)}. {t('Кількості — в одиницях виміру кожного товару; загальні суми кількостей складають різні одиниці.')} {t('Запаси й резерви — стан на момент розрахунку, не історичний залишок на цю дату. Перед замовленням перевірте актуальність у конструкторі.')}</Text>
         <Text size="sm" c="dimmed">{t('Бюджет')}: {charts?.population?.budget_eur == null ? t('не задано') : `${qtyFormatter.format(charts.population.budget_eur)} ${t('EUR без ПДВ')}`}. {t('Стан погодження не надходить із джерела. Рекомендація не є погодженим замовленням.')}</Text>
-        <div className="procurement-dashboard__metrics" aria-label={t('Поточні показники')}>
+        <div className="procurement-dashboard__metrics" data-tiles={topSuggestedByUnit ? 4 : 3} aria-label={t('Поточні показники')}>
           <DashboardMetric label={t('Всього позицій')} value={summary.totalPositions} active={mode === 'urgency' && urgencyFilter === 'all'} onClick={() => selectUrgency('all')} icon={<Layers3 size={16} />} />
           <DashboardMetric label={t('Критичні позиції')} value={summary.criticalPositions} active={mode === 'urgency' && urgencyFilter === 'critical'} onClick={() => selectUrgency('critical')} icon={<CircleAlert size={16} />} />
           <DashboardMetric label={t('Потребують уваги')} value={summary.attentionPositions} active={mode === 'urgency' && urgencyFilter === 'attention'} onClick={() => selectUrgency('attention')} icon={<BarChart3 size={16} />} />
-          <article className="procurement-dashboard__metric"><span>{t('Рекомендовано в добірці')}</span><strong>{qtyFormatter.format(summary.totalSuggested)}</strong><small>{summary.topItems} {t('позицій')}</small></article>
+          {topSuggestedByUnit && <article className="procurement-dashboard__metric procurement-dashboard__metric--units"><span>{t('Рекомендовано в добірці')}</span><strong>{Object.entries(topSuggestedByUnit).map(([unit, qty]) => formatDashboardQuantity(qty, unit)).join(' · ')}</strong><small>{summary.topItems} {t(deskPlural(summary.topItems, ['позиція', 'позиції', 'позицій']))}</small></article>}
         </div>
         <Card className="app-section-card procurement-dashboard__analysis" withBorder radius="md" padding={12}>
           <div className="procurement-dashboard__chart-toolbar">
@@ -410,7 +411,7 @@ function ProcureDashboardTabContent() {
           <Group gap="xs"><TableChip tone="document" value={detailItem.producer_name || detailItem.producer_id} /><TableChip tone={detailItem.urgency === 'critical' ? 'danger' : detailItem.urgency === 'high' ? 'warning' : 'neutral'} value={t(URGENCY_LABEL[detailItem.urgency] ?? detailItem.urgency)} /></Group>
           <div className="procurement-dashboard__detail-metrics">{([
             ['В наявності', detailItem.on_hand], ['Точка замовлення', detailItem.reorder_point], ['Рекомендовано', detailItem.suggested_qty],
-          ] as const).map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{qtyFormatter.format(value)}</strong></article>)}</div>
+          ] as const).map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{formatDashboardQuantity(value, detailItem.measure_unit)}</strong></article>)}</div>
           <Text size="sm">{t('Дата розрахунку')}: {formatAsOfDate(charts?.as_of_date)}. {t('Історія попиту')}: {charts?.history_complete ? t('покриття повне') : t('покриття часткове')}.</Text>
           {detailItem.evidence ? <Stack gap={4}>
             <Text size="sm">{detailItem.evidence.reason}</Text>

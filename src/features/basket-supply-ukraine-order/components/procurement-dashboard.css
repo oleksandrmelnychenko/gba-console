@@ -45,3 +45,6 @@ button.procurement-dashboard__metric:focus-visible { outline: 2px solid var(--br
   .procurement-dashboard__distribution { flex-direction: column; gap: 16px; }
   .procurement-dashboard__table-actions { margin-left: 0; width: 100%; }
 }
+@media (min-width: 701px) { .procurement-dashboard__metrics[data-tiles="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.procurement-dashboard__metric--units > strong { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+.procurement-dashboard__table .data-table-header-label { line-height: 1.15; white-space: normal; }

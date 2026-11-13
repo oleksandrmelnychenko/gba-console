@@ -208,18 +208,23 @@ describe('ProcureDashboardTab', () => {
     fireEvent.click(screen.getByText('Гальмівний диск'))
     const drawer = await screen.findByRole('dialog')
     expect(within(drawer).getByText('Аналітика товару')).not.toBeNull()
-    expect(within(drawer).getByText('7,5')).not.toBeNull()
+    expect(within(drawer).getByText('7,50')).not.toBeNull()
     expect(within(drawer).getByRole('button', { name: 'Відкрити в конструкторі' })).not.toBeNull()
     expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
   })
 
   it('scopes KPI filtering to the top-item selection and preserves actual global counts', async () => {
     vi.mocked(getSupplyDashboardCharts).mockResolvedValue({ ...charts, top_items: [
-      charts.top_items[0], { ...charts.top_items[0], product_id: 102, product_name: 'Інший товар', urgency: 'normal' },
+      { ...charts.top_items[0], measure_unit: 'шт' }, { ...charts.top_items[0], product_id: 102, product_name: 'Інший товар', urgency: 'normal', measure_unit: 'м', suggested_qty: 800.61 },
     ] })
     renderDashboard()
     await screen.findByText('Інший товар')
-    expect(screen.getByText('Рекомендовано в добірці').closest('article')?.textContent).toContain('15')
+    const tile = screen.getByText('Рекомендовано в добірці').closest('article')!
+    expect(tile.querySelector('strong')?.textContent?.replace(/\u00a0/g, ' ')).toBe('8 шт · 800,61 м')
+    expect(tile.querySelector('small')?.textContent).toBe('2 позиції')
+    const measured = screen.getByText('Інший товар').closest('tr')!
+    expect(within(measured).getByText('800,61 м')).not.toBeNull()
+    expect(within(screen.getAllByText('Гальмівний диск')[0].closest('tr')!).getByText(`${charts.top_items[0].on_hand} шт`)).not.toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /Критичні позиції/ }))
     expect(screen.queryByText('Інший товар')).toBeNull()
     expect(screen.getByText('Критичні в добірці ×')).not.toBeNull()
@@ -282,7 +287,7 @@ describe('ProcureDashboardTab', () => {
     })
     renderDashboard()
     await screen.findByText('Гальмівний диск')
-    expect(screen.getByText('Рекомендовано в добірці').closest('article')?.querySelector('strong')?.textContent).toBe('0,021')
+    expect(screen.queryByText('Рекомендовано в добірці')).toBeNull()
     const productRow = screen.getByText('Гальмівний диск').closest('tr')!
     expect(within(productRow).getAllByText('0,021').length).toBeGreaterThan(0)
     expect(within(productRow).getByText('0,004')).not.toBeNull()

@@ -524,6 +524,7 @@ function normalizeTopItems(value: unknown) {
       producer_name: requireNullableString(entry.producer_name, `${path}.producer_name`),
       product_id: productId,
       product_name: requireNullableString(entry.product_name, `${path}.product_name`),
+      ...(typeof entry.measure_unit === 'string' && entry.measure_unit.trim() ? { measure_unit: entry.measure_unit.trim() } : {}),
       suggested_qty: requireNumberInRange(
         entry.suggested_qty,
         `${path}.suggested_qty`,

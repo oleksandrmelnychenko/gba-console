@@ -31,6 +31,7 @@ export type ProcurementTopItem = {
   producer_name?: string | null
   product_id: number
   product_name?: string | null
+  measure_unit?: string | null
   suggested_qty: number
   on_hand: number
   reorder_point: number
