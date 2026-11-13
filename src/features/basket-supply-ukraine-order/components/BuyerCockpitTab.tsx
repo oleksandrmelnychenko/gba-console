@@ -25,6 +25,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { summarizeDraftCost, unpricedLinesNote } from '../procurementTotals'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -335,17 +336,6 @@ function BuyerCockpitTabContent() {
 
   const urgencyCounts = useMemo(() => buildUrgencyCounts(plan?.items ?? []), [plan])
 
-  const totalDraftCost = useMemo(
-    () =>
-      sortedItems.reduce((sum, item) => {
-        const qty = getDraftQty(draftQty, item)
-        const unitCost = lineUnitCost(item)
-
-        return sum + qty * unitCost
-      }, 0),
-    [sortedItems, draftQty],
-  )
-
   const orderableItems = useMemo(
     () =>
       sortedItems.filter((item) => {
@@ -358,11 +348,11 @@ function BuyerCockpitTabContent() {
     [sortedItems, draftQty, feedbackDecision],
   )
 
-  const orderableCost = useMemo(
-    () =>
-      orderableItems.reduce((sum, item) => sum + getDraftQty(draftQty, item) * lineUnitCost(item), 0),
+  const draftCost = useMemo(
+    () => summarizeDraftCost(orderableItems, (item) => getDraftQty(draftQty, item)),
     [orderableItems, draftQty],
   )
+  const draftUnpricedNote = unpricedLinesNote(draftCost.unpricedCount, t)
 
   function updateDraftQty(productId: number, value: number | '') {
     const nextValue = typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0
@@ -913,10 +903,15 @@ function BuyerCockpitTabContent() {
                   </Text>
                   <Group gap={5} justify="flex-end" wrap="nowrap">
                     <Text className="app-money" fw={600} size="lg">
-                      {eurFormatter.format(totalDraftCost)}
+                      {eurFormatter.format(draftCost.pricedCost)}
                     </Text>
                     <Text className="app-money-meta" size="xs">EUR</Text>
                   </Group>
+                  {draftUnpricedNote && (
+                    <Text c="orange.8" size="xs">
+                      {draftUnpricedNote}
+                    </Text>
+                  )}
                 </Stack>
                 {canEditProducerProfile && (
                 <Popover position="bottom-end" shadow="none" withinPortal>
@@ -1019,8 +1014,9 @@ function BuyerCockpitTabContent() {
 
             {hasItems && (
               <Text c="dimmed" size="xs" ta="right">
-                {t('Чернетка')}: {countFormatter.format(sortedItems.length)} {t('позицій')} ·{' '}
-                <span className="app-money app-money-meta">€{eurFormatter.format(totalDraftCost)}</span>
+                {t('Чернетка')}: {countFormatter.format(draftCost.lineCount)} {t('позицій')} ·{' '}
+                <span className="app-money app-money-meta">€{eurFormatter.format(draftCost.pricedCost)}</span>
+                {draftUnpricedNote ? ` · ${draftUnpricedNote}` : ''}
               </Text>
             )}
           </Stack>
@@ -1044,8 +1040,13 @@ function BuyerCockpitTabContent() {
           <Stack gap={4}>
             <Text size="sm">{plan?.producer_name || `#${plan?.producer_id ?? ''}`}</Text>
             <Text c="dimmed" size="sm">
-              {countFormatter.format(orderableItems.length)} {t('позицій')} · €{eurFormatter.format(orderableCost)}
+              {countFormatter.format(draftCost.lineCount)} {t('позицій')} · €{eurFormatter.format(draftCost.pricedCost)}
             </Text>
+            {draftUnpricedNote && (
+              <Text c="orange.8" size="xs">
+                {draftUnpricedNote}
+              </Text>
+            )}
           </Stack>
           <AppModalFooter>
             <Button color="gray" disabled={isCreatingOrder} variant="default" onClick={closeConfirm}>
@@ -1255,18 +1256,6 @@ function getDraftQty(draftQty: Record<number, number>, item: ReorderSuggestion):
   const value = draftQty[item.product_id]
 
   return typeof value === 'number' && Number.isFinite(value) ? value : item.suggested_qty
-}
-
-function lineUnitCost(item: ReorderSuggestion): number {
-  if (item.unit_cost_eur !== null) {
-    return item.unit_cost_eur
-  }
-
-  if (item.line_cost_eur !== null && item.suggested_qty > 0) {
-    return item.line_cost_eur / item.suggested_qty
-  }
-
-  return 0
 }
 
 function buildUrgencyCounts(items: ReorderSuggestion[]): Record<ProcurementUrgency, number> {

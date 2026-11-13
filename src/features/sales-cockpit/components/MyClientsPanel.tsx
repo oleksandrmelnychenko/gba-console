@@ -49,13 +49,12 @@ import { NewSaleWizard, type NewSaleWizardPrefill } from '../../sales-ukraine/co
 import { RecommendationAgreementScope } from '../../clients/components/recommendations/RecommendationAgreementScope'
 import type { SalesUkraineClientAgreement, SalesUkraineProduct } from '../../sales-ukraine/types'
 import { getCockpitClients } from '../api/salesCockpitApi'
+import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { ContactClient } from '../contactTypes'
 import type { CockpitClient, CockpitClientSegment, CockpitClientsResponse } from '../types'
 import { ClientRepeatEvidence } from './ClientRepeatEvidence'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
-const OVERDUE_DEBT_RULE =
-  'Прострочений борг: боргові документи за останні 365 днів, що перейшли договірний термін оплати; EUR з ПДВ за курсом на дату боргу. Це не загальний борг клієнта.'
 const lastOrderFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 type ClientRecommendationsState = {
@@ -180,9 +179,16 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
         header: t('Прострочений борг'),
         accessor: (client) => client.overdue_eur,
         cell: (client) => (
-          <span className="app-money" title={t(OVERDUE_DEBT_RULE) + (client.overdue_eur > 0 ? ' ' + t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : '')}>
-            {formatMoney(client.overdue_eur)}
-          </span>
+          <Stack gap={0} align="flex-end">
+            <span className="app-money" title={t(OVERDUE_DEBT_RULE) + (client.overdue_eur > 0 ? ' ' + t('Прострочено понад терміни') + ': ' + client.max_days_past_terms + ' ' + t('дн') : '')}>
+              {formatMoney(client.overdue_eur)}
+            </span>
+            {(client.debt_unknown_date_count ?? 0) > 0 && (
+              <Text c="yellow.8" size="xs" title={t('Ці документи показано окремо від відомого простроченого боргу.')}>
+                {t('Дата документа не визначена')}: {client.debt_unknown_date_count} · {formatMoney(client.debt_unknown_date_eur ?? 0)}
+              </Text>
+            )}
+          </Stack>
         ),
         align: 'right',
         width: 215,

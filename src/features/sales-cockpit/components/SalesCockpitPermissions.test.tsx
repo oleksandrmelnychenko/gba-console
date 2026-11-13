@@ -18,8 +18,9 @@ describe('sales cockpit action permissions', () => {
     renderTask({}, { task_type: 'debt_followup', expected_value: 1500 })
 
     const label = screen.getByText('Прострочений борг')
-    expect(label.getAttribute('title')).toContain('за останні 365 днів')
-    expect(label.getAttribute('title')).toContain('EUR з ПДВ за курсом на дату боргу')
+    expect(label.getAttribute('title')).not.toContain('365')
+    expect(label.getAttribute('title')).toContain('без обмеження давності')
+    expect(label.getAttribute('title')).toContain('EUR з ПДВ за курсом на дату розрахунку')
     expect(label.getAttribute('title')).toContain('Це не загальний борг клієнта')
     expect(screen.queryByText('Очікувана цінність')).toBeNull()
   })

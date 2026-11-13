@@ -6,6 +6,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { buildReorderExplanation } from '../procurementOrderQty'
 import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
+import { isBelowReorderPoint } from '../procurementTotals'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementCostBadge, ProcurementCostProof } from './ProcurementCostProof'
 import { ProcurementProductCell } from './ProcurementProductCell'
@@ -285,7 +286,7 @@ function SignalsCell({ item }: { item: ReorderSuggestion }) {
 function buildDecisionSignals(item: ReorderSuggestion, t: (value: string) => string): DecisionSignal[] {
   const signals: DecisionSignal[] = []
 
-  if (item.inventory.available <= item.reorder_point) {
+  if (isBelowReorderPoint(item)) {
     signals.push({ label: t('Нижче точки замовлення'), pillClass: 'app-role-pill is-red' })
   }
 

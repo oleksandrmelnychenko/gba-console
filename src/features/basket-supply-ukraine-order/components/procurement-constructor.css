@@ -169,6 +169,12 @@
   white-space: nowrap;
 }
 
+.procure-cockpit .procure-metric > small {
+  color: var(--mantine-color-orange-8);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
 .procure-cockpit .procure-cockpit__charts {
   padding: 10px 12px 0;
 }

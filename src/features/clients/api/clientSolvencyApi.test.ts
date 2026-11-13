@@ -343,6 +343,54 @@ describe('current observation proof for every serving response', () => {
     })
   })
 
+  it('keeps the three risk amounts, outside-window lines and unconverted debt, and tolerates their absence', async () => {
+    apiRequestMock.mockResolvedValueOnce(score())
+    const older = await getClientSolvencyScore(CLIENT_NET_ID)
+    expect(older.risk_90d).not.toHaveProperty('total_debt_eur')
+    expect(older.unconverted_debt).toEqual([])
+
+    apiRequestMock.mockResolvedValueOnce({
+      ...score(),
+      risk_90d: { ...score().risk_90d, overdue_91_plus_eur: 0, overdue_1_90_eur: 40.5, total_debt_eur: 100.01 },
+      unconverted_debt: [{ currency_id: 7, currency: 'PLN', lines: 2, amount: 310.5 }],
+    })
+    await expect(getClientSolvencyScore(CLIENT_NET_ID)).resolves.toMatchObject({
+      risk_90d: { overdue_91_plus_eur: 0, overdue_1_90_eur: 40.5, total_debt_eur: 100.01 },
+      unconverted_debt: [{ currency_id: 7, currency: 'PLN', lines: 2, amount: 310.5 }],
+    })
+
+    apiRequestMock.mockResolvedValueOnce({
+      ...score(),
+      risk_90d: { ...score().risk_90d, overdue_91_plus_eur: null, overdue_1_90_eur: null, total_debt_eur: null },
+      unconverted_debt: null,
+    })
+    const nulled = await getClientSolvencyScore(CLIENT_NET_ID)
+    expect(nulled.risk_90d).not.toHaveProperty('total_debt_eur')
+    expect(nulled.unconverted_debt).toEqual([])
+
+    apiRequestMock.mockResolvedValueOnce({
+      ...score(),
+      risk_90d: { ...score().risk_90d, total_debt_eur: -1 },
+    })
+    await expect(getClientSolvencyScore(CLIENT_NET_ID)).rejects.toThrow('total_debt_eur')
+
+    apiRequestMock.mockResolvedValueOnce(charts())
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      donut_outside_window_lines: 0, unconverted_debt: [],
+    })
+    apiRequestMock.mockResolvedValueOnce({
+      ...charts(),
+      donut_outside_window_lines: 4,
+      unconverted_debt: [{ currency_id: null, currency: null, lines: 1, amount: 9.9 }],
+    })
+    await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({
+      donut_outside_window_lines: 4,
+      unconverted_debt: [{ currency_id: null, currency: null, lines: 1, amount: 9.9 }],
+    })
+    apiRequestMock.mockResolvedValueOnce({ ...charts(), donut_outside_window_lines: -1 })
+    await expect(getClientSolvencyCharts(42)).rejects.toThrow('donut_outside_window_lines')
+  })
+
   it('accepts a gauge from an older server without the new fields', async () => {
     apiRequestMock.mockResolvedValueOnce(charts())
     await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({

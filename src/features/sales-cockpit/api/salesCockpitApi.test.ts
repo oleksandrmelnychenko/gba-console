@@ -717,6 +717,28 @@ describe('salesCockpitApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard')
   })
 
+  it('passes debt without an exchange rate through and leaves it absent for an older service', async () => {
+    const base = { manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), value_at_risk_eur: 100 }
+    apiRequestMock.mockResolvedValueOnce({
+      ...base,
+      debt_unconverted_count: 3,
+      debt_unconverted_native: [{ currency: 'PLN', amount: 310.5 }, { currency: '', amount: 1 }, null],
+    })
+    await expect(getDashboard()).resolves.toMatchObject({
+      debt_unconverted_count: 3,
+      debt_unconverted_native: [{ currency: 'PLN', amount: 310.5 }],
+    })
+    apiRequestMock.mockResolvedValueOnce(base)
+    const older = await getDashboard()
+    expect(older).not.toHaveProperty('debt_unconverted_count')
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true, as_of: '2026-06-08', ...history('2025-06-08'),
+      teams: [{ manager_id: 7, open_tasks: 0, critical: 0, value_at_risk_eur: 0, debt_unconverted_count: 2 }],
+      total_value_at_risk_eur: 0,
+    })
+    await expect(getHeadDashboard()).resolves.toMatchObject({ teams: [{ debt_unconverted_count: 2 }] })
+  })
+
   it('preserves unknown-date debt separately in manager and head responses', async () => {
     const debt = { debt_unknown_date_count: 3, debt_unknown_date_eur: 250.75, value_at_risk_eur: 100 }
     apiRequestMock.mockResolvedValueOnce({ manager_id: 7, as_of: '2026-06-08', ...history('2025-06-08'), ...debt })

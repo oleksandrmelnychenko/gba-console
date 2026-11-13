@@ -10,6 +10,7 @@ import type {
   CockpitCompletedVsOpen,
   CockpitCount,
   CockpitCountByUrgency,
+  CockpitUnconvertedDebt,
   CockpitDashboard,
   CockpitDebtAging,
   CockpitGenerationResult,
@@ -558,6 +559,10 @@ function normalizeDashboard(result: unknown, expectedAsOf?: string): CockpitDash
     value_at_risk_eur: toNumber(payload.value_at_risk_eur),
     debt_unknown_date_count: toNumber(payload.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(payload.debt_unknown_date_eur),
+    ...(payload.debt_unconverted_count !== undefined ? {
+      debt_unconverted_count: toNumber(payload.debt_unconverted_count),
+      debt_unconverted_native: normalizeUnconvertedDebt(payload.debt_unconverted_native),
+    } : {}),
     ...(payload.debt_unknown_terms_count !== undefined ? {
       debt_unknown_terms_count: toNumber(payload.debt_unknown_terms_count),
       debt_unknown_terms_eur: toNumber(payload.debt_unknown_terms_eur),
@@ -677,6 +682,7 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
     value_at_risk_eur: toNumber(row.value_at_risk_eur),
     debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
     debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
+    ...(row.debt_unconverted_count !== undefined ? { debt_unconverted_count: toNumber(row.debt_unconverted_count) } : {}),
     ...(row.debt_unknown_terms_count !== undefined ? {
       debt_unknown_terms_count: toNumber(row.debt_unknown_terms_count),
       debt_unknown_terms_eur: toNumber(row.debt_unknown_terms_eur),
@@ -949,6 +955,10 @@ function normalizeCockpitClient(value: unknown): CockpitClient | null {
     turnover_eur: toNumber(row.turnover_eur),
     overdue_eur: toNumber(row.overdue_eur),
     max_days_past_terms: toNumber(row.max_days_past_terms),
+    ...(row.debt_unknown_date_count !== undefined ? {
+      debt_unknown_date_eur: toNumber(row.debt_unknown_date_eur),
+      debt_unknown_date_count: toNumber(row.debt_unknown_date_count),
+    } : {}),
     segments: row.segments,
     repeat_evidence: evidence,
     contact_cooldown: cooldown,
@@ -997,6 +1007,20 @@ function normalizeStringArray(value: unknown): string[] {
 
 function toNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function normalizeUnconvertedDebt(value: unknown): CockpitUnconvertedDebt[] {
+  if (!Array.isArray(value)) return []
+
+  return value.reduce<CockpitUnconvertedDebt[]>((acc, item) => {
+    if (item && typeof item === 'object') {
+      const row = item as Partial<CockpitUnconvertedDebt>
+      if (typeof row.currency === 'string' && row.currency.trim()) {
+        acc.push({ currency: row.currency, amount: toNumber(row.amount) })
+      }
+    }
+    return acc
+  }, [])
 }
 
 function normalizeTask(value: unknown): CockpitTask | null {

@@ -6,6 +6,7 @@ import type {
   GaugeChart,
   GaugeStatus,
   Risk90d,
+  UnconvertedDebt,
   SolvencyBatch,
   SolvencyBatchError,
   SolvencyCharts,
@@ -307,6 +308,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     effective_start: effectiveStart,
     history_complete: score.history_complete,
     ...observation,
+    unconverted_debt: normalizeUnconvertedDebt(score.unconverted_debt, `${path}.unconverted_debt`),
   }
 }
 
@@ -364,7 +366,39 @@ function normalizeRisk90d(value: unknown, path: string): Risk90d | null {
     band,
     exposure_eur: exposureEur,
     reason_code: reasonCode,
+    ...optionalMoneyField(risk, 'overdue_91_plus_eur', path),
+    ...optionalMoneyField(risk, 'overdue_1_90_eur', path),
+    ...optionalMoneyField(risk, 'total_debt_eur', path),
   }
+}
+
+function optionalMoneyField<Key extends string>(
+  record: Record<string, unknown>,
+  key: Key,
+  path: string,
+): Partial<Record<Key, number>> {
+  const value = record[key]
+  if (value === null || value === undefined) {
+    return {}
+  }
+
+  return { [key]: requireMoney(value, `${path}.${key}`) } as Partial<Record<Key, number>>
+}
+
+function normalizeUnconvertedDebt(value: unknown, path: string): UnconvertedDebt[] {
+  if (value === null || value === undefined) {
+    return []
+  }
+
+  return requireArray(value, path).map((item, index) => {
+    const row = requireRecord(item, `${path}[${index}]`)
+    return {
+      currency_id: typeof row.currency_id === 'number' ? row.currency_id : null,
+      currency: typeof row.currency === 'string' && row.currency.trim() ? row.currency : null,
+      lines: requirePositiveInteger(row.lines, `${path}[${index}].lines`),
+      amount: requireMoney(row.amount, `${path}[${index}].amount`),
+    }
+  })
 }
 
 function normalizeForwardRisk(value: unknown, path: string): ForwardRisk | null {
@@ -471,6 +505,11 @@ function normalizeCharts(result: unknown, expectedClientId: number): SolvencyCha
     open_invoice_aging_bars: agingBars,
     turnover_vs_exposure: turnoverVsExposure,
     turnover_trend: turnoverTrend,
+    donut_outside_window_lines:
+      charts.donut_outside_window_lines === null || charts.donut_outside_window_lines === undefined
+        ? 0
+        : requireNonNegativeInteger(charts.donut_outside_window_lines, 'charts.donut_outside_window_lines'),
+    unconverted_debt: normalizeUnconvertedDebt(charts.unconverted_debt, 'charts.unconverted_debt'),
   }
 }
 

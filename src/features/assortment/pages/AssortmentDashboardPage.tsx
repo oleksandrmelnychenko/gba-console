@@ -47,6 +47,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import './assortment-dashboard.css'
 
 const integer = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
+const quantity = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const money = new Intl.NumberFormat('uk-UA', { currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2, style: 'currency' })
 
 const RATING_LIMIT = 8
@@ -128,6 +129,16 @@ function formatMoney(value: number | null | undefined): string {
   return value == null ? '' : money.format(value)
 }
 
+function formatQty(value: number | null | undefined): string {
+  return value == null ? '' : quantity.format(value)
+}
+
+function formatIsoDate(value: string | null | undefined): string {
+  const match = value == null ? null : /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : value ?? ''
+}
+
 function formatInt(value: number | null | undefined): string {
   return value == null ? '' : integer.format(value)
 }
@@ -183,6 +194,14 @@ function regionName(region: AssortmentRegionRow): string {
 
 function isRegionalSort(sort: string | undefined): boolean {
   return sort ? REGIONAL_SORT_VALUES.has(sort) : false
+}
+
+function rowStockValue(row: AssortmentRow): number | null {
+  if (row.stock_value_eur !== undefined) {
+    return row.stock_value_eur
+  }
+
+  return row.unit_cost_eur == null ? null : row.eur_value
 }
 
 function getSummaryNumber(summary: Record<string, unknown> | undefined, key: string): number | null {
@@ -256,7 +275,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         },
         {
           id: 'margin',
-          header: t('Оцінена маржа %'),
+          header: t('Оцінена маржа %, без ПДВ'),
           align: 'right',
           minWidth: 110,
           accessor: (row) => row.margin_pct ?? -Infinity,
@@ -277,8 +296,8 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           header: t('Запас за собівартістю, €'),
           align: 'right',
           minWidth: 130,
-          accessor: (row) => row.eur_value,
-          cell: (row) => <MoneyCell value={row.unit_cost_eur == null ? null : row.eur_value} />,
+          accessor: (row) => rowStockValue(row) ?? -Infinity,
+          cell: (row) => <MoneyCell value={rowStockValue(row)} />,
         },
         {
           id: 'action',
@@ -449,6 +468,7 @@ function AssortmentDashboardPageContent() {
   const weightedMargin = getSummaryNumber(marginSummary, 'weighted_avg_margin_pct')
   const negativeMarginSkus = getSummaryNumber(marginSummary, 'negative_margin_skus')
   const knownMarginRevenue = getSummaryNumber(marginSummary, 'revenue_eur_known_margin')
+  const knownMarginRevenueExVat = getSummaryNumber(marginSummary, 'revenue_ex_vat_eur_known_margin')
   const negativeMarginRevenue = getSummaryNumber(marginSummary, 'eur_at_negative_margin')
   const overallReturnRate = getSummaryNumber(returnsSummary, 'overall_return_rate')
   const marginProfit = getSummaryNumber(marginSummary, 'estimated_profit_eur')
@@ -526,6 +546,7 @@ function AssortmentDashboardPageContent() {
               body={body}
               period={financialPeriod(overview)}
               knownMarginRevenue={knownMarginRevenue}
+              knownMarginRevenueExVat={knownMarginRevenueExVat}
               marginProfit={marginProfit}
               negativeMarginSkus={negativeMarginSkus}
               negativeMarginRevenue={negativeMarginRevenue}
@@ -672,6 +693,7 @@ function AssortmentKpis({
   body,
   period,
   knownMarginRevenue,
+  knownMarginRevenueExVat,
   marginProfit,
   negativeMarginSkus,
   negativeMarginRevenue,
@@ -681,6 +703,7 @@ function AssortmentKpis({
   body?: AssortmentOverview['overview']
   period: string
   knownMarginRevenue: number | null
+  knownMarginRevenueExVat: number | null
   marginProfit: number | null
   negativeMarginSkus: number | null
   negativeMarginRevenue: number | null
@@ -688,13 +711,27 @@ function AssortmentKpis({
   weightedMargin: number | null
 }) {
   const { t } = useI18n()
+  const hasStockValue = body?.stock_value_eur !== undefined
+  const stockValue = hasStockValue ? body?.stock_value_eur : body?.total_eur_value
+  const unvaluedSkus = body?.stock_unvalued_skus ?? 0
+  const stockSub = [
+    body?.stock_skus != null
+      ? `${t('Позицій із залишком')}: ${formatInt(body.stock_skus)}`
+      : body?.total_skus == null ? null : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`,
+    unvaluedSkus > 0
+      ? `${t('без собівартості, не враховано')}: ${formatInt(unvaluedSkus)} ${t('поз.')}${body?.stock_unvalued_qty ? ` (${formatQty(body.stock_unvalued_qty)} ${t('од.')})` : ''}`
+      : null,
+    body?.stock_matches_as_of === false
+      ? `${t('залишок і собівартість — на сьогодні')}${body.stock_as_of ? ` (${formatIsoDate(body.stock_as_of)})` : ''}`
+      : null,
+  ].filter((part): part is string => Boolean(part)).join(' · ')
 
   return (
     <SimpleGrid className="assort-kpis" cols={{ base: 1, sm: 2, lg: 5 }} spacing={0}>
       <KpiTile
         label={t('Вартість запасів за собівартістю')}
-        sub={body?.total_skus == null ? undefined : `${t('Товарних позицій')}: ${formatInt(body.total_skus)}`}
-        value={formatMoney(body?.total_eur_value)}
+        sub={stockSub || undefined}
+        value={hasStockValue && stockValue === null ? t('Не оцінено') : formatMoney(stockValue)}
       />
       <KpiTile
         label={t('Продажі до повернень, з ПДВ')}
@@ -707,11 +744,13 @@ function AssortmentKpis({
         sub={body?.unresolved_amount_count ? `${t('Відома частина')}: ${formatMoney(body.known_total_net_revenue_eur)} · ${body.unresolved_amount_count} ${t('сум без підтвердження')} · ${period}` : `${t('Увесь асортимент')} · ${period}`}
       />
       <KpiTile
-        label={t('Оцінений прибуток')}
+        label={t('Оцінений прибуток, без ПДВ')}
         sub={
           weightedMargin == null
             ? t('маржа невідома')
-            : `${t('Продажі з ПДВ мінус поточна собівартість; лише товари з відомою собівартістю')} · ${pct(weightedMargin)} · ${formatMoney(knownMarginRevenue)}`
+            : `${t('Продажі без ПДВ мінус поточна собівартість; лише товари з відомою собівартістю')} · ${t('маржа без ПДВ')} ${pct(weightedMargin)} · ${knownMarginRevenueExVat == null
+              ? `${t('їх продажі з ПДВ')}: ${formatMoney(knownMarginRevenue)}`
+              : `${t('їх продажі без ПДВ')}: ${formatMoney(knownMarginRevenueExVat)}`}`
         }
         value={formatMoney(marginProfit)}
       />
@@ -719,7 +758,7 @@ function AssortmentKpis({
         label={t('Ризики маржі та повернень')}
         sub={
           negativeMarginSkus
-            ? `${formatInt(negativeMarginSkus)} ${t('позицій у мінусі; їх продажі з ПДВ')}: ${formatMoney(negativeMarginRevenue)}`
+            ? `${formatInt(negativeMarginSkus)} ${t('позицій із відʼємною маржею без ПДВ; їх продажі з ПДВ')}: ${formatMoney(negativeMarginRevenue)}`
             : t('частка повернених одиниць')
         }
         value={pct(overallReturnRate)}
@@ -849,7 +888,7 @@ function AssortmentAttention({
 
     rows.slice(0, 2).forEach((row) => add(t('Низьке здоровʼя'), healthPill(row.health), row, `${Math.round(row.health)}/100`))
     frozenRows.slice(0, 2).forEach((row) => add(t('Найбільший запас за собівартістю'), 'is-orange', row, formatMoney(row.eur_value)))
-    lowMarginRows.slice(0, 2).forEach((row) => add(t('Низька маржа'), 'is-yellow', row, pct(row.margin_pct)))
+    lowMarginRows.slice(0, 2).forEach((row) => add(t('Низька маржа, без ПДВ'), 'is-yellow', row, pct(row.margin_pct)))
     highReturnRows.slice(0, 2).forEach((row) => add(t('Повернення'), 'is-red', row, pct(row.return_rate)))
 
     return items.slice(0, 5)

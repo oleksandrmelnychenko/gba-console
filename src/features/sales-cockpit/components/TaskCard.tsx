@@ -3,6 +3,7 @@ import { Check, CircleDashed, Clock, Mail, MessageCircle, MessageSquarePlus, Pho
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { WhyThisTask } from './WhyThisTask'
+import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -204,7 +205,7 @@ export function TaskCard({
 function expectedValueBasis(taskType: CockpitTaskType | undefined): { hint: string; label: string } {
   if (taskType === 'debt_followup') {
     return {
-      hint: 'Боргові документи клієнта за останні 365 днів, що перейшли договірний термін оплати; EUR з ПДВ за курсом на дату боргу. Це не загальний борг клієнта.',
+      hint: OVERDUE_DEBT_RULE,
       label: 'Прострочений борг',
     }
   }

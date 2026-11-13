@@ -203,6 +203,82 @@ describe('AssortmentDashboardPage', () => {
     expect(screen.queryByText('Надлишок запасу')).toBeNull()
   })
 
+  it('shows stocked positions, unvalued stock and the current-stock note on the stock value tile', async () => {
+    mockAssortmentData()
+    const base = await vi.mocked(getAssortmentOverview).getMockImplementation()!()
+    vi.mocked(getAssortmentOverview).mockResolvedValue({
+      ...base,
+      overview: {
+        ...base.overview,
+        stock_as_of: '2026-11-13',
+        stock_matches_as_of: false,
+        stock_skus: 11288,
+        stock_unvalued_qty: 960.5,
+        stock_unvalued_skus: 3,
+        stock_value_eur: 1923979.83,
+        total_eur_value: 5,
+        total_skus: 16764,
+      },
+    })
+    renderPage()
+
+    const tile = (await screen.findByText('Вартість запасів за собівартістю')).closest('.kpi-tile') as HTMLElement
+    const text = tile.textContent?.replace(/\s/g, ' ') ?? ''
+    expect(text).toContain('1 923 979,83')
+    expect(text).toContain('Позицій із залишком: 11 288')
+    expect(text).not.toContain('16 764')
+    expect(text).toContain('без собівартості, не враховано: 3 поз. (960,5 од.)')
+    expect(text).toContain('залишок і собівартість — на сьогодні (13.11.2026)')
+  })
+
+  it('says the stock is not valued when no stocked position has a cost', async () => {
+    mockAssortmentData()
+    const base = await vi.mocked(getAssortmentOverview).getMockImplementation()!()
+    vi.mocked(getAssortmentOverview).mockResolvedValue({
+      ...base,
+      overview: { ...base.overview, stock_matches_as_of: true, stock_skus: 2, stock_unvalued_skus: 2, stock_value_eur: null },
+    })
+    renderPage()
+
+    const tile = (await screen.findByText('Вартість запасів за собівартістю')).closest('.kpi-tile') as HTMLElement
+    expect(tile.textContent).toContain('Не оцінено')
+    expect(tile.textContent).not.toContain('на сьогодні')
+  })
+
+  it('keeps the legacy stock value tile for a payload without the new fields', async () => {
+    renderPage()
+
+    const tile = (await screen.findByText('Вартість запасів за собівартістю')).closest('.kpi-tile') as HTMLElement
+    const text = tile.textContent?.replace(/\s/g, ' ') ?? ''
+    expect(text).toContain('126,00')
+    expect(text).toContain('Товарних позицій: 1')
+    expect(text).not.toContain('без собівартості')
+  })
+
+  it('labels margin and profit as ex-VAT with the ex-VAT revenue base', async () => {
+    mockAssortmentData()
+    const base = await vi.mocked(getAssortmentMargin).getMockImplementation()!()
+    vi.mocked(getAssortmentMargin).mockResolvedValue({
+      ...base,
+      summary: {
+        ...base.summary,
+        estimated_profit_eur: 484333.32,
+        margin_vat_basis: 'ex-vat',
+        revenue_ex_vat_eur_known_margin: 2648489.32,
+        revenue_eur_known_margin: 3087813.99,
+      },
+    })
+    renderPage()
+
+    const tile = (await screen.findByText('Оцінений прибуток, без ПДВ')).closest('.kpi-tile') as HTMLElement
+    const text = tile.textContent?.replace(/\s/g, ' ') ?? ''
+    expect(text).toContain('484 333,32')
+    expect(text).toContain('їх продажі без ПДВ: 2 648 489,32')
+    expect(text).not.toContain('3 087 813,99')
+    expect(screen.getAllByText('Оцінена маржа %, без ПДВ').length).toBeGreaterThan(0)
+    expect(screen.getByText('Продажі до повернень, з ПДВ')).not.toBeNull()
+  })
+
   it('translates recommendation codes and applies the selected supported row limit', async () => {
     mockAssortmentData([{ ...product, action_reasons: ['negative_margin'] }])
     renderPage()

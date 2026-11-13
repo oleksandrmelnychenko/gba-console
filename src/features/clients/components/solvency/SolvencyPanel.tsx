@@ -15,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { CircleAlert, Info } from 'lucide-react'
-import { useEffect, useReducer } from 'react'
+import { Fragment, useEffect, useReducer } from 'react'
 import { AiFeatureBadge } from '../../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
@@ -30,6 +30,7 @@ import type {
   SolvencyScore,
   SubFactor,
   SubFactors,
+  UnconvertedDebt,
 } from '../../solvencyTypes'
 
 type SolvencyPanelProps = {
@@ -49,6 +50,8 @@ type SolvencyAction =
   | { type: 'loaded'; charts: SolvencyCharts | null; chartsError: string | null; score: SolvencyScore }
   | { type: 'loading' }
 
+const nativeAmountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const countFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
 const eurFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
@@ -242,6 +245,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
               </Text>
             )}
           </Group>
+          <UnconvertedDebtAlert rows={score.unconverted_debt?.length ? score.unconverted_debt : charts?.unconverted_debt} />
           <Divider />
           {score.sub_factors ? (
             <SubFactorBars subFactors={score.sub_factors} />
@@ -310,11 +314,67 @@ const PAYMENT_DISCIPLINE_LABEL: Record<string, string> = {
   settled: 'продажі без відкритого боргу за 12 міс., документів',
 }
 
+type Risk90dAmount = { hint: string; key: string; label: string; value: number }
+
+function risk90dAmounts(risk: Risk90d): Risk90dAmount[] | null {
+  const total = risk.total_debt_eur
+  const within = risk.overdue_1_90_eur
+  const beyond = risk.overdue_91_plus_eur
+  if (typeof total !== 'number' || typeof within !== 'number' || typeof beyond !== 'number') {
+    return null
+  }
+
+  const parts: Risk90dAmount[] = []
+  if (total > 0) {
+    parts.push({ hint: TOTAL_DEBT_HINT, key: 'total', label: 'загальний борг', value: total })
+  }
+  if (within > 0) {
+    parts.push({ hint: RISK_90D_AMOUNT_HINT.will_cross_90_days, key: 'within', label: 'прострочено 1–90 днів', value: within })
+  }
+  if (beyond > 0) {
+    parts.push({
+      hint: RISK_90D_AMOUNT_HINT.already_90_plus,
+      key: 'beyond',
+      label: within > 0 ? 'понад 90 днів' : 'прострочено понад 90 днів',
+      value: beyond,
+    })
+  }
+
+  return parts
+}
+
+function UnconvertedDebtAlert({ rows }: { rows: UnconvertedDebt[] | null | undefined }) {
+  const { t } = useI18n()
+  if (!rows || rows.length === 0) {
+    return null
+  }
+
+  return (
+    <Alert className="client-solvency-unconverted" color="yellow" icon={<CircleAlert size={18} />} variant="light">
+      {t('Борг без курсу до EUR не входить до жодної суми в EUR')}:{' '}
+      {rows
+        .map((row) => `${nativeAmountFormatter.format(row.amount)} ${row.currency ?? t('валюта невідома')} (${row.lines} ${t('док.')})`)
+        .join(' · ')}
+    </Alert>
+  )
+}
+
+function outsideWindowCaption(lines: number, months: number): string {
+  const lastTwo = lines % 100
+  const last = lines % 10
+  const noun = lastTwo >= 11 && lastTwo <= 14
+    ? 'документів'
+    : last === 1 ? 'документ' : last >= 2 && last <= 4 ? 'документи' : 'документів'
+
+  return `ще ${countFormatter.format(lines)} ${noun} боргу за продажами, старшими за ${months} міс.`
+}
+
 function Risk90dSummary({ risk }: { risk: Risk90d }) {
   const { t } = useI18n()
   const color = RISK_90D_COLOR[risk.band] ?? 'gray'
   const label = RISK_90D_LABEL[risk.band] ?? risk.band
   const reason = RISK_90D_REASON[risk.reason_code] ?? risk.reason_code
+  const amounts = risk90dAmounts(risk)
 
   return (
     <Group gap="xs" wrap="wrap">
@@ -323,17 +383,29 @@ function Risk90dSummary({ risk }: { risk: Risk90d }) {
       </Badge>
       <Text size="sm">
         {t(reason)}
-        {risk.exposure_eur > 0 && (
-          <>
-            {' · '}
-            <Tooltip label={t(RISK_90D_AMOUNT_HINT[risk.reason_code] ?? TOTAL_DEBT_HINT)} multiline w={320} withArrow>
-              <span className="client-solvency-risk-amount">
-                {t(RISK_90D_AMOUNT_LABEL[risk.reason_code] ?? RISK_90D_AMOUNT_LABEL.current_debt)}:{' '}
-                <span className="app-money">{formatEur(risk.exposure_eur)}</span>
-              </span>
-            </Tooltip>
-          </>
-        )}
+        {amounts
+          ? amounts.map((part) => (
+              <Fragment key={part.key}>
+                {' · '}
+                <Tooltip label={t(part.hint)} multiline w={320} withArrow>
+                  <span className="client-solvency-risk-amount">
+                    {t(part.label)}{' '}
+                    <span className="app-money">{formatEur(part.value)}</span>
+                  </span>
+                </Tooltip>
+              </Fragment>
+            ))
+          : risk.exposure_eur > 0 && (
+              <>
+                {' · '}
+                <Tooltip label={t(RISK_90D_AMOUNT_HINT[risk.reason_code] ?? TOTAL_DEBT_HINT)} multiline w={320} withArrow>
+                  <span className="client-solvency-risk-amount">
+                    {t(RISK_90D_AMOUNT_LABEL[risk.reason_code] ?? RISK_90D_AMOUNT_LABEL.current_debt)}:{' '}
+                    <span className="app-money">{formatEur(risk.exposure_eur)}</span>
+                  </span>
+                </Tooltip>
+              </>
+            )}
       </Text>
     </Group>
   )
@@ -629,6 +701,11 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
             ) : (
               <Text c="dimmed" py="md" size="sm">
                 {t('Дані відсутні')}
+              </Text>
+            )}
+            {(charts.donut_outside_window_lines ?? 0) > 0 && (
+              <Text c="dimmed" className="client-solvency-donut-outside" size="xs">
+                {outsideWindowCaption(charts.donut_outside_window_lines ?? 0, charts.window_months)}
               </Text>
             )}
           </Stack>

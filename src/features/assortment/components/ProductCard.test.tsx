@@ -67,6 +67,45 @@ describe('ProductCard', () => {
     expect(within(regions).getByText('Київ').closest('tr')?.getAttribute('aria-current')).toBe('true')
   })
 
+  it('labels margin and profit as ex-VAT and shows unvalued stock honestly', async () => {
+    vi.mocked(getProduct).mockResolvedValue({
+      ...buildProduct(),
+      margin_ex_vat_eur: 1234.4,
+      margin_pct: 0.2,
+      revenue_ex_vat_eur: 6172,
+      stock_value_eur: null,
+    })
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <ProductCard productId={18_286} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(await screen.findByText('Оцінена маржа, без ПДВ')).toBeTruthy()
+    expect(screen.getByText('Не оцінено: немає собівартості')).toBeTruthy()
+    const profit = screen.getByText('Оцінений прибуток, без ПДВ').parentElement as HTMLElement
+    expect(profit.textContent).toMatch(/1\s234/)
+    expect(screen.getByText('Продажі до повернень, без ПДВ')).toBeTruthy()
+    expect(screen.getByText('Продажі до повернень, з ПДВ')).toBeTruthy()
+  })
+
+  it('keeps the stock value and hides ex-VAT figures for a payload without the new fields', async () => {
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <ProductCard productId={18_286} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const stock = (await screen.findByText('Вартість залишку за собівартістю')).parentElement as HTMLElement
+    expect(stock.textContent).toContain('114')
+    expect(screen.queryByText('Оцінений прибуток, без ПДВ')).toBeNull()
+    expect(screen.queryByText('Продажі до повернень, без ПДВ')).toBeNull()
+  })
+
   it('explains the product scores and empty states in business language', async () => {
     render(
       <MantineProvider>

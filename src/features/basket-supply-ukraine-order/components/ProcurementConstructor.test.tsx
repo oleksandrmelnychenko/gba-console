@@ -471,6 +471,58 @@ describe('ProcurementConstructor', () => {
     expect(screen.getAllByText('Відомі оцінки')).toHaveLength(2)
     expect(screen.getByText('1 без ціни')).not.toBeNull()
   })
+
+  it('states how many unpriced lines the known totals leave out and lists them after priced lines', async () => {
+    const basePlan = await vi.mocked(getPurchaseCockpitWarehousePlan)({ budgetEur: 0, method: 'greedy' })
+
+    vi.mocked(getPurchaseCockpitWarehousePlan).mockResolvedValue({
+      ...basePlan,
+      item_count: 3,
+      items: [
+        suggestion({ product_id: 43, product_name: 'Без ціни товар', line_cost_eur: null, unit_cost_eur: null }),
+        suggestion({ product_id: 44, product_name: 'Дешевий товар', line_cost_eur: 12, unit_cost_eur: 2 }),
+        suggestion({ product_id: 45, product_name: 'Дорогий товар', line_cost_eur: 90, unit_cost_eur: 15 }),
+      ],
+      priced_cost_eur: 102,
+      selected_count: 3,
+      total_cost_eur: null,
+      total_item_count: 3,
+      total_suggested_qty: 18,
+      unpriced_item_count: 1,
+    })
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Дорогий товар')
+    const known = screen.getByText('Відомі оцінки потреби, EUR без ПДВ').closest('.procure-metric')!
+    expect(known.querySelector('small')?.textContent).toBe('1 рядок без ціни не враховано')
+    const urgent = screen.getByText('Оцінки термінових позицій, EUR без ПДВ').closest('.procure-metric')!
+    expect(urgent.querySelector('small')?.textContent).toBe('1 рядок без ціни не враховано')
+    const order = ['Дорогий товар', 'Дешевий товар', 'Без ціни товар'].map(
+      (name) => document.body.textContent!.indexOf(name),
+    )
+    expect(order).toEqual(order.toSorted((left, right) => left - right))
+  })
+
+  it('adds no unpriced note when every line has a price', async () => {
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <ProcurementConstructor />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const known = (await screen.findByText('Відомі оцінки потреби, EUR без ПДВ')).closest('.procure-metric')!
+    await screen.findAllByText('Meyle')
+    expect(known.querySelector('small')).toBeNull()
+  })
 })
 
 function suggestion(overrides: Partial<ReorderSuggestion> = {}): ReorderSuggestion {

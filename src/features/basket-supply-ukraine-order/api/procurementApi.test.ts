@@ -680,6 +680,8 @@ describe('getProcurementCharts', () => {
     })
     expect(charts.population).toMatchObject({ item_count: 1, total_suggested_qty: 8, budget_eur: null, approval_status: 'not_provided' })
     expect(charts.top_items[0].evidence).toMatchObject({ available: 1, reserved: 1, on_order: 3, unit_cost_eur: 0, line_cost_eur: 0, forecast_method: 'naive' })
+    expect(charts.population?.suggested_qty_by_unit).toBeNull()
+    expect(charts.top_items[0].evidence?.position).toBeNull()
     expect(charts.model_version).toBe('procure-hist120-v1')
     expect(charts).toMatchObject({
       source_history_start: '2025-01-01',
@@ -721,6 +723,20 @@ describe('getBudgetCartPlan', () => {
     expect(plan.model_version).toBe('procure-hist120-v1')
     expect(plan.source_history_start).toBe('2025-01-01')
     expect(plan.items).toHaveLength(3)
+    expect(plan.suggested_qty_by_unit).toBeNull()
+    expect(plan.items[0].measure_unit).toBeNull()
+
+    apiRequestMock.mockResolvedValueOnce({ Body: {
+      ...buildFullCartPlan(),
+      suggested_qty_by_unit: { шт: 40, м: 2.5 },
+      items: buildFullCartPlan().items.map((item: Record<string, unknown>) => ({ ...item, measure_unit: 'шт' })),
+    } })
+    const withUnits = await getBudgetCartPlan({ budgetEur: 50000, method: 'milp', asOfDate: '2026-06-15' })
+    expect(withUnits.suggested_qty_by_unit).toEqual({ шт: 40, м: 2.5 })
+    expect(withUnits.items[0].measure_unit).toBe('шт')
+
+    apiRequestMock.mockResolvedValueOnce({ Body: { ...buildFullCartPlan(), suggested_qty_by_unit: { шт: -1 } } })
+    await expect(getBudgetCartPlan({ budgetEur: 50000, method: 'milp', asOfDate: '2026-06-15' })).rejects.toThrow()
 
     const [first] = plan.items
 

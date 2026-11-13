@@ -7,7 +7,7 @@ import { TaskTypeDonut } from '../../../shared/ui/charts/TaskTypeDonut'
 import { UrgencyDonut } from '../../../shared/ui/charts/UrgencyDonut'
 import type { TaskTypeSliceInput, UrgencySliceInput } from '../../../shared/ui/charts/donutData'
 import { getDashboard } from '../api/salesCockpitApi'
-import type { CockpitDashboard, CockpitTaskType, CockpitUrgency } from '../types'
+import type { CockpitDashboard, CockpitTaskType, CockpitUnconvertedDebt, CockpitUrgency } from '../types'
 
 const URGENCY_LABEL: Record<CockpitUrgency, string> = {
   critical: 'Критично',
@@ -25,6 +25,7 @@ const TASK_TYPE_LABEL: Record<CockpitTaskType, string> = {
   manual: 'Від керівника',
 }
 
+const nativeAmountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
 })
@@ -149,6 +150,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     (dashboard?.active_total ?? 0) > 0 ||
     (dashboard?.debt_unknown_date_count ?? 0) > 0 ||
     (dashboard?.debt_unknown_terms_count ?? 0) > 0 ||
+    (dashboard?.debt_unconverted_count ?? 0) > 0 ||
     (dashboard?.value_at_risk_eur ?? 0) > 0 ||
     completedTotals.open > 0 ||
     completedTotals.done > 0 ||
@@ -167,9 +169,12 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         {dashboard && (dashboard.ai_active != null && dashboard.manual_backlog != null && dashboard.active_total != null ? (
           <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.active_total} · {t('AI-рекомендації')}: {dashboard.ai_active} · {t('Ручні завдання')}: {dashboard.manual_backlog}</Text>
         ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}
-        <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')} {t('Суми — лише прострочена частина боргу, EUR з ПДВ за курсом на дату документа, без обмеження давності; це не загальний борг клієнтів.')}</Text>
+        <Text size="xs" c="dimmed">{t('Борг — поточні непогашені документи; групування за днями після договірного терміну оплати. Кількість у групах — документи, не клієнти.')} {t('Суми — лише прострочена частина боргу, EUR з ПДВ за курсом на дату розрахунку, термін оплати рахується за київською датою, без обмеження давності; це не загальний борг клієнтів.')}</Text>
         {(dashboard?.debt_unknown_date_count ?? 0) > 0 && <Alert color="yellow">
           {t('Дата документа не визначена')}: {dashboard?.debt_unknown_date_count} · {formatMoney(dashboard?.debt_unknown_date_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
+        </Alert>}
+        {(dashboard?.debt_unconverted_count ?? 0) > 0 && <Alert color="yellow">
+          {t('Без курсу до EUR')}: {dashboard?.debt_unconverted_count}{formatUnconvertedDebt(dashboard?.debt_unconverted_native) ? ' · ' + formatUnconvertedDebt(dashboard?.debt_unconverted_native) : ''}. {t('Ці документи не входять до сум у EUR.')}
         </Alert>}
         {(dashboard?.debt_unknown_terms_count ?? 0) > 0 && <Alert color="yellow">
           {t('Термін оплати не визначено')}: {dashboard?.debt_unknown_terms_count} · {formatMoney(dashboard?.debt_unknown_terms_eur ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
@@ -258,4 +263,10 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
 
 function formatMoney(value: number): string {
   return `€${moneyFormatter.format(value)}`
+}
+
+function formatUnconvertedDebt(rows: CockpitUnconvertedDebt[] | undefined): string {
+  return (rows ?? [])
+    .map((row) => `${nativeAmountFormatter.format(row.amount)} ${row.currency === 'unknown' ? 'валюта невідома' : row.currency}`)
+    .join(' · ')
 }

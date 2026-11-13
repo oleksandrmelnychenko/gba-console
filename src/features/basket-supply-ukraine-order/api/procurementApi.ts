@@ -419,10 +419,20 @@ function normalizeChartPopulation(value: unknown, itemCount: number) {
     item_count: count,
     unique_product_count: requireIntegerInRange(data.unique_product_count, 'charts.population.unique_product_count', 0, count),
     total_suggested_qty: requireNumberInRange(data.total_suggested_qty, 'charts.population.total_suggested_qty', 0, Number.MAX_VALUE),
+    suggested_qty_by_unit: normalizeQtyByUnit(data.suggested_qty_by_unit, 'charts.population.suggested_qty_by_unit'),
     unpriced_item_count: requireIntegerInRange(data.unpriced_item_count, 'charts.population.unpriced_item_count', 0, count),
     budget_ineligible_item_count: requireIntegerInRange(data.budget_ineligible_item_count, 'charts.population.budget_ineligible_item_count', 0, count),
     budget_eur: data.budget_eur == null ? null : requireNumberInRange(data.budget_eur, 'charts.population.budget_eur', 0, Number.MAX_VALUE),
   } as const
+}
+
+function normalizeQtyByUnit(value: unknown, path: string): Record<string, number> | null {
+  if (value == null) return null
+  const data = requireRecord(value, path)
+
+  return Object.fromEntries(
+    Object.entries(data).map(([unit, qty]) => [unit, requireNumberInRange(qty, `${path}.${unit}`, 0, Number.MAX_VALUE)]),
+  )
 }
 
 function normalizeChartEvidence(value: unknown, path: string) {
@@ -434,6 +444,7 @@ function normalizeChartEvidence(value: unknown, path: string) {
     available: requireFiniteNumber(inventory.available, `${path}.inventory.available`),
     reserved: requireFiniteNumber(inventory.reserved, `${path}.inventory.reserved`),
     on_order: requireFiniteNumber(inventory.on_order, `${path}.inventory.on_order`),
+    position: inventory.position == null ? null : requireFiniteNumber(inventory.position, `${path}.inventory.position`),
     forecast_method: requireNonEmptyString(data.forecast_method, `${path}.forecast_method`),
     forecast_units: requireNumberInRange(data.forecast_units, `${path}.forecast_units`, 0, Number.MAX_VALUE),
     forecast_horizon_days: requireIntegerInRange(data.forecast_horizon_days, `${path}.forecast_horizon_days`, 1, Number.MAX_SAFE_INTEGER),
@@ -784,6 +795,7 @@ async function normalizeCartPlan(
       Number.MAX_SAFE_INTEGER,
     ),
     total_suggested_qty: totalSuggestedQty,
+    suggested_qty_by_unit: normalizeQtyByUnit(data.suggested_qty_by_unit, 'cart.suggested_qty_by_unit'),
     total_cost_eur: totalCostEur,
     priced_cost_eur: pricedCostEur,
     unpriced_item_count: unpricedItemCount,
@@ -1001,6 +1013,7 @@ function normalizeReorderSuggestion(value: unknown, path: string, manifest: Proc
     estimated_unit_cost_eur: requireNullableMoney(entry.estimated_unit_cost_eur, `${path}.estimated_unit_cost_eur`),
     estimated_line_cost_eur: requireNullableMoney(entry.estimated_line_cost_eur, `${path}.estimated_line_cost_eur`),
     demand_evidence: requireNullableOneOf(entry.demand_evidence, `${path}.demand_evidence`, KNOWN_DEMAND_EVIDENCE),
+    measure_unit: requireNullableString(entry.measure_unit, `${path}.measure_unit`),
   }
 }
 

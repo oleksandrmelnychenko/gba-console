@@ -34,6 +34,7 @@ import type { Client } from '../../supply-ukraine-orders/types'
 import { getSupplyDashboardCharts } from '../api/procurementApi'
 import { summarizeProcurementCharts } from '../procureDashboardModel'
 import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
+import { formatSuggestedQtyByUnit, topItemPosition, topItemShortage } from '../procurementTotals'
 import type {
   ProcurementCharts,
   ProcurementDemandSeries,
@@ -319,8 +320,8 @@ function ProcureDashboardTabContent() {
       width: 145, align: 'right' as const,
     })),
     {
-      id: 'shortage', header: t('Бракує до точки'), accessor: (item) => Math.max(0, item.reorder_point - item.on_hand),
-      cell: (item) => <span className="procurement-dashboard__number">{qtyFormatter.format(Math.max(0, item.reorder_point - item.on_hand))}</span>, width: 135, align: 'right',
+      id: 'shortage', header: t('Бракує до точки'), accessor: (item) => topItemShortage(item),
+      cell: (item) => <span className="procurement-dashboard__number" title={t('Точка замовлення мінус доступно з урахуванням резервів і замовленого')}>{qtyFormatter.format(topItemShortage(item))}</span>, width: 135, align: 'right',
     },
   ], [hasProducerData, t])
 
@@ -349,7 +350,7 @@ function ProcureDashboardTabContent() {
         action={hasAppliedFilters ? { label: t('Показати весь кошик'), onClick: resetFilters } : canOpenConstructor ? { label: t('Відкрити конструктор закупівель'), onClick: () => navigate('/basket-supply-ukraine-order/cockpit') } : undefined} />}
       {hasUsefulData && <>
         <Text size="sm" c="dimmed">{charts?.population
-          ? `${t(charts.population.scope === 'needed_cart' ? 'Повний кошик позицій, що потребують поповнення' : 'Повний асортимент вибраного постачальника')}: ${charts.population.item_count} ${t('позицій')}, ${charts.population.unique_product_count} ${t('унікальних товарів')}. ${t('Рекомендовано загалом')}: ${qtyFormatter.format(charts.population.total_suggested_qty)}. ${t('Без вартості')}: ${charts.population.unpriced_item_count}. ${t('Не підтверджено для бюджету')}: ${charts.population.budget_ineligible_item_count}.`
+          ? `${t(charts.population.scope === 'needed_cart' ? 'Повний кошик позицій, що потребують поповнення' : 'Повний асортимент вибраного постачальника')}: ${charts.population.item_count} ${t('позицій')}, ${charts.population.unique_product_count} ${t('унікальних товарів')}. ${t('Рекомендовано загалом')}: ${formatSuggestedQtyByUnit(charts.population.suggested_qty_by_unit, t) ?? qtyFormatter.format(charts.population.total_suggested_qty)}. ${t('Без вартості')}: ${charts.population.unpriced_item_count}. ${t('Не підтверджено для бюджету')}: ${charts.population.budget_ineligible_item_count}.`
           : t('Повний обсяг рекомендованої кількості та покриття вартості в цьому зрізі не надано.')}</Text>
         <Text size="sm" c="dimmed">{t('Зріз попиту')}: {charts?.as_of_date ?? '—'}. {t('Кількості — в одиницях виміру кожного товару; загальні суми кількостей складають різні одиниці.')} {t('Запаси й резерви — стан на момент розрахунку, не історичний залишок на цю дату. Перед замовленням перевірте актуальність у конструкторі.')}</Text>
         <Text size="sm" c="dimmed">{t('Бюджет')}: {charts?.population?.budget_eur == null ? t('не задано') : `${qtyFormatter.format(charts.population.budget_eur)} ${t('EUR без ПДВ')}`}. {t('Стан погодження не надходить із джерела. Рекомендація не є погодженим замовленням.')}</Text>
@@ -415,7 +416,7 @@ function ProcureDashboardTabContent() {
           <Text size="sm">{t('Дата розрахунку')}: {charts?.as_of_date ?? '—'}. {t('Історія попиту')}: {charts?.history_complete ? t('покриття повне') : t('покриття часткове')}.</Text>
           {detailItem.evidence ? <Stack gap={4}>
             <Text size="sm">{detailItem.evidence.reason}</Text>
-            <Text size="sm">{t('Доступно')}: {qtyFormatter.format(detailItem.evidence.available)} · {t('У резерві')}: {qtyFormatter.format(detailItem.evidence.reserved)} · {t('В дорозі')}: {qtyFormatter.format(detailItem.evidence.on_order)}</Text>
+            <Text size="sm">{t('Доступно')}: {qtyFormatter.format(detailItem.evidence.available)} · {t('У резерві')}: {qtyFormatter.format(detailItem.evidence.reserved)} · {t('В дорозі')}: {qtyFormatter.format(detailItem.evidence.on_order)} · {t('Доступно з урахуванням замовлень')}: {qtyFormatter.format(topItemPosition(detailItem))} · {t('Бракує до точки')}: {qtyFormatter.format(topItemShortage(detailItem))}</Text>
             <Text size="sm">{t('Прогноз')}: {qtyFormatter.format(detailItem.evidence.forecast_units)} / {detailItem.evidence.forecast_horizon_days} {t('днів')} · {t('Метод')}: {detailItem.evidence.forecast_method}</Text>
             <Text size="sm">{t('Вартість позиції')}: {detailItem.evidence.line_cost_eur == null ? t('невідома') : `${qtyFormatter.format(detailItem.evidence.line_cost_eur)} ${t('EUR без ПДВ')}`}. {detailItem.evidence.budget_eligible ? t('Джерело вартості підтверджене для розрахунку бюджету.') : t('Вартість не підтверджена для розрахунку бюджету; потрібна перевірка закупівельником.')}</Text>
           </Stack> : <Text size="sm" c="dimmed">{t('Детальні джерела запасу, прогнозу та вартості для цього зрізу недоступні.')}</Text>}

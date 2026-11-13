@@ -119,7 +119,7 @@ describe('Sales cockpit workspace', () => {
 
     renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
 
-    expect(await screen.findByText(/EUR з ПДВ за курсом на дату документа, без обмеження давності; це не загальний борг клієнтів/)).toBeTruthy()
+    expect(await screen.findByText(/EUR з ПДВ за курсом на дату розрахунку, термін оплати рахується за київською датою, без обмеження давності; це не загальний борг клієнтів/)).toBeTruthy()
     expect(screen.getByText(/Прострочений борг разом/)).toBeTruthy()
     expect(screen.queryByText(/Під ризиком/)).toBeNull()
   })
@@ -163,6 +163,36 @@ describe('Sales cockpit workspace', () => {
     expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
     expect(screen.getByText('€0')).toBeTruthy()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
+  })
+
+  it('warns about debt without an exchange rate only when the service reports it', async () => {
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({
+      value_at_risk_eur: 100,
+      debt_unconverted_count: 2,
+      debt_unconverted_native: [{ currency: 'PLN', amount: 1310.5 }, { currency: 'unknown', amount: 7 }],
+    }))
+    const first = renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    const warning = await screen.findByText(/Без курсу до EUR: 2/)
+    expect(warning.textContent?.replace(/\s/g, ' ')).toContain('1 310,50 PLN · 7,00 валюта невідома')
+    expect(warning.textContent).toContain('Ці документи не входять до сум у EUR.')
+    first.unmount()
+
+    vi.mocked(getDashboard).mockResolvedValue(dashboard({ value_at_risk_eur: 100, debt_unconverted_count: 0, debt_unconverted_native: [] }))
+    renderWithTheme(<CockpitDashboardPanel reloadKey={0} />)
+    await screen.findByText('Відомий прострочений борг')
+    expect(screen.queryByText(/Без курсу до EUR/)).toBeNull()
+  })
+
+  it('sums head debt without an exchange rate across managers', async () => {
+    vi.mocked(getHeadDashboard).mockResolvedValue({
+      is_head: true, as_of: '2026-07-24', escalated_count: 0, total_value_at_risk_eur: 100,
+      teams: [
+        { manager_id: 1, open_tasks: 0, critical: 0, value_at_risk_eur: 100, debt_unconverted_count: 2 },
+        { manager_id: 2, open_tasks: 0, critical: 0, value_at_risk_eur: 0, debt_unconverted_count: 1 },
+      ],
+    })
+    renderWithTheme(<HeadDashboardChartsPanel reloadKey={0} rows={[]} />)
+    expect(await screen.findByText(/Без курсу до EUR: 3/)).toBeTruthy()
   })
 
   it('shows head unknown-date totals separately from known manager chart values', async () => {

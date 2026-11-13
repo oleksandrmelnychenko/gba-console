@@ -27,6 +27,19 @@ describe('BudgetCartTable', () => {
     expect(item.suggested_qty).toBe(quantity)
   })
 
+  it('flags a line below the reorder point by position including reserves and stock on order', () => {
+    const view = (inventory: ReorderSuggestion['inventory']) => render(<MantineProvider theme={theme}><I18nProvider>
+      <BudgetCartTable items={[{ ...suggestion(), inventory }]} producerNameById={new Map([[501, 'Meyle']])} />
+    </I18nProvider></MantineProvider>)
+
+    const below = view({ product_id: 42, on_hand: 2, reserved: 0, available: 2, on_order: 0, position: 2 })
+    expect(screen.getByText('Нижче точки замовлення')).not.toBeNull()
+    below.unmount()
+
+    view({ product_id: 42, on_hand: 2, reserved: 0, available: 2, on_order: 40, position: 42 })
+    expect(screen.queryByText('Нижче точки замовлення')).toBeNull()
+  })
+
   it('shows a useful product identity with its image and supplier name', () => {
     const { container } = render(
       <MantineProvider theme={theme}>

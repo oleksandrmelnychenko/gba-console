@@ -224,6 +224,11 @@ export type CockpitCompletedVsOpen = {
   count: number
 }
 
+export type CockpitUnconvertedDebt = {
+  currency: string
+  amount: number
+}
+
 export type CockpitDashboard = AiHistoryLineage & {
   ai_active?: number | null
   manual_backlog?: number | null
@@ -232,6 +237,8 @@ export type CockpitDashboard = AiHistoryLineage & {
   debt_unknown_terms_eur?: number
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
+  debt_unconverted_count?: number
+  debt_unconverted_native?: CockpitUnconvertedDebt[]
   manager_id: number
   manager_net_uid?: string
   as_of: string
@@ -249,6 +256,7 @@ export type HeadDashboardTeam = {
   debt_unknown_terms_eur?: number
   debt_unknown_date_count?: number
   debt_unknown_date_eur?: number
+  debt_unconverted_count?: number
   manager_id: number
   open_tasks: number
   critical: number
@@ -425,6 +433,8 @@ export type CockpitClient = {
   turnover_eur: number
   overdue_eur: number
   max_days_past_terms: number
+  debt_unknown_date_eur?: number
+  debt_unknown_date_count?: number
   segments: CockpitClientSegment[]
   repeat_evidence: {
     products: CockpitRepeatProduct[]

@@ -80,6 +80,7 @@ import {
   type ProcurementDraftQuantities,
 } from '../procurementConstructorModel'
 import { procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
+import { compareLineCostUnpricedLast, unpricedLinesNote } from '../procurementTotals'
 import type { CartPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
@@ -388,7 +389,7 @@ function ProcurementConstructorContent() {
       rows.toSorted(
         (a, b) =>
           URGENCY_META[a.urgency].order - URGENCY_META[b.urgency].order ||
-          (b.line_cost_eur ?? 0) - (a.line_cost_eur ?? 0),
+          compareLineCostUnpricedLast(a.line_cost_eur, b.line_cost_eur),
       ),
     [rows],
   )
@@ -801,10 +802,12 @@ function ProcurementConstructorContent() {
             <div className="procure-metric">
               <span>{t('Відомі оцінки потреби, EUR без ПДВ')}</span>
               <strong>{hasPlanData && overview.totalValue !== null ? amount.format(overview.totalValue) : '—'}</strong>
+              {hasPlanData && overview.unpricedCount > 0 ? <small>{unpricedLinesNote(overview.unpricedCount, t)}</small> : null}
             </div>
             <div className="procure-metric">
               <span>{t('Оцінки термінових позицій, EUR без ПДВ')}</span>
               <strong>{hasPlanData && overview.valueAtRisk !== null ? amount.format(overview.valueAtRisk) : '—'}</strong>
+              {hasPlanData && overview.urgentUnpricedCount > 0 ? <small>{unpricedLinesNote(overview.urgentUnpricedCount, t)}</small> : null}
             </div>
           </div>
           {visibleRows.length > 0 ? (
@@ -1329,6 +1332,8 @@ type Overview = {
   criticalCount: number
   totalValue: number | null
   valueAtRisk: number | null
+  unpricedCount: number
+  urgentUnpricedCount: number
   urgencyDonut: Array<{ name: string; value: number; color: string }>
   coverHist: Array<{ bucket: string; count: number }>
   producerValue: Array<{ producer: string; value: number }>
@@ -1390,6 +1395,8 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
     criticalCount,
     totalValue: rows.length && !knownCount ? null : totalValue,
     valueAtRisk: urgentCount && !knownUrgentCount ? null : valueAtRisk,
+    unpricedCount: rows.length - knownCount,
+    urgentUnpricedCount: urgentCount - knownUrgentCount,
     urgencyDonut,
     coverHist: Object.entries(coverBuckets).map(([bucket, count]) => ({ bucket, count })),
     producerValue,

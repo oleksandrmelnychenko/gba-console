@@ -368,6 +368,52 @@ describe('current-state display', () => {
       .toBe(`${label} 12 345,67 EUR`)
   })
 
+  it.each([
+    [{ total_debt_eur: 5000, overdue_1_90_eur: 1200.5, overdue_91_plus_eur: 300 }, 'critical', 'already_90_plus', 300,
+      ['загальний борг 5 000,00 EUR', 'прострочено 1–90 днів 1 200,50 EUR', 'понад 90 днів 300,00 EUR']],
+    [{ total_debt_eur: 5000, overdue_1_90_eur: 0, overdue_91_plus_eur: 300 }, 'critical', 'already_90_plus', 300,
+      ['загальний борг 5 000,00 EUR', 'прострочено понад 90 днів 300,00 EUR']],
+    [{ total_debt_eur: 5000, overdue_1_90_eur: 1200.5, overdue_91_plus_eur: 0 }, 'high', 'will_cross_90_days', 1200.5,
+      ['загальний борг 5 000,00 EUR', 'прострочено 1–90 днів 1 200,50 EUR']],
+    [{ total_debt_eur: 5000, overdue_1_90_eur: 0, overdue_91_plus_eur: 0 }, 'medium', 'current_debt', 5000,
+      ['загальний борг 5 000,00 EUR']],
+    [{ total_debt_eur: 0, overdue_1_90_eur: 0, overdue_91_plus_eur: 0 }, 'low', 'no_debt', 0, []],
+  ] as const)('shows total, 1–90 and 90+ debt the same way in every band %#', async (amounts, band, reasonCode, exposure, expected) => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      risk_90d: { horizon_days: 90, threshold_days: 90, band, exposure_eur: exposure, reason_code: reasonCode, ...amounts },
+    })
+    getClientSolvencyCharts.mockResolvedValue(null)
+    const { container, findByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    await findByText('Контроль боргу на 90 днів:')
+    await waitFor(() => expect(container.querySelector('.client-solvency-risk .mantine-Badge-root')).toBeTruthy())
+    const shown = Array.from(container.querySelectorAll('.client-solvency-risk-amount'))
+      .map((node) => node.textContent?.replace(/\s/g, ' '))
+    expect(shown).toEqual(expected)
+  })
+
+  it('captions debt lines outside the donut window and warns about unconverted debt only when present', async () => {
+    getClientSolvencyScore.mockResolvedValue({
+      ...v3Score,
+      unconverted_debt: [{ currency_id: 7, currency: 'PLN', lines: 2, amount: 1310.5 }],
+    })
+    getClientSolvencyCharts.mockResolvedValue({ ...currentCharts, donut_outside_window_lines: 3 })
+    const first = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    await first.findByText('Платіжна дисципліна')
+    expect(first.container.querySelector('.client-solvency-donut-outside')?.textContent)
+      .toBe('ще 3 документи боргу за продажами, старшими за 12 міс.')
+    expect(first.container.querySelector('.client-solvency-unconverted')?.textContent?.replace(/\s/g, ' '))
+      .toContain('Борг без курсу до EUR не входить до жодної суми в EUR: 1 310,50 PLN (2 док.)')
+    first.unmount()
+
+    getClientSolvencyScore.mockResolvedValue(v3Score)
+    getClientSolvencyCharts.mockResolvedValue(currentCharts)
+    const second = renderPanel(<SolvencyPanel clientNetId="abc" />)
+    await second.findByText('Платіжна дисципліна')
+    expect(second.container.querySelector('.client-solvency-donut-outside')).toBeNull()
+    expect(second.container.querySelector('.client-solvency-unconverted')).toBeNull()
+  })
+
   it('states the turnover basis and explains the limit amounts once per block', async () => {
     const { getByText, queryByText } = await renderGauge({
       value: 0.4567, status: 'ok', debt_amount: 456.7, limit_amount: 1000, currency_id: 2,

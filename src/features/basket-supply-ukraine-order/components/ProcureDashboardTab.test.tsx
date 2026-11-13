@@ -228,6 +228,47 @@ describe('ProcureDashboardTab', () => {
     expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
   })
 
+  it('measures the shortage on the service position and totals recommendations per unit', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
+      ...charts,
+      population: {
+        scope: 'needed_cart', item_count: 25, unique_product_count: 25, total_suggested_qty: 28227.19,
+        suggested_qty_by_unit: { шт: 22861, компл: 2187, м: 3179.19 },
+        unpriced_item_count: 0, budget_ineligible_item_count: 0, budget_eur: null, approval_status: 'not_provided',
+      },
+      top_items: [{
+        ...charts.top_items[0], on_hand: 20, reorder_point: 9,
+        evidence: {
+          available: 2, reserved: 18, on_order: 3, position: 5, forecast_method: 'naive', forecast_units: 8,
+          forecast_horizon_days: 30, unit_cost_eur: null, line_cost_eur: null, cost_coverage: 'none',
+          budget_eligible: false, reason: 'Потрібне поповнення',
+        },
+      }],
+    })
+    renderDashboard()
+    await screen.findByText('Гальмівний диск')
+    const summaryText = screen.getByText(/Рекомендовано загалом/).textContent?.replace(/\u00a0/g, ' ')
+    expect(summaryText).toContain('Рекомендовано загалом: 22 861 шт · 2 187 компл · 3 179,19 м.')
+    const productRow = screen.getByText('Гальмівний диск').closest('tr')!
+    const shortage = within(productRow).getByTitle('Точка замовлення мінус доступно з урахуванням резервів і замовленого')
+    expect(shortage.textContent).toBe('4')
+  })
+
+  it('falls back to the single total and gross stock when the server omits the new fields', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
+      ...charts,
+      population: {
+        scope: 'needed_cart', item_count: 25, unique_product_count: 25, total_suggested_qty: 310,
+        unpriced_item_count: 0, budget_ineligible_item_count: 0, budget_eur: null, approval_status: 'not_provided',
+      },
+    })
+    renderDashboard()
+    await screen.findByText('Гальмівний диск')
+    expect(screen.getByText(/Рекомендовано загалом/).textContent).toContain('Рекомендовано загалом: 310.')
+    const productRow = screen.getByText('Гальмівний диск').closest('tr')!
+    expect(within(productRow).getByTitle('Точка замовлення мінус доступно з урахуванням резервів і замовленого').textContent).toBe('8')
+  })
+
   it('preserves fractional quantities in summary, priority cells, product details and chart inspection', async () => {
     vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
       ...charts,

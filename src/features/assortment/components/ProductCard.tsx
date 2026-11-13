@@ -317,8 +317,13 @@ export function ProductCard({
 
       <SimpleGrid className="assort-product-metrics" cols={{ base: 2, md: 4 }} spacing={12}>
         <Stat label={t('Вільний залишок, од. виміру')} value={formatNullableNumber(detail.qty_on_hand)} />
-        <Stat label={t('Вартість залишку за собівартістю')} value={<>{decimal.format(detail.eur_value)} <TableChip tone="source" value="EUR" /></>} />
-        <Stat label={t('Оцінена маржа')} value={formatPercent(detail.margin_pct)} />
+        <Stat
+          label={t('Вартість залишку за собівартістю')}
+          value={detail.stock_value_eur === null
+            ? t('Не оцінено: немає собівартості')
+            : <>{decimal.format(detail.stock_value_eur ?? detail.eur_value)} <TableChip tone="source" value="EUR" /></>}
+        />
+        <Stat label={t('Оцінена маржа, без ПДВ')} value={formatPercent(detail.margin_pct)} />
         <Stat
           label={t('Запасу вистачить')}
           value={detail.cover_days == null ? '—' : <TableChip tone={detail.band === 'understock' ? 'warning' : 'neutral'} value={formatDays(detail.cover_days)} />}
@@ -417,6 +422,12 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
           <Stat label={t('Продано за період')} value={formatNullableNumber(detail.annual_units)} />
           <Stat label={t('Продажі до повернень, з ПДВ')} value={money.format(detail.revenue_eur)} />
           <Stat label={t('Продажі мінус повернення, з ПДВ')} value={detail.net_revenue_eur == null ? `${t('Відома частина')}: ${detail.known_net_revenue_eur == null ? '—' : money.format(detail.known_net_revenue_eur)}` : money.format(detail.net_revenue_eur)} />
+          {detail.revenue_ex_vat_eur != null && (
+            <Stat label={t('Продажі до повернень, без ПДВ')} value={money.format(detail.revenue_ex_vat_eur)} />
+          )}
+          {detail.margin_ex_vat_eur != null && (
+            <Stat label={t('Оцінений прибуток, без ПДВ')} value={money.format(detail.margin_ex_vat_eur)} />
+          )}
           <Stat
             label={t('Поточна собівартість одиниці')}
             value={detail.unit_cost_eur == null ? t('Немає даних') : preciseMoney.format(detail.unit_cost_eur)}

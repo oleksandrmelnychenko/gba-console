@@ -163,6 +163,9 @@ export function HeadDashboardChartsPanel({
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_terms_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
           {t('Є документи без визначеного терміну оплати. Вони не входять до відомого простроченого боргу.')}
         </Alert>}
+        {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unconverted_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
+          {t('Без курсу до EUR')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unconverted_count ?? 0), 0)}. {t('Ці документи не входять до сум у EUR.')}
+        </Alert>}
         {(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0) ?? 0) > 0 && <Alert color="yellow">
           {t('Дата документа не визначена')}: {dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_count ?? 0), 0)} · {formatMoney(dashboard?.teams.reduce((sum, team) => sum + (team.debt_unknown_date_eur ?? 0), 0) ?? 0)}. {t('Ці документи показано окремо від відомого простроченого боргу.')}
         </Alert>}

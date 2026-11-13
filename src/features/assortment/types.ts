@@ -26,9 +26,13 @@ export type AssortmentRow = SalesFinancials & {
   product_id: number
   qty_on_hand: number
   eur_value: number
+  stock_value_eur?: number | null
   unit_cost_eur: number | null
   avg_price_eur: number | null
   margin_pct: number | null
+  margin_vat_basis?: string | null
+  margin_ex_vat_eur?: number | null
+  revenue_ex_vat_eur?: number | null
   annual_units: number
   revenue_eur: number
   cover_days: number | null
@@ -76,6 +80,9 @@ export type AssortmentStock = ProductHistoryContract & {
   total_skus: number
   total_qty: number
   total_eur_value: number
+  stock_as_of?: string
+  stock_basis?: string
+  stock_matches_as_of?: boolean
   bands: Record<string, AssortmentStockBand>
   rows: AssortmentStockRow[]
 }
@@ -86,6 +93,15 @@ export type AssortmentOverviewBody = {
   by_abc: Record<string, number>
   by_xyz: Record<string, number>
   total_eur_value: number
+  stock_value_eur?: number | null
+  stock_skus?: number
+  stock_valued_skus?: number
+  stock_unvalued_skus?: number
+  stock_unvalued_qty?: number
+  stock_value_complete?: boolean
+  stock_as_of?: string
+  stock_basis?: string
+  stock_matches_as_of?: boolean
   total_revenue_eur: number
   total_net_revenue_eur?: number | null
   known_total_net_revenue_eur?: number
@@ -142,6 +158,9 @@ export type AssortmentMarginRow = Pick<
   'abc' | 'annual_units' | 'avg_price_eur' | 'band' | 'health' | 'lifecycle' | 'margin_pct' | 'product_id' | 'revenue_eur' | 'unit_cost_eur'
 > & {
   margin_eur: number | null
+  margin_ex_vat_eur?: number | null
+  margin_vat_basis?: string | null
+  revenue_ex_vat_eur?: number | null
   name?: string | null
   returned_units?: number
   return_rate?: number
@@ -164,6 +183,9 @@ export type AssortmentMarginSummary = {
   negative_margin_skus?: number
   eur_at_negative_margin?: number
   revenue_eur_known_margin?: number
+  revenue_ex_vat_eur_known_margin?: number
+  estimated_profit_eur?: number
+  margin_vat_basis?: string
   total_annual_units?: number
   total_returned_units?: number
   overall_return_rate?: number

@@ -49,6 +49,16 @@ export type Risk90d = {
   band: Risk90dBand
   exposure_eur: number
   reason_code: Risk90dReason
+  overdue_91_plus_eur?: number | null
+  overdue_1_90_eur?: number | null
+  total_debt_eur?: number | null
+}
+
+export type UnconvertedDebt = {
+  currency_id: number | null
+  currency: string | null
+  lines: number
+  amount: number
 }
 
 export type SolvencyCurrentObservation = {
@@ -84,6 +94,7 @@ export type SolvencyScore = SolvencyCurrentObservation & {
   model_version: string
   policy_reason_code?: string | null
   policy_reason?: string | null
+  unconverted_debt?: UnconvertedDebt[] | null
 }
 
 export type SolvencyScoreSlim = {
@@ -159,6 +170,8 @@ export type SolvencyCharts = SolvencyCurrentObservation & {
   applicable: boolean
   limit_utilization_gauge: GaugeChart
   payment_discipline_donut: DonutSlice[]
+  donut_outside_window_lines?: number | null
+  unconverted_debt?: UnconvertedDebt[] | null
   open_invoice_aging_bars: AgingBar[]
   turnover_vs_exposure: TurnoverExposurePoint[]
   score_sparkline: []

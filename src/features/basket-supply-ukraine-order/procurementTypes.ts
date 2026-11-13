@@ -12,14 +12,15 @@ export type ProcurementDaysOfCoverBucket = {
 }
 
 export type ProcurementChartEvidence = {
-  available: number; reserved: number; on_order: number
+  available: number; reserved: number; on_order: number; position?: number | null
   forecast_method: string; forecast_units: number; forecast_horizon_days: number
   unit_cost_eur: number | null; line_cost_eur: number | null
   cost_coverage: string; budget_eligible: boolean; reason: string
 }
 export type ProcurementChartPopulation = {
   scope: 'supplier_assortment' | 'needed_cart'; item_count: number; unique_product_count: number
-  total_suggested_qty: number; unpriced_item_count: number; budget_ineligible_item_count: number
+  total_suggested_qty: number; suggested_qty_by_unit?: Record<string, number> | null
+  unpriced_item_count: number; budget_ineligible_item_count: number
   budget_eur: number | null; approval_status: 'not_provided'
 }
 export type ProcurementTopItem = {
@@ -139,6 +140,7 @@ export type ReorderSuggestion = {
   estimated_unit_cost_eur?: number | null
   estimated_line_cost_eur?: number | null
   demand_evidence?: ProcurementDemandEvidence | null
+  measure_unit?: string | null
 }
 
 export type ProducerPlan = ProcurementHistoryContract & {
@@ -160,6 +162,7 @@ export type CartPlan = ProcurementHistoryContract & {
   is_truncated: boolean
   duplicate_supplier_options_removed: number
   total_suggested_qty: number
+  suggested_qty_by_unit?: Record<string, number> | null
   total_cost_eur: number | null
   priced_cost_eur: number
   unpriced_item_count: number
