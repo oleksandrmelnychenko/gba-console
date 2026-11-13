@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
 import type { ExchangeRateGroup } from '../types'
@@ -11,6 +12,16 @@ vi.mock('../api/exchangeRatesApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../api/exchangeRatesApi')>(),
   getExchangeRateHistory: vi.fn(),
   updateExchangeRates: vi.fn(),
+}))
+
+const grantedKeys = new Set<string>()
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: (key: string) => grantedKeys.has(key),
+    cannot: (key: string) => !grantedKeys.has(key),
+    isLoading: false,
+    permissions: [...grantedKeys],
+  }),
 }))
 
 const group: ExchangeRateGroup = {
@@ -30,6 +41,8 @@ function renderPanel() {
 }
 
 beforeEach(() => {
+  grantedKeys.clear()
+  grantedKeys.add(PermissionKeys.ClientResources.Currency.Edit)
   vi.mocked(getExchangeRateHistory).mockReset().mockResolvedValue(
     Array.from({ length: 20 }, (_, index) => ({ ...group.rates[0], NetUid: `history-${index}`, Created: '2026-10-19T12:00:00' })),
   )
@@ -67,5 +80,23 @@ describe('CurrencyRatesPanel form actions', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Оновити курси' })))
     await user.keyboard('{Escape}')
     expect(onClose).toHaveBeenCalledOnce()
+  })
+})
+
+describe('CurrencyRatesPanel permissions', () => {
+  it('hides the update action from roles without a currency edit right', async () => {
+    grantedKeys.clear()
+    renderPanel()
+    await screen.findByRole('button', { name: 'Завантажити ще' })
+
+    expect(screen.queryByRole('button', { name: 'Оновити курси' })).toBeNull()
+  })
+
+  it('offers the update action to a currency-converter editor', async () => {
+    grantedKeys.clear()
+    grantedKeys.add(PermissionKeys.FinancialAdministration.CurrencyConvertors.Converter.Edit)
+    renderPanel()
+
+    expect(await screen.findByRole('button', { name: 'Оновити курси' })).toBeTruthy()
   })
 })
