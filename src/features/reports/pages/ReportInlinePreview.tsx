@@ -21,7 +21,7 @@ import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 import { reportAxisCaption, type ReportCaptionAxisSchema } from '../data/reportAxisCaption'
 import { orderReportNotes } from '../data/reportNotesOrder'
-import { QUANTITY_BREAKDOWN_PROVENANCE, quantityBreakdownText } from '../data/quantityBreakdown'
+import { QUANTITY_BREAKDOWN_PROVENANCE, isNegativeSingleUnitQuantity, isSingleUnitQuantity, quantityBreakdownText } from '../data/quantityBreakdown'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -48,7 +48,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const numberPresentation = effectiveConstructorNumberPresentation(preview.Request?.DataSource, previewReportProfile, preview.numberPresentation)
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
-  const valueClass = (value: NativeReportPreviewScalar | undefined) => isQuantityBreakdown(value) ? 'is-quantity-breakdown'
+  const valueClass = (value: NativeReportPreviewScalar | undefined) => isQuantityBreakdown(value)
+    ? isSingleUnitQuantity(value!.Value!) ? (negativeRed && isNegativeSingleUnitQuantity(value!.Value!) ? 'is-negative' : undefined) : 'is-quantity-breakdown'
     : negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals
   const grandTotals = preview.constructorPresentation?.grandTotals !== false

@@ -245,3 +245,15 @@ it('shows a mixed-unit quantity breakdown in full instead of a blank cell', () =
   expect(cell?.textContent).toBe('3\u00a0420\u00a0шт · 593\u00a0компл · 35\u00a0м · 4\u00a0без\u00a0одиниці')
   expect(view.container.textContent).not.toContain('—')
 })
+
+it('shows a single-unit quantity with its unit as an ordinary number cell', () => {
+  const cellOf = (text: string) => {
+    const view = showProfit('sales', [{ RowSourceIndex: 1, ColumnSourceIndex: 0, Value: { Kind: 'text', Value: text, Provenance: 'quantityBreakdown' } }])
+    const cell = [...view.container.querySelectorAll('td')].find(item => item.textContent === text.replace(/ /g, '\u00a0'))
+    const result = { found: !!cell, className: cell?.className ?? '', breakdowns: view.container.querySelectorAll('td.is-quantity-breakdown').length }
+    view.unmount()
+    return result
+  }
+  expect(cellOf('3\u00a0шт')).toEqual({ found: true, className: '', breakdowns: 0 })
+  expect(cellOf('−2\u00a0шт')).toEqual({ found: true, className: '', breakdowns: 0 })
+})
