@@ -199,7 +199,7 @@ describe('AssortmentDashboardPage', () => {
     expect(await screen.findByText('Вартість запасів за собівартістю')).not.toBeNull()
     expect(screen.getByText('Продажі до повернень, з ПДВ')).not.toBeNull()
     expect(screen.getByText('Продажі мінус повернення, з ПДВ')).not.toBeNull()
-    expect(screen.getAllByText('Запас за собівартістю, €').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Запас за собівартістю, EUR').length).toBeGreaterThan(0)
     expect(screen.queryByText('Надлишок запасу')).toBeNull()
   })
 

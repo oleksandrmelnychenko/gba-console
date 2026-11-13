@@ -4,6 +4,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getWorkday } from '../api/workdayApi'
 import { CONTACT_RESULTS, type ContactClient } from '../contactTypes'
 import { useWorkdayResource } from '../hooks/useWorkdayResource'
@@ -31,7 +32,7 @@ export function WorkdayQueue({ revision, paused, actions, onContact }: {
     <Group justify="space-between" gap={8}>
       <Text className="app-section-title" fw={600}>{t('Робоча черга клієнтів')}</Text>
       {state.data && !loading && <Group gap={6}>
-        <Text className="cockpit-workday-asof">{t('Станом на')}: {state.data.as_of}</Text>
+        <Text className="cockpit-workday-asof">{t('Станом на')}: {formatBusinessDate(state.data.as_of) || state.data.as_of}</Text>
         <TableChip value={`${t('Карток у черзі')}: ${state.data.total}`} />
       </Group>}
     </Group>

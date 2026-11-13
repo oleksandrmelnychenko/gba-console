@@ -1,3 +1,4 @@
+import { formatMonthLabel } from '../../../shared/date/monthLabel'
 import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
 import {
   Alert,
@@ -98,11 +99,6 @@ const URGENCY_TO_LEVEL: Record<string, UrgencyLevel> = {
 
 const countFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
-})
-const snapshotDateFormatter = new Intl.DateTimeFormat('uk-UA', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
 })
 
 export function ProcureDashboardTab() {
@@ -414,7 +410,7 @@ function ProcureDashboardTabContent() {
           <div className="procurement-dashboard__detail-metrics">{([
             ['В наявності', detailItem.on_hand], ['Точка замовлення', detailItem.reorder_point], ['Рекомендовано', detailItem.suggested_qty],
           ] as const).map(([label, value]) => <article key={label}><span>{t(label)}</span><strong>{qtyFormatter.format(value)}</strong></article>)}</div>
-          <Text size="sm">{t('Дата розрахунку')}: {charts?.as_of_date ?? '—'}. {t('Історія попиту')}: {charts?.history_complete ? t('покриття повне') : t('покриття часткове')}.</Text>
+          <Text size="sm">{t('Дата розрахунку')}: {formatAsOfDate(charts?.as_of_date)}. {t('Історія попиту')}: {charts?.history_complete ? t('покриття повне') : t('покриття часткове')}.</Text>
           {detailItem.evidence ? <Stack gap={4}>
             <Text size="sm">{detailItem.evidence.reason}</Text>
             <Text size="sm">{t('Доступно')}: {qtyFormatter.format(detailItem.evidence.available)} · {t('У резерві')}: {qtyFormatter.format(detailItem.evidence.reserved)} · {t('В дорозі')}: {qtyFormatter.format(detailItem.evidence.on_order)} · {t('Доступно з урахуванням замовлень')}: {qtyFormatter.format(topItemPosition(detailItem))} · {t('Бракує до точки')}: {qtyFormatter.format(topItemShortage(detailItem))}</Text>
@@ -443,7 +439,7 @@ function DashboardMetric({ label, value, active, onClick, icon }: {
 }
 
 function DemandChart({ series, t }: { series: ProcurementDemandSeries; t: (value: string) => string }) {
-  return <AnalyticsSeriesChart points={series.points.map((point) => ({ label: point.period, actual: point.is_forecast ? null : point.units, forecast: point.is_forecast ? point.units : null }))}
+  return <AnalyticsSeriesChart points={series.points.map((point) => ({ label: formatMonthLabel(point.period), actual: point.is_forecast ? null : point.units, forecast: point.is_forecast ? point.units : null }))}
     valueLabel={t('Кількість')} formatValue={(value) => qtyFormatter.format(value)} height={240} emptyLabel={t('Даних не знайдено')} />
 }
 
@@ -473,6 +469,5 @@ function formatAsOfDate(value: string | null | undefined): string {
 
 function formatSnapshotDate(value: string | null, t: (value: string) => string): string {
   if (!value) return t('Поточний стан')
-  const date = new Date(`${value}T00:00:00`)
-  return Number.isNaN(date.getTime()) ? value : snapshotDateFormatter.format(date)
+  return formatBusinessDate(value) || value
 }

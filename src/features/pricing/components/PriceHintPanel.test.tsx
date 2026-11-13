@@ -67,7 +67,7 @@ it('explains the recommendation in Ukrainian and prints money and percents with 
   expect(await screen.findByText('Рекомендовано ціну договору: підстав для знижки немає')).toBeTruthy()
   const text = view.container.textContent!
   expect(text).not.toContain('at-baseline')
-  expect(text).toContain('16,83\u00a0€')
+  expect(text).toContain('16,83\u00a0EUR')
   expect(text).toContain('12,5\u00a0%')
   expect(text).not.toContain('€16.83')
   expect(text).not.toContain('12.5%')

@@ -328,7 +328,7 @@ function formatMoney(value: number | null, currency: string): string {
     return '—'
   }
 
-  return `${moneyFormatter.format(value)}\u00a0${currency === 'EUR' ? '€' : currency}`
+  return `${moneyFormatter.format(value)}\u00a0${currency}`
 }
 
 function formatPercent(value: number | null): string {

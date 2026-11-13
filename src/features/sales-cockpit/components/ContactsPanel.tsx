@@ -5,6 +5,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { formatBusinessDate } from '../../exchange-rates/utils'
 import { getContacts } from '../api/contactsApi'
 import { CONTACT_BUCKETS, CONTACT_RESULTS, type ContactBucket, type ContactClient, type ContactPage } from '../contactTypes'
 import { formatContactDate } from '../utils/contactDate'
@@ -52,7 +53,7 @@ export function ContactsPanel({ onOpen, revision }: { onOpen: (client: ContactCl
     <Group justify="space-between" gap={8}>
       <Text className="app-section-title" fw={600}>{t('Контакти та домовленості')}</Text>
       {state.data && !pending && <Group gap={6}>
-        <Text className="cockpit-workday-asof">{t('Станом на')}: {state.data.as_of}</Text>
+        <Text className="cockpit-workday-asof">{t('Станом на')}: {formatBusinessDate(state.data.as_of) || state.data.as_of}</Text>
         <TableChip value={`${t('Знайдено')}: ${state.data.total}`} />
       </Group>}
     </Group>

@@ -6,7 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getCockpitSource, type CockpitSource } from '../api/sourceApi'
 
 const timeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Kyiv',
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Kyiv',
 })
 const formatTime = (value: string) => timeFormatter.format(new Date(value))
 

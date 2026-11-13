@@ -79,7 +79,7 @@ export function SalesPredictionChart({
             />
             {hasRange && (
               <Text className="sales-prediction-range-note">
-                {t('Пунктир — діапазон, у який потрапляв факт приблизно у {coverage}% минулих місяців для схожих рядів', {
+                {t('Пунктир — діапазон, у який потрапляв факт приблизно у {coverage} % минулих місяців для схожих рядів', {
                   coverage: coveragePct,
                 })}
               </Text>

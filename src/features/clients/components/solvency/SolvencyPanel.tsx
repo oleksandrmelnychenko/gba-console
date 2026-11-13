@@ -1,3 +1,4 @@
+import { formatMonthLabel } from '../../../../shared/date/monthLabel'
 import { userErrorText } from '../../../../shared/api/userErrorText'
 import { BarChart, DonutChart } from '@mantine/charts'
 import { MONEY_AXIS_TICK } from '../../../../shared/ui/charts/chartTheme'
@@ -642,7 +643,7 @@ function SolvencyChartsView({ charts, gaugeCurrencyCode }: { charts: SolvencyCha
 
   const turnoverData = charts.turnover_trend.map((point) => ({
     оборот: round2(point.turnover_eur),
-    період: point.period,
+    період: formatMonthLabel(point.period),
   }))
 
   return (

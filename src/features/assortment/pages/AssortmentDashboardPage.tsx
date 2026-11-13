@@ -82,7 +82,7 @@ const BAND_ORDER = ['healthy', 'slow', 'overstock', 'understock', 'order_to_dema
 
 const SORT_OPTIONS = [
   { value: 'health_asc', label: 'Найнижче здоровʼя' },
-  { value: 'frozen_eur', label: 'Найбільший запас €' },
+  { value: 'frozen_eur', label: 'Найбільший запас, EUR' },
   { value: 'revenue', label: 'Найбільша виручка' },
 ]
 const REGIONAL_SORT_OPTIONS = [
@@ -300,7 +300,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         },
         {
           id: 'eur',
-          header: t('Запас за собівартістю, €'),
+          header: t('Запас за собівартістю, EUR'),
           align: 'right',
           width: 190,
           minWidth: 150,
@@ -333,7 +333,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
         ...baseColumns,
         {
           id: 'regionRevenue',
-          header: t('Регіон, € з ПДВ'),
+          header: t('Регіон, EUR з ПДВ'),
           align: 'right',
           minWidth: 130,
           accessor: (row) => row.regional_revenue_eur ?? 0,
