@@ -4,9 +4,8 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from '../api/reportWorkspaceApi'
-import { getSettlementPeriodAgreements } from '../api/settlementPeriodApi'
 import { groupedSettlementDataset as dataset } from '../data/groupedSettlementPeriod.test-fixtures'
-import { settlementPeriodAgreement, settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
+import { settlementPeriodRequest } from '../data/settlementPeriod.test-fixtures'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { settlementAttributesDataset } from '../data/settlementSourceAttributes.test-fixtures'
@@ -16,14 +15,12 @@ vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => tr
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
-vi.mock('../api/settlementPeriodApi', () => ({ getSettlementPeriodAgreements: vi.fn() }))
 
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, dataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
-  vi.mocked(getSettlementPeriodAgreements).mockResolvedValue([settlementPeriodAgreement])
   vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
   vi.mocked(searchDatasetReportValues).mockReset().mockResolvedValue([])
   vi.mocked(saveServerReportTemplate).mockImplementation(async template => ({ ...template, Revision: (template.Revision ?? 0) + 1 }))
@@ -68,7 +65,6 @@ it('opens the debtor workbook directly with grouped current Buyers and no exact-
   expect(screen.queryByRole('combobox', { name: 'Обсяг взаєморозрахунків' })).toBeNull()
   expect((screen.getByRole('combobox', { name: 'Форма взаєморозрахунків' }) as HTMLInputElement).value).toBe('Організація → контрагент')
   expect(screen.queryByRole('checkbox', { name: 'Контрагенти у групі «Покупці» (Fenix)' })).toBeNull()
-  expect(getSettlementPeriodAgreements).not.toHaveBeenCalled()
   expect(screen.getAllByText(/^Організація → контрагент, договори контрагента в різних валютах — в одному рядку, як у 1С\. Покупці з групи «Покупці»\./).length).toBeGreaterThan(0)
   fireEvent.submit(container.querySelector('form')!)
   await waitFor(() => expect(createStockReport).toHaveBeenCalledOnce())

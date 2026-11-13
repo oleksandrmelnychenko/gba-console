@@ -4,8 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
-import { getSettlementPeriodAgreements } from '../api/settlementPeriodApi'
-import { settlementPeriodDataset, settlementPeriodAgreement } from '../data/settlementPeriod.test-fixtures'
+import { settlementPeriodDataset } from '../data/settlementPeriod.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -14,7 +13,6 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
   createStockReport: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
-vi.mock('../api/settlementPeriodApi', () => ({ getSettlementPeriodAgreements: vi.fn() }))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -22,7 +20,6 @@ beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, settlementPeriodDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
-  vi.mocked(getSettlementPeriodAgreements).mockResolvedValue([settlementPeriodAgreement])
   vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
 })
 
@@ -33,7 +30,6 @@ it('offers no exact-agreement or Fenix/AMG base controls for the settlement work
   expect((screen.getByRole('combobox', { name: 'Звіт' }) as HTMLInputElement).value).toBe(settlementPeriodDataset.Name)
   expect(screen.queryByRole('combobox', { name: 'База обліку договору' })).toBeNull()
   expect(screen.queryByRole('combobox', { name: 'Тип договору' })).toBeNull()
-  expect(getSettlementPeriodAgreements).not.toHaveBeenCalled()
 })
 
 it('does not expose dedicated controls when the server does not advertise dataset 41', async () => {
@@ -44,5 +40,4 @@ it('does not expose dedicated controls when the server does not advertise datase
   fireEvent.click(screen.getByRole('combobox', { name: 'Звіт' }))
   expect(screen.queryByRole('option', { name: settlementPeriodDataset.Name })).toBeNull()
   expect(screen.queryByRole('combobox', { name: 'База обліку договору' })).toBeNull()
-  expect(getSettlementPeriodAgreements).not.toHaveBeenCalled()
 })

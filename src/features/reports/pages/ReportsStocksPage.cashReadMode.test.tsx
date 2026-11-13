@@ -6,9 +6,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { createStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
-import { getCashPeriodLegs } from '../api/cashPeriodApi'
 import { CASH_READ_MODE_NOTICE } from '../data/bug1274WorkbookLaunch'
-import { cashPeriodLeg } from '../data/cashPeriod.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
@@ -18,14 +16,12 @@ vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => tr
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), createStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(), saveServerReportTemplate: vi.fn() }))
-vi.mock('../api/cashPeriodApi', () => ({ getCashPeriodLegs: vi.fn() }))
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, cashModeDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   vi.mocked(searchDatasetReportValues).mockResolvedValue([])
-  vi.mocked(getCashPeriodLegs).mockResolvedValue([cashPeriodLeg])
   vi.mocked(createStockReport).mockResolvedValue({ document: { DocumentURL: '/files/cash.xlsx' }, raw: {} })
 })
 afterEach(() => { cleanup(); localStorage.clear(); sessionStorage.clear() })

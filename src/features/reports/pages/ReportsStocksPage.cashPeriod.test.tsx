@@ -4,8 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
-import { getCashPeriodLegs } from '../api/cashPeriodApi'
-import { cashPeriodDataset, cashPeriodLeg } from '../data/cashPeriod.test-fixtures'
+import { cashPeriodDataset } from '../data/cashPeriod.test-fixtures'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { groupedCashDataset } from '../data/groupedCashPeriod.test-fixtures'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -15,7 +14,6 @@ vi.mock('../api/reportsApi', async original => ({ ...await original<typeof impor
   createStockReport: vi.fn() }))
 vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
-vi.mock('../api/cashPeriodApi', () => ({ getCashPeriodLegs: vi.fn() }))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -23,7 +21,6 @@ beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets, cashPeriodDataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
-  vi.mocked(getCashPeriodLegs).mockResolvedValue([cashPeriodLeg])
   vi.mocked(createStockReport).mockResolvedValue({ document: {}, raw: {} })
 })
 
@@ -40,5 +37,4 @@ it('opens the multi-account workbook only with its capability and submits eight 
   expect(data.groupedCashPeriod).toEqual({ Version: 1, CurrencyBasis: 'AccountAndManagementCurrency' })
   expect(data.cashPeriod).toBeUndefined(); expect(data.selections).toEqual([])
   expect(data.sorted.Measurements.map(x => x.Type)).toEqual([84, 85, 86, 87, 92, 93, 94, 95])
-  expect(getCashPeriodLegs).not.toHaveBeenCalled()
 })
