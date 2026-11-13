@@ -4,7 +4,7 @@ const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рах
 
 const captions = ['Рахунок', 'Валюта рахунку', 'Запис залишку рахунку', 'Організація рахунку', 'Тип рахунку', 'Призначення рахунку']
 export const accountBalanceDataset: ReportDataset = {
-  DataSource: 11, Name: ACCOUNT_BALANCE_REPORT_TITLE, Description: 'Поточні записані залишки рахунків у підтверджених валютах.',
+  DataSource: 3, Name: ACCOUNT_BALANCE_REPORT_TITLE, Description: 'Поточні записані залишки рахунків у підтверджених валютах.',
   PeriodSupported: false, PeriodRequired: false,
   Groupings: captions.map((Name, index) => ({ Type: 40 + index, Name })),
   Filters: captions.map((Name, index) => ({ Type: 29 + index, Name })),

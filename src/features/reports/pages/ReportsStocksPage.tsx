@@ -194,8 +194,6 @@ import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { requestThreshold } from '../data/reportThreshold'
-import { requestHideZero } from '../data/reportHideZero'
-import { ReportHideZeroPanel } from './ReportHideZeroPanel'
 import { ReportThresholdPanel } from './ReportThresholdPanel'
 import { ReportTopGroupsPanel } from './ReportTopGroupsPanel'
 import { ABC_CLASS_GROUPING, requestAbcClassification } from '../data/reportAbcClassification'
@@ -367,7 +365,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering
   const abc = useReportAbcClassification({ Row: rowGroups, Col: colGroups }, groupingOrdering.changeLayout, dataset)
   const abcClassification = abc.value
-  const [hideZero, setHideZero] = useValueState<unknown>(undefined)
   const [threshold, setThreshold] = useValueState<unknown>(undefined)
   const [topGroups, setTopGroups] = useValueState<unknown>(undefined)
   const filterLogic = useReportFilterExpression()
@@ -413,8 +410,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const settlementDataset = useMemo(() => settlementFormDataset(dataset, groupedSettlementPeriod, settlementReadMode), [dataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, from, to, ordering, filterExpression, topGroups, threshold, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -636,7 +633,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     filterLogic.load([])
     setTopGroups(undefined)
     setThreshold(undefined)
-    setHideZero(undefined)
     abc.load(undefined)
     groupingOrdering.loadOrdering(undefined)
     clearRun()
@@ -745,7 +741,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     filterLogic.load(data.selections, requestFilterExpression(data))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
-    setHideZero(structuredClone(requestHideZero(data)))
     abc.load(requestAbcClassification(data))
     setMeasurements(datasetMeasurements(nextDataset, data.sorted.Measurements))
     setTemplateNotice(null)
@@ -806,7 +801,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     workbook.restore(data)
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
-    setHideZero(structuredClone(requestHideZero(data)))
     abc.load(requestAbcClassification(data))
     setTemplateNotice(null)
     setDraftRestoreError(null)
@@ -904,7 +898,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
 
   const analysisPanels = {
     abc: !analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change} />,
-    hideZero: <ReportHideZeroPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setHideZero} />,
     threshold: !analysisRules.threshold ? null : <ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />,
     topGroups: !analysisRules.topGroups ? null : <ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups} />,
     filterExpression: !analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
@@ -982,7 +975,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     {!hasFixedReportAxes(dataSource) ? <>
       {analysisPanels.topGroups}
       {analysisPanels.threshold}
-      {analysisPanels.hideZero}
       {analysisPanels.abc}
       {analysisPanels.ordering}
     </> : null}
@@ -1007,7 +999,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       {!hasFixedReportAxes(dataSource) ? <>
         {analysisPanels.topGroups}
         {analysisPanels.threshold}
-        {analysisPanels.hideZero}
         {analysisPanels.abc}
         {analysisPanels.ordering}
       </> : null}

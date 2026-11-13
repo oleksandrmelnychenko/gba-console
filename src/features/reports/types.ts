@@ -188,27 +188,6 @@ export type ReportThresholdCapabilities = {
   SupportsOrdering: true
 }
 
-export type ReportHideZero = { Version: 1 }
-export type ReportHideZeroCapabilities = {
-  Version: 1
-  GroupingTypes: [42]
-  Measures: [24]
-  MinimumNativeRowGroups: 1
-  MaximumNativeRowGroups: 1
-  MaximumColumnGroups: 0
-  MinimumActiveMeasures: 1
-  MaximumActiveMeasures: 1
-  MaximumContributions: 200000
-  OptionalGeneratedGrouping: 46
-  ProofGrain: 'CurrentPaymentCurrencyRegisterId'
-  UnknownAmountsRetained: true
-  PresentationOnly: true
-  FactsRetainedForTotals: true
-  FactsRetainedForAbc: true
-  GlobalZeroResourceHidden: true
-  CompleteSourceParity: false
-}
-
 export type ReportProductClassification = {
   Version: 1
   SourceWorld: 0
@@ -373,7 +352,6 @@ export type ReportDataset = {
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown
-  HideZero?: unknown
   Threshold?: unknown
   AbcClassification?: unknown
   productClassification?: unknown

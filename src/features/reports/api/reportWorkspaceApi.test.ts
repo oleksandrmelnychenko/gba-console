@@ -4,7 +4,6 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { deleteServerReportTemplate, getReportDatasets, getServerReportTemplates, saveServerReportTemplate, normalizeSavedTemplate } from './reportWorkspaceApi'
 import { createSalesReportPreset } from '../testing/reportPresets'
 import { reportDatasets, stockDataset, currentStockDatasets, currentDebtDataset } from '../data/reportDatasets.test-fixtures'
-import { accountBalanceDataset } from '../data/accountBalances.test-fixtures'
 import { originalScopeRequest, originalScopeWireTemplate } from '../testing/originalVparivanieScopeFixtures'
 import { originalMatrixScope } from '../data/originalVparivanieScope'
 import { currentVparivanieConfigurationError } from '../data/currentVparivanie'
@@ -142,8 +141,6 @@ describe('report workspace wire contract', () => {
     [{ ...stockDataset, PeriodRequired: true }],
     [{ ...currentDebtDataset, PeriodSupported: true }],
     [{ ...currentDebtDataset, PeriodSupported: undefined }],
-    [{ ...accountBalanceDataset, PeriodSupported: true }],
-    [{ ...accountBalanceDataset, PeriodSupported: undefined }],
   ].map(value => ({ value })))('rejects malformed or retired dataset catalogues %#', async ({ value }) => {
     vi.mocked(apiRequest).mockResolvedValue(value)
     await expect(getReportDatasets()).rejects.toThrow('некоректний список наборів даних')

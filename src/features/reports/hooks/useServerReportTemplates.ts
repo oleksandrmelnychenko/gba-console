@@ -167,7 +167,7 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
         if (topError) throw new Error(topError)
         const thresholdError = reportThresholdError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (thresholdError) throw new Error(thresholdError)
-        const hideZeroError = reportHideZeroError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
+        const hideZeroError = reportHideZeroError(request.Data)
         if (hideZeroError) throw new Error(hideZeroError)
         controller.signal.throwIfAborted()
         if (!isCurrent()) return { ok: false }

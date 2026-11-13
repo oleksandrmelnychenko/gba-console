@@ -12,7 +12,6 @@ type BuilderValues = {
   returnsOnly?: boolean
   dataSource: number; from: string; to: string; ordering: unknown; filterExpression: unknown; topGroups: unknown
   abcClassification?: unknown
-  hideZero?: unknown
   threshold?: unknown
   productClassification?: unknown
   productServiceFilter?: unknown
@@ -36,12 +35,11 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   return { dataSource, from, to, ...(values.stockQuantityFilter != null ? { stockQuantityFilter: values.stockQuantityFilter } : {}), ...(values.constructorPresentation !== undefined ? { constructorPresentation: values.constructorPresentation } : {}), ...(values.reportProfile !== undefined ? { reportProfile: values.reportProfile } : {}), ...(values.presentationCurrency !== undefined ? { presentationCurrency: values.presentationCurrency } : {}), ...(values.supplierWarehouse !== undefined ? { supplierWarehouse: values.supplierWarehouse } : {}), ...(values.numberPresentation !== undefined ? { numberPresentation: values.numberPresentation } : {}), ...(returnsOnly === true ? { returnsOnly: true } : {}),
     ...(ordering !== undefined ? { ordering } : {}),
     ...(filterExpression !== undefined ? { filterExpression } : {}),
     ...(abcClassification !== undefined ? { abcClassification } : {}),
-    ...(hideZero !== undefined ? { hideZero } : {}),
     ...(threshold !== undefined ? { threshold } : {}),
     ...(topGroups !== undefined ? { topGroups } : {}),
     ...(productClassification !== undefined ? { productClassification } : {}),
