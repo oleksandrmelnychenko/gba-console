@@ -26,9 +26,6 @@ describe('workbook desk names', () => {
   })
 })
 
-describe('workbook default periods', () => {
-})
-
 describe('row counts', () => {
   it('uses Ukrainian plural forms', () => {
     expect([1, 2, 5, 11, 21, 22, 25, 101, 111].map(count => deskPlural(count, ['рядок', 'рядки', 'рядків'])))

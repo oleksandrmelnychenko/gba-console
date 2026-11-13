@@ -29,9 +29,6 @@ describe('restored report options', () => {
   })
 })
 
-describe('sanitizeReportTemplate', () => {
-})
-
 it('appends the percent sign to a profitability group label only once', () => {
   expect(measurementGroupCaption('Profitability', 'Рентабельність')).toBe('Рентабельність, %')
   expect(measurementGroupCaption('Profitability', 'Рентабельність без ПДВ, %')).toBe('Рентабельність без ПДВ, %')

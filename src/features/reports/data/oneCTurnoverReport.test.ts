@@ -15,7 +15,3 @@ describe('consolidated 1C report payloads', () => {
     expect(oneCReportPeriodError('2024-01-01', '2024-12-31')).toBeNull()
   })
 })
-
-
-describe('organization-only v3 report bounds', () => {
-})
