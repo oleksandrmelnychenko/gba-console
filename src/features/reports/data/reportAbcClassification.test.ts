@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { abcCapabilities, abcClass, abcDataset, abcRequest, accountAbc } from './reportAbcClassification.test-fixtures'
 import { defaultAbcClassification, readAbcCapabilities, readAbcClassification, reportAbcClassificationError, requestAbcClassification } from './reportAbcClassification'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
-import { reportDatasets, valuationDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { reportDatasets } from './reportDatasets.test-fixtures'
 import { readTopGroupsCapabilities, reportTopGroupsError } from './reportTopGroups'
 import { canTransferReportGrouping, reorderReportGrouping } from './reportGroupingLayout'
 
@@ -80,18 +80,5 @@ describe('ABC classification contract and generated identity', () => {
     const data = defaultDatasetRequest(dataset, '2026-06-01', '2026-06-30')
     data.sorted.Row = [abcClass, { type: 0, key: 'Year', label: 'Рік' }]
     expect(reportAbcClassificationError({ ...data, abcClassification: { ...accountAbc, Grouping: 0, Measure: 0 } }, dataset)).toBeNull()
-  })
-  it('retains exact class position, raw rules, filter tree and disabled conditions through a preset, plus valuation CA', () => {
-    const data = abcRequest(), original = structuredClone(data)
-    const preset = datasetPresetRequest(abcDataset, 'account-balances-by-purpose-currency', data)!
-    expect(preset.Data.sorted.Row).toEqual(data.sorted.Row)
-    expect(preset.Data.abcClassification).toEqual(accountAbc)
-    expect(preset.Data.filterExpression).toEqual(data.filterExpression); expect(preset.Data.selections).toEqual(data.selections)
-    const valuation = datasetPresetRequest(valuationDataset, 'stock-value-by-agreement', { ...data, dataSource: 8, valuationClientAgreementId: 456246 })!
-    expect(valuation.Data.valuationClientAgreementId).toBe(456246); expect(valuation.Data.abcClassification).toEqual(accountAbc)
-    expect(valuation.Data.sorted.Row[0]).toEqual(abcClass)
-    const duplicate = datasetPresetRequest(abcDataset, 'account-balances-by-purpose-currency', { ...data, AbcClassification: { Version: 99 } })!
-    expect(duplicate.Data.AbcClassification).toEqual({ Version: 99 }); expect(reportAbcClassificationError(duplicate.Data, abcDataset)).toContain('двічі')
-    expect(data).toEqual(original)
   })
 })

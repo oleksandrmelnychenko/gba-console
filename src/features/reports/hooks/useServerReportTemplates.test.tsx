@@ -74,32 +74,6 @@ describe('server report templates', () => {
     expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(raw)
   })
 
-  it.each([undefined, 0])('refuses browser imports with absent or invalid valuation identity %s without altering local originals', async identity => {
-    const template = { Name: 'Оцінка', Data: { ...defaultDatasetRequest(valuationDataset, '', ''), valuationClientAgreementId: identity } }
-    const raw = JSON.stringify([template])
-    localStorage.setItem('app_configs_reports_template:v1', raw)
-    const { result } = renderHook(() => useServerReportTemplates(true))
-    await waitFor(() => expect(result.current.ready).toBe(true))
-    await act(() => result.current.importBrowserTemplate(template))
-    expect(saveServerReportTemplate).not.toHaveBeenCalled()
-    expect(result.current.notice).toContain('Виберіть точний договір')
-    expect(localStorage.getItem('app_configs_reports_template:v1')).toBe(raw)
-  })
-
-  it('imports the exact valuation scenario parameter with a distinct stable identity', async () => {
-    const template = { Name: 'Оцінка', Data: { ...defaultDatasetRequest(valuationDataset, '', ''), valuationClientAgreementId: 456246 } }
-    vi.mocked(saveServerReportTemplate).mockImplementation(async request => {
-      const saved = { ...request, Revision: 1 }
-      vi.mocked(getServerReportTemplates).mockResolvedValue([saved])
-      return saved
-    })
-    const { result } = renderHook(() => useServerReportTemplates(true))
-    await waitFor(() => expect(result.current.ready).toBe(true))
-    await act(() => result.current.importBrowserTemplate(template))
-    expect(saveServerReportTemplate).toHaveBeenCalledWith({ ...template, Id: await browserTemplateImportId(template), Revision: 0 }, expect.any(AbortSignal))
-    expect(await browserTemplateImportId(template)).not.toBe(await browserTemplateImportId({ ...template, Data: { ...template.Data, valuationClientAgreementId: 459018 } }))
-  })
-
   it('uses stable import identities so a retried import cannot create another copy', async () => {
     const template = createSalesReportPreset('daily', '2026-09-01', '2026-09-07', [])
     expect(await browserTemplateImportId(template)).toBe(await browserTemplateImportId(structuredClone(template)))

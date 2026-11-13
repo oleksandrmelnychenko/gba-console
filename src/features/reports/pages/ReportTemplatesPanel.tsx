@@ -5,7 +5,6 @@ import { useId, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
-import { isCurrentReportSource } from '../data/nativeReportProfiles'
 import type { TemplateMutationResult, useServerReportTemplates } from '../hooks/useServerReportTemplates'
 import type { ReportDataset, ReportTemplate } from '../types'
 import { formatDate } from '../utils'
@@ -157,8 +156,7 @@ function SavedTemplateRow({ template, dataset, active, blocked, onApply, onRunSa
   onApply: () => void; onRunSaved: () => void; onAction: (kind: Action['kind']) => void
 }) {
   const { t } = useI18n()
-  const period = isCurrentReportSource(template.Data.dataSource) && !template.Data.from && !template.Data.to
-    ? t('Поточний стан') : template.Data.from || template.Data.to
+  const period = template.Data.from || template.Data.to
       ? [template.Data.from, template.Data.to].filter(Boolean).map(formatDate).filter((value, index, values) => values.indexOf(value) === index).join(' – ') : null
   return <div className="reports-stocks-template-item" role="group" aria-label={template.Name}>
     <span className="reports-stocks-template-item__icon"><LayoutTemplate size={20} aria-hidden="true" /></span>

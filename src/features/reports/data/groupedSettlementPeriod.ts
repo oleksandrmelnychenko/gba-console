@@ -4,7 +4,7 @@ import type { ReportDataset, ReportFilterExpressionCapabilities, ReportGroupingI
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { EXACT_ONE_C_BUYER_ROOT_ID } from './oneCTurnoverReport'
 import { readFilterExpressionCapabilities, reportFilterExpressionError } from './reportFilterExpression'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { settlementAttributeKey } from './settlementSourceAttributes'
 import { previousKyivDay } from './cashPeriod'
@@ -243,7 +243,7 @@ export function groupedSettlementConfigurationError(data: ReportRequestBody, dat
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection?.Values)
       || !selection.Values.length || selection.Values.some(value => [60, 61].includes(selection.SelectedField.Type)
         ? selector.SourceWorld !== 'Fenix' || settlementAttributeKey(selection.SelectedField.Type, value?.Data) === null
-        : revenueExactId(value?.Data) === null))))
+        : exactId(value?.Data) === null))))
     return 'Оберіть точні організації, покупців, постачальників, їхні договори або валюти з поточних списків.'
   const buyerKeys = aliases(data, 'SourceBuyerSubtree')
   if (buyerKeys.length > 1) return 'Відбір групи покупців задано двічі.'

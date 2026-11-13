@@ -30,14 +30,6 @@ describe('server report configuration', () => {
     expect(supplierWarehouseAfterRowEdit(hidden, rows([4, 21]), rows([78, 4, 21]))).toBe(78)
     expect(supplierWarehouseAfterRowEdit(undefined, rows([78, 4, 21]), rows([21]))).toBe(78)
   })
-  it('selects operational sales and legacy Fenix settlement variants independently of row order', () => {
-    const variants = [{ key: 'operational', allowedRows: [5] }, { key: 'originalNormal', period: { ...configuration.period, maximumDays: null, maximumMonths: 120 } }]
-    const configured = { ...dataset, configuration: { ...configuration, variants } }
-    expect(effectiveReportConfiguration(configured, { ...request([5]), dataSource: 27, priceTypeSalesComparison: { SalesBasis: 0 } })?.allowedRows).toEqual([5])
-    const legacy = { ...request([4, 76]), dataSource: 41, profitReadMode: undefined, groupedSettlementPeriod: { SourceWorld: 'Fenix' }, sourceBuyerSubtree: {} }
-    expect(effectiveReportConfiguration(configured, legacy)?.period.maximumMonths).toBe(120)
-    expect(effectiveReportConfiguration(configured, { ...legacy, groupedSettlementPeriod: { SourceWorld: 'Amg' } })?.period.maximumDays).toBe(31)
-  })
   it('enforces the server closing-day policy for imported requests, not only the date picker', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-21T12:00:00Z'))
     try {
@@ -45,10 +37,6 @@ describe('server report configuration', () => {
       expect(reportConfigurationError({ ...request([21]), from: '2026-10-01', to: '2026-10-21' }, configured)).toMatch(/кінцеву дату/)
       expect(reportConfigurationError({ ...request([21]), from: '2026-10-01', to: '2026-10-20' }, configured)).toBeNull()
     } finally { vi.useRealTimers() }
-  })
-  it('keeps legacy special forms fixed until server confirms editable capability', () => {
-    expect(reportAxesPolicy(undefined, { ...request([3, 4]), dataSource: 35 }).fixed).toBe(true)
-    expect(reportAxesPolicy(undefined, { ...request([3, 4]), dataSource: 36 }).fixed).toBe(true)
   })
   it.each([[40, [40, 44, 43]], [41, [4, 41, 76]], [41, [4, 76]]] as const)('restores valid source%s draft axes without extra workbook presentation', (source, layout) => {
     const dataSet = source === 40 ? presentedCashDataset : presentedSettlementDataset

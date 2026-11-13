@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { defaultReportThreshold, readReportThreshold, readThresholdCapabilities, reportThresholdError, requestThreshold } from './reportThreshold'
 import { accountThreshold, thresholdCapabilities, thresholdDataset, thresholdRequest } from './reportThreshold.test-fixtures'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
-import { reportDatasets, valuationDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { reportDatasets } from './reportDatasets.test-fixtures'
 
 describe('server threshold contract', () => {
   it('accepts one native row with ABC/TOP/ordering and ordinary native filters untouched', () => {
@@ -61,16 +61,6 @@ describe('server threshold contract', () => {
   it.each([{ Scope: 'PerParent' }, { SyntheticOtherSelectable: true }, { ZeroOnlyRemainder: 'Omit' }, { UnknownScores: 'Zero' },
     { MaximumActiveMeasures: 2 }, { MaximumNativeColumnGroupings: 1 }, { RankingMeasures: [16] }, { GroupingTypes: [46] }])('refuses changed server semantics %#', patch => {
     expect(readThresholdCapabilities({ ...thresholdDataset, Threshold: { ...thresholdCapabilities(thresholdDataset), ...patch } })).toBeNull()
-  })
-  it('preserves raw threshold on same-source preset and keeps exact valuation agreement independently', () => {
-    const current = thresholdRequest()
-    const preset = datasetPresetRequest(thresholdDataset, 'account-balances-by-purpose-currency', current)!
-    expect(preset.Data.threshold).toEqual(accountThreshold)
-    expect(preset.Data.selections).toEqual(current.selections)
-    expect(reportThresholdError(preset.Data, thresholdDataset)).not.toBeNull()
-    const valuation = datasetPresetRequest(valuationDataset, 'stock-value-by-agreement', { ...current, dataSource: 8, valuationClientAgreementId: 456246 })!
-    expect(valuation.Data.threshold).toEqual(accountThreshold)
-    expect(valuation.Data.valuationClientAgreementId).toBe(456246)
   })
   it('supports Year grouping identity0 and additive quantity0 without truthiness substitutions', () => {
     const dataset = { ...reportDatasets[0], Threshold: thresholdCapabilities(reportDatasets[0]) }

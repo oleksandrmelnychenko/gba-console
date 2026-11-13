@@ -25,7 +25,7 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
   const { measurements } = snapshot
   const data = withCurrentVparivanieMovementScope(snapshot.data)
   if (!dataset || dataset.DataSource !== (data.dataSource ?? 0) || data.dataSource === 1
-    || (data.oneC != null && data.dataSource !== 27)) {
+    || (data.oneC != null)) {
     return 'Набір даних чернетки зараз недоступний. Чернетка збережена без змін.'
   }
   if (dataset.PeriodSupported === false && (data.from || data.to)) {
@@ -61,10 +61,8 @@ export function reportWorkspaceDraftCompatibility(snapshot: ReportWorkspaceSnaps
     || data.sorted.Measurements.some(field => !measures.has(field.Type))) {
     return 'Склад полів набору даних змінився. Чернетка збережена; невідомі поля не видалено.'
   }
-  if ((data.dataSource === 13 && data.sorted.Col.length > 0)
-    || (hasFixedReportAxes(dataset.DataSource) && !requestCurrentVparivanieAnalysis(data) && ((dataset.DataSource === 39 ? !requestCurrentVparivanieAnalysis(data) && data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
-      || !capabilityLayout && !legacyLayout && !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))
-    || (data.dataSource === 19 && data.selections.length > 0)) {
+  if ((hasFixedReportAxes(dataset.DataSource) && !requestCurrentVparivanieAnalysis(data) && ((dataset.DataSource === 39 ? !requestCurrentVparivanieAnalysis(data) && data.sorted.Col.map(field => field.type).join(',') !== '74,75' : data.sorted.Col.length > 0)
+      || !capabilityLayout && !legacyLayout && !presented && !originalSupplier && JSON.stringify(data.sorted.Row.map(field => field.type)) !== JSON.stringify(getNativeReportProfile(dataset.DataSource)?.rowGroupings)))) {
     return 'Структура чернетки несумісна з цим набором даних. Чернетка збережена без змін.'
   }
   const keys = Object.keys(data)

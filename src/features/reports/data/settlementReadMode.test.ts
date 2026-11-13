@@ -48,7 +48,7 @@ it('normalizes the dataset capability and hides unknown or misplaced ones withou
   }
   expect(hasMode(parseReportDatasets([{ ...plain, settlementReadMode: capability, SettlementReadMode: capability }])[0])).toBe(false)
   const parsed = parseReportDatasets([{ ...reportDatasets[0], settlementReadMode: capability }, plain])
-  expect(parsed.map(item => item.DataSource)).toEqual([reportDatasets[0].DataSource, 41])
+  expect(parsed.map(item => item.DataSource)).toEqual([41])
   expect(parsed.some(hasMode)).toBe(false)
 })
 
@@ -137,7 +137,7 @@ it.each([0, 1, null, undefined])('round trips mode %s through saved template, bu
   const data = buildReportBuilderRequest({ dataSource: 41, from: original.from, to: original.to,
     groupedSettlementPeriod: original.groupedSettlementPeriod, sourceBuyerSubtree: original.sourceBuyerSubtree,
     settlementReadMode: requestSettlementReadMode(normalized.Data), ordering: undefined, filterExpression: undefined,
-    topGroups: undefined, valuationClientAgreementId: undefined, rowGroups: original.sorted.Row, colGroups: [],
+    topGroups: undefined, rowGroups: original.sorted.Row, colGroups: [],
     measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
   expect(hasMode(data)).toBe(mode !== undefined)
   if (mode === undefined) expect(data).toEqual(original)

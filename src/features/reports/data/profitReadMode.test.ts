@@ -99,8 +99,8 @@ it.each([0, 1, null, undefined])('round trips explicit mode %s through builder, 
   expect(requestProfitReadMode(normalized.Data)).toBe(mode)
   expect(requestProfitReadMode(withDefaultReadModes(normalized.Data, dataset))).toBe(mode === undefined ? 0 : mode)
   const data = buildReportBuilderRequest({ ...original, dataSource: dataset.DataSource, profitReadMode: requestProfitReadMode(normalized.Data),
-    ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
-    rowGroups: original.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
+    ordering: undefined, filterExpression: undefined, topGroups: undefined,
+     rowGroups: original.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
   expect(requestProfitReadMode(data)).toBe(mode)
   expect(Object.hasOwn(data, 'profitReadMode')).toBe(mode !== undefined)
   expect(retainStoredTemplateFields(original, data).ProfitReadMode).toBeUndefined()

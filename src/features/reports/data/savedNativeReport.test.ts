@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { agreementPricesDataset, agreementPricesRequest } from './agreementPrices.test-fixtures'
 import { currentVparivanieDataset, currentVparivanieRequest } from './currentVparivanie.test-fixtures'
 import { groupedCashDataset, groupedCashRequest } from './groupedCashPeriod.test-fixtures'
 import { groupedSettlementDataset, groupedSettlementRequest } from './groupedSettlementPeriod.test-fixtures'
@@ -10,7 +9,6 @@ function error(data: ReportRequestBody, datasets: readonly ReportDataset[]) {
   return savedNativeReportConfigurationError({ Name: 'Збережений варіант', Data: data }, datasets)
 }
 const forms = [
-  { name: 'exact agreement', dataset: agreementPricesDataset, request: agreementPricesRequest },
   { name: 'current matrix', dataset: currentVparivanieDataset, request: currentVparivanieRequest },
   { name: 'grouped cash', dataset: groupedCashDataset, request: groupedCashRequest },
   { name: 'grouped settlement', dataset: groupedSettlementDataset, request: groupedSettlementRequest },
@@ -23,13 +21,6 @@ describe('saved native variants retain current form and refusal contracts', () =
     expect(data).toEqual(original)
     expect(error(data, [])).not.toBeNull()
     expect(error(data, [dataset, dataset])).not.toBeNull()
-  })
-
-  it('retains exact agreement identity and refuses a saved current-price variant with a historical period', () => {
-    const data = agreementPricesRequest()
-    expect(error({ ...data, valuationClientAgreementId: undefined }, [agreementPricesDataset])).toContain('договір')
-    expect(error({ ...data, from: '2026-09-01' }, [agreementPricesDataset])).not.toBeNull()
-    expect(error(data, [{ ...agreementPricesDataset, agreementPrices: undefined }])).not.toBeNull()
   })
 
   it('refuses a matrix capability change and saved transformations instead of dropping them', () => {

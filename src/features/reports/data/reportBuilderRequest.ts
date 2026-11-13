@@ -1,7 +1,6 @@
 import type { ReportGroupingItem, ReportMeasurementGroup, ReportRequestBody, ReportSelection } from '../types'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { reportSelectionsForRequest } from './reportFilterExpression'
-import { oneCSpecialSpecification } from './oneCSpecialReports'
 
 type BuilderValues = {
   presentationCurrency?: unknown
@@ -13,14 +12,6 @@ type BuilderValues = {
   returnsOnly?: boolean
   dataSource: number; from: string; to: string; ordering: unknown; filterExpression: unknown; topGroups: unknown
   abcClassification?: unknown
-  paymentComparison?: unknown
-  marginComparison?: unknown
-  rateComparison?: unknown
-  returnComparison?: unknown
-  buyerSalesShare?: unknown
-  revenueComparison?: unknown
-  xyz?: unknown
-  comparison?: unknown
   hideZero?: unknown
   threshold?: unknown
   productClassification?: unknown
@@ -33,11 +24,7 @@ type BuilderValues = {
   dayOrganizationBasis?: unknown
   supplierBasis?: unknown
   supplierSourceWorld?: unknown
-  priceTypeSalesComparison?: unknown
-  oneCSpecialSettings?: unknown
   oneC?: ReportRequestBody['oneC']
-  valuationClientAgreementId: number | undefined
-  agreementPriceComparison?: unknown
   settlementPeriod?: unknown
   groupedSettlementPeriod?: unknown
   sourceCounterpartyGroups?: unknown
@@ -50,18 +37,8 @@ type BuilderValues = {
 
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
-  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, priceTypeSalesComparison, oneCSpecialSettings, oneC, valuationClientAgreementId, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
-  const special = oneCSpecialSpecification(dataSource)
+  const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, hideZero, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, oneC, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
   return { dataSource, from, to, ...(values.stockQuantityFilter != null ? { stockQuantityFilter: values.stockQuantityFilter } : {}), ...(values.constructorPresentation !== undefined ? { constructorPresentation: values.constructorPresentation } : {}), ...(values.reportProfile !== undefined ? { reportProfile: values.reportProfile } : {}), ...(values.presentationCurrency !== undefined ? { presentationCurrency: values.presentationCurrency } : {}), ...(values.supplierWarehouse !== undefined ? { supplierWarehouse: values.supplierWarehouse } : {}), ...(values.numberPresentation !== undefined ? { numberPresentation: values.numberPresentation } : {}), ...(returnsOnly === true ? { returnsOnly: true } : {}),
-    ...(special && oneCSpecialSettings !== undefined ? { [special.key]: oneCSpecialSettings } : {}),
-    ...(paymentComparison !== undefined ? { paymentComparison } : {}),
-    ...(marginComparison !== undefined ? { marginComparison } : {}),
-    ...(rateComparison !== undefined ? { rateComparison } : {}),
-    ...(returnComparison !== undefined ? { returnComparison } : {}),
-    ...(buyerSalesShare !== undefined ? { buyerSalesShare } : {}),
-    ...(revenueComparison !== undefined ? { revenueComparison } : {}),
-    ...(xyz !== undefined ? { xyz } : {}),
-    ...(comparison !== undefined ? { comparison } : {}),
     ...(ordering !== undefined ? { ordering } : {}),
     ...(filterExpression !== undefined ? { filterExpression } : {}),
     ...(abcClassification !== undefined ? { abcClassification } : {}),
@@ -78,10 +55,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(dayOrganizationBasis !== undefined ? { dayOrganizationBasis } : {}),
     ...(supplierBasis !== undefined ? { supplierBasis } : {}),
     ...(supplierSourceWorld !== undefined ? { supplierSourceWorld } : {}),
-    ...(priceTypeSalesComparison !== undefined ? { priceTypeSalesComparison } : {}),
     ...(oneC !== undefined ? { oneC } : {}),
-    ...(valuationClientAgreementId !== undefined ? { valuationClientAgreementId } : {}),
-    ...(agreementPriceComparison !== undefined ? { agreementPriceComparison } : {}),
     ...(settlementPeriod !== undefined ? { settlementPeriod } : {}),
     ...(groupedSettlementPeriod !== undefined ? { groupedSettlementPeriod } : {}),
     ...(values.sourceCounterpartyGroups !== undefined ? { sourceCounterpartyGroups: values.sourceCounterpartyGroups } : {}),
@@ -89,6 +63,6 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(values.groupedCashPeriod !== undefined ? { groupedCashPeriod: values.groupedCashPeriod } : {}),
     ...(values.workbookPresentation !== undefined ? { workbookPresentation: values.workbookPresentation } : {}),
     sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
-    selections: (dataSource === 15 || dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 19 || dataSource === 20 || dataSource === 21 || dataSource === 22 || dataSource === 27) ? selections : reportSelectionsForRequest(selections, filterExpression),
+    selections: reportSelectionsForRequest(selections, filterExpression),
   }
 }

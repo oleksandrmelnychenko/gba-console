@@ -1,5 +1,5 @@
 import { customerGroupDirectoryId } from './customerGroupDirectory'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 
 /** A scoped report lookup Id is an Int64 string, never a rounded JavaScript number. */
 export function canonicalCustomerGroupInt64Id(value: unknown): string | null {
@@ -8,7 +8,7 @@ export function canonicalCustomerGroupInt64Id(value: unknown): string | null {
 /** Presentation/admission only. Preserve the original saved object or JSON text unchanged. */
 export function customerGroupInt64Id(raw: unknown): string | null {
   if (typeof raw === 'string' && raw.length > 65536) return null
-  const exact = revenueExactId(raw)
+  const exact = exactId(raw)
   if (!exact) return null
   try {
     const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw

@@ -61,13 +61,6 @@ import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/
 import { withoutProductClassification, withUnifiedSource } from '../data/unifiedReportSource'
 import { useWorkbookPresentation } from '../hooks/useWorkbookPresentation'
 import './stocks-workspace.css'
-import { clonePaymentComparisonValue, paymentComparisonSummary } from '../data/paymentComparison'
-import { cloneMarginComparisonValue, marginComparisonSummary } from '../data/marginComparison'
-import { rateComparisonOptions, requestRateComparison, type RateComparisonOptions } from '../data/rateComparison'
-import { requestReturnComparison, returnComparisonOptions, returnComparisonSummary } from '../data/returnComparison'
-import { requestBuyerSalesShare, buyerSalesShareOptions } from '../data/buyerSalesShare'
-import { requestRevenueComparison, revenueComparisonOptions } from '../data/revenueComparison'
-import { requestXyz, xyzOptions } from '../data/salesXyz'
 import {
   ActionIcon,
   Alert,
@@ -172,8 +165,6 @@ import { CashSettlementSettingsPanels } from './CashSettlementSettingsPanels'
 import { cashFormDataset, requestGroupedCashPeriod } from '../data/groupedCashPeriod'
 import { defaultGroupedSettlementBuyer, defaultGroupedSettlementPeriod, groupedSettlementPeriod as parseGroupedSettlementPeriod, requestGroupedSettlementPeriod, settlementFormDataset, settlementAxesDescription, settlementMaximumDate, settlementModePatch, SINGLE_SETTLEMENT_AXES } from '../data/groupedSettlementPeriod'
 import { requestSourceCounterpartyGroups } from '../data/sourceCounterpartyGroups'
-import { requiresValuationAgreement } from '../data/reportValuation'
-import { useValuationAgreement } from '../hooks/useValuationAgreement'
 import { useAppliedReportSettings } from '../hooks/useAppliedReportSettings'
 import { useReportRunState } from '../hooks/useReportRunState'
 import { useReportWorkspaceDraft } from '../hooks/useReportWorkspaceDraft'
@@ -198,7 +189,7 @@ import { retainStoredGroupingLabels, retainStoredMeasurementLabels, retainStored
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
 import { requestFilterExpression } from '../data/reportFilterExpression'
-import { CLIENT_COMPARISON_MAX_DATE, CLIENT_COMPARISON_MIN_DATE, comparisonWindow, isComparisonDate, requestComparison } from '../data/clientPeriodComparison'
+import { FULL_REPORT_MAX_DATE, FULL_REPORT_MIN_DATE, isFullRangeReportDate } from '../data/reportDateRange'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
 import type { NativeReportPreview } from '../data/nativeReportPreview'
@@ -227,14 +218,6 @@ import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { productClassificationReviewError, requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability } from '../data/supplierBatchGrossProfit'
-import { requestAgreementPriceComparison } from '../data/agreementPriceComparison'
-import { currentProvidedDiscountLookupBasis, oneCSpecialSpecification, requestOneCSpecialSettings } from '../data/oneCSpecialReports'
-import {
-  clonePriceTypeSalesComparisonValue,
-  priceTypeSalesFormDataset,
-  currentPriceTypeSalesLookupBasis,
-  PRICE_TYPE_SALES_COMPARISON_SOURCE,
-} from '../data/priceTypeSalesComparison'
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
 // A native <input type="date"> carries no bounds of its own and reports every intermediate value while the
@@ -271,8 +254,6 @@ const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
 // What the finished run was asked for, kept because the response carries none of it back.
 type ReportRunOutcome = {
-  rateComparison?: RateComparisonOptions
-  comparison?: { From: string; To: string }
   periodSupported: boolean
   colGroupings: string[]
   fileName: string
@@ -306,17 +287,13 @@ function createEmptySelection(): ReportSelection {
 function shouldLoadDatasetDefaults(dataSource: number, periodSupported: boolean): boolean {
   return !periodSupported
     || supportsFullReportDateRange(dataSource)
-    || dataSource === PRICE_TYPE_SALES_COMPARISON_SOURCE
     || dataSource === 35
 }
 
-function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown, specialSettings: unknown): 1 | 2 | undefined {
-  if (dataSource === 41) {
-    const world = parseGroupedSettlementPeriod(groupedSettlement)?.SourceWorld
-    return world === 'Fenix' ? 1 : world === 'Amg' ? 2 : undefined
-  }
-  return typeof specialSettings === 'object' && specialSettings !== null && 'SourceWorld' in specialSettings
-    && (specialSettings.SourceWorld === 1 || specialSettings.SourceWorld === 2) ? specialSettings.SourceWorld : undefined
+function reportLookupSourceWorld(dataSource: number, groupedSettlement: unknown): 1 | 2 | undefined {
+  if (dataSource !== 41) return undefined
+  const world = parseGroupedSettlementPeriod(groupedSettlement)?.SourceWorld
+  return world === 'Fenix' ? 1 : world === 'Amg' ? 2 : undefined
 }
 
 export function ReportsStocksPage() {
@@ -346,14 +323,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     if (value.Incoming || value.Outgoing) setFullCurrentVparivanie(true)
   }
 
-  const [comparison, setComparison] = useValueState<unknown>(undefined)
-  const [rateComparison, setRateComparison] = useValueState<unknown>(undefined)
-  const [paymentComparison, setPaymentComparison] = useValueState<unknown>(undefined)
-  const [marginComparison, setMarginComparison] = useValueState<unknown>(undefined)
-  const [returnComparison, setReturnComparison] = useValueState<unknown>(undefined)
-  const [buyerSalesShare, setBuyerSalesShare] = useValueState<unknown>(undefined)
-  const [revenueComparison, setRevenueComparison] = useValueState<unknown>(undefined)
-  const [xyz, setXyz] = useValueState<unknown>(undefined)
   const [productClassification, setProductClassification] = useValueState<unknown>(undefined)
   const [productServiceFilter, setProductServiceFilter] = useValueState<unknown>(undefined)
   const [sourceOrganizations, setSourceOrganizations] = useValueState<unknown>(undefined)
@@ -375,8 +344,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
   const [customerGroups, setCustomerGroups] = useValueState<CustomerGroups | undefined>(undefined)
   const [returnsOnly, setReturnsOnly] = useValueState<boolean | undefined>(undefined)
-  const [priceTypeSalesComparison, setPriceTypeSalesComparison] = useValueState<unknown>(undefined)
-  const [agreementPriceComparison, setAgreementPriceComparison] = useValueState<unknown>(undefined)
   const [settlementPeriod, setSettlementPeriod] = useValueState<unknown>(undefined)
   const [groupedSettlementPeriod, setGroupedSettlementPeriod] = useValueState<unknown>(undefined)
   const [settlementReadMode, setSettlementReadMode] = useValueState<unknown>(undefined)
@@ -384,13 +351,10 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [groupedCashPeriod, setGroupedCashPeriod] = useValueState<unknown>(undefined)
   const [cashReadMode, setCashReadMode] = useValueState<unknown>(undefined)
   const [cashPeriod, setCashPeriod] = useValueState<unknown>(undefined)
-  const [oneCSpecialSettings, setOneCSpecialSettings] = useValueState<unknown>(undefined)
   const [oneCScope, setOneCScope] = useValueState<OneCTurnoverFilters | undefined>(undefined)
   const [publishedTab, setPublishedTab] = useState<PublishedReportTab | null>(null)
   const [visitedPublished, setVisitedPublished] = useState<PublishedReportTab[]>([])
   const [publishedBusy, setPublishedBusy] = useState(false)
-  const [valuationClientAgreementId, setValuationAgreementId] = useValueState<number | undefined>(undefined)
-  const valuation = useValuationAgreement(valuationClientAgreementId, canGenerateReport && requiresValuationAgreement(dataSource))
   const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null)
   const [restoredData, setRestoredData] = useState<ReportRequestBody | null>(null)
   const retainedData = restoredData ?? activeTemplate?.Data
@@ -398,8 +362,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const periodSupported = dataset?.PeriodSupported !== false
   const datasetHidden = !BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource)
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
-  const priceTypeDataset = useMemo(() => priceTypeSalesFormDataset(dataset, priceTypeSalesComparison), [dataset, priceTypeSalesComparison])
-  const supplierDataset = useMemo(() => supplierBasisFormDataset(priceTypeDataset, supplierBasis), [priceTypeDataset, supplierBasis])
+  const supplierDataset = useMemo(() => supplierBasisFormDataset(dataset, supplierBasis), [dataset, supplierBasis])
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
     datasetMeasurements(salesConstructorDataset(supplierDataset, reportProfile), flattenCheckedMeasurements(selectedMeasurements))),
   [dataSource, retainedData, reportProfile, selectedMeasurements, supplierBasis, supplierDataset])
@@ -435,7 +398,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const jobAbort = useRef<AbortController | null>(null)
   useEffect(() => () => jobAbort.current?.abort(REPORT_JOB_DETACHED), [])
   const workbookLaunchToken = useRef(0)
-  const groupingOptions = useMemo(() => datasetGroupings(priceTypeDataset, { dataSource, profitReadMode, dayOrganizationBasis, reportProfile }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, priceTypeDataset, dataSource, profitReadMode, dayOrganizationBasis, reportProfile])
+  const groupingOptions = useMemo(() => datasetGroupings(dataset, { dataSource, profitReadMode, dayOrganizationBasis, reportProfile }).filter(field => field.type !== ABC_CLASS_GROUPING || abcClassification != null), [abcClassification, dataset, dataSource, profitReadMode, dayOrganizationBasis, reportProfile])
   const workbook = useWorkbookPresentation({ dataSource, groupingOptions, setRowGroups, setGroupedCashPeriod })
   const groupingSelectData = useMemo(
     () =>
@@ -445,16 +408,16 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
           ...(colGroups.some((group) => group.type === item.type) ? ['columns' as const] : []),
         ],
         label: item.label,
-        path: currentVparivanieAnalysisCapability(priceTypeDataset)?.groupings.find(f => f.type === item.type)?.path ?? reportGroupingPath(item.type),
+        path: currentVparivanieAnalysisCapability(dataset)?.groupings.find(f => f.type === item.type)?.path ?? reportGroupingPath(item.type),
         value: String(item.type),
       }) satisfies GroupingOption),
-    [colGroups, groupingOptions, rowGroups, priceTypeDataset],
+    [colGroups, groupingOptions, rowGroups, dataset],
   )
-  const settlementDataset = useMemo(() => settlementFormDataset(priceTypeDataset, groupedSettlementPeriod, settlementReadMode), [priceTypeDataset, groupedSettlementPeriod, settlementReadMode])
+  const settlementDataset = useMemo(() => settlementFormDataset(dataset, groupedSettlementPeriod, settlementReadMode), [dataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, priceTypeSalesComparison, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneCSpecialSettings, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, valuationClientAgreementId, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
-    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, agreementPriceComparison, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, comparison, xyz, revenueComparison, buyerSalesShare, returnComparison, paymentComparison, marginComparison, rateComparison, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, priceTypeSalesComparison, oneCSpecialSettings, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold, valuationClientAgreementId],
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, oneC: oneCScope, from, to, ordering, filterExpression, topGroups, threshold, hideZero, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, oneCScope, dataSource, filterExpression, from, hideZero, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
   const effectiveFilterTypes = effectiveConfiguration?.filters
@@ -463,15 +426,14 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     return datasetFilters(salesConstructorDataset(cashDataset, reportProfile), reportBody).filter(option => !allowed || allowed.has(option.field.Type))
   }, [cashDataset, effectiveFilterTypes, reportBody, reportProfile])
   const maxDate = reportMaximumDate(effectiveConfiguration, today) ?? settlementMaximumDate(dataSource, groupedSettlementPeriod, today, cashReadMode)
-    ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MAX_DATE : `${today.slice(0, 4)}-12-31`)
+    ?? (supportsFullReportDateRange(dataSource) ? FULL_REPORT_MAX_DATE : `${today.slice(0, 4)}-12-31`)
   const [debouncedFrom] = useDebouncedValue(from, DATE_INPUT_DEBOUNCE_MS)
   const [debouncedTo] = useDebouncedValue(to, DATE_INPUT_DEBOUNCE_MS)
-  const periodError = supportsFullReportDateRange(dataSource) ? (!isComparisonDate(from) || !isComparisonDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
+  const periodError = supportsFullReportDateRange(dataSource) ? (!isFullRangeReportDate(from) || !isFullRangeReportDate(to) || from > to ? 'Оберіть коректний період у межах 1900–9998 років.' : null)
     : periodSupported ? getPeriodError(from, to, maxDate, t) : null
   // The value lookups re-query on every keystroke in the date fields, half-typed years included. They follow the
   // period on a pause, and only once it is a period the server can answer for.
   const hasLookupPeriod = !getPeriodError(debouncedFrom, debouncedTo, maxDate, t)
-  const agreementVerified = !requiresValuationAgreement(dataSource) || valuation.agreement?.Id === valuationClientAgreementId
   const templateBody = useMemo(() => retainedData
     ? retainStoredTemplateFields(retainedData, { ...reportBody, selections })
     : { ...reportBody, selections }, [retainedData, reportBody, selections])
@@ -481,8 +443,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const settingsScope = `${dataSource}|${activeWorkbook ?? ''}|${settingsRevision}`
   const appliedSettings = useAppliedReportSettings(settingsScope, draftSnapshot, reportBody)
   const resultRequest = appliedSettings.appliedRequest ?? reportBody
-  const runRequestKey = useMemo(() => JSON.stringify({ request: settingsScope, allowed: canGenerateReport, agreementVerified }),
-    [agreementVerified, canGenerateReport, reportBody, true, settingsScope])
+  const runRequestKey = useMemo(() => JSON.stringify({ request: settingsScope, allowed: canGenerateReport }),
+    [true, canGenerateReport, reportBody, true, settingsScope])
   const { result, preview, lastRun, error, isLoading, downloadModalOpened, update: updateRun, begin: beginRun, clear: clearRun } = useReportRunState<ReportRunOutcome>(runRequestKey)
   const comparisonSettingsDisabled = isLoading || workbookResolving || !canGenerateReport
   function changeExportLayout(value: FinancialExportLayout) {
@@ -497,7 +459,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     ready: datasetStorage.loaded && !datasetStorage.error && !initialWorkbookLaunch && initialWorkbook !== 'opening',
     snapshot: draftSnapshot, backgroundRecovery: true })
   const configurationError = (dataSource === 46 ? nativePriceComparisonError(nativePriceComparison) : null) ?? (dataSource === 44 ? customerGroupsError(customerGroups) : null) ?? (!BUG_1274_ACTIVE_DATA_SOURCES.has(dataSource) ? BUG_1274_DISABLED_MESSAGE : null) ?? datasetStorage.error ?? (!datasetStorage.loaded ? t('Завантаження наборів даних…') : datasetConfigurationError(templateBody, dataset, 'workspace'))
-    ?? (requiresValuationAgreement(dataSource) && valuation.agreement?.Id !== valuationClientAgreementId ? 'Підтвердіть доступний договір оцінки.' : null)
+    ?? (null)
   const checkedMeasurements = reportBody.sorted.Measurements.length
   // The report engine lays the sheet out from the row groupings; without one it fails deep
   // inside the spreadsheet writer («Column out of range»), so the form has to require it.
@@ -553,7 +515,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
   const emptyRunNotice =
     lastRun && !lastRun.hasDocument && !preview
-      ? lastRun.rateComparison ? 'Сервер не повернув файл історичних курсів. Перевірте обрану серію.' : !lastRun.periodSupported ? t(dataSource === 11 ? 'Сервер не повернув файл записаних залишків рахунків. Спробуйте послабити умови відбору.' : dataSource === 10 ? 'Сервер не повернув файл поточної заборгованості. Спробуйте послабити умови відбору.' : 'Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
+      ? !lastRun.periodSupported ? t('Сервер не повернув файл поточних залишків. Спробуйте послабити умови відбору.')
       : t('За період {from} – {to} сервер не повернув файл звіту. Спробуйте інший період або послабте умови відбору.', {
           from: formatDate(lastRun.from),
           to: formatDate(lastRun.to),
@@ -591,13 +553,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
       const outcome: ReportRunOutcome = exportingApplied ? { ...lastRun!,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL), previewNeedsExport: false } : {
-        ...(rateComparisonOptions(rateComparison) ? { rateComparison: structuredClone(rateComparisonOptions(rateComparison)!) } : {}),
-        ...returnComparisonSummary(returnComparison),
-        ...paymentComparisonSummary(paymentComparison),
-        ...marginComparisonSummary(marginComparison),
-        ...(buyerSalesShareOptions(buyerSalesShare) ? { comparison: structuredClone(buyerSalesShareOptions(buyerSalesShare)!) } : {}),
-        ...(revenueComparisonOptions(revenueComparison) ? { comparison: structuredClone(revenueComparisonOptions(revenueComparison)!) } : {}),
-        ...(comparisonWindow(comparison) ? { comparison: structuredClone(comparisonWindow(comparison)!) } : {}),
         periodSupported,
         colGroupings: colGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         from,
@@ -655,14 +610,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     const snapshotDefaults = dataset && shouldLoadDatasetDefaults(dataSource, periodSupported)
       ? defaultDatasetRequest(dataset, resetDay, resetDay)
       : null
-    setComparison(snapshotDefaults?.comparison)
-    setXyz(snapshotDefaults?.xyz)
-    setRateComparison(snapshotDefaults?.rateComparison)
-    setPaymentComparison(snapshotDefaults?.paymentComparison)
-    setMarginComparison(snapshotDefaults?.marginComparison)
-    setReturnComparison(snapshotDefaults?.returnComparison)
-    setBuyerSalesShare(snapshotDefaults?.buyerSalesShare)
-    setRevenueComparison(snapshotDefaults?.revenueComparison)
     setProductClassification(undefined)
     setProductServiceFilter(undefined)
     setSourceOrganizations(undefined)
@@ -676,8 +623,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setReportProfile(snapshotDefaults?.reportProfile)
     setNumberPresentation(snapshotDefaults?.numberPresentation)
     setSupplierBasis(snapshotDefaults?.supplierBasis)
-    setPriceTypeSalesComparison(snapshotDefaults?.priceTypeSalesComparison)
-    setAgreementPriceComparison(snapshotDefaults?.agreementPriceComparison)
     setSettlementPeriod(undefined)
     setGroupedSettlementPeriod(snapshotDefaults?.groupedSettlementPeriod)
     setSettlementReadMode(snapshotDefaults?.settlementReadMode)
@@ -686,8 +631,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setGroupedCashPeriod(snapshotDefaults?.groupedCashPeriod)
     setCashReadMode(snapshotDefaults?.cashReadMode)
     workbook.reset(snapshotDefaults)
-    setOneCSpecialSettings(snapshotDefaults && oneCSpecialSpecification(dataSource)
-      ? requestOneCSpecialSettings(snapshotDefaults, dataSource) : undefined)
     setOneCScope(snapshotDefaults?.oneC)
     setFrom(periodSupported ? resetDay : '')
     setTo(periodSupported ? resetDay : '')
@@ -699,7 +642,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setThreshold(undefined)
     setHideZero(undefined)
     abc.load(undefined)
-    setValuationAgreementId(undefined)
     groupingOrdering.loadOrdering(undefined)
     clearRun()
     setTemplateNotice(null)
@@ -768,14 +710,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     const data = upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope(template.Data), nextDataset)
     setFullCurrentVparivanie(currentVparivanieFullScope(data))
     setMovementQuantities(movementSelection(data) ?? EMPTY_MOVEMENT_SELECTION)
-    setComparison(structuredClone(requestComparison(data)))
-    setXyz(structuredClone(xyzOptions(requestXyz(data)) ?? requestXyz(data)))
-    setRateComparison(structuredClone(rateComparisonOptions(requestRateComparison(data)) ?? requestRateComparison(data)))
-    setPaymentComparison(clonePaymentComparisonValue(data))
-    setMarginComparison(cloneMarginComparisonValue(data))
-    setReturnComparison(structuredClone(returnComparisonOptions(requestReturnComparison(data)) ?? requestReturnComparison(data)))
-    setBuyerSalesShare(structuredClone(buyerSalesShareOptions(requestBuyerSalesShare(data)) ?? requestBuyerSalesShare(data)))
-    setRevenueComparison(structuredClone(revenueComparisonOptions(requestRevenueComparison(data)) ?? requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setProductServiceFilter(structuredClone(requestProductServiceFilter(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
@@ -787,8 +721,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setNativePriceComparison(data.nativePriceComparison ?? data.NativePriceComparison)
     setCustomerGroups(data.customerGroups ?? data.CustomerGroups)
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
-    setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
-    setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
     setSettlementPeriod(structuredClone(data.settlementPeriod))
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
     setSettlementReadMode(structuredClone(requestSettlementReadMode(data)))
@@ -803,11 +735,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
-    setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     groupingOrdering.loadOrdering(requestOrdering(data))
-    const nextAgreementId = data.valuationClientAgreementId ?? undefined
-    setValuationAgreementId(nextAgreementId)
     const groupingByType = new Map(datasetGroupings(nextDataset, data).map(item => [item.type, item]))
     if (periodSupported && !getPeriodError(from, to, maxDate, t)) setPreviousPeriod({ from, to })
     setDataSource(nextDataset.DataSource)
@@ -855,14 +784,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setMeasurements(structuredClone(snapshot.measurements))
     filterLogic.load(data.selections, requestFilterExpression(data))
     groupingOrdering.loadOrdering(requestOrdering(data))
-    setComparison(structuredClone(requestComparison(data)))
-    setXyz(structuredClone(requestXyz(data)))
-    setRateComparison(structuredClone(requestRateComparison(data)))
-    setPaymentComparison(clonePaymentComparisonValue(data))
-    setMarginComparison(cloneMarginComparisonValue(data))
-    setReturnComparison(structuredClone(requestReturnComparison(data)))
-    setBuyerSalesShare(structuredClone(requestBuyerSalesShare(data)))
-    setRevenueComparison(structuredClone(requestRevenueComparison(data)))
     setProductClassification(structuredClone(requestProductClassification(data)))
     setProductServiceFilter(structuredClone(requestProductServiceFilter(data)))
     setSourceOrganizations(structuredClone(requestSourceOrganizations(data)))
@@ -874,8 +795,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setNativePriceComparison(data.nativePriceComparison ?? data.NativePriceComparison)
     setCustomerGroups(data.customerGroups ?? data.CustomerGroups)
     setReturnsOnly(data.returnsOnly ?? data.ReturnsOnly)
-    setPriceTypeSalesComparison(clonePriceTypeSalesComparisonValue(data))
-    setAgreementPriceComparison(structuredClone(requestAgreementPriceComparison(data)))
     setSettlementPeriod(structuredClone(data.settlementPeriod))
     setGroupedSettlementPeriod(structuredClone(requestGroupedSettlementPeriod(data)))
     setSettlementReadMode(structuredClone(requestSettlementReadMode(data)))
@@ -890,13 +809,11 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setReportProfile(structuredClone(requestReportProfile(data)))
     setNumberPresentation(structuredClone(requestNumberPresentation(data)))
     workbook.restore(data)
-    setOneCSpecialSettings(structuredClone(requestOneCSpecialSettings(data, nextDataset.DataSource)))
     setOneCScope(structuredClone(data.oneC))
     setTopGroups(structuredClone(requestTopGroups(data)))
     setThreshold(structuredClone(requestThreshold(data)))
     setHideZero(structuredClone(requestHideZero(data)))
     abc.load(requestAbcClassification(data))
-    setValuationAgreementId(data.valuationClientAgreementId ?? undefined)
     setTemplateNotice(null)
     setDraftRestoreError(null)
     if (!cancelDraft) clearRun()
@@ -955,15 +872,13 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
 
   const analysisRules = supportedAnalysisRules(templateBody, dataset, settlementDataset)
   const lookup: { from: string; to: string; profitReadMode: 0 | 1 | undefined; profitUnavailable: boolean
-    providedDiscountBasis: 0 | undefined; salesBasis: 0 | undefined; sourceWorld: number | undefined } = {
+    sourceWorld: number | undefined } = {
     from: hasLookupPeriod ? debouncedFrom : '',
     to: hasLookupPeriod ? debouncedTo : '',
     profitReadMode: (dataSource === 35 || dataSource === 38) && dataset?.profitReadModeLookup === true
       && (profitReadMode === 0 || profitReadMode === 1) ? profitReadMode : undefined,
     profitUnavailable: dataSource === 38 && profitReadMode === 0 && dataset?.profitReadModeLookup !== true,
-    providedDiscountBasis: currentProvidedDiscountLookupBasis(dataSource, oneCSpecialSettings, dataset),
-    salesBasis: currentPriceTypeSalesLookupBasis(dataSource, priceTypeSalesComparison, dataset?.priceTypeSalesComparison),
-    sourceWorld: reportLookupSourceWorld(dataSource, groupedSettlementPeriod, oneCSpecialSettings),
+    sourceWorld: reportLookupSourceWorld(dataSource, groupedSettlementPeriod),
   }
   const cashSettlementPanels = (part?: 'source' | 'filters' | 'form') => <CashSettlementSettingsPanels dataSource={dataSource} part={part}
     cash={{ dataset, grouped: groupedCashPeriod, rows: rowGroups,
@@ -1028,8 +943,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const builder = {
     inlineSelections: true, selectionKeys: filterLogic.selectionKeys, dataset, request: reportBody, dataSource, colGroups, filterFieldOptions, groupingOptions, groupingSelectData, measurements, rowGroups, selections,
     lookupFrom: lookup.from, lookupTo: lookup.to, lookupProfitReadMode: lookup.profitReadMode,
-    lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld, lookupSalesBasis: lookup.salesBasis,
-    lookupProvidedDiscountBasis: lookup.providedDiscountBasis,
+    lookupProfitUnavailable: lookup.profitUnavailable, lookupSourceWorld: lookup.sourceWorld,
     onColGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => groupingOrdering.changeAxis('Col', value),
     onRowGroupsChange: (value: ReportGroupingItem[] | ((current: ReportGroupingItem[]) => ReportGroupingItem[])) => {
       const next = typeof value === 'function' ? value(rowGroups) : value
@@ -1044,11 +958,11 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
       onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
       onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
-      footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{dataSource !== 19 && returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+      footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
       renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
         selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
         filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
-        lookupSourceWorld={lookup.sourceWorld} lookupSalesBasis={lookup.salesBasis} lookupProvidedDiscountBasis={lookup.providedDiscountBasis}
+        lookupSourceWorld={lookup.sourceWorld}
         onChange={filterLogic.editSelection} />} />
   const filtersContent = <>
     {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('organizations')}</div> : null}
@@ -1077,7 +991,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       {analysisPanels.hideZero}
       {analysisPanels.abc}
       {analysisPanels.ordering}
-    </> : dataSource === 26 ? analysisPanels.abc : null}
+    </> : null}
   </div>
   const constructorDesk = usesConstructorDesk(dataset, reportBody) && !selectionOnly
   const constructorCaptions = constructorMeasureCaptions(dataset, reportBody, dataSource, t)
@@ -1177,7 +1091,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
           {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
             warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
             period={periodSupported ? { from, to, error: periodError, disabled: isLoading || workbookResolving,
-              minDate: effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE), maxDate,
+              minDate: effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? FULL_REPORT_MIN_DATE : REPORT_MIN_DATE), maxDate,
               onChange: range => { setFrom(range.from); setTo(range.to) } } : null}
             currentStateNotice={<Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>}
             parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
@@ -1193,7 +1107,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
           <WorkbookSettings unified sections={selectionOnly ? deskSections.filter(section => section.id === 'filters') : deskSections}
             advanced={selectionOnly ? null : advancedContent} disabled={comparisonSettingsDisabled}
             period={periodSupported ? <WorkbookPeriodField from={from} to={to}
-              minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? CLIENT_COMPARISON_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
+              minDate={effectiveConfiguration?.period.minimumDate ?? (supportsFullReportDateRange(dataSource) ? FULL_REPORT_MIN_DATE : REPORT_MIN_DATE)} maxDate={maxDate}
               presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
               onFromChange={setFrom} onToChange={setTo} />
               : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
@@ -1256,8 +1170,6 @@ type LegacyReportBuilderProps = {
   lookupProfitReadMode?: 0 | 1
   lookupProfitUnavailable?: boolean
   lookupSourceWorld?: number
-  lookupProvidedDiscountBasis?: 0
-  lookupSalesBasis?: 0
   measurements: ReportMeasurementGroup[]
   rowGroups: ReportGroupingItem[]
   selections: ReportSelection[]
@@ -1303,8 +1215,6 @@ function LegacyReportBuilder({
   lookupProfitReadMode,
   lookupProfitUnavailable,
   lookupSourceWorld,
-  lookupSalesBasis,
-  lookupProvidedDiscountBasis,
   measurements,
   rowGroups,
   selections,
@@ -1352,9 +1262,9 @@ function LegacyReportBuilder({
 
   const { measurementLabel, measurementUnit, groupCaption } = measureCaptionFunctions(dataset, request, dataSource, t)
 
-  const selectionPanel = dataSource === 19 ? null : <section className="reports-stocks-legacy__selections">
+  const selectionPanel = <section className="reports-stocks-legacy__selections">
     <ReportSelectionsCard inline={inlineSelections} selectionKeys={selectionKeys} dataset={dataset} dataSource={dataSource} description={null} filterFieldOptions={filterFieldOptions}
-      request={request} from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
+      request={request} from={lookupFrom} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable} lookupSourceWorld={lookupSourceWorld} selections={selections} title={selectionTitle ?? t('Умови відбору')} to={lookupTo} onChange={onSelectionsChange}
       filter={selectionFilter} newSelection={newSelection} addLabel={addSelectionLabel} />
   </section>
 
@@ -1608,8 +1518,6 @@ type ReportSelectionsCardProps = {
   lookupProfitReadMode?: 0 | 1
   lookupProfitUnavailable?: boolean
   lookupSourceWorld?: number
-  lookupProvidedDiscountBasis?: 0
-  lookupSalesBasis?: 0
   description?: string | null
   filterFieldOptions: FilterFieldOption[]
   from: string
@@ -1634,8 +1542,6 @@ export function ReportSelectionsCard({
   lookupProfitReadMode,
   lookupProfitUnavailable,
   lookupSourceWorld,
-  lookupSalesBasis,
-  lookupProvidedDiscountBasis,
   description,
   filterFieldOptions,
   from,
@@ -1729,7 +1635,7 @@ export function ReportSelectionsCard({
               if (inline) return <InlineReportSelection key={selectionKeys?.[index]} dataset={dataset} request={request}
                 selection={selection} selections={selections} index={index} dataSource={dataSource} from={from} to={to}
                 filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookupProfitReadMode} lookupProfitUnavailable={lookupProfitUnavailable}
-                lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
+                lookupSourceWorld={lookupSourceWorld}
                 onChange={onChange} />
               const fieldLabel = getSelectionFieldSummary(selection, filterFieldOptions, t)
 
@@ -1830,7 +1736,7 @@ export function ReportSelectionsCard({
                   onChange={Values => setDraftSelection(current => current ? { ...current, Values } : current)} /> : <SelectionValuePicker request={request}
                 dataSource={dataSource}
                 dataset={dataset}
-                lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
+                lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable} lookupSourceWorld={lookupSourceWorld}
                 from={from}
                 label={t('Значення')}
                 selection={draftSelection}
@@ -1862,10 +1768,10 @@ export function ReportSelectionsCard({
 }
 
 export function InlineReportSelection({ dataset, request, selection, selections, index, dataSource, from, to, filterFieldOptions,
-  lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, onChange,
+  lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, onChange,
   variant = 'card', selected = false, onSelect,
 }: Pick<ReportSelectionsCardProps, 'dataset' | 'request' | 'selections' | 'dataSource' | 'from' | 'to' | 'filterFieldOptions' | 'lookupProfitReadMode'
-  | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'lookupSalesBasis' | 'lookupProvidedDiscountBasis' | 'onChange'> & { selection: ReportSelection; index: number
+  | 'lookupProfitUnavailable' | 'lookupSourceWorld' | 'onChange'> & { selection: ReportSelection; index: number
   variant?: 'card' | 'row'; selected?: boolean; onSelect?: () => void }) {
   const { t } = useI18n()
   const analysis = currentVparivanieAnalysisCapability(dataset)
@@ -1906,7 +1812,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     : isDatasetGroupSelection(dataset, selection) ? <CurrentVparivanieAnalysisValuePicker selection={selection} selections={selections}
       descriptor={descriptor} status={hierarchyStatus} from={from} to={to} searchItems={itemSearch} renderItemPicker={nativeProductItemRenderer(dataSource, dataset, selection)} onChange={Values => change({ ...selection, Values })} />
     : <SelectionValuePicker request={request} dataSource={dataSource} dataset={dataset} lookupProfitReadMode={documentLookup.mode} lookupProfitUnavailable={documentLookup.unavailable}
-      lookupSourceWorld={lookupSourceWorld} lookupSalesBasis={lookupSalesBasis} lookupProvidedDiscountBasis={lookupProvidedDiscountBasis}
+      lookupSourceWorld={lookupSourceWorld}
       from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
       onSelectionChange={change}
       onChange={Values => change({ ...selection, Values })} />
@@ -2040,8 +1946,6 @@ type SelectionValuePickerProps = {
   lookupProfitReadMode?: 0 | 1
   lookupProfitUnavailable?: boolean
   lookupSourceWorld?: number
-  lookupProvidedDiscountBasis?: 0
-  lookupSalesBasis?: 0
   error?: string
   from: string
   label?: string
@@ -2093,7 +1997,7 @@ function LegacySelectionValuePicker(props: SelectionValuePickerProps) {
       : <CommonSelectionValuePicker {...props} />
 }
 
-function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const documentLookup = salesDocumentLookupPolicy(dataSource, selection.SelectedField.Type, dataset, lookupProfitUnavailable, from, to)
@@ -2209,7 +2113,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
             ? await getReportClientAgreements(dependentClientNetId)
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
-                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupSalesBasis, lookupProvidedDiscountBasis, lookupProfitReadMode, nativeSalesDocument,
+                controller.signal, saleDocumentFilters, lookupSourceWorld, lookupProfitReadMode, nativeSalesDocument,
               )
 
         if (!cancelled) {
@@ -2238,8 +2142,6 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     lookupUnavailable,
     lookupScope,
     lookupSourceWorld,
-    lookupSalesBasis,
-    lookupProvidedDiscountBasis,
     dependentClientNetId,
     from,
     lookupAttempt,
@@ -2447,8 +2349,7 @@ function isAuthoredServerMessage(message: string): boolean {
 // Names the run for the export modal, where the only other identity on offer is the engine's «Reports_MM.yyyy_
 // <guid>.xlsx» file name.
 function describeReportRun(run: ReportRunOutcome, t: TranslateFunction): string {
-  const parts = [run.rateComparison ? `Курс на ${formatDate(run.rateComparison.CurrentAsOf)} / порівняння на ${formatDate(run.rateComparison.PreviousAsOf)} · ${run.rateComparison.RateKind === 'commercial' ? 'Комерційний' : 'Державний'} [${run.rateComparison.RateDefinitionId}]` : run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
-  if (run.comparison) parts.push(`Порівняння: ${formatDate(run.comparison.From)} – ${formatDate(run.comparison.To)}`)
+  const parts = [run.periodSupported ? `${formatDate(run.from)} – ${formatDate(run.to)}` : t('Поточний стан на час читання даних')]
 
   if (run.rowGroupings.length) {
     parts.push(`${t('Рядки')}: ${run.rowGroupings.join(', ')}`)
@@ -2554,8 +2455,6 @@ async function loadSelectionLookupOptions(
   signal?: AbortSignal,
   saleDocumentFilters?: SaleDocumentLookupFilters,
   lookupSourceWorld?: number,
-  lookupSalesBasis?: 0,
-  lookupProvidedDiscountBasis?: 0,
   lookupProfitReadMode?: 0 | 1,
   nativeSalesDocument = usesSalesDocumentLookup(dataSource, fieldType),
 ): Promise<ReportEntity[]> {
@@ -2580,10 +2479,6 @@ async function loadSelectionLookupOptions(
       return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, undefined, undefined, lookupProfitReadMode)
     if (dataSource === 41 && [60, 61].includes(fieldType))
       return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
-    if (dataSource === 27 && lookupSalesBasis === 0)
-      return searchDatasetReportValues(dataSource, fieldType, params, signal, undefined, 0)
-    if (dataSource === 24 && lookupProvidedDiscountBasis === 0)
-      return searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld, undefined, 0)
     return [23, 24, 25, 28].includes(dataSource)
       ? searchDatasetReportValues(dataSource, fieldType, params, signal, lookupSourceWorld)
       : searchDatasetReportValues(dataSource, fieldType, params, signal)
@@ -2699,7 +2594,7 @@ function createSelectedValue(entity: ReportEntity, dataSource?: number, field?: 
   return {
     Data: nativeSalesDocument ? { Id: entity.Id } : reference ?? entity,
     Name: getEntityDisplayName(entity),
-    Value: (dataSource === 16 || dataSource === 17 || dataSource === 18 || dataSource === 20 || dataSource === 21 || dataSource === 23 || dataSource === 24 || dataSource === 25 || dataSource === 28 || dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
+    Value: (dataSource === 39 || dataSource === 41) ? 0 : getReportEntityNumericValue(entity),
   }
 }
 

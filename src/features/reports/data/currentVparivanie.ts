@@ -1,6 +1,6 @@
 import { currentVparivanieAnalysisCapability, currentVparivanieAnalysisScopeError, currentVparivanieAnalysisLayoutError, requestCurrentVparivanieAnalysis, withCurrentVparivanieAnalysisScope } from './currentVparivanieAnalysis'
 import type { ReportDataset, ReportFilterCondition, ReportRequestBody } from '../types'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 import { movementSelection, movementSelectionError } from './currentVparivanieMovements'
 import { originalMatrixScope } from './originalVparivanieScope'
 
@@ -213,7 +213,7 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     if ((field === 4 ? condition !== 6 : field === 5 || field === 60 ? condition !== 0 : condition !== 0 && condition !== 2)
       || selection.Values.length < 1 || selection.Values.length > max
       || (condition === 0 && selection.Values.length !== 1)) return invalid
-    const ids = selection.Values.map(item => field === 60 ? currentVparivanieManagerReference(item?.Data) : revenueExactId(item?.Data))
+    const ids = selection.Values.map(item => field === 60 ? currentVparivanieManagerReference(item?.Data) : exactId(item?.Data))
     if (field === 60 && ids.includes(CURRENT_VPARIVANIE_UNASSIGNED_MANAGER) && dataset
       && (!record(dataset.currentVparivanie) || dataset.currentVparivanie.ManagerUnassignedFilterSupported !== true))
       return 'Сервер не підтвердив відбір покупців без основного менеджера.'

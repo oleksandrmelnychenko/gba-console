@@ -26,8 +26,6 @@ import { QUANTITY_BREAKDOWN_PROVENANCE, isNegativeSingleUnitQuantity, isSingleUn
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
   const products = preview.CurrentVparivanieProducts
-  const regions = preview.ClientDiscountRecipientRegions
-  const regionRows = new Map(regions?.Rows.map(row => [row.RowSourceIndex, row.RegionCode]))
   const attributes = preview.SettlementCounterpartyAttributes
   const attributeRows = new Map(attributes?.Rows.map(row => [row.RowSourceIndex, row]))
   const productRows = new Map(products?.Rows.map(row => [row.RowSourceIndex, row]))
@@ -98,7 +96,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   }
   const rowHeaders = products ? CURRENT_VPARIVANIE_PRODUCT_CAPTIONS : [...preview.RowSchema.map((level, index) => [level.Caption || `Рівень ${index + 1}`,
     ...(index === preview.RowSchema.length - 1 ? inlineFields.map(field => field.caption) : [])].join(', ')),
-    ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []), ...(regions ? ['Код по региону'] : []),
+    ...(attributes ? ['Основний менеджер покупця', 'Код по региону'] : []),
     ...workbookColumns.map(field => field.caption)]
   const levelCount = products ? 0 : preview.RowSchema.length
   const totalledLevels = new Set(totalGroups.map(group => group.Level))
@@ -182,7 +180,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           <tr>
           {rowHeaders.map((header, index) => {
             const caption = rowHeaderText({ index, row, preview,
-              products: !!products, product: productRows.get(row.SourceIndex), regions: !!regions, region: regionRows.get(row.SourceIndex),
+              products: !!products, product: productRows.get(row.SourceIndex),
               attributes: attributeRows.get(row.SourceIndex), workbookRow: workbookRows.get(row.SourceIndex), workbookColumns, sharedNames,
               caption: rowCaption })
             const isOrganization = !products && index < levelCount
@@ -274,9 +272,9 @@ function rowDimensionCaption(preview: NativeReportPreview, index: number, captio
   return reportAxisCaption(preview.Request?.DataSource, schema[index], caption, sharedNames)
 }
 
-function rowHeaderText({ index, row, preview, products, product, regions, region, attributes, workbookRow, workbookColumns, sharedNames, caption }: {
+function rowHeaderText({ index, row, preview, products, product, attributes, workbookRow, workbookColumns, sharedNames, caption }: {
   index: number; row: NativeReportPreviewAxis; preview: NativeReportPreview; products: boolean
-  product?: CurrentVparivanieProduct; regions: boolean; region?: string | null; attributes?: SettlementCounterpartyAttribute
+  product?: CurrentVparivanieProduct; attributes?: SettlementCounterpartyAttribute
   workbookRow?: WorkbookRow; workbookColumns: NonNullable<NativeReportPreview['WorkbookPresentation']>['fields']
   sharedNames: readonly ReadonlySet<string>[]; caption: (row: NativeReportPreviewAxis, index: number) => string
 }): string {
@@ -284,7 +282,6 @@ function rowHeaderText({ index, row, preview, products, product, regions, region
   if (index < preview.RowSchema.length) return rowDimensionCaption(preview, index, caption(row, index), sharedNames[index])
   if (workbookColumns.length) return workbookAttributeText(workbookRow?.values
     .find(value => value.type === workbookColumns[index - preview.RowSchema.length]?.type))
-  if (regions) return region ?? '∅'
   return settlementAttributeText(attributes, index === preview.RowSchema.length ? 'manager' : 'region')
 }
 

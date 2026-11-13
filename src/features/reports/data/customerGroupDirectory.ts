@@ -1,9 +1,9 @@
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 
 /** Presentation identity only: the stored Data object/string is never rewritten on load. */
 export function customerGroupDirectoryId(raw: unknown): number | null {
   if (typeof raw === 'string' && (raw.length > 65536 || !canonicalJsonIdNumber(raw))) return null
-  const text = revenueExactId(raw)
+  const text = exactId(raw)
   if (!text) return null
   const id = Number(text)
   return Number.isSafeInteger(id) && id > 0 ? id : null

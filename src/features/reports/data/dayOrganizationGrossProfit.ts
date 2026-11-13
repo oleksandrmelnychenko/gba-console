@@ -6,7 +6,7 @@ import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
 import { productClassification, requestProductClassification, requestSourceOrganizations,
@@ -99,7 +99,7 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
       if (groupError) return groupError
       continue
     }
-    const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : revenueExactId
+    const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : exactId
     if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean')
       || !(filters.has(field) || field === 12 || field === 60)
       || !admittedConditions.has(selection.FilterCondition?.Type) || !selection.Values.length

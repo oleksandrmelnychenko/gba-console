@@ -1,8 +1,6 @@
-import actualScope from '../data/oneCTurnoverScope.http-fixture.json'
-import { organizationOnlyScope } from '../data/oneCTurnoverScopes.test-fixtures'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { createStockReport, previewStockReport, getOneCTurnoverScopes, searchDatasetReportValues, searchReportUsers, searchValuationAgreements } from './reportsApi'
+import { createStockReport, previewStockReport, searchDatasetReportValues, searchReportUsers } from './reportsApi'
 import type { ReportRequestBody } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -70,15 +68,6 @@ describe('reportsApi', () => {
     })
   })
 
-  it('normalizes exact current-discount lookup IDs from SQL strings without losing precision', async () => {
-    apiRequestMock.mockResolvedValueOnce([{ Id: '459018', Name: 'Договір [459018]' }])
-    await expect(searchDatasetReportValues(29, 9, { limit: 25, offset: 0, value: '459018' }))
-      .resolves.toEqual([{ Id: 459018, Name: 'Договір [459018]' }])
-    apiRequestMock.mockResolvedValueOnce([{ Id: '9007199254740992', Name: 'Небезпечний ID' }])
-    await expect(searchDatasetReportValues(29, 9, { limit: 25, offset: 0, value: '' }))
-      .rejects.toThrow('некоректні значення')
-  })
-
   it('keeps supplier batch Product lookup Int64 IDs as exact strings', async () => {
     const params = { limit: 30, offset: 0, value: ' ISS1012LSLH ' }
     apiRequestMock.mockResolvedValueOnce([{ Id: '35430089', Name: 'ISS1012LSLH [35430089]' }])
@@ -95,15 +84,6 @@ describe('reportsApi', () => {
     await expect(searchDatasetReportValues(38, 1, params)).rejects.toThrow('некоректні значення')
     apiRequestMock.mockResolvedValueOnce([{ Id: '0', Name: 'Zero ID' }])
     await expect(searchDatasetReportValues(38, 1, params)).rejects.toThrow('некоректні значення')
-  })
-
-  it('uses the dedicated valuation agreement catalogue with exact Id, independent of stock ownership', async () => {
-    const signal = new AbortController().signal
-    apiRequestMock.mockResolvedValue([{ Id: 459018, Name: 'Клієнт · Договір [459018]' }])
-    await expect(searchValuationAgreements({ limit: 30, offset: 0, value: ' 459018 ' }, signal)).resolves.toEqual([{ Id: 459018, Name: 'Клієнт · Договір [459018]' }])
-    expect(apiRequestMock).toHaveBeenLastCalledWith('/report/datasets/8/valuation-agreements', { query: { limit: 30, offset: 0, value: '459018' }, signal })
-    apiRequestMock.mockResolvedValue([{ AgreementId: 459018, Name: 'Неправильний ID' }])
-    await expect(searchValuationAgreements({ limit: 30, offset: 0, value: '' })).rejects.toThrow('некоректний список договорів')
   })
 
   it('uses bounded targeted lookup for report users', async () => {
@@ -181,55 +161,5 @@ describe('reportsApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/preview', {
       method: 'POST', dedupe: false, query: { rowOffset: 0, rowLimit: 50 }, body,
     })
-  })
-
-  it('reads only the local scope catalogue and forwards cancellation', async () => {
-    const signal = new AbortController().signal
-    apiRequestMock.mockResolvedValueOnce([])
-    await expect(getOneCTurnoverScopes(signal)).resolves.toEqual([])
-    expect(apiRequestMock).toHaveBeenCalledWith('/report/stocks/one-c/scopes', { signal })
-  })
-
-
-  it('accepts the exact GBA HTTP serializer v3 scope with UTC instants intact', async () => {
-    apiRequestMock.mockResolvedValueOnce([actualScope])
-    const scopes = await getOneCTurnoverScopes()
-    expect(scopes).toEqual([actualScope])
-    expect(scopes[0].OldestReadCompletedUtc).toBe('2026-10-24T08:34:02.4248058Z')
-    expect(scopes[0].Filters).toMatchObject({ ScopeVersion: 3, ProductKindId: null, ExcludeServices: null, BuyerRootId: null })
-  })
-
-  it.each([{ FirstDay: '2026-02-30' }, { LastDay: '2026-08-01' }, { LoadedDayCount: 999 }])('rejects malformed v3 publication range %#', patch => {
-    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, ...patch }])
-    return expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
-  })
-
-  it('keeps legacy v1/v2 and published v3 together without rewriting source filters', async () => {
-    const legacy = { ...organizationOnlyScope, Key: 'b'.repeat(64), Filters: {
-      OrganizationIds: ['1'.repeat(32)], ProductKindId: '2'.repeat(32), ExcludeServices: true,
-    } }
-    const exactCost = { ...legacy, Key: 'c'.repeat(64), Filters: { ...legacy.Filters, BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' } }
-    const scopes = [legacy, organizationOnlyScope, exactCost]
-    apiRequestMock.mockResolvedValueOnce(scopes)
-    await expect(getOneCTurnoverScopes()).resolves.toEqual(scopes)
-  })
-
-  it.each([
-    { ScopeVersion: 4 }, { ScopeVersion: 1 }, { ProductKindId: '2'.repeat(32) }, { ExcludeServices: false },
-    { BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40' }, { OrganizationIds: ['1'.repeat(32)] },
-    { OrganizationIds: [...organizationOnlyScope.Filters.OrganizationIds, '88D1B8CB29DC7A6911ECFC60797DF65F'] },
-  ])('rejects changed v3 population or unsupported version %#', async patch => {
-    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, Filters: { ...organizationOnlyScope.Filters, ...patch } }])
-    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
-  })
-
-  it('rejects unqualified v3 source timestamps instead of labeling local wall time UTC', async () => {
-    apiRequestMock.mockResolvedValueOnce([{ ...organizationOnlyScope, NewestReadCompletedUtc: '2026-10-24T11:01:00' }])
-    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
-  })
-
-  it('rejects malformed scope metadata instead of inventing source filters', async () => {
-    apiRequestMock.mockResolvedValueOnce([{ Key: 'local-id', Filters: { OrganizationIds: [123] } }])
-    await expect(getOneCTurnoverScopes()).rejects.toThrow('Invalid 1C report scope catalogue')
   })
 })

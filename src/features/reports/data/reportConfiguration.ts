@@ -59,8 +59,6 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
   if (data.dataSource === 40 && option(data, 'cashPeriod') != null) key = 'exactRecord'
   if (data.dataSource === 41 && option(data, 'settlementPeriod') != null) key = 'exactAgreement'
   if (data.dataSource === 2 && option(data, 'returnsOnly') === true) key = 'returnsOnly'
-  const sales = option(data, 'priceTypeSalesComparison')
-  if (data.dataSource === 27 && record(sales) && (sales.SalesBasis ?? sales.salesBasis) === 0) key = 'operational'
   const groupedSettlement = option(data, 'groupedSettlementPeriod')
   if (data.dataSource === 41 && mode == null && record(groupedSettlement)
     && (groupedSettlement.SourceWorld ?? groupedSettlement.sourceWorld) === 'Fenix' && option(data, 'sourceBuyerSubtree') != null) key = 'originalNormal'
@@ -87,7 +85,7 @@ export function effectiveReportConfiguration(dataset: ReportDataset | undefined,
 export function reportAxesPolicy(dataset: ReportDataset | undefined, data: ReportRequestBody) {
   const config = effectiveReportConfiguration(dataset, data)
   const fixed = config ? config.axisMode === 'fixedLayouts' : hasFixedReportAxes(data.dataSource ?? 0) || data.dataSource === 35
-  return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed || data.dataSource === 13 }
+  return { config, fixed, rowsOnly: config ? config.axisMode === 'profitRows' || config.axisMode === 'rowsOnly' || config.allowedColumns.length === 0 : fixed }
 }
 export function reportConfigurationError(data: ReportRequestBody, dataset?: ReportDataset, draft = false): string | null {
   const managerFilterError = currentFinancialBuyerManagerFilterError(data, dataset, draft)

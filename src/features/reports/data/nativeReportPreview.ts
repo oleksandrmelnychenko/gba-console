@@ -7,7 +7,6 @@ import { isMovementSelection, readMovementCoverage, type CurrentVparivanieMoveme
 import { readNumberPresentation, readValueSemantics, type ReportNumberPresentation, type ReportValueSemantics } from './reportNumberPresentation'
 import { readWorkbookPreview, type WorkbookPreview } from './workbookPreview'
 import { readSettlementCounterpartyAttributes, type SettlementCounterpartyAttributes } from './settlementSourceAttributes'
-import { readClientDiscountRegions, type ClientDiscountRegions } from './originalClientDiscounts'
 import { CURRENT_VPARIVANIE_PRODUCT_FIELDS, CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { validateCurrentVparivanieColumns } from './currentVparivanieColumns'
 import { validateFinancialProductTimePreview } from './currentFinancialProductTimePreview'
@@ -71,7 +70,6 @@ export type NativeReportPreview = {
   CurrentVparivanieMovements?: CurrentVparivanieMovementCoverage
   Totals?: NativeReportPreviewTotals
   SettlementCounterpartyAttributes?: SettlementCounterpartyAttributes
-  ClientDiscountRecipientRegions?: ClientDiscountRegions
   WorkbookPresentation?: WorkbookPreview
 }
 
@@ -227,11 +225,6 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   if (attributes && (request?.DataSource !== 'NativeSettlementPeriod'
     || (preview.RowSchema as { Identity?: string }[]).at(-1)?.Identity !== 'SettlementCounterparty'))
     throw new Error('Реквізити покупця не відповідають набору взаєморозрахунків.')
-  const regions = readClientDiscountRegions(preview.ClientDiscountRecipientRegions,
-    preview.ResultSha256 as string, (preview.Rows as NativeReportPreviewAxis[]).map(row => row.SourceIndex))
-  if (regions && (request?.DataSource !== 'NativeOneCClientDiscounts' || preview.RowSchema.length !== 1
-    || (preview.RowSchema as { Identity?: string }[])[0]?.Identity !== 'OneCDiscountClient'))
-    throw new Error('Код регіону не відповідає рядку одержувача знижки.')
   const workbookAliases = Object.keys(preview).filter(key => key.toLowerCase() === 'workbookpresentation')
   if (workbookAliases.length > 1 || workbookAliases.some(key => key !== 'workbookPresentation'))
     throw new Error('Сервер повернув неоднозначні додаткові поля форми.')
@@ -242,7 +235,7 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const productDisplay = analysis ? undefined : normalizeCurrentVparivanieProducts(preview, request, fullCurrentVparivanie)
   const totals = normalizeTotals(preview.Totals, preview.Rows as NativeReportPreviewAxis[], columnIds, preview.RowSchema.length, columnBound)
   const movements = analysis ? undefined : readMovementCoverage({ ...preview, Request: request } as NativeReportPreview)
-  return { ...preview, PhysicalQuantityExceptions: readPhysicalQuantityExceptions(preview.PhysicalQuantityExceptions), ...(preview.PhysicalCoverage != null ? { PhysicalCoverage: readPhysicalCoverage(preview.PhysicalCoverage) } : {}), Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}), ...(regions ? { ClientDiscountRecipientRegions: regions } : {}) } as NativeReportPreview
+  return { ...preview, PhysicalQuantityExceptions: readPhysicalQuantityExceptions(preview.PhysicalQuantityExceptions), ...(preview.PhysicalCoverage != null ? { PhysicalCoverage: readPhysicalCoverage(preview.PhysicalCoverage) } : {}), Request: request, Totals: totals, ...(analysis ? { currentVparivanieAnalysis: analysis } : {}), ...(movements ? { CurrentVparivanieMovements: movements } : {}), ...(workbook ? { WorkbookPresentation: workbook } : {}), ...(productDisplay ? { CurrentVparivanieProducts: productDisplay } : {}), ...(attributes ? { SettlementCounterpartyAttributes: attributes } : {}) } as NativeReportPreview
 }
 
 function readColumnWindow(page: Record<string, unknown>, returned: number): NativeReportPreviewColumnWindow | null {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { accountTop, topCapabilities, topDataset, topRequest } from './reportTopGroups.test-fixtures'
 import { defaultReportTopGroups, readReportTopGroups, readTopGroupsCapabilities, reportTopGroupsError, requestTopGroups } from './reportTopGroups'
-import { datasetConfigurationError, datasetPresetRequest, defaultDatasetRequest } from './reportDatasets'
-import { reportDatasets, valuationDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError, defaultDatasetRequest } from './reportDatasets'
+import { reportDatasets } from './reportDatasets.test-fixtures'
 
 describe('whole-group TOP request and capability guards', () => {
   it('uses only a chosen row grouping and an active additive measure; absent rule keeps legacy compatibility', () => {
@@ -63,16 +63,5 @@ describe('whole-group TOP request and capability guards', () => {
     const source = reportDatasets[0], dataset = { ...source, TopGroups: topCapabilities(source) }, data = defaultDatasetRequest(dataset, '2026-06-01', '2026-06-30')
     data.sorted.Row = [{ type: 0, key: 'Year', label: 'Рік' }]
     expect(reportTopGroupsError({ ...data, topGroups: { ...accountTop, Grouping: 0, Measure: 0 } }, dataset)).toBeNull()
-  })
-  it('keeps TOP alongside raw filter logic, disabled conditions, valuation identity and all display measures in a preset', () => {
-    const data = topRequest(), preset = datasetPresetRequest(topDataset, 'account-balances-by-purpose-currency', data)!
-    expect(preset.Data.topGroups).toEqual(accountTop); expect(preset.Data.filterExpression).toEqual(data.filterExpression)
-    expect(preset.Data.selections).toEqual(data.selections); expect(preset.Data.sorted.Measurements).toEqual(data.sorted.Measurements)
-    const valuation = datasetPresetRequest(valuationDataset, 'stock-value-by-agreement', { ...data, dataSource: 8, valuationClientAgreementId: 456246 })!
-    expect(valuation.Data.valuationClientAgreementId).toBe(456246); expect(valuation.Data.topGroups).toEqual(accountTop)
-    // A now-unsupported old identity is retained for validation rather than replaced with a new group/measure.
-    expect(reportTopGroupsError(valuation.Data, { ...valuationDataset, TopGroups: topCapabilities(valuationDataset) })).toContain('поле має бути вибране')
-    const duplicate = datasetPresetRequest(topDataset, 'account-balances-by-purpose-currency', { ...data, TopGroups: { Version: 99 } })!
-    expect(duplicate.Data.TopGroups).toEqual({ Version: 99 }); expect(reportTopGroupsError(duplicate.Data, topDataset)).toContain('двічі')
   })
 })

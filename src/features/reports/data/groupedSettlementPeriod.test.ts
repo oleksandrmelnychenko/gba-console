@@ -96,8 +96,8 @@ it('clones stored aliases and includes grouped scope in builder, draft and file 
   expect(aliases.GroupedSettlementPeriod).not.toBe(raw.GroupedSettlementPeriod)
   const built = buildReportBuilderRequest({ dataSource: 41, from: current.from, to: current.to,
     groupedSettlementPeriod: current.groupedSettlementPeriod, sourceBuyerSubtree: current.sourceBuyerSubtree,
-    ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
-    rowGroups: current.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, current.sorted.Measurements), selections: [] })
+    ordering: undefined, filterExpression: undefined, topGroups: undefined,
+     rowGroups: current.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, current.sorted.Measurements), selections: [] })
   expect(built).toEqual(current)
   const updated = retainStoredTemplateFields({ ...current, GROUPEDSETTLEMENTPERIOD: null } as never, built)
   expect(updated).not.toHaveProperty('GROUPEDSETTLEMENTPERIOD')

@@ -1,6 +1,6 @@
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 import { cashReadModeConfigurationError, isCashReadModeCapability, requestCashReadMode } from './cashReadMode'
 
 export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
@@ -74,8 +74,8 @@ export function groupedCashConfigurationError(data: ReportRequestBody, dataset?:
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
     && (!(GROUPED_CASH_FILTERS as readonly number[]).includes(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection.Values)
-      || !selection.Values.length || selection.Values.some(value => revenueExactId(value?.Data) === null
-        || selection.SelectedField.Type === 33 && !['1', '2'].includes(revenueExactId(value.Data) ?? '')))))
+      || !selection.Values.length || selection.Values.some(value => exactId(value?.Data) === null
+        || selection.SelectedField.Type === 33 && !['1', '2'].includes(exactId(value.Data) ?? '')))))
     return 'Оберіть точні рахунки, організації, валюти або вид «Банк / Каса» з поточних списків.'
   return null
 }

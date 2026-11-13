@@ -2,7 +2,7 @@ import { validProfitRows, readReportConfiguration } from './reportConfiguration'
 import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitMaximumDays } from './profitReadMode'
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
-import { revenueExactId } from './revenueComparison'
+import { exactId } from './exactId'
 import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
@@ -122,7 +122,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
       if (filterExpression == null && activeFields.has(selection.SelectedField.Type)) return invalid
       activeFields.add(selection.SelectedField.Type)
     }
-    if (values > 100 || selection.Values.some(value => !value || !revenueExactId(value.Data)
+    if (values > 100 || selection.Values.some(value => !value || !exactId(value.Data)
       || (value.Value !== undefined && (!Number.isInteger(value.Value)
         || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
   }

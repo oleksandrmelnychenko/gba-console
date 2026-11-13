@@ -97,7 +97,7 @@ describe('saved-template draft preservation', () => {
     return buildReportBuilderRequest({ dataSource: 38, from: stored.from, to: stored.to,
       supplierBasis: basis, supplierSourceWorld: 0, rowGroups: stored.sorted.Row, colGroups: [],
       measurements, selections: [], ordering: undefined, filterExpression: undefined,
-      topGroups: undefined, valuationClientAgreementId: undefined })
+      topGroups: undefined })
   }
 
   it('round-trips the complete restored supplier request despite the adapted quantity default caption', () => {

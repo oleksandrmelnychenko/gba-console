@@ -52,9 +52,9 @@ it('normalizes the dataset capability and hides unknown or misplaced ones withou
   }
   expect(hasMode(parseReportDatasets([{ ...plain, cashReadMode: capability, CashReadMode: capability }])[0])).toBe(false)
   const parsed = parseReportDatasets([{ ...reportDatasets[0], cashReadMode: capability }, { ...settlementModeDataset, cashReadMode: capability }, plain])
-  expect(parsed.map(item => item.DataSource)).toEqual([reportDatasets[0].DataSource, 41, 40])
+  expect(parsed.map(item => item.DataSource)).toEqual([41, 40])
   expect(parsed.some(hasMode)).toBe(false)
-  expect(parsed[1].settlementReadMode).toEqual(settlementModeDataset.settlementReadMode)
+  expect(parsed[0].settlementReadMode).toEqual(settlementModeDataset.settlementReadMode)
 })
 
 it.each([0, 1])('admits explicit mode %s on grouped cash from 01.01.2025 for 120 months to today', mode => {
@@ -124,8 +124,8 @@ it.each([0, 1, null, undefined])('round trips mode %s through saved template, bu
   expect(datasetConfigurationError(normalized.Data, dataset)).toBeNull()
   const data = buildReportBuilderRequest({ dataSource: 40, from: original.from, to: original.to,
     groupedCashPeriod: original.groupedCashPeriod, cashReadMode: requestCashReadMode(normalized.Data),
-    ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
-    rowGroups: original.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
+    ordering: undefined, filterExpression: undefined, topGroups: undefined,
+     rowGroups: original.sorted.Row, colGroups: [], measurements: datasetMeasurements(dataset, original.sorted.Measurements), selections: [] })
   expect(hasMode(data)).toBe(mode !== undefined)
   if (mode === undefined) expect(data).toEqual(original)
   expect(requestCashReadMode(retainStoredTemplateFields(normalized.Data, data))).toBe(mode)

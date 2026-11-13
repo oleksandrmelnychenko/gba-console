@@ -1,4 +1,4 @@
-import { revenueExactId } from '../data/revenueComparison'
+import { exactId } from '../data/exactId'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportDataset, ReportEntity, ReportSearchParams, ReportSelectedValue } from '../types'
 import { customerGroupSalesDocumentLookup } from '../data/salesDocumentLookupCapability'
@@ -20,7 +20,7 @@ export function salesDocumentId(value: unknown): string | null {
 export function salesDocumentSelectedEntity(value: ReportSelectedValue, field: number): ReportEntity {
   const raw: unknown = value.Data
   // Legacy saved DTOs can retain Data as JSON text; derive a display key only, never rewrite the payload.
-  const id = typeof raw === 'string' && raw.length > 65536 ? null : revenueExactId(raw)
+  const id = typeof raw === 'string' && raw.length > 65536 ? null : exactId(raw)
   return id ? { Id: id, Name: value.Name, salesDocumentKind: field === 14 ? 'return' : 'sale' } : value.Data
 }
 export function salesDocumentKey(entity: ReportEntity): string | null {

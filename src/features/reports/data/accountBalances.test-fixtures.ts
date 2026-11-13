@@ -1,5 +1,6 @@
 import type { ReportDataset, ReportSelection, SpreadsheetCellValue } from '../types'
-import { ACCOUNT_BALANCE_REPORT_TITLE, ACCOUNT_BALANCE_AMOUNT_CAPTION } from './nativeReportProfiles'
+const ACCOUNT_BALANCE_REPORT_TITLE = 'Записані залишки рахунків'
+const ACCOUNT_BALANCE_AMOUNT_CAPTION = 'Записаний залишок рахунку'
 
 const captions = ['Рахунок', 'Валюта рахунку', 'Запис залишку рахунку', 'Організація рахунку', 'Тип рахунку', 'Призначення рахунку']
 export const accountBalanceDataset: ReportDataset = {

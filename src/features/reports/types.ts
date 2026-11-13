@@ -291,33 +291,6 @@ export type ReportRequestBody = {
   NativePriceComparison?: import('./data/nativePriceComparison').NativePriceComparison
   customerGroups?: import('./data/customerGroups').CustomerGroups
   CustomerGroups?: import('./data/customerGroups').CustomerGroups
-  priceTypeSalesComparison?: unknown
-  PriceTypeSalesComparison?: unknown
-  paymentComparison?: unknown
-  PaymentComparison?: unknown
-  marginComparison?: unknown
-  MarginComparison?: unknown
-  rateComparison?: unknown
-  RateComparison?: unknown
-  discountMarkup?: unknown
-  DiscountMarkup?: unknown
-  providedDiscounts?: unknown
-  ProvidedDiscounts?: unknown
-  priceAnalysis?: unknown
-  PriceAnalysis?: unknown
-  returnComparison?: unknown
-  ReturnComparison?: unknown
-  buyerSalesShare?: unknown
-  BuyerSalesShare?: unknown
-  revenueComparison?: unknown
-  RevenueComparison?: unknown
-  xyz?: unknown
-  Xyz?: unknown
-  comparison?: unknown
-  Comparison?: unknown
-  valuationClientAgreementId?: number | null
-  agreementPriceComparison?: unknown
-  AgreementPriceComparison?: unknown
   // Preserve unknown imported versions/properties for explicit validation; never sanitize them away.
   ordering?: unknown
   Ordering?: unknown
@@ -391,25 +364,12 @@ export type ReportDataset = {
   cashPeriod?: unknown
   currentVparivanie?: unknown
   agreementPrices?: unknown
-  agreementPriceComparison?: unknown
-  priceTypeSalesComparison?: unknown
-  discountMarkup?: unknown
   originalClientDiscounts?: unknown
-  providedDiscounts?: unknown
-  priceAnalysis?: unknown
   DataSource: number
   Name: string
   Description: string
   PeriodRequired?: boolean
-  rateComparison?: unknown
   PeriodSupported?: boolean
-  Comparison?: unknown
-  Xyz?: unknown
-  RevenueComparison?: unknown
-  ReturnComparison?: unknown
-  paymentComparison?: unknown
-  MarginComparison?: unknown
-  BuyerSalesShare?: unknown
   Ordering?: unknown
   FilterExpression?: unknown
   TopGroups?: unknown

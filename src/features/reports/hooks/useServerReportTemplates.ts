@@ -5,9 +5,6 @@ import { deleteServerReportTemplate, getServerReportTemplates, saveServerReportT
 import { getReportTemplateOrderState, orderReportTemplates } from '../api/reportTemplateOrderApi'
 import { invalidTemplateOrder, templatesInAuthoritativeOrder, type ReportTemplateOrderCommand,
   type ReportTemplateOrderState } from '../data/reportTemplateOrder'
-import { clientComparisonConfigurationError } from '../data/clientPeriodComparison'
-import { datasetConfigurationError } from '../data/reportDatasets'
-import { valuationConfigurationError } from '../data/reportValuation'
 import { reportThresholdError } from '../data/reportThreshold'
 import { reportHideZeroError } from '../data/reportHideZero'
 import { reportOrderingError } from '../data/reportOrdering'
@@ -200,14 +197,6 @@ export function useServerReportTemplates(enabled: boolean, datasets: ReportDatas
             Name: existing?.Name ?? operation.name.trim(), Data: structuredClone(operation.data) }
         }
         if (!request.Name.trim()) throw new Error('Введіть назву шаблону.')
-        const comparisonError = clientComparisonConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
-        if (comparisonError) throw new Error(comparisonError)
-        if (request.Data.dataSource === 12 || request.Data.dataSource === 13 || request.Data.dataSource === 14 || request.Data.dataSource === 15 || request.Data.dataSource === 16 || request.Data.dataSource === 17 || request.Data.dataSource === 18 || request.Data.dataSource === 19 || request.Data.dataSource === 20 || request.Data.dataSource === 21) {
-          const activityError = datasetConfigurationError(request.Data, datasets.find(item => item.DataSource === request.Data.dataSource))
-          if (activityError) throw new Error(activityError)
-        }
-        const valuationError = valuationConfigurationError(request.Data)
-        if (valuationError) throw new Error(valuationError)
         const abcError = reportAbcClassificationError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))
         if (abcError) throw new Error(abcError)
         const orderingError = reportOrderingError(request.Data, datasets.find(item => item.DataSource === (request.Data.dataSource ?? 0)))

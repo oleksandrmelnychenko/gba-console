@@ -4,7 +4,7 @@ import { currentVparivanieConfigurationError, currentVparivanieFilterConditions,
 import { currentVparivanieDataset as dataset, currentVparivanieRequest as request, exactSelection } from './currentVparivanie.test-fixtures'
 import { datasetConfigurationError, datasetFilters, datasetMeasurements, datasetPresetRequest } from './reportDatasets'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
-import { hasFixedReportAxes, isCurrentReportSource, nativeReportMeasurementUnit, supportsFullReportDateRange, usesNativeReportLookup } from './nativeReportProfiles'
+import { hasFixedReportAxes, nativeReportMeasurementUnit, supportsFullReportDateRange, usesNativeReportLookup } from './nativeReportProfiles'
 
 describe('current native Vparivanie form contract', () => {
   it('keeps one resource and fixed dynamic column identities through presets', () => {
@@ -18,7 +18,6 @@ describe('current native Vparivanie form contract', () => {
     expect(hasFixedReportAxes(39)).toBe(true)
     expect(supportsFullReportDateRange(39)).toBe(true)
     expect(usesNativeReportLookup(39)).toBe(true)
-    expect(isCurrentReportSource(39)).toBe(false)
     expect(nativeReportMeasurementUnit(39, 'Результат')).toBe('Кількість товару')
   })
   it('accepts bounded product hierarchy plus stock-only warehouse and customer-leg selections', () => {

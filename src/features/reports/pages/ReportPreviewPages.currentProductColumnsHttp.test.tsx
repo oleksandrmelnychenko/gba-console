@@ -16,7 +16,7 @@ const api=vi.mocked(apiRequest)
 beforeEach(()=>{api.mockReset()});afterEach(cleanup)
 async function requestFromServer(raw:unknown){api.mockResolvedValue([{Id:'actual-v4',Revision:1,Name:'Реквізити товару',Data:raw}]);return (await getServerReportTemplates())[0].Data}
 it('binds actual ten-field escaped HTTP pages0→2→0 with exact field order, financial cells and snapshot',async()=>{
- api.mockResolvedValue(fixture.datasets);const datasets=await getReportDatasets();expect(datasets).toHaveLength(42)
+ api.mockResolvedValue(fixture.datasets);const datasets=await getReportDatasets();expect(datasets).toHaveLength(11)
  const stock= datasets.find(item=>item.DataSource===45)
  expect(stockQuantityFilterSupported(stock)).toBe(true)
  expect(stock?.stockQuantityFilter).toEqual(stockFixture.dataset.stockQuantityFilter)

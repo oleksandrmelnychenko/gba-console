@@ -48,7 +48,7 @@ describe('document-date report currency contract', () => {
       expect(presentationCurrencyError(loaded.Data, currencyDataset)).toBeNull()
     }
     const builder = { ...data, dataSource: 35, rowGroups: data.sorted.Row, colGroups: data.sorted.Col, measurements: [],
-      ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined }
+      ordering: undefined, filterExpression: undefined, topGroups: undefined }
     expect(buildReportBuilderRequest(builder).presentationCurrency).toEqual(currencySelection)
     expect(buildReportBuilderRequest({ ...builder, presentationCurrency: undefined })).not.toHaveProperty('presentationCurrency')
   })

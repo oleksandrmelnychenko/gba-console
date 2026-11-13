@@ -103,8 +103,8 @@ it.each([undefined, null, 1])('preserves saved basis %s through normalization, l
   expect(requestSupplierBasis(registrar.Data)).toBe(basis)
   expect(registrar.Data.sorted.Row.map(field => field.type)).toEqual([78, 4, 21])
   const built = buildReportBuilderRequest({ dataSource: 38, from: legacy.from, to: legacy.to,
-    ordering: undefined, filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
-    rowGroups: preset.Data.sorted.Row, colGroups: [], measurements: [], selections: [],
+    ordering: undefined, filterExpression: undefined, topGroups: undefined,
+     rowGroups: preset.Data.sorted.Row, colGroups: [], measurements: [], selections: [],
     supplierBasis: requestSupplierBasis(preset.Data) })
   const updated = retainStoredTemplateFields({ ...saved.Data, SUPPLIERBASIS: basis } as never, built)
   expect(requestSupplierBasis(updated)).toBe(basis)

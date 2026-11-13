@@ -49,7 +49,7 @@ it('preserves both independent lists through template aliases, layout presets, m
   const built = buildReportBuilderRequest({ dataSource: 41, from: current.from, to: current.to,
     groupedSettlementPeriod: current.groupedSettlementPeriod, sourceBuyerSubtree: current.sourceBuyerSubtree,
     sourceCounterpartyGroups: groupSelection, ordering: undefined, filterExpression: undefined, topGroups: undefined,
-    valuationClientAgreementId: undefined, rowGroups: current.sorted.Row, colGroups: [],
+    rowGroups: current.sorted.Row, colGroups: [],
     measurements: datasetMeasurements(groupDataset, current.sorted.Measurements), selections: [] })
   expect(built).toEqual(current)
   const draft = retainStoredTemplateFields({ ...saved.Data, SOURCECOUNTERPARTYGROUPS: null } as never, built)

@@ -1,3 +1,4 @@
+import { BUG_1274_ACTIVE_DATA_SOURCES } from '../data/reportMigration'
 import { salesProductLookupCapability } from '../data/salesProductLookupCapability'
 import { cloneStockQuantityFilter, stockQuantityFilterError } from '../data/stockQuantityFilter'
 import { customerGroupSalesDocumentLookup } from '../data/salesDocumentLookupCapability'
@@ -19,43 +20,18 @@ import { readReportConfiguration, reportConfigurationError } from '../data/repor
 import { cloneNumberPresentationAliases, readValueSemantics, numberPresentationSupported, numberPresentationError } from '../data/reportNumberPresentation'
 import { cloneWorkbookAliases, normalizeWorkbookDataset, workbookConfigurationError } from '../data/workbookPresentation'
 import { settlementPeriodConfigurationError, isSettlementPeriodDataset } from '../data/settlementPeriod'
-import { agreementPricesConfigurationError, isAgreementPricesDataset } from '../data/agreementPrices'
-import { agreementPriceComparisonConfigurationError, cloneAgreementPriceComparisonAliases, isAgreementPriceComparisonCapability, normalizeAgreementPriceComparisonDataset } from '../data/agreementPriceComparison'
-import { recordedSaleGrossProfitConfigurationError } from '../data/recordedSaleGrossProfit'
 import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganizationGrossProfit'
-import { vparivanieConfigurationError } from '../data/vparivanie'
 import { currentVparivanieConfigurationError, isCurrentVparivanieDataset, cloneCurrentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { cloneGroupedCashAliases, normalizeGroupedCashDataset } from '../data/groupedCashPeriod'
 import { cashPeriodConfigurationError, isCashPeriodDataset } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
-import { importedSaleDiscountConfigurationError } from '../data/importedSaleDiscount'
-import { clonePaymentComparisonAliases, isPaymentComparisonCapability, paymentComparisonConfigurationError, PAYMENT_COMPARISON_CAPTIONS, PAYMENT_COMPARISON_GROUPINGS, PAYMENT_COMPARISON_FILTERS } from '../data/paymentComparison'
-import { cloneMarginComparisonAliases, isMarginComparisonCapability, marginComparisonConfigurationError, MARGIN_COMPARISON_CAPTIONS } from '../data/marginComparison'
-import { cloneRateComparisonAliases, isRateComparisonCapability, rateComparisonConfigurationError, RATE_COMPARISON_CAPTIONS, RATE_COMPARISON_GROUP } from '../data/rateComparison'
-import { cloneReturnComparisonAliases, isReturnComparisonCapability, returnComparisonConfigurationError } from '../data/returnComparison'
-import { cloneBuyerSalesShareAliases, isBuyerSalesShareCapability, buyerSalesShareConfigurationError } from '../data/buyerSalesShare'
-import { cloneRevenueComparisonAliases, isRevenueComparisonCapability, revenueComparisonConfigurationError } from '../data/revenueComparison'
-import { cloneXyzAliases, isXyzCapability, salesXyzConfigurationError } from '../data/salesXyz'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportDataset, ReportDatasetField, ReportRequestBody, ReportTemplate } from '../types'
-import { isCurrentReportSource } from '../data/nativeReportProfiles'
-import { isClientComparisonCapability } from '../data/clientPeriodComparison'
 import { cloneNativeExactFilterAliases, nativeExactFiltersConfigurationError, normalizeNativeExactFilterDataset } from '../data/nativeExactFilters'
-import {
-  clonePriceTypeSalesComparisonAliases,
-  isPriceTypeSalesComparisonDataset,
-  normalizePriceTypeSalesComparisonDataset,
-  priceTypeSalesComparisonConfigurationError,
-} from '../data/priceTypeSalesComparison'
-import { cloneOneCSpecialAliases, isOneCSpecialDataset, oneCSpecialSettingsError } from '../data/oneCSpecialReports'
-import { readAbcCapabilities } from '../data/reportAbcClassification'
 import { cloneGroupedSettlementAliases, normalizeGroupedSettlementDataset } from '../data/groupedSettlementPeriod'
 import { cloneSourceCounterpartyGroupAliases, normalizeSourceCounterpartyGroupDataset } from '../data/sourceCounterpartyGroups'
 import { cloneSettlementReadModeAliases, normalizeSettlementReadModeDataset } from '../data/settlementReadMode'
 import { cloneCashReadModeAliases, normalizeCashReadModeDataset } from '../data/cashReadMode'
-
-const paymentUnsupportedCapabilities = ['Ordering', 'TopGroups', 'Threshold', 'HideZero', 'AbcClassification', 'FilterExpression'] as const
-const marginGroupings = [{ Type: 12, Name: 'Клієнт' }, { Type: 15, Name: 'Договір' }] as const
 
 function isDatasetField(value: unknown): value is ReportDatasetField {
   if (!value || typeof value !== 'object') return false
@@ -90,14 +66,6 @@ function isDataset(value: unknown): value is ReportDataset {
     && typeof item.Description === 'string' && fieldsValid && !!item.Groupings?.length && !!item.Measurements?.length
     && (item.PeriodRequired === undefined || typeof item.PeriodRequired === 'boolean')
     && (item.PeriodSupported === undefined || typeof item.PeriodSupported === 'boolean')
-    && !Object.hasOwn(item, 'AgreementPrices')
-    && (item.DataSource === 22 ? isAgreementPricesDataset(item as ReportDataset) : item.agreementPrices == null)
-    && (item.DataSource === 31 ? item.PeriodSupported === false && item.PeriodRequired !== true
-      && isAgreementPriceComparisonCapability(item.agreementPriceComparison)
-      && item.Groupings?.map(field => field.Type).join(',') === '5,28'
-      && item.Measurements?.map(field => field.Type).join(',') === '75,76,77,78'
-      && item.Filters?.length === 0 : item.agreementPriceComparison == null)
-    && (item.DataSource === 27 ? isPriceTypeSalesComparisonDataset(item as ReportDataset) : item.priceTypeSalesComparison == null)
     && !Object.hasOwn(item, 'CurrentVparivanie')
     && (item.DataSource === 39 ? isCurrentVparivanieDataset(item as ReportDataset) : item.currentVparivanie == null)
     && !Object.hasOwn(item, 'SettlementPeriod')
@@ -110,36 +78,13 @@ function isDataset(value: unknown): value is ReportDataset {
     && (item.DataSource === 40 || item.groupedCashPeriod == null)
     && !Object.hasOwn(item, 'CashPeriod')
     && (item.DataSource === 40 ? isCashPeriodDataset(item as ReportDataset) : item.cashPeriod == null)
-    && isOneCSpecialDataset(item as ReportDataset)
-    && (item.DataSource !== 26 || (item.PeriodRequired === true && item.PeriodSupported === true
-      && readAbcCapabilities(item as ReportDataset) !== null))
-    && (item.DataSource !== 12 || (item.PeriodRequired === true && item.PeriodSupported === true))
-    && (item.DataSource === 19 ? item.PeriodRequired === false && item.PeriodSupported === false && item.Filters?.length === 0 && item.Groupings?.length === 1 && item.Groupings[0].Type === 52 && item.Groupings[0].Name === RATE_COMPARISON_GROUP
-      && item.Measurements?.length === RATE_COMPARISON_CAPTIONS.length && item.Measurements.every((field, index) => field.Type === 51 + index && field.Name === RATE_COMPARISON_CAPTIONS[index] && field.Selectable !== false) && isRateComparisonCapability(item.rateComparison) : item.rateComparison == null)
-    && !Object.hasOwn(item, 'PaymentComparison')
-    && (item.DataSource === 21 ? item.PeriodRequired === true && item.PeriodSupported === true && item.Groupings?.length === PAYMENT_COMPARISON_GROUPINGS.length && item.Groupings.every((field,index) => field.Type === PAYMENT_COMPARISON_GROUPINGS[index].Type && field.Name === PAYMENT_COMPARISON_GROUPINGS[index].Name && field.Selectable !== false)
-      && item.Measurements?.length === PAYMENT_COMPARISON_CAPTIONS.length && item.Measurements.every((field,index) => field.Type === 59 + index && field.Name === PAYMENT_COMPARISON_CAPTIONS[index] && field.Selectable !== false)
-      && item.Filters?.length === PAYMENT_COMPARISON_FILTERS.length && item.Filters.every(field => PAYMENT_COMPARISON_FILTERS.some(type => type === field.Type) && field.Selectable !== false) && paymentUnsupportedCapabilities.every(key => item[key] == null) && isPaymentComparisonCapability(item.paymentComparison) : item.paymentComparison == null)
-    && (item.DataSource === 20 ? item.PeriodRequired === true && item.PeriodSupported === true && item.Groupings?.length === marginGroupings.length && item.Groupings.every((field,index) => field.Type === marginGroupings[index].Type && field.Name === marginGroupings[index].Name && field.Selectable !== false)
-      && item.Measurements?.length === MARGIN_COMPARISON_CAPTIONS.length && item.Measurements.every((field,index) => field.Type === 55 + index && field.Name === MARGIN_COMPARISON_CAPTIONS[index] && field.Selectable !== false)
-      && item.Filters?.length === 4 && item.Filters.every(field => [1,2,6,9].includes(field.Type) && field.Selectable !== false) && isMarginComparisonCapability(item.MarginComparison) : item.MarginComparison == null)
-    && (item.DataSource !== 30 || (item.PeriodRequired === true && item.PeriodSupported === true
-      && item.Groupings?.map(field => field.Type).join(',') === '12,15'
-      && item.Measurements?.map(field => field.Type).join(',') === '2,6,10,14'
-      && item.Filters?.map(field => field.Type).join(',') === '1,2,6,9'))
-    && (item.DataSource !== 32 || (item.PeriodRequired === true && item.PeriodSupported === true
-      && item.Groupings?.map(field => field.Type).join(',') === '12,15,5'
-      && item.Measurements?.map(field => field.Type).join(',') === '79'
-      && item.Filters?.map(field => field.Type).join(',') === '1,2,6,9'))
-    && (item.DataSource === 18 ? item.PeriodRequired === true && item.PeriodSupported === true && isReturnComparisonCapability(item.ReturnComparison) : item.ReturnComparison == null)
-    && (item.DataSource === 17 ? item.PeriodRequired === true && item.PeriodSupported === true && isBuyerSalesShareCapability(item.BuyerSalesShare) : item.BuyerSalesShare == null)
-    && (item.DataSource === 16 ? item.PeriodRequired === true && item.PeriodSupported === true && isRevenueComparisonCapability(item.RevenueComparison) : item.RevenueComparison == null)
-    && (item.DataSource === 15 ? item.PeriodRequired === true && item.PeriodSupported === true && isXyzCapability(item.Xyz) : item.Xyz == null)
-    && (item.DataSource !== 14 || (item.PeriodRequired === true && item.PeriodSupported === true))
-    && (item.DataSource !== 13 || (item.PeriodRequired === true && item.PeriodSupported === true && isClientComparisonCapability(item.Comparison)))
     && !(item.PeriodSupported === false && item.PeriodRequired === true)
-    && (!isCurrentReportSource(item.DataSource) || item.PeriodSupported === false)
     && Array.isArray(item.Limitations) && item.Limitations.every(text => typeof text === 'string')
+}
+
+function isUnofferedDataset(item: unknown): boolean {
+  const source = item && typeof item === 'object' ? (item as { DataSource?: unknown }).DataSource : undefined
+  return typeof source === 'number' && !BUG_1274_ACTIVE_DATA_SOURCES.has(source)
 }
 
 export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDataset[]> {
@@ -148,12 +93,10 @@ export async function getReportDatasets(signal?: AbortSignal): Promise<ReportDat
 
 /** Validate and normalize the same capability bytes used by the live Console. */
 export function parseReportDatasets(result: unknown): ReportDataset[] {
-  const normalized = Array.isArray(result) ? result.map(item => {
+  const normalized = Array.isArray(result) ? result.filter(item => !isUnofferedDataset(item)).map(item => {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return null
     const exactFilters = normalizeNativeExactFilterDataset(normalizeCashReadModeDataset(normalizeSettlementReadModeDataset(item as Record<string, unknown>)))
-    const comparison = exactFilters ? normalizeAgreementPriceComparisonDataset(exactFilters as unknown as Record<string, unknown>) : null
-    const prices = comparison ? normalizePriceTypeSalesComparisonDataset(comparison as unknown as Record<string, unknown>) : null
-    const groups = prices ? normalizeGroupedSettlementDataset(prices as unknown as Record<string, unknown>) : null
+    const groups = exactFilters ? normalizeGroupedSettlementDataset(exactFilters as unknown as Record<string, unknown>) : null
     const sourceGroups = groups ? normalizeSourceCounterpartyGroupDataset(groups as unknown as Record<string, unknown>) : null
     const cash = sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
     return cash ? normalizeWorkbookDataset(cash as unknown as Record<string, unknown>) : null
@@ -202,23 +145,6 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     groupedCashPeriod?: unknown
     GroupedCashPeriod?: unknown
     cashPeriod?: unknown
-    ValuationClientAgreementId?: ReportRequestBody['valuationClientAgreementId']
-    RateComparison?: unknown
-    rateComparison?: unknown
-    PaymentComparison?: unknown
-    paymentComparison?: unknown
-    MarginComparison?: unknown
-    marginComparison?: unknown
-    ReturnComparison?: unknown
-    returnComparison?: unknown
-    BuyerSalesShare?: unknown
-    buyerSalesShare?: unknown
-    RevenueComparison?: unknown
-    revenueComparison?: unknown
-    Xyz?: unknown
-    xyz?: unknown
-    Comparison?: unknown
-    comparison?: unknown
     Ordering?: unknown
     FilterExpression?: unknown
     HideZero?: unknown
@@ -243,16 +169,6 @@ type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
     SupplierBasis?: unknown
     supplierBasis?: unknown
     supplierSourceWorld?: unknown
-    PriceTypeSalesComparison?: unknown
-    priceTypeSalesComparison?: unknown
-    DiscountMarkup?: unknown
-    discountMarkup?: unknown
-    ProvidedDiscounts?: unknown
-    providedDiscounts?: unknown
-    PriceAnalysis?: unknown
-    priceAnalysis?: unknown
-    AgreementPriceComparison?: unknown
-    agreementPriceComparison?: unknown
     OneC?: ReportRequestBody['oneC']
     oneC?: ReportRequestBody['oneC']
   }
@@ -280,8 +196,8 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
   }
   return { ...value, Data: withCurrentVparivanieMovementScope({
     from: value.Data.From ?? '', to: value.Data.To ?? '',
-    sorted: (value.Data.DataSource === 39 || value.Data.DataSource === 41) ? normalizeNativeMeasurements(value.Data.Sorted) : (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Sorted) : value.Data.Sorted,
-    selections: (value.Data.DataSource === 16 || value.Data.DataSource === 17 || value.Data.DataSource === 18 || value.Data.DataSource === 19 || value.Data.DataSource === 20 || value.Data.DataSource === 21 || value.Data.DataSource === 27) ? structuredClone(value.Data.Selections ?? []) : value.Data.Selections ?? [],
+    sorted: (value.Data.DataSource === 39 || value.Data.DataSource === 41) ? normalizeNativeMeasurements(value.Data.Sorted) : value.Data.Sorted,
+    selections: value.Data.Selections ?? [],
     dataSource: value.Data.DataSource,
     ...cloneCurrentVparivanieFullScope(value.Data),
     ...cloneMovementSelection(value.Data),
@@ -305,23 +221,10 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...(Object.hasOwn(value.Data, 'cashPeriod') ? { cashPeriod: value.Data.cashPeriod,
       ...(Object.hasOwn(value.Data, 'CashPeriod') ? { CashPeriod: value.Data.CashPeriod } : {}),
     } : Object.hasOwn(value.Data, 'CashPeriod') ? { cashPeriod: value.Data.CashPeriod } : {}),
-    ...clonePaymentComparisonAliases(value.Data),
-    ...cloneMarginComparisonAliases(value.Data),
-    ...cloneRateComparisonAliases(value.Data),
-    ...cloneReturnComparisonAliases(value.Data),
-    ...cloneBuyerSalesShareAliases(value.Data),
-    ...cloneRevenueComparisonAliases(value.Data),
-    ...cloneXyzAliases(value.Data),
     ...cloneNativeExactFilterAliases(value.Data),
     ...(Object.hasOwn(value.Data, 'supplierSourceWorld') ? { supplierSourceWorld: value.Data.supplierSourceWorld,
       ...(Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { SupplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
     } : Object.hasOwn(value.Data, 'SupplierSourceWorld') ? { supplierSourceWorld: value.Data.SupplierSourceWorld } : {}),
-    ...clonePriceTypeSalesComparisonAliases(value.Data),
-    ...cloneAgreementPriceComparisonAliases(value.Data),
-    ...cloneOneCSpecialAliases(value.Data),
-    ...(Object.hasOwn(value.Data, 'comparison') ? { comparison: value.Data.comparison,
-      ...(Object.hasOwn(value.Data, 'Comparison') ? { Comparison: value.Data.Comparison } : {}),
-    } : Object.hasOwn(value.Data, 'Comparison') ? { comparison: value.Data.Comparison } : {}),
     ...(Object.hasOwn(value.Data, 'Ordering') ? { ordering: value.Data.Ordering } : {}),
     ...(Object.hasOwn(value.Data, 'FilterExpression') ? { filterExpression: value.Data.FilterExpression } : {}),
     ...(Object.hasOwn(value.Data, 'hideZero') ? { hideZero: value.Data.hideZero,
@@ -336,7 +239,6 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
     ...(Object.hasOwn(value.Data, 'topGroups') ? { topGroups: value.Data.topGroups,
       ...(Object.hasOwn(value.Data, 'TopGroups') ? { TopGroups: value.Data.TopGroups } : {}),
     } : Object.hasOwn(value.Data, 'TopGroups') ? { topGroups: value.Data.TopGroups } : {}),
-    ...(value.Data.ValuationClientAgreementId != null ? { valuationClientAgreementId: value.Data.ValuationClientAgreementId } : {}),
     ...((value.Data.OneC ?? value.Data.oneC) ? { oneC: value.Data.OneC ?? value.Data.oneC } : {}),
   }) }
 }
@@ -344,11 +246,11 @@ export function normalizeSavedTemplate(value: WireTemplate): ReportTemplate {
 export async function getServerReportTemplates(signal?: AbortSignal): Promise<ReportTemplate[]> {
   const result = await apiRequest<WireTemplate[]>('/report/templates', { signal, cache: 'no-store', dedupe: false })
   if (!Array.isArray(result)) throw new Error('Сервер повернув некоректний список шаблонів.')
-  return result.map(normalizeSavedTemplate)
+  return result.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item?.Data?.DataSource as number)).map(normalizeSavedTemplate)
 }
 
 export async function saveServerReportTemplate(template: ReportTemplate, signal?: AbortSignal, dataset?: ReportDataset): Promise<ReportTemplate> {
-  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 44 || template.Data.dataSource === 17 || template.Data.dataSource === 18 || template.Data.dataSource === 19 || template.Data.dataSource === 20 || template.Data.dataSource === 21 || template.Data.dataSource === 22 || template.Data.dataSource === 23 || template.Data.dataSource === 24 || template.Data.dataSource === 25 || template.Data.dataSource === 27 || template.Data.dataSource === 28 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
+  const request = (template.Data.dataSource === 2 || template.Data.dataSource === 44 || template.Data.dataSource === 35 || template.Data.dataSource === 39 || template.Data.dataSource === 40 || template.Data.dataSource === 41) ? structuredClone(template) : template
   request.Data = withCurrentVparivanieMovementScope(request.Data)
   const numericError = salesConstructorError(request.Data) ?? numberPresentationError(request.Data) ?? reportConfigurationError(request.Data, request.Data.dataSource === 35 ? dataset : undefined)
   if (numericError) throw new Error(numericError)
@@ -360,12 +262,6 @@ export async function saveServerReportTemplate(template: ReportTemplate, signal?
   if (workbookError) throw new Error(workbookError)
   const exactFilterError = nativeExactFiltersConfigurationError(request.Data)
   if (exactFilterError) throw new Error(exactFilterError)
-  const pricesError = agreementPricesConfigurationError(request.Data)
-  if (pricesError) throw new Error(pricesError)
-  const priceComparisonError = agreementPriceComparisonConfigurationError(request.Data)
-  if (priceComparisonError) throw new Error(priceComparisonError)
-  const grossProfitError = recordedSaleGrossProfitConfigurationError(request.Data)
-  if (grossProfitError) throw new Error(grossProfitError)
   const dayOrganizationProfitError = dayOrganizationGrossProfitConfigurationError(request.Data, dataset)
   if (dayOrganizationProfitError) throw new Error(dayOrganizationProfitError)
   const currentVparivanieError = currentVparivanieConfigurationError(request.Data, undefined, 'workspace')
@@ -374,30 +270,8 @@ export async function saveServerReportTemplate(template: ReportTemplate, signal?
   if (settlementPeriodError) throw new Error(settlementPeriodError)
   const cashPeriodError = cashPeriodConfigurationError(request.Data)
   if (cashPeriodError) throw new Error(cashPeriodError)
-  const vparivanieError = vparivanieConfigurationError(request.Data)
-  if (vparivanieError) throw new Error(vparivanieError)
   const supplierBatchProfitError = supplierBatchGrossProfitConfigurationError(request.Data)
   if (supplierBatchProfitError) throw new Error(supplierBatchProfitError)
-  const importedDiscountError = importedSaleDiscountConfigurationError(request.Data)
-  if (importedDiscountError) throw new Error(importedDiscountError)
-  const paymentError = paymentComparisonConfigurationError(request.Data)
-  if (paymentError) throw new Error(paymentError)
-  const marginError = marginComparisonConfigurationError(request.Data)
-  if (marginError) throw new Error(marginError)
-  const rateError = rateComparisonConfigurationError(request.Data)
-  if (rateError) throw new Error(rateError)
-  const returnError = returnComparisonConfigurationError(request.Data)
-  if (returnError) throw new Error(returnError)
-  const buyerShareError = buyerSalesShareConfigurationError(request.Data)
-  if (buyerShareError) throw new Error(buyerShareError)
-  const revenueError = revenueComparisonConfigurationError(request.Data)
-  if (revenueError) throw new Error(revenueError)
-  const xyzError = salesXyzConfigurationError(request.Data)
-  if (xyzError) throw new Error(xyzError)
-  const priceTypeComparisonError = priceTypeSalesComparisonConfigurationError(request.Data)
-  if (priceTypeComparisonError) throw new Error(priceTypeComparisonError)
-  const specialOneCError = oneCSpecialSettingsError(request.Data, undefined)
-  if (specialOneCError) throw new Error(specialOneCError)
   const result = await apiRequest<WireTemplate>('/report/templates/save', {
     method: 'POST', body: { Id: request.Id, Revision: request.Revision ?? 0, Name: request.Name, Data: request.Data },
     ...(signal ? { signal } : {}),

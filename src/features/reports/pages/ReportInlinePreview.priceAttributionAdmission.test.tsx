@@ -73,8 +73,8 @@ it('admits owned source46 author/supplier metadata and reserved minus-one row/co
   const groups = (types: number[]) => types.flatMap(type => available.filter(field => field.type === type))
   const request = { ...buildReportBuilderRequest({ dataSource: 46, from: '2026-10-20', to: '2026-10-20',
     ordering: undefined,
-    filterExpression: undefined, topGroups: undefined, valuationClientAgreementId: undefined,
-    rowGroups: groups([19, 5]), colGroups: groups([21]), selections: [],
+    filterExpression: undefined, topGroups: undefined,
+     rowGroups: groups([19, 5]), colGroups: groups([21]), selections: [],
     measurements: datasetMeasurements(dataset, dataset.Measurements.map(field => ({ Type: field.Type, Name: field.Name, parentName: field.Name, IsChecked: true }))),
   }), nativePriceComparison: { Version: 2 as const, PricingId: '844' } }
   expect(reportConfigurationError(request, dataset)).toBeNull()

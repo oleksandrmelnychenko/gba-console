@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { datasetConfigurationError, datasetPresetRequest } from './reportDatasets'
+import { datasetConfigurationError } from './reportDatasets'
 import { hideZeroCapabilities, hideZeroDataset, hideZeroRequest } from './reportHideZero.test-fixtures'
 import { defaultReportHideZero, readHideZeroCapabilities, readReportHideZero, reportHideZeroError, requestHideZero } from './reportHideZero'
-import { reportDatasets, valuationDataset } from './reportDatasets.test-fixtures'
+import { reportDatasets } from './reportDatasets.test-fixtures'
 
 describe('strict source11 HideZero contract', () => {
   it('accepts only the exact record grain and retains native filters, TOP/Threshold/ABC, ordering and disabled selections', () => {
@@ -56,14 +56,5 @@ describe('strict source11 HideZero contract', () => {
   it('retains a mismatched ABC rule for explicit correction', () => {
     const data = { ...hideZeroRequest(), abcClassification: { Version: 1, Axis: 1, Grouping: 40, Measure: 24, PercentA: 80, PercentB: 15, PercentC: 5 } }
     expect(reportHideZeroError(data, hideZeroDataset)).toContain('Обидва правила збережено')
-  })
-  it('retains the rule across a same-source preset and never substitutes the valuation agreement', () => {
-    const current = hideZeroRequest()
-    const preset = datasetPresetRequest(hideZeroDataset, 'account-balances-by-purpose-currency', current)
-    expect(preset?.Data.hideZero).toEqual({ Version: 1 })
-    expect(reportHideZeroError(preset!.Data, hideZeroDataset)).toBeTruthy()
-    const incompatible = { ...current, dataSource: 8, valuationClientAgreementId: 456246 }
-    expect(datasetConfigurationError(incompatible, valuationDataset)).toBeTruthy()
-    expect(incompatible.valuationClientAgreementId).toBe(456246)
   })
 })

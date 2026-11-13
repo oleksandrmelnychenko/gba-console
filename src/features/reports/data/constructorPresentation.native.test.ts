@@ -21,7 +21,7 @@ it.each(validCases)('admits explicit own-source $source presentation $flags with
 it.each(ownPresentationSources)('keeps absent options absent through the real builder and clone for source%i', source => {
   const dataset = ownPresentationDataset(source), request = ownPresentationRequest(source)
   const values = { dataSource: source, from: request.from, to: request.to, ordering: undefined, filterExpression: undefined,
-    topGroups: undefined, valuationClientAgreementId: undefined, rowGroups: request.sorted.Row, colGroups: request.sorted.Col,
+    topGroups: undefined, rowGroups: request.sorted.Row, colGroups: request.sorted.Col,
     measurements: datasetMeasurements(dataset, request.sorted.Measurements), selections: request.selections }
   const absent = buildReportBuilderRequest(values)
   expect(Object.hasOwn(absent, 'constructorPresentation')).toBe(false)

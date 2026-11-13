@@ -126,8 +126,8 @@ describe('per-tab workspace draft recovery', () => {
   it('clones external callback values and leaves recovery/undo intact when application fails', () => {
     const before = { ...workspaceSnapshot(), name: 'Undo exact' }; stored(workspaceSnapshot(), before)
     const view = renderHook(useReportWorkspaceDraft, { initialProps: options() })
-    act(() => { view.result.current.restore(candidate => { candidate.data.valuationClientAgreementId = 1; candidate.name = 'Mutated'; return false }) })
-    expect(view.result.current.pendingSnapshot?.data.valuationClientAgreementId).toBe(456246)
+    act(() => { view.result.current.restore(candidate => { candidate.data.from = 'mutated'; candidate.name = 'Mutated'; return false }) })
+    expect(view.result.current.pendingSnapshot?.data.from).toBe(workspaceSnapshot().data.from)
     act(() => { view.result.current.restore(candidate => { view.rerender(options(candidate)); return true }) })
     act(() => { expect(view.result.current.undo(candidate => { candidate.name = 'Mutated'; return false })).toBe(false) })
     expect(view.result.current.previousSnapshot).toEqual(before)

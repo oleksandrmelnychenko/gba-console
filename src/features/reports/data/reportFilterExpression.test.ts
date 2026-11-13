@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { createFilterExpression, editFilterExpression, filterNodeAt, readFilterExpressionCapabilities, readReportFilterExpression, removeFilterSelection, reportFilterExpressionError, reportSelectionsForRequest, requestFilterExpression } from './reportFilterExpression'
+import { createFilterExpression, editFilterExpression, readFilterExpressionCapabilities, readReportFilterExpression, removeFilterSelection, reportFilterExpressionError, reportSelectionsForRequest, requestFilterExpression } from './reportFilterExpression'
 import { expressionCapabilities as cap, expressionDataset as dataset, expressionRequest, nestedExpression } from './reportFilterExpression.test-fixtures'
-import { datasetConfigurationError, datasetPresetRequest } from './reportDatasets'
-import { valuationDataset } from './reportDatasets.test-fixtures'
+import { datasetConfigurationError } from './reportDatasets'
 import type { ReportFilterNode } from '../types'
 
 describe('strict typed filter expressions', () => {
@@ -87,17 +86,5 @@ describe('explicit index and tree edits', () => {
     expect(editFilterExpression(nestedExpression, { kind: 'move', path: [], target: [1] }, cap)).toBe(nestedExpression)
     expect(editFilterExpression(nestedExpression, { kind: 'move', path: [1], target: [1, 0] }, cap)).toBe(nestedExpression)
     expect(editFilterExpression(nestedExpression, { kind: 'move', path: [0], target: [1] }, { ...cap, MaximumDepth: 2 })).toBe(nestedExpression)
-  })
-  it('never inserts duplicate references, allows explicit ungroup, and preserves presets with valuation/ordering/flags', () => {
-    expect(editFilterExpression(nestedExpression, { kind: 'add-selection', path: [1], index: 0 }, cap)).toBe(nestedExpression)
-    const expanded = editFilterExpression(nestedExpression, { kind: 'ungroup', path: [1] }, cap)
-    expect(readReportFilterExpression(expanded)?.Root).toEqual({ Kind: 1, Children: [{ Kind: 3, SelectionIndex: 1 }, { Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 2 }] })
-    expect(filterNodeAt(nestedExpression, [0, 1])).toBeNull()
-    const data = expressionRequest(), preset = datasetPresetRequest(dataset, 'account-balances-by-purpose-currency', data)
-    expect(preset?.Data.filterExpression).toEqual(data.filterExpression)
-    expect(preset?.Data.selections).toEqual(data.selections)
-    const valuation = datasetPresetRequest(valuationDataset, 'stock-value-by-agreement', { ...data, dataSource: 8, valuationClientAgreementId: 456246 })
-    expect(valuation?.Data.filterExpression).toEqual(data.filterExpression)
-    expect(valuation?.Data.valuationClientAgreementId).toBe(456246)
   })
 })
