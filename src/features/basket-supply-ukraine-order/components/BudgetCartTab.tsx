@@ -142,7 +142,12 @@ function BudgetCartTabContent() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      setRequest({ asOfDate: normalizeDateFilter(asOfDate), budgetEur, method })
+      const next = { asOfDate: normalizeDateFilter(asOfDate), budgetEur, method }
+      setRequest(current => (
+        current && current.asOfDate === next.asOfDate && current.budgetEur === next.budgetEur && current.method === next.method
+          ? current
+          : next
+      ))
     }, OPTIMIZE_DEBOUNCE_MS)
 
     return () => {

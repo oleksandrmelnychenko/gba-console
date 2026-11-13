@@ -137,6 +137,26 @@ describe('BudgetCartTab', () => {
     expect(screen.queryByText('Дата зрізу', { selector: '.procure-workspace-state__fact span' })).toBeNull()
   })
 
+  it('sends one plan request while the service is still preparing', async () => {
+    vi.mocked(getBudgetCartPlan).mockRejectedValue(Object.assign(new Error('preparing'), { status: 503 }))
+
+    render(
+      <MantineProvider env="test" theme={{ ...theme, respectReducedMotion: true }}>
+        <MemoryRouter>
+          <I18nProvider>
+            <BudgetCartTab />
+          </I18nProvider>
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Сформувати план' }))
+    await screen.findByText(/Автоматично повторимо запит за 20 с\./)
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    expect(getBudgetCartPlan).toHaveBeenCalledTimes(1)
+  })
+
   it.each([
     [{ built_at: '2026-07-25T06:15:00Z', stale: true }, 'Дані на 09:15, оновлюються'],
     [{ built_at: '2026-07-25T06:15:00Z', stale: false }, null],
