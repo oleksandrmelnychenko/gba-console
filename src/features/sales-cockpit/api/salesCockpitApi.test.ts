@@ -536,6 +536,23 @@ describe('salesCockpitApi', () => {
     await expect(getHeadTasks()).rejects.toBeInstanceOf(SalesCockpitContractError)
   })
 
+  it('keeps the target degraded marker and leaves it absent for an older service', async () => {
+    const metric = { target: 1, mtd: 1, daily_pace: 1, expected_to_date: 1, gap: 0, today_needed: 0, attainment_pct: 100, pace_status: 'on' }
+    const base = { manager_id: 7, month: '2026-06', as_of: '2026-06-08', ...history('2026-03-01'), working_days: 21, working_days_elapsed: 6, shipped: metric, paid: metric }
+
+    apiRequestMock.mockResolvedValueOnce({ ...base, degraded: true, degraded_reasons: ['invoice_event_date_unverified', 7], unverified_orders: 3, unverified_amount: 75.5 })
+    await expect(getCockpitTarget('2026-06-08')).resolves.toMatchObject({
+      degraded: true,
+      degraded_reasons: ['invoice_event_date_unverified'],
+      unverified_orders: 3,
+      unverified_amount: 75.5,
+    })
+
+    apiRequestMock.mockResolvedValueOnce(base)
+    const older = await getCockpitTarget('2026-06-08')
+    expect('degraded' in older).toBe(false)
+  })
+
   it('loads the manager target with the as-of date query and normalizes both metrics', async () => {
     apiRequestMock.mockResolvedValueOnce({
       manager_id: 7,

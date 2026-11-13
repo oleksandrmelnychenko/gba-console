@@ -44,6 +44,14 @@ export function CockpitTargetCard({ target }: { target: CockpitTarget }) {
         <Text size="xs" c="dimmed">{t('Середнє завершених місяців, не затверджений план. Клієнти належать поточному менеджеру; темп порівнюється з очікуваним результатом на дату за календарем Пн–Сб.')}</Text>
         <Text size="xs" c="dimmed">{t('Накладні: брутто в EUR за цінами накладних (для продажів з ПДВ — з ПДВ) за підтвердженою датою накладної; повернення мають власний період. Це не визнана виручка чи факт відправки. Оплати: збережені EUR за датою реєстру. Повнота імпорту невідома; календар Пн–Сб не враховує свят.')}</Text>
 
+        {target.degraded && (
+          <Text c="yellow.8" size="xs" role="status">
+            {(target.unverified_orders ?? 0) > 0
+              ? `${t('Неповні дані: накладні без підтвердженої дати не враховано')} — ${target.unverified_orders} · ${formatMoney(target.unverified_amount ?? 0)}`
+              : t('Неповні дані: показники розраховано в обмеженому режимі')}
+          </Text>
+        )}
+
         <SimpleGrid cols={1} spacing={0}>
           <TargetMetric label={t('Накладні, брутто з ПДВ')} metric={target.shipped} t={t} />
           <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />

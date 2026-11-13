@@ -79,6 +79,8 @@ export type CockpitInbox = {
   manager_net_uid?: string
   count: number
   tasks: CockpitTask[]
+  degraded?: boolean
+  degraded_reasons?: string[]
 }
 
 export type CockpitCountByUrgency = {
@@ -136,6 +138,10 @@ export type CockpitTarget = AiHistoryLineage & {
   working_days_elapsed: number
   shipped: CockpitTargetMetric
   paid: CockpitTargetMetric
+  degraded?: boolean
+  degraded_reasons?: string[]
+  unverified_orders?: number
+  unverified_amount?: number
 }
 
 export type EscalatedTask = CockpitTask

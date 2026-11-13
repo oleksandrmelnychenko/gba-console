@@ -5,6 +5,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { WhyThisTask } from './WhyThisTask'
 import { OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
+import { scoreBasisNote } from '../utils/scoreBasis'
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
@@ -78,6 +79,7 @@ export function TaskCard({
   const inProgressLabel = isInProgress ? inProgressBadgeLabel(task.in_progress_since, t) : ''
   const expectedValue = typeof task.expected_value === 'number' ? task.expected_value : null
   const pOutcome = typeof task.p_outcome === 'number' ? task.p_outcome : null
+  const scoreNote = pOutcome !== null ? scoreBasisNote(task) : null
 
   return (
     <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="sm" radius="md" withBorder>
@@ -153,6 +155,12 @@ export function TaskCard({
               </Badge>
             )}
           </Group>
+        )}
+
+        {scoreNote && (
+          <Text c="dimmed" size="xs" data-testid="task-score-basis">
+            {t(scoreNote)}
+          </Text>
         )}
 
         <WhyThisTask task={task} />

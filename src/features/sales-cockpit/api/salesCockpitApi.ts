@@ -490,6 +490,16 @@ function normalizeCockpitTarget(result: unknown, expectedAsOf?: string): Cockpit
     working_days_elapsed: toNumber(payload.working_days_elapsed),
     shipped: normalizeCockpitMetric(payload.shipped),
     paid: normalizeCockpitMetric(payload.paid),
+    ...(typeof payload.degraded === 'boolean'
+      ? {
+          degraded: payload.degraded,
+          degraded_reasons: Array.isArray(payload.degraded_reasons)
+            ? payload.degraded_reasons.filter((reason): reason is string => typeof reason === 'string')
+            : [],
+          unverified_orders: toNumber(payload.unverified_orders),
+          unverified_amount: toNumber(payload.unverified_amount),
+        }
+      : {}),
   }
 }
 
