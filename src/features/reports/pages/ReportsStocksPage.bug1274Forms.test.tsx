@@ -17,7 +17,6 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { expandWorkbookSettings, findOpenedWorkbook, openWorkbookSettingsSection, openWorkbookAdvanced } from '../testing/workbookDesk'
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(), searchDatasetReportValues: vi.fn() }))

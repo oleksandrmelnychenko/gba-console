@@ -11,7 +11,6 @@ import type { NativeReportPreview } from '../data/nativeReportPreview'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: vi.fn(() => null) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),

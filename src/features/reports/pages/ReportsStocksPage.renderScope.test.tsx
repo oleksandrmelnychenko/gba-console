@@ -11,7 +11,6 @@ import { ReportInlinePreview } from './ReportInlinePreview'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { findWorkbookLanding } from '../testing/workbookDesk'
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
 vi.mock('./ReportInlinePreview', () => ({ ReportInlinePreview: vi.fn(() => <section aria-label="Попередній перегляд звіту" />) }))

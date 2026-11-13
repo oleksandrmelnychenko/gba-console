@@ -29,7 +29,6 @@ import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 const auth = vi.hoisted(() => ({ owner: null as string | null }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: auth.owner ? { NetUid: auth.owner } : null, hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: vi.fn(() => null) }))

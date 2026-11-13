@@ -1,4 +1,3 @@
-import { BUG_1274_ONLY_REPORT_SURFACE } from '../reports/reportSurfacePolicy'
 import type { NavigationMatch, NavigationModule, NavigationNode } from './types'
 
 const wildcardRouteSegments = new Set(['all', 'edit', 'new'])
@@ -179,7 +178,7 @@ function normalizeNavigationNodes(
       Module: normalizePath(node.Route || '') === '/dashboard'
         ? 'Робочий простір'
         : reportWorkspaceRoutes.includes(normalizePath(node.Route || ''))
-          ? BUG_1274_ONLY_REPORT_SURFACE ? 'Звіти' : 'Конструктор звітів'
+          ? 'Звіти'
           : overrideNavigationLabel(node.Module),
       Children: normalizeNavigationNodes(node.Children, includeVehicleRegistry),
     })
@@ -296,7 +295,7 @@ function isNavigationAliasPathAllowed(route: string | undefined, pathname: strin
   const rule = navigationRouteAliasRules.find((item) => item.source === normalizedRoute)
 
   return Boolean(rule && rule.targets.some((target) => target.test(normalizedPath)))
-    || (BUG_1274_ONLY_REPORT_SURFACE && reportWorkspaceRoutes.includes(normalizedRoute)
+    || (reportWorkspaceRoutes.includes(normalizedRoute)
       && bug1274DisabledReportPathPattern.test(normalizedPath))
 }
 
@@ -385,16 +384,14 @@ function hasRemovedNavigationLabel(label: string | undefined): boolean {
 
 function hasRemovedNavigationRoute(route: string | undefined): boolean {
   return Boolean(route && (removedNavigationRoutePatterns.some((pattern) => pattern.test(normalizePath(route)))
-    || (BUG_1274_ONLY_REPORT_SURFACE && bug1274DisabledReportRoutePattern.test(normalizePath(route)))))
+    || bug1274DisabledReportRoutePattern.test(normalizePath(route))))
 }
 
 function normalizeNavigationTarget(path: string): string {
   const { pathname, suffix } = splitRouteTarget(path)
   const normalizedPath = normalizePath(pathname)
   // Change the visible destination without replacing the server-owned node or grant.
-  const targetPath = BUG_1274_ONLY_REPORT_SURFACE
-    ? normalizedPath === '/reports/constructor' ? '/reports/stocks' : normalizedPath
-    : normalizedPath === '/reports/stocks' ? '/reports/constructor' : normalizedPath
+  const targetPath = normalizedPath === '/reports/constructor' ? '/reports/stocks' : normalizedPath
 
   return `${targetPath}${suffix}`
 }

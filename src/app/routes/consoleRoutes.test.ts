@@ -1,11 +1,10 @@
 import { isValidElement } from 'react'
 import { Navigate } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { PaymentArticlesPage } from '../../features/payment-articles/PaymentArticlesPage'
 import { PermissionKeys } from '../../shared/auth/permissionKeys'
 import { consoleRoutes } from './consoleRoutes'
 
-vi.mock('../../features/reports/reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 
 const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/dashboard': PermissionKeys.SystemPages.Dashboard.View,

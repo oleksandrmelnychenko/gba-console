@@ -81,9 +81,7 @@ import {
   PricingPage,
   NewResalePage,
   NewUkraineSaleReturnPage,
-  ReportsSalePage,
   ReportsStocksPage,
-  ReportsConstructorPage,
   ResalePage,
   ResalesPage,
   SadSpecificationsPage,
@@ -138,7 +136,6 @@ import {
 import { lazyRoute } from './lazyRoute'
 import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
 import { SalesDashboardShell } from '../../shared/ui/SalesDashboardShell'
-import { BUG_1274_ONLY_REPORT_SURFACE } from '../../features/reports/reportSurfacePolicy'
 
 export type ConsoleRoute = {
   path: string
@@ -818,7 +815,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/reports/constructor',
-    element: BUG_1274_ONLY_REPORT_SURFACE ? <Navigate to="/reports/stocks" replace /> : lazyRoute(<ReportsConstructorPage />),
+    element: <Navigate to="/reports/stocks" replace />,
     permissionKey: PermissionKeys.ReportsStocks.Page.View,
   },
   {
@@ -828,12 +825,12 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   },
   {
     path: '/reports/sale',
-    element: BUG_1274_ONLY_REPORT_SURFACE ? <Navigate to="/reports/stocks" replace /> : lazyRoute(<ReportsSalePage />),
+    element: <Navigate to="/reports/stocks" replace />,
     permissionKey: PermissionKeys.ReportsSaleFile.Page.View,
   },
   {
     path: '/reports/sales',
-    element: BUG_1274_ONLY_REPORT_SURFACE ? <Navigate to="/reports/stocks" replace /> : lazyRoute(<ReportsSalePage />),
+    element: <Navigate to="/reports/stocks" replace />,
     permissionKey: PermissionKeys.ReportsSaleFile.Page.View,
   },
   {

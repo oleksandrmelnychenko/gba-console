@@ -15,7 +15,6 @@ import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 
 const allowedPermissions = new Set<string>()
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     user: { NetUid: 'reports-user' },

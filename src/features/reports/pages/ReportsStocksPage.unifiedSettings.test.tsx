@@ -14,7 +14,6 @@ import type { ReportRequestBody, ReportTemplate } from '../types'
 import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
-vi.mock('../reportSurfacePolicy', () => ({ BUG_1274_ONLY_REPORT_SURFACE: true }))
 const auth = vi.hoisted(() => ({ allowed: true, owner: 'unified-owner' }))
 vi.mock('../../../shared/auth/session', async original => ({ ...await original<typeof import('../../../shared/auth/session')>(), readSession: () => ({ userNetUid: auth.owner, csrfToken: 'test' }) }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: { NetUid: auth.owner }, hasPermission: () => auth.allowed }) }))

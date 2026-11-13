@@ -1,13 +1,10 @@
 import { expect, it } from 'vitest'
 import { currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
-  CURRENT_VPARIVANIE_FULL_NOTE, CURRENT_VPARIVANIE_FULL_TITLE, CURRENT_VPARIVANIE_LEGACY_FULL_TITLES } from './currentVparivanie'
+  CURRENT_VPARIVANIE_FULL_NOTE } from './currentVparivanie'
 import { currentVparivanieDataset, currentVparivanieRequest, currentVparivaniePreview, exactSelection } from './currentVparivanie.test-fixtures'
 import { normalizeNativeReportPreview } from './nativeReportPreview'
 import { normalizeCurrentVparivanieRegional } from './currentVparivanieRegional'
 import { regionalRequest, regionalResult } from './currentVparivanieRegional.test-fixtures'
-import { buildSpreadsheetSheet, buildSheetExportRows, parseDelimitedText } from '../spreadsheet'
-import { CURRENT_VPARIVANIE_DISPLAY_LINE } from './currentVparivanieSpreadsheet'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS } from './currentVparivanie'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { currentRegionalSheets } from './currentVparivanieRegionalExport'
 
@@ -64,34 +61,6 @@ it('requires the own complete regional marker while keeping current version 3 an
   expect(normalizeCurrentVparivanieRegional(result, request).Rows[0].Cells[0].Quantity).toBe('9007199254740993.00000001')
   expect(() => normalizeCurrentVparivanieRegional(result, regionalRequest())).toThrow('неповну')
   expect(() => normalizeCurrentVparivanieRegional(regionalResult(), request)).toThrow('неповну')
-})
-
-it('reads and reexports every full workbook row with text identity and null quantity intact', () => {
-  const rows = [[CURRENT_VPARIVANIE_FULL_TITLE], ['Період: 01.09.2026 – 27.09.2026'], ['Рядки: Товар'],
-    ['Колонки: Группа, Контрагент'], ['Показники: Результат'], [CURRENT_VPARIVANIE_DISPLAY_LINE],
-    [`! ${CURRENT_VPARIVANIE_FULL_NOTE}`], [],
-    [null,null,null,null,null,null,null,'Остатки','Продажи'],
-    [null,null,null,null,null,null,null,'',''],
-    [...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS,'Результат','Результат'],
-    ...Array.from({ length: 257 }, (_, i) => [`0000${i}`,`Product ${i}`,'',null,null,null,null,i === 0 ? null : i,-i])]
-  const sheet = buildSpreadsheetSheet('Full', rows)
-  expect(sheet.rows).toHaveLength(257); expect(sheet.rows[0].cells[7]).toBeNull()
-  const exported = buildSheetExportRows(sheet, sheet.rows)
-  const csv = exported.map(row => row.map(cell => cell == null ? '' : `"${String(cell).replaceAll('"','""')}"`).join(';')).join('\n')
-  const restored = buildSpreadsheetSheet('Full', parseDelimitedText(csv, ';'), 'flat')
-  expect(restored.rows).toHaveLength(257);expect(restored.rows[256].cells[0]).toBe('0000256')
-  for (const title of CURRENT_VPARIVANIE_LEGACY_FULL_TITLES) {
-    const legacy = buildSpreadsheetSheet('Full', [[title], ...rows.slice(1)])
-    expect(legacy.header?.lines[0]).toBe(CURRENT_VPARIVANIE_FULL_TITLE)
-    expect(legacy.rows).toEqual(sheet.rows)
-  }
-  rows[0] = ['Впарювання: поточні залишки та продажі GBA']
-  expect(() => buildSpreadsheetSheet('Bounded', rows)).toThrow('Некоректний файл')
-})
-
-it('refuses a full workbook without its EOF attribution', () => {
-  expect(() => buildSpreadsheetSheet('Incomplete', [[CURRENT_VPARIVANIE_FULL_TITLE], ['Рядки: Товар'],
-    ['Колонки: Группа, Контрагент'], [], ['Артикул','Результат'], ['A',1]])).toThrow('Некоректний файл')
 })
 
 it('counts the seven attributes and financial keys in the complete regional Matrix footprint', () => {

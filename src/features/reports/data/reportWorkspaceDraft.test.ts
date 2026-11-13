@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
-import { actualPaymentRequestWire } from './paymentComparison.test-fixtures'
+import { savedTemplateRequestWire } from './reportWorkspaceDraft.test-fixtures'
 import { decodeReportWorkspaceDraft, encodeReportWorkspaceDraft, encodeReportWorkspaceSnapshot,
   reportWorkspaceDraftKey, REPORT_WORKSPACE_DRAFT_MAX_BYTES, type ReportWorkspaceDraft, type ReportWorkspaceSnapshot } from './reportWorkspaceDraft'
 
@@ -31,7 +31,7 @@ describe('bounded per-owner workspace draft codec', () => {
   })
   it('retains the actual normalized payment wire nulls and legacy exact string IDs, including disabled incomplete selections', () => {
     const source = { Id: 'payment-template', Revision: 8, Name: 'Платежі', UpdatedAtUtc: '2026-09-10T10:00:00Z', Data: {
-      ...structuredClone(actualPaymentRequestWire), Selections: [
+      ...structuredClone(savedTemplateRequestWire), Selections: [
         { SelectedField: { Type: 9, Name: 'Contract' }, FilterCondition: { Type: 0, Name: 'Дорівнює' },
           IsChecked: null, Values: [{ Data: '{"Id":"9223372036854775807"}', Name: 'Точний договір' }] },
         { IsChecked: false, SelectedField: { Type: 1000 } },

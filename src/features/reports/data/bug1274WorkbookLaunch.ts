@@ -20,7 +20,6 @@ import { datasetGroupings } from './reportDatasets'
 import { isCurrentVparivanieDataset } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, goodsWithoutServices, isProductServiceFilterCapability, isSourceBuyerSubtreeCapability,
   isSourceOrganizationsCapability } from './nativeExactFilters'
-import { BUG_1274_ONLY_REPORT_SURFACE } from '../reportSurfacePolicy'
 import { BUG_1274_PARITY_NOTICE } from './reportMigration'
 import { SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroupCapability } from './sourceCounterpartyGroups'
 import { requestSupplierBasis } from './supplierBasis'
@@ -166,11 +165,9 @@ export function availableBug1274WorkbookLaunches(datasets: readonly ReportDatase
 }
 
 function profitReadModeNotice(dataSource: number, dataset: ReportDataset): string {
-  const original = dataSource === 35 ? '«Збережені регістри 1С» і відбори Fenix' : '«Збережені регістри 1С»'
   const filters = dataSource === 35 ? ` ${DAY_WORKBOOK_FILTERS_NOTICE}`
     : isSourceBuyerSubtreeCapability(dataset.sourceBuyerSubtree) ? ` ${SUPPLIER_WORKBOOK_FILTERS_NOTICE}` : ''
-  const notice = `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} ${BUG_1274_AMG_PARITY_NOTICE}`
-  return BUG_1274_ONLY_REPORT_SURFACE ? notice : `${notice} Для розрахунку за регістрами 1С оберіть ${original}.`
+  return `Форма відкривається з джерелом «Поточні документи GBA»: продажі та повернення з поточних документів за період до ${currentProfitMaximumDays(dataset.profitReadMode)} календарних днів.${filters} ${BUG_1274_AMG_PARITY_NOTICE}`
 }
 
 export const BUG_1274_AMG_PARITY_NOTICE = `${BUG_1274_PARITY_NOTICE} ТОВ «АМГ «КОНКОРД» розраховано й звірено за базою 1С AMG.`

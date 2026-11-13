@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest'
+import { expect, it } from 'vitest'
 import { cashPeriodDataset } from './cashPeriod.test-fixtures'
 import { settlementPeriodDataset } from './settlementPeriod.test-fixtures'
 import { currentVparivanieDataset } from './currentVparivanie.test-fixtures'
@@ -24,9 +24,6 @@ import { resolveBug1274WorkbookFilters, SUPPLIER_WORKBOOK_FILTERS_NOTICE, VPARIV
 import { currentVparivanieConfigurationError } from './currentVparivanie'
 import { FENIX_BUYERS_ROOT_ID, nativeExactFiltersConfigurationError } from './nativeExactFilters'
 
-const surface = vi.hoisted(() => ({ only: true }))
-vi.mock('../reportSurfacePolicy', () => ({ get BUG_1274_ONLY_REPORT_SURFACE() { return surface.only } }))
-beforeEach(() => { surface.only = true })
 
 const dayDataset: ReportDataset = {
   DataSource: 35, Name: 'Валовий прибуток за днем', Description: '', PeriodRequired: true, PeriodSupported: true,
@@ -282,11 +279,6 @@ it('opens every workbook with an advertised source on current GBA documents and 
     sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: FENIX_BUYERS_ROOT_ID },
     workbookPresentation: { version: 1, additionalFields: [2, 3], ordering: 'MonthAscending' } })
   expect(launches[0].notice).toContain(DAY_WORKBOOK_FILTERS_NOTICE)
-  surface.only = false
-  const [dayLaunchWithRegisters, supplierLaunchWithRegisters] = availableBug1274WorkbookLaunches([profitDayDataset, profitSupplierDataset])
-  expect(dayLaunchWithRegisters.notice).toContain('«Збережені регістри 1С» і відбори Fenix')
-  expect(supplierLaunchWithRegisters.notice).toContain('«Збережені регістри 1С»')
-  surface.only = true
   const original = bug1274WorkbookRequest({ ...defaultDatasetRequest(profitDayDataset, day, day), profitReadMode: 1 }, launches[0])
   expect(original).toMatchObject({ profitReadMode: 1, dayOrganizationBasis: 0,
     sourceOrganizations: { OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] },
