@@ -13,6 +13,8 @@ import { notifications } from '@mantine/notifications'
 import { ChevronDown, PencilLine, RotateCcw, Save, X } from 'lucide-react'
 import { useCallback, useEffect, useId, useMemo, useReducer, useRef, type CSSProperties, type FormEvent, type MouseEvent } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import { getExchangeRateHistory, updateExchangeRates } from '../api/exchangeRatesApi'
 import type { ExchangeRate, ExchangeRateGroup } from '../types'
 import {
@@ -284,7 +286,12 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = 
     toDateTime,
   ])
 
-  const isReadOnly = group.id === 'government-cross'
+  const { can } = usePermissions()
+  // The API accepts rate updates from either currency right (see gba-server exchange-rate controllers).
+  const canEditRates =
+    can(PermissionKeys.ClientResources.Currency.Edit) ||
+    can(PermissionKeys.FinancialAdministration.CurrencyConvertors.Converter.Edit)
+  const isReadOnly = group.id === 'government-cross' || !canEditRates
   const selectedRateUpdatedAt = formatHistoryDate(panelState.selectedRate?.Updated)
   const amountEntries = useMemo(() => group.rates.map((rate) => ({ key: getRateKey(rate), rate })), [group.rates])
 
