@@ -74,7 +74,7 @@ it('renders server HTML as text in ignored-filter warnings', () => {
 
 it('shows the server explanation of profit and quantity as plain text and folds notes beyond three', () => {
   const unshipped = 'Продажі GBA без відвантаження не враховано в собівартості та прибутку: 10 на 1256.49 EUR з ПДВ (рядків: 13). Ці суми входять у продажі, тому прибуток менший за різницю продажів і собівартості.'
-  const view = show({ ...request, Notes: [unshipped, ...request.Notes!] })
+  const view = show({ ...request, Notes: [...request.Notes!, unshipped] })
   const notes = screen.getByRole('complementary', { name: 'Примітки до звіту' })
   expect(within(notes).getByText(unshipped)).toBeTruthy()
   expect(notes.textContent).toContain('1256.49 EUR')
@@ -82,6 +82,7 @@ it('shows the server explanation of profit and quantity as plain text and folds 
   expect(within(folded).getByText('Ще примітки: 1')).toBeTruthy()
   expect(folded.querySelectorAll('li')).toHaveLength(1)
   expect(notes.querySelectorAll(':scope > ul > li')).toHaveLength(3)
+  expect(notes.querySelector(':scope > ul > li')?.textContent).toBe(unshipped)
 })
 
 it('shows no notes block when the server sends none', () => {

@@ -726,6 +726,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
               dataKey="бакет"
               h={200}
               series={[{ color: 'orange.6', name: 'кількість' }]}
+              yAxisProps={{ allowDecimals: false }}
             />
           ) : (
             <Text c="dimmed" size="sm">

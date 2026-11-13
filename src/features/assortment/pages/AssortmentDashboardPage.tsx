@@ -281,6 +281,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           id: 'margin',
           header: t('Оцінена маржа %, без ПДВ'),
           align: 'right',
+          width: 190,
           minWidth: 150,
           accessor: (row) => row.margin_pct ?? -Infinity,
           cell: (row) => (
@@ -299,6 +300,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           id: 'eur',
           header: t('Запас за собівартістю, €'),
           align: 'right',
+          width: 190,
           minWidth: 150,
           accessor: (row) => rowStockValue(row) ?? -Infinity,
           cell: (row) => <MoneyCell value={rowStockValue(row)} />,
@@ -1034,7 +1036,7 @@ function AssortmentDetailTable({
           getRowId={(row) => String(row.product_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="assortment-detail-3"
+          layoutVersion="assortment-detail-4"
           loadingText={t('Завантаження')}
           minWidth={filters.regionId == null ? 1080 : 1440}
           showLayoutControls

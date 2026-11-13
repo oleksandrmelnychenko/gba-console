@@ -19,6 +19,7 @@ import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
 import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 import { reportAxisCaption, type ReportCaptionAxisSchema } from '../data/reportAxisCaption'
+import { orderReportNotes } from '../data/reportNotesOrder'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
   const cells = new Map(preview.Cells.map(cell => [`${cell.RowSourceIndex}:${cell.ColumnSourceIndex}`, cell.Value]))
@@ -77,6 +78,9 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
         : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
           ? previewAmountText(value.Value) : previewCellText(value)
+  const unknownColumns = new Set([...preview.Cells, ...(totals?.Values ?? []), ...(totals?.Groups ?? []).flatMap(group => group.Values)]
+    .filter(cell => cell.Value?.Kind === 'null').map(cell => cell.ColumnSourceIndex))
+  const unknownCaptions = preview.Columns.filter(column => unknownColumns.has(column.SourceIndex)).flatMap(column => column.Values.map(value => value.Caption))
   const quantityExplanations = reportQuantityExplanations(preview, previewReportProfile)
   const quantityDescription = (value: NativeReportPreviewScalar | undefined, column: number) =>
     value?.Kind === 'null' ? quantityExplanations.get(column) : undefined
@@ -141,7 +145,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     </div>
     <PhysicalQuantityExceptionNotice exceptions={preview.PhysicalQuantityExceptions} />
     {preview.PhysicalCoverage?.some(item => !item.ImportedPeriodComplete) ? <PhysicalCoverageNotice coverage={preview.PhysicalCoverage} /> : null}
-    <ReportAttributionWarnings request={preview.Request} />
+    <ReportAttributionWarnings request={preview.Request} unknownCaptions={unknownCaptions} />
     <CurrentProductFieldsNotice version={workbook?.version} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}
     {preview.currentVparivanieAnalysis ? <Alert color={preview.currentVparivanieAnalysis.fieldCoverage.some(f => f.unknownFacts > 0) ? 'yellow' : 'blue'} title="Розрізи та покриття звіту">
@@ -309,7 +313,7 @@ function filterText(filter: NativeReportPreviewFilter): string {
   const description = `${filter.Field} ${filter.Condition}: ${values.length ? values.join(', ') : '—'}`
   return filter.IgnoredReason ? `${description} (${filter.IgnoredReason})` : description
 }
-function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRequest | null | undefined }) {
+function ReportAttributionWarnings({ request, unknownCaptions }: { request: NativeReportPreviewRequest | null | undefined; unknownCaptions: readonly string[] }) {
   if (!request) return <Alert color="yellow" title="Опис розрахунку відсутній">
     Сервер не передав опис розрахунку. Період, застосовані фільтри й обмеження цього результату не зазначені.
   </Alert>
@@ -317,7 +321,7 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
     <SnapshotAttribution request={request} />
     <IgnoredFilterAttribution filters={request.IgnoredFilters} />
     <ReturnParentGapAttribution notes={request.Notes} />
-    <ReportNotes notes={request.Notes} />
+    <ReportNotes notes={request.Notes} unknownCaptions={unknownCaptions} />
   </>
 }
 
@@ -331,8 +335,8 @@ function ReturnParentGapAttribution({ notes }: { notes: string[] | null }) {
 }
 
 const VISIBLE_NOTES = 3
-function ReportNotes({ notes }: { notes: string[] | null }) {
-  const items = [...new Set((notes ?? []).map(note => note.trim()).filter(note => note && !note.startsWith(RETURN_PARENT_GAP_NOTE)))]
+function ReportNotes({ notes, unknownCaptions }: { notes: string[] | null; unknownCaptions: readonly string[] }) {
+  const items = orderReportNotes([...new Set((notes ?? []).map(note => note.trim()).filter(note => note && !note.startsWith(RETURN_PARENT_GAP_NOTE)))], unknownCaptions)
   if (items.length === 0) return null
   const visible = items.length > VISIBLE_NOTES ? items.slice(0, VISIBLE_NOTES) : items
   const rest = items.slice(visible.length)
