@@ -9,6 +9,10 @@ export type WizardProductPriceRow = {
   value: number
 }
 
+export function getWizardConvertedCurrencyCode(localCurrencyCode: string): string {
+  return localCurrencyCode === 'EUR' ? 'UAH' : localCurrencyCode
+}
+
 export function buildWizardProductPriceMatrix({
   currentPriceEur, localCurrency, pricing, product,
 }: {

@@ -125,7 +125,7 @@ describe('SolvencyPanel', () => {
     expect(await findByText(/Борг уже прострочений понад 90 днів/i)).toBeTruthy()
     expect(await findByText(/12.*345,67 EUR/i)).toBeTruthy()
     // Current-state PD remains; the retired forward PD is no longer shown.
-    expect(await findByText(/PD 64\.9%/)).toBeTruthy()
+    expect(await findByText(/PD 64,9\s%/)).toBeTruthy()
     expect(queryByText(/99\.7%/)).toBeNull()
   })
 
@@ -193,10 +193,10 @@ describe('SolvencyPanel', () => {
     const { findByText, queryByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
 
     // risk-reducing (negative points) renders as a signed value without a leading '+'
-    const reducing = await findByText('-2.4')
+    const reducing = await findByText('-2,4')
     expect(reducing).toBeTruthy()
     // risk-increasing (positive points) keeps the leading '+'
-    expect(await findByText('+3.8')).toBeTruthy()
+    expect(await findByText('+3,8')).toBeTruthy()
     // zero-point contribution is filtered out of the drivers list
     expect(queryByText(/Прострочено 180\+ днів/i)).toBeNull()
   })

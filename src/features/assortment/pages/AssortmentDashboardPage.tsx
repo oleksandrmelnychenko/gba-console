@@ -1,6 +1,6 @@
 import { financialPeriod } from '../financials'
 import { requireMatchingAssortmentScopes } from '../snapshotScope'
-import { ACTION_LABELS, REASON_LABELS } from '../assortmentLabels'
+import { ACTION_LABELS, REASON_LABELS, classLabel, regionDisplayName } from '../assortmentLabels'
 import {
   Alert,
   Badge,
@@ -108,7 +108,11 @@ type SelectOption = {
 }
 
 function bandMeta(band: string): { label: string; color: string; pill: string } {
-  return BAND_META[band] ?? { label: band, color: 'gray', pill: 'is-gray' }
+  return BAND_META[band] ?? { label: band && band !== 'unknown' ? band : 'Не визначено', color: 'gray', pill: 'is-gray' }
+}
+
+function classCode(value: string | null | undefined): string {
+  return value && value !== 'unknown' ? value : '—'
 }
 
 function healthColor(health: number): string {
@@ -189,7 +193,7 @@ const ASSORT_COMBOBOX_PROPS = {
 }
 
 function regionName(region: AssortmentRegionRow): string {
-  return region.region_name || (region.region_id == null ? 'Без регіону' : `#${region.region_id}`)
+  return regionDisplayName(region.region_name) || (region.region_id == null ? 'Без регіону' : `#${region.region_id}`)
 }
 
 function isRegionalSort(sort: string | undefined): boolean {
@@ -269,7 +273,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           accessor: (row) => `${row.abc}${row.xyz}`,
           cell: (row) => (
             <span className="assort-cell-num">
-              {row.abc}/{row.xyz}
+              {classCode(row.abc)}/{classCode(row.xyz)}
             </span>
           ),
         },
@@ -277,7 +281,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           id: 'margin',
           header: t('Оцінена маржа %, без ПДВ'),
           align: 'right',
-          minWidth: 110,
+          minWidth: 150,
           accessor: (row) => row.margin_pct ?? -Infinity,
           cell: (row) => (
             <span className="assort-cell-num">{row.margin_pct == null ? '' : pct(row.margin_pct)}</span>
@@ -295,7 +299,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           id: 'eur',
           header: t('Запас за собівартістю, €'),
           align: 'right',
-          minWidth: 130,
+          minWidth: 150,
           accessor: (row) => rowStockValue(row) ?? -Infinity,
           cell: (row) => <MoneyCell value={rowStockValue(row)} />,
         },
@@ -1030,7 +1034,7 @@ function AssortmentDetailTable({
           getRowId={(row) => String(row.product_id)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="assortment-detail-2"
+          layoutVersion="assortment-detail-3"
           loadingText={t('Завантаження')}
           minWidth={filters.regionId == null ? 1080 : 1440}
           showLayoutControls
@@ -1106,7 +1110,7 @@ function MixGroup({ counts, title }: { counts?: Record<string, number>; title: s
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([key, value]) => (
             <span key={key} className="assort-mix__chip">
-              {key} <b>{integer.format(Number(value))}</b>
+              {classLabel(key)} <b>{integer.format(Number(value))}</b>
             </span>
           ))}
       </div>

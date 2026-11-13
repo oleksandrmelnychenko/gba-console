@@ -202,6 +202,11 @@
   container-type: inline-size;
 }
 
+.procure-cockpit .procure-cockpit__table .data-table-header-label {
+  line-height: 1.15;
+  white-space: normal;
+}
+
 .procure-cockpit .procure-cockpit__table .data-table-expanded-content {
   box-sizing: border-box;
   position: sticky;

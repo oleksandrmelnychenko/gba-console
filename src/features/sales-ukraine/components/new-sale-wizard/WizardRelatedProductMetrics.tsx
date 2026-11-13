@@ -1,6 +1,7 @@
 import { Box, Text } from '@mantine/core'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { getWizardConvertedCurrencyCode } from './wizardProductPricing'
 import { getWizardProductNumber, getWizardSellableQty, type WizardSaleProduct } from './wizardSaleProduct'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -32,7 +33,7 @@ export function WizardRelatedProductMetrics({ product, setQty, isVatSale, localC
         <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)}</Text>
       </Box>
       <Box className="new-sale-related-row__metric">
-        <TableChip tone="source" value={localCurrencyCode} />
+        <TableChip tone="source" value={getWizardConvertedCurrencyCode(localCurrencyCode)} />
         <Text className="new-sale-related-row__amount app-money">{amountFormatter.format(localPrice)}</Text>
       </Box>
     </Box>

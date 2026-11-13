@@ -24,7 +24,7 @@ const SALES_TAB_PERMISSIONS = [
   ['Зацікавленість', PermissionKeys.SystemPages.SalesUkraineInterest.View],
   ['Повернення', PermissionKeys.SystemPages.SalesUkraineReturns.View],
   ['Рух товару клієнта', PermissionKeys.SystemPages.SalesUkraineClientProductMovement.View],
-  ['Resale', PermissionKeys.Resales.Page.View],
+  ['Перепродаж', PermissionKeys.Resales.Page.View],
 ] as const
 
 const HIDDEN_SALES_TAB_PERMISSIONS = [
@@ -140,7 +140,7 @@ describe('SalesDashboardShell layout', () => {
       ).toBe('true')
     })
     expect(
-      screen.getByRole('button', { name: 'Resale' }).getAttribute('aria-pressed'),
+      screen.getByRole('button', { name: 'Перепродаж' }).getAttribute('aria-pressed'),
     ).toBe('false')
   })
 })

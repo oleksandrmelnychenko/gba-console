@@ -16,7 +16,7 @@ function preview(source = 'NativeSalesNet', quantity: unknown = missing): Native
   return normalizeNativeReportPreview({ Preview: {
     Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true,
     Request: { DataSource: source, IsCurrentSnapshot: false, HasPeriod: true, PeriodFrom: '19.10.2026', PeriodTo: '27.10.2026',
-      RowGroupings: ['Група', 'Товар'], ColumnGroupings: [], Measures: ['Перейменований показник', 'Кількість'], Filters: [], IgnoredFilters: [], Notes: ['Службова примітка не для показу'] },
+      RowGroupings: ['Група', 'Товар'], ColumnGroupings: [], Measures: ['Перейменований показник', 'Кількість'], Filters: [], IgnoredFilters: [], Notes: ['Примітка сервера до розрахунку'] },
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
     RowSchema: [{ Caption: 'Група' }, { Caption: 'Товар' }], ColumnSchema: [{ Caption: 'Показник' }],
     Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'Група А' }, { Caption: 'Товар А' }] }],
@@ -39,7 +39,7 @@ it.each(['sales', 'grossProfit'])('explains unknown quantity in %s leaf and tota
   expect(quantities).toHaveLength(3)
   for (const cell of quantities) { expect(cell.textContent).toBe('—'); expect(cell.title).toBe(explanation) }
   expect(view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td:last-child')?.getAttribute('title')).toBe('Значення не визначено.')
-  expect(view.container.textContent).not.toContain('Службова примітка')
+  expect(view.container.textContent).toContain('Примітка сервера до розрахунку')
   expect(view.container.textContent).not.toContain(explanation)
 })
 
@@ -95,7 +95,7 @@ it.each([109, 110])('explains source44 measure%i null in leaf and totals without
   const cells = screen.getAllByRole('cell', { description: comparisonExplanation })
   expect(cells).toHaveLength(3)
   for (const cell of cells) { expect(cell.textContent).toBe('—'); expect(cell.title).toBe(comparisonExplanation) }
-  expect(view.container.textContent).not.toContain('Службова примітка')
+  expect(view.container.textContent).toContain('Примітка сервера до розрахунку')
   expect(view.container.textContent).not.toContain(comparisonExplanation)
 })
 
@@ -143,7 +143,7 @@ it('explains source46 unknown quantity in leaf, subtotal and grand without attri
   expect(view.container.querySelector('tbody tr:not(.report-inline-preview__group-total) td:last-child')?.getAttribute('title')).toBe('Значення не визначено.')
   expect(view.container.querySelectorAll('td[aria-description]')).toHaveLength(3)
   expect(view.container.textContent).not.toContain(historicalUnitReason)
-  expect(view.container.textContent).not.toContain('Службова примітка')
+  expect(view.container.textContent).toContain('Примітка сервера до розрахунку')
 })
 it('preserves a supplied source46 quantity zero without a missing-unit tooltip or changing monetary unknowns', () => {
   show(preview('NativePriceComparison', { Kind: 'decimal', Value: '0', Provenance: 'producerCell' }), priceRequest())

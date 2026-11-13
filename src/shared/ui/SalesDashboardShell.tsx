@@ -85,7 +85,7 @@ const SALES_DASHBOARD_TABS: SalesTab[] = [
   */
   {
     icon: ClipboardList,
-    label: 'Resale',
+    label: 'Перепродаж',
     permissionKey: PermissionKeys.Resales.Page.View,
     value: '/resales',
   },

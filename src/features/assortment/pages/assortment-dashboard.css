@@ -508,7 +508,7 @@
   display: grid;
   font: inherit;
   gap: 8px;
-  grid-template-columns: 126px minmax(0, 1fr) auto;
+  grid-template-columns: 148px minmax(0, 1fr) auto;
   min-height: 36px;
   padding: 4px 2px;
   text-align: left;
@@ -520,8 +520,23 @@
 }
 
 .assort-attention__row .app-role-pill {
+  height: auto;
   justify-self: start;
-  max-width: 126px;
+  max-width: 148px;
+  min-height: 20px;
+  padding-block: 2px;
+}
+
+.assort-attention__row .app-role-pill .mantine-Badge-label {
+  line-height: 1.15;
+  overflow: visible;
+  text-align: left;
+  white-space: normal;
+}
+
+.assort-table-card__table .data-table-header-label {
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .assort-attention__product {

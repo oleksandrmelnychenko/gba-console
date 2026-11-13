@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildWizardProductPriceMatrix, buildWizardProductPriceRows } from './wizardProductPricing'
+import { buildWizardProductPriceMatrix, buildWizardProductPriceRows, getWizardConvertedCurrencyCode } from './wizardProductPricing'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 
 describe('buildWizardProductPriceRows', () => {
@@ -49,5 +49,13 @@ describe('product summary price matrix', () => {
       { key: 'discount-eur', label: 'Зі знижкою', eur: 0, local: null },
       { key: 'retail', label: 'Роздріб', eur: 0, local: 0 },
     ])
+  })
+})
+
+describe('converted price column currency', () => {
+  it('names the EUR to UAH conversion column UAH for an agreement in EUR and keeps other agreement currencies', () => {
+    expect(getWizardConvertedCurrencyCode('EUR')).toBe('UAH')
+    expect(getWizardConvertedCurrencyCode('UAH')).toBe('UAH')
+    expect(getWizardConvertedCurrencyCode('USD')).toBe('USD')
   })
 })

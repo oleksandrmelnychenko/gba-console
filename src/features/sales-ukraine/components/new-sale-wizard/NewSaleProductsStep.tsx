@@ -23,7 +23,7 @@ import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import type { Product } from '../../../products/types'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import { ProductInterestModal } from '../../../sales-preorders'
-import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
+import { getSaleConvertedCurrencyCode, getSaleLocalCurrencyCode, isNonVatEurSale, isUahConvertedSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import { SaleEditDrawer } from '../SaleEditDrawer'
@@ -341,6 +341,8 @@ export function NewSaleProductsStep({
   const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
   const useEurToUah = isNonVatEurSale(sale)
   const localCurrencyCode = getSaleLocalCurrencyCode(sale)
+  const cartUsesUahConversion = isUahConvertedSale(sale)
+  const cartCurrencyCode = getSaleConvertedCurrencyCode(sale)
   const totalVat = getWizardProductNumber(sale?.Order?.TotalVat) ?? 0
 
   const componentEntries = useMemo(
@@ -1036,11 +1038,11 @@ export function NewSaleProductsStep({
             agreementNetId={agreementNetId}
             busy={busy}
             items={orderItems}
-            localCurrencyCode={localCurrencyCode}
+            localCurrencyCode={cartCurrencyCode}
             opened={cartSheetOpen}
             overlayActive={Boolean(cartActionItem || qtyModal || removeRowItem || removeConfirmOpen || isActEditOpen || crossSellProduct || shiftRow || futureProduct || productCardNetId || imagePreview)}
             totalVat={isVatSale ? totalVat : undefined}
-            useEurToUah={useEurToUah}
+            useEurToUah={cartUsesUahConversion}
             onClose={() => setCartSheetOpen(false)}
             onCrossSell={clientNetId ? handleCartCrossSell : undefined}
             onEditCart={openEditCart}
@@ -1094,10 +1096,10 @@ export function NewSaleProductsStep({
         clientNetId={clientNetId}
         excludeNetUids={excludedCrossSellProductNetUids}
         isVatSale={isVatSale}
-        localCurrencyCode={localCurrencyCode}
+        localCurrencyCode={cartCurrencyCode}
         opened={crossSellProduct !== null}
         seedProduct={crossSellProduct}
-        useEurToUah={useEurToUah}
+        useEurToUah={cartUsesUahConversion}
         onClose={() => setCrossSellProduct(null)}
         onPick={(product) => {
           setCrossSellProduct(null)

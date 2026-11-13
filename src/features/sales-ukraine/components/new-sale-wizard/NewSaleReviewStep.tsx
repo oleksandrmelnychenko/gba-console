@@ -2,7 +2,7 @@ import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, NumberInput
 import { notifications } from '@mantine/notifications'
 import { CircleX, Upload } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { getSaleLocalCurrencyCode, isNonVatEurSale } from '../../saleMoney'
+import { getSaleConvertedCurrencyCode, isUahConvertedSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
 import { SALES_TTN_FILE_ACCEPT, getSalesTtnFileValidationError } from '../../salesPayloadGuards'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
@@ -177,8 +177,8 @@ export function NewSaleReviewStep({
           <Box className="new-sale-review-layout">
             <WizardReviewOrderSummary
               items={reviewItems}
-              localCurrencyCode={getSaleLocalCurrencyCode(sale)}
-              useEurToUah={isNonVatEurSale(sale)}
+              localCurrencyCode={getSaleConvertedCurrencyCode(sale)}
+              useEurToUah={isUahConvertedSale(sale)}
             />
             <Box className="new-sale-review-main">
               {needsDocumentWarehouse && (
@@ -381,8 +381,8 @@ export function NewSaleReviewStep({
 
       <WizardReviewOrderTotals
         items={reviewItems}
-        localCurrencyCode={getSaleLocalCurrencyCode(sale)}
-        useEurToUah={isNonVatEurSale(sale)}
+        localCurrencyCode={getSaleConvertedCurrencyCode(sale)}
+        useEurToUah={isUahConvertedSale(sale)}
       />
       <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={() => void handleConfirmClose()} />
     </Box>

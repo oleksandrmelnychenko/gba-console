@@ -854,12 +854,14 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(0)}%`
 }
 
+const percent1Formatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+
 function formatPercent1(value: number): string {
   if (!Number.isFinite(value)) {
     return '-'
   }
 
-  return `${(value * 100).toFixed(1)}%`
+  return `${percent1Formatter.format(value * 100)}\u00a0%`
 }
 
 function formatNumber(value: number): string {
@@ -867,7 +869,7 @@ function formatNumber(value: number): string {
     return '-'
   }
 
-  return value.toFixed(1)
+  return percent1Formatter.format(value)
 }
 
 function formatEur(value: number): string {

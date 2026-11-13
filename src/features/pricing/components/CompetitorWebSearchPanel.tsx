@@ -336,7 +336,7 @@ function PromptDisclosure() {
           <FileCode2 size={16} />
         </span>
         <span className="competitor-radar__prompt-heading">
-          <span className="competitor-radar__prompt-kicker">SYSTEM PROMPT · READ ONLY</span>
+          <span className="competitor-radar__prompt-kicker">{t('Системний промпт · лише перегляд')}</span>
           <span className="competitor-radar__prompt-title">{t('Як Anthropic шукає та перевіряє ціни')}</span>
         </span>
         <span className="competitor-radar__prompt-metric">13 {t('правил доказовості')}</span>
@@ -610,11 +610,13 @@ function formatUah(value: number): string {
   return `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 }).format(value)} ₴`
 }
 
+const deltaFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+
 function formatDelta(value: number): string {
   if (Math.abs(value) < 0.05) {
-    return '0%'
+    return '0\u00a0%'
   }
-  return `${value > 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}%`
+  return `${value > 0 ? '+' : '−'}${deltaFormatter.format(Math.abs(value))}\u00a0%`
 }
 
 function formatScanTime(value: string): string {

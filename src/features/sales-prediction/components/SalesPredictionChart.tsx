@@ -4,6 +4,7 @@ import { Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SalesPredictionChartPoint } from '../types'
+import { formatAxisMoney } from './salesPredictionAxis'
 import './sales-prediction-chart.css'
 
 type SalesPredictionChartProps = {
@@ -72,7 +73,7 @@ export function SalesPredictionChart({
               valueFormatter={formatMoney}
               withDots
               withLegend={false}
-              yAxisProps={{ tick: MONEY_AXIS_TICK }}
+              yAxisProps={{ tick: MONEY_AXIS_TICK, tickFormatter: formatAxisMoney, width: 96 }}
             />
             {hasRange && (
               <Text className="sales-prediction-range-note">
@@ -139,7 +140,7 @@ export function SalesPredictionComparisonChart({
             valueFormatter={formatMoney}
             withDots
             withLegend
-            yAxisProps={{ tick: MONEY_AXIS_TICK }}
+            yAxisProps={{ tick: MONEY_AXIS_TICK, tickFormatter: formatAxisMoney, width: 96 }}
           />
         )}
       </Stack>
@@ -222,3 +223,4 @@ function getSummary(data: SalesPredictionChartPoint[]): { average: number; peak:
 function formatMoney(value: number): string {
   return `${moneyFormatter.format(value)} EUR`
 }
+

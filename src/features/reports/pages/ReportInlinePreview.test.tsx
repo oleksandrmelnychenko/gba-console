@@ -29,13 +29,14 @@ function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
 
-it('shows the result without technical report descriptions or tutorials', () => {
+it('shows the result with the server notes and without technical report descriptions', () => {
   const view = show()
   expect(screen.queryByText('Про дані звіту')).toBeNull()
   expect(screen.queryByText('Як розраховано')).toBeNull()
   expect(screen.queryByText('Застосовані фільтри')).toBeNull()
   expect(screen.queryByText(/Період розрахунку:/)).toBeNull()
-  for (const note of request.Notes!) expect(screen.queryByText(note)).toBeNull()
+  const notes = within(screen.getByRole('complementary', { name: 'Примітки до звіту' }))
+  for (const note of request.Notes!) expect(notes.getByText(note)).toBeTruthy()
   expect(view.container.querySelector('details')).toBeNull()
   expect(view.container.textContent).not.toContain('NativeDayOrganizationGrossProfit')
   expect(view.container.textContent).not.toContain('a'.repeat(64))
@@ -49,13 +50,16 @@ it('warns explicitly about ignored filters and their server reason', () => {
   expect(within(warning).getByText('Договір Дорівнює: Обраний договір (Цей відбір не застосовано до результату.)')).toBeTruthy()
 })
 
-it('shows the non-blocking note about returns without a confirmed original sale and keeps other notes hidden', () => {
+it('shows the returns note once in its own warning and the other notes in the notes block', () => {
   const gap = 'Повернень без підтвердженого первинного продажу в GBA: 1 (рядків: 1), сума 1.22 EUR з ПДВ. Їх не віднесено до жодного менеджера первинного продажу, тому до цього відбору вони не входять і звіт не блокують; у звіті без відбору вони показані в групі «Не вказано».'
   show({ ...request, Notes: [...request.Notes!, gap] })
   const warning = screen.getByRole('alert')
   expect(within(warning).getByText('Частину повернень не віднесено до первинного продажу')).toBeTruthy()
   expect(within(warning).getByText(gap)).toBeTruthy()
-  for (const note of request.Notes!) expect(screen.queryByText(note)).toBeNull()
+  expect(screen.getAllByText(gap)).toHaveLength(1)
+  const notes = within(screen.getByRole('complementary', { name: 'Примітки до звіту' }))
+  for (const note of request.Notes!) expect(notes.getByText(note)).toBeTruthy()
+  expect(notes.queryByText(gap)).toBeNull()
   expect(screen.getByText('12.09.2026')).toBeTruthy()
 })
 
@@ -66,6 +70,23 @@ it('renders server HTML as text in ignored-filter warnings', () => {
   expect(screen.getByRole('alert').textContent).toContain(html)
   expect(view.container.querySelectorAll('img,script')).toHaveLength(0)
   expect(view.container.textContent).not.toContain(`Період розрахунку: ${html}`)
+})
+
+it('shows the server explanation of profit and quantity as plain text and folds notes beyond three', () => {
+  const unshipped = 'Продажі GBA без відвантаження не враховано в собівартості та прибутку: 10 на 1256.49 EUR з ПДВ (рядків: 13). Ці суми входять у продажі, тому прибуток менший за різницю продажів і собівартості.'
+  const view = show({ ...request, Notes: [unshipped, ...request.Notes!] })
+  const notes = screen.getByRole('complementary', { name: 'Примітки до звіту' })
+  expect(within(notes).getByText(unshipped)).toBeTruthy()
+  expect(notes.textContent).toContain('1256.49 EUR')
+  const folded = view.container.querySelector('details')!
+  expect(within(folded).getByText('Ще примітки: 1')).toBeTruthy()
+  expect(folded.querySelectorAll('li')).toHaveLength(1)
+  expect(notes.querySelectorAll(':scope > ul > li')).toHaveLength(3)
+})
+
+it('shows no notes block when the server sends none', () => {
+  show({ ...request, Notes: [] })
+  expect(screen.queryByRole('complementary', { name: 'Примітки до звіту' })).toBeNull()
 })
 
 it('keeps missing legacy attribution explicit rather than inventing dates or completeness', () => {
@@ -96,7 +117,7 @@ it('retains repeated ignored filters and hides exact technical identities', () =
   const guid = '11111111222233334444555555555555'
   const view = show({ ...request, Notes: ['Повторена примітка', 'Повторена примітка'],
     IgnoredFilters: [0, 1].map(() => ({ Field: 'Вид товару Fenix', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null })) })
-  expect(screen.queryByText('Повторена примітка')).toBeNull()
+  expect(screen.getAllByText('Повторена примітка')).toHaveLength(1)
   expect(view.container.textContent).not.toContain(guid)
   expect(view.container.textContent).not.toContain('[Id=42]')
   expect(view.container.textContent).not.toContain('[Id=64]')
@@ -190,4 +211,29 @@ it('shows no per-group subtotal under single-level rows and keeps the grand tota
   expect(view.container.querySelectorAll('tbody tr')).toHaveLength(2)
   expect(view.container.querySelector('tbody th.is-repeat')).toBeNull()
   expect(screen.getByRole('rowheader', { name: 'Загальний підсумок' })).toBeTruthy()
+})
+
+function showProfit(profile?: 'grossProfit' | 'sales') {
+  const money = { kind: 'money', currencyPolicy: 'EUR', unitPolicy: 'currency', aggregation: 'sum', scalable: true, defaultDecimalPlaces: 2 }
+  const preview = normalizeNativeReportPreview({ Preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: { ...request, DataSource: 'NativeSalesNet', Notes: [] },
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
+    RowSchema: [{ Caption: 'Організація' }], ColumnSchema: [{ Caption: 'Група', Identity: '$measureGroup' }, { Caption: 'Показник', Identity: '$measure' }],
+    Rows: [{ Ordinal: 0, SourceIndex: 1, Values: [{ Caption: 'АМГ' }] }],
+    Columns: [{ Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Собівартість, EUR' }, { Caption: 'Без ПДВ' }] },
+      { Ordinal: 1, SourceIndex: 1, Values: [{ Caption: 'Націнка, EUR' }, { Caption: 'Без ПДВ' }] }],
+    Cells: [],
+    valueSemantics: [{ columnSourceIndex: 0, measureType: 6, semantics: money }, { columnSourceIndex: 1, measureType: 10, semantics: money }],
+  } })
+  return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} previewReportProfile={profile} /></I18nProvider></MantineProvider>)
+}
+
+it('heads the profit column of the gross profit report as gross profit and leaves the sales report markup caption', () => {
+  const view = showProfit('grossProfit')
+  expect(screen.getByRole('columnheader', { name: 'Валовий прибуток, EUR / Без ПДВ' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Собівартість, EUR / Без ПДВ' })).toBeTruthy()
+  expect(view.container.textContent).not.toContain('Націнка')
+  view.unmount()
+  showProfit('sales')
+  expect(screen.getByRole('columnheader', { name: 'Націнка, EUR / Без ПДВ' })).toBeTruthy()
 })

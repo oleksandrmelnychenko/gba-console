@@ -16,6 +16,7 @@ import { useEffect, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
+import { regionDisplayName } from '../assortmentLabels'
 import { getProduct, getProductAnalytics, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
 import type { ProductAnalytics, ProductDetail, ProductRegions, ProductSubstitutes } from '../types'
 import { ProductSalesAnalytics } from './ProductSalesAnalytics'
@@ -438,8 +439,8 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
           />
         </SimpleGrid>
         <Group gap={6}>
-          <TableChip value={`${t('Внесок у продажі')}: ${t(ABC_LABELS[detail.abc] ?? 'недостатньо даних')} (${t('клас')} ${detail.abc})`} />
-          <TableChip value={`${t('Регулярність попиту')}: ${t(XYZ_LABELS[detail.xyz] ?? 'недостатньо даних')} (${t('клас')} ${detail.xyz})`} />
+          <TableChip value={`${t('Внесок у продажі')}: ${ABC_LABELS[detail.abc] ? `${t(ABC_LABELS[detail.abc])} (${t('клас')} ${detail.abc})` : t('недостатньо даних')}`} />
+          <TableChip value={`${t('Регулярність попиту')}: ${XYZ_LABELS[detail.xyz] ? `${t(XYZ_LABELS[detail.xyz])} (${t('клас')} ${detail.xyz})` : t('недостатньо даних')}`} />
           <TableChip value={`${t('Стан запасу')}: ${t(formatClass(detail.band))}`} />
           <TableChip value={`${t('Стадія попиту')}: ${t(formatClass(detail.lifecycle))}`} />
           <TableChip value={detail.return_rate === 0
@@ -530,7 +531,7 @@ function RegionsPanel({ error, productRegions, regionId, t }: {
               <thead><tr><th scope="col">{t('Регіон')}</th><th scope="col">{t('К-сть')}</th><th scope="col" title={t('Накладні')}>{t('Накл.')}</th><th scope="col">{t('Клієнти')}</th><th scope="col">{t('До повернень')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th><th scope="col">{t('Мінус повернення')} <TableChip tone="source" value={t('EUR з ПДВ')} /></th></tr></thead>
               <tbody>{visible.map(region => (
                 <tr key={region.region_id ?? 'unassigned'} aria-current={(region.region_id ?? 0) === regionId ? 'true' : undefined}>
-                  <td><TableChip tone="document" value={region.region_name || (region.region_id == null ? t('Без регіону') : `#${region.region_id}`)} /></td>
+                  <td><TableChip tone="document" value={regionDisplayName(region.region_name) || (region.region_id == null ? t('Без регіону') : `#${region.region_id}`)} /></td>
                   <td>{relatedNumber(region.regional_units)}</td>
                   <td>{relatedNumber(region.regional_order_count)}</td>
                   <td>{relatedNumber(region.regional_client_count)}</td>

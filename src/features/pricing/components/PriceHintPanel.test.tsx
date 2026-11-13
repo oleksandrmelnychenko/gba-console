@@ -41,3 +41,20 @@ it('labels the fallback baseline as the client sales median', async () => {
   expect(view.container.textContent).toContain('медіана продажів клієнту')
   expect(view.container.textContent).not.toContain('ціна договору')
 })
+
+it('explains the recommendation in Ukrainian and prints money and percents with a decimal comma', async () => {
+  const view = show({ ...recommendation, recommended_price: 16.83, rationale: 'at-baseline' })
+  expect(await screen.findByText('Рекомендовано ціну договору: підстав для знижки немає')).toBeTruthy()
+  const text = view.container.textContent!
+  expect(text).not.toContain('at-baseline')
+  expect(text).toContain('16,83\u00a0€')
+  expect(text).toContain('12,5\u00a0%')
+  expect(text).not.toContain('€16.83')
+  expect(text).not.toContain('12.5%')
+})
+
+it('never shows an unknown rationale code', async () => {
+  const view = show({ ...recommendation, rationale: 'new-engine-code' })
+  expect(await screen.findByText('Підстава рекомендації потребує перевірки')).toBeTruthy()
+  expect(view.container.textContent).not.toContain('new-engine-code')
+})

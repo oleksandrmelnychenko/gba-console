@@ -96,7 +96,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const columnWindow = previewColumnWindow(preview)
   const wide = isPartialColumnWindow(columnWindow)
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
-  const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex),
+  const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex), previewReportProfile,
     (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
       .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
     .filter((caption, index, path) => index === 0 || caption !== path[index - 1]))
@@ -213,6 +213,7 @@ const DOCUMENT_MEASURE_CAPTIONS: readonly (readonly [string, Readonly<Record<num
   ['Вартість продажу, ', { 2: 'Без ПДВ', 3: 'ПДВ', 4: 'З ПДВ' }],
   ['Собівартість, ', { 6: 'Без ПДВ', 7: 'ПДВ', 8: 'З ПДВ' }],
   ['Націнка, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
+  ['Валовий прибуток, ', { 10: 'Без ПДВ', 11: 'ПДВ', 12: 'З ПДВ' }],
   ['Рентабельність, %', { 14: 'Без ПДВ', 15: 'З ПДВ' }],
 ]
 
@@ -220,7 +221,9 @@ const STOCK_PERIOD_GROUPS = ['Початковий залишок', 'Прихі�
 const STOCK_PERIOD_MEASURES = ['Кількість', 'Собівартість без ПДВ, EUR', 'ПДВ, EUR'] as const
 const PURCHASE_MEASURES: Readonly<Record<number, string>> = { 0: 'Кількість', 2: 'Вартість без ПДВ, EUR', 3: 'ПДВ, EUR', 96: 'Вага (нетто), кг' }
 
-function documentMeasurePath(source: string | undefined, measureType: number | null | undefined, path: string[]): string[] {
+function documentMeasurePath(source: string | undefined, measureType: number | null | undefined, profile: SalesConstructorProfile | undefined, path: string[]): string[] {
+  if (source === 'NativeSalesNet' && profile === 'grossProfit' && measureType != null && measureType >= 10 && measureType <= 12)
+    return path.map(caption => caption.replace(/^Націнка(?=,|\s|$)/u, 'Валовий прибуток'))
   if (measureType == null || path.length < 2) return path
   if (source === 'NativeStockPeriod' && measureType >= 97 && measureType <= 108)
     return [...path.slice(0, -2), STOCK_PERIOD_GROUPS[Math.floor((measureType - 97) / 3)], STOCK_PERIOD_MEASURES[(measureType - 97) % 3]]
@@ -314,6 +317,7 @@ function ReportAttributionWarnings({ request }: { request: NativeReportPreviewRe
     <SnapshotAttribution request={request} />
     <IgnoredFilterAttribution filters={request.IgnoredFilters} />
     <ReturnParentGapAttribution notes={request.Notes} />
+    <ReportNotes notes={request.Notes} />
   </>
 }
 
@@ -324,6 +328,22 @@ function ReturnParentGapAttribution({ notes }: { notes: string[] | null }) {
   return <Alert color="yellow" title="Частину повернень не віднесено до первинного продажу">
     {gaps.map(note => <Text key={note} size="sm">{note}</Text>)}
   </Alert>
+}
+
+const VISIBLE_NOTES = 3
+function ReportNotes({ notes }: { notes: string[] | null }) {
+  const items = [...new Set((notes ?? []).map(note => note.trim()).filter(note => note && !note.startsWith(RETURN_PARENT_GAP_NOTE)))]
+  if (items.length === 0) return null
+  const visible = items.length > VISIBLE_NOTES ? items.slice(0, VISIBLE_NOTES) : items
+  const rest = items.slice(visible.length)
+  return <aside className="report-inline-preview__notes" aria-label="Примітки до звіту">
+    <Text component="h3" size="xs" fw={600} className="report-inline-preview__notes-title">Примітки</Text>
+    <ul>{visible.map(note => <li key={note}>{note}</li>)}</ul>
+    {rest.length ? <details>
+      <summary>Ще примітки: {rest.length}</summary>
+      <ul>{rest.map(note => <li key={note}>{note}</li>)}</ul>
+    </details> : null}
+  </aside>
 }
 
 function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {

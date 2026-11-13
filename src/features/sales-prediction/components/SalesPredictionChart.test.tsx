@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { SalesPredictionChart } from './SalesPredictionChart'
+import { formatAxisMoney } from './salesPredictionAxis'
 
 vi.mock('@mantine/charts', () => ({
   LineChart: ({ series }: { series: Array<{ label: string }> }) => <div data-testid="chart">{series.map((item) => item.label).join('|')}</div>,
@@ -25,4 +26,9 @@ it('states the forecast basis in the series and summary labels', () => {
   expect(screen.getByText('Разом за період, з ПДВ')).toBeTruthy()
   expect(screen.getByText('Середнє за місяць')).toBeTruthy()
   expect(screen.getByText('Пік за місяць')).toBeTruthy()
+})
+
+it('keeps the axis amount and its currency on one line with a non-breaking space', () => {
+  expect(formatAxisMoney(1500)).toBe('1\u00a0500\u00a0EUR')
+  expect(formatAxisMoney(0)).toBe('0\u00a0EUR')
 })

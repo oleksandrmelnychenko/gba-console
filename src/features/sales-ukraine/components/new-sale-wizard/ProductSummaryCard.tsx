@@ -6,7 +6,7 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getProductMainOriginalNumber, isCriticalProductTop } from '../../../products/utils'
 import type { WizardCalculatedProductPricing } from './newSaleWizardApi'
-import { buildWizardProductPriceMatrix } from './wizardProductPricing'
+import { buildWizardProductPriceMatrix, getWizardConvertedCurrencyCode } from './wizardProductPricing'
 import type { WizardSaleProduct } from './wizardSaleProduct'
 import { WizardProductPhoto } from './WizardProductPhoto'
 import './product-summary-card.css'
@@ -108,7 +108,7 @@ export const ProductSummaryCard = memo(function ProductSummaryCard({
             <tr>
               <th scope="col">{t('Тип ціни')}</th>
               <th className="app-table-cell-number" scope="col"><TableChip tone="source" value="EUR" /></th>
-              <th className="app-table-cell-number" scope="col"><TableChip tone="source" value={localCurrencyCode} /></th>
+              <th className="app-table-cell-number" scope="col"><TableChip tone="source" value={getWizardConvertedCurrencyCode(localCurrencyCode)} /></th>
             </tr>
           </thead>
           <tbody>

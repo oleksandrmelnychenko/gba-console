@@ -132,6 +132,19 @@ export function PriceHintPanel({ productNetId, clientAgreementNetId }: PriceHint
   return <PriceHintCard recommendation={recommendation} />
 }
 
+const RATIONALE_LABELS: Record<string, string> = {
+  'at-baseline': 'Рекомендовано ціну договору: підстав для знижки немає',
+  'below-margin-loss-flag': 'Ціна договору нижча за мінімально прибуткову: рекомендовано мінімальну ціну',
+  'discount-cap': 'Знижку обмежено дозволеним лімітом',
+  'margin-floor': 'Рекомендовано мінімальну ціну: нижче не дозволяє мінімальна прибутковість',
+  'no-anchor': 'Недостатньо даних: немає ціни договору, наших продажів і собівартості',
+  'no-baseline': 'Для цього товару немає ціни договору',
+  'peer-median': 'Рекомендовано за медіаною наших цін продажу',
+}
+
+const moneyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const percentFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+
 function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation }) {
   const { t } = useI18n()
 
@@ -171,7 +184,7 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
       )}
       {recommendation.rationale && recommendation.rationale !== 'constraints-conflict' && (
         <Text c="dimmed" size="sm">
-          {recommendation.rationale}
+          {t(RATIONALE_LABELS[recommendation.rationale] ?? 'Підстава рекомендації потребує перевірки')}
         </Text>
       )}
 
@@ -307,9 +320,7 @@ function formatMoney(value: number | null, currency: string): string {
     return '—'
   }
 
-  const symbol = currency === 'EUR' ? '€' : `${currency} `
-
-  return `${symbol}${value.toFixed(2)}`
+  return `${moneyFormatter.format(value)}\u00a0${currency === 'EUR' ? '€' : currency}`
 }
 
 function formatPercent(value: number | null): string {
@@ -317,5 +328,5 @@ function formatPercent(value: number | null): string {
     return '—'
   }
 
-  return `${value.toFixed(1)}%`
+  return `${percentFormatter.format(value)}\u00a0%`
 }

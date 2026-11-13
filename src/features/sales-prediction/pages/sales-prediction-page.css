@@ -14,6 +14,10 @@
   overflow-y: auto;
 }
 
+.sales-prediction-content > * {
+  flex-shrink: 0;
+}
+
 .sales-prediction-filter-card {
   background: var(--mantine-color-white);
   flex: 0 0 auto;

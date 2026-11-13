@@ -15,6 +15,14 @@ export function getSaleLocalCurrencyCode(sale: SalesUkraineSale | null | undefin
   return isNonVatEurSale(sale) ? CONVERTED_CURRENCY_CODE : getSaleCurrencyCode(sale)
 }
 
+export function isUahConvertedSale(sale: SalesUkraineSale | null | undefined): boolean {
+  return getSaleCurrencyCode(sale) === BASE_CURRENCY_CODE
+}
+
+export function getSaleConvertedCurrencyCode(sale: SalesUkraineSale | null | undefined): string {
+  return isUahConvertedSale(sale) ? CONVERTED_CURRENCY_CODE : getSaleCurrencyCode(sale)
+}
+
 export function roundMoney(value: number): number {
   return Math.round(value * 100) / 100
 }

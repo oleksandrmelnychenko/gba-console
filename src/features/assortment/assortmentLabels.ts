@@ -1,3 +1,5 @@
+import { OBLAST_CENTROIDS } from '../sales-geography/data/oblastCentroids'
+
 export const ACTION_LABELS: Record<string, string> = {
   discount_or_redistribute: 'Знизити ціну або перемістити запас',
   dead_stock_review: 'Перевірити залишок без продажів',
@@ -25,4 +27,14 @@ export const REASON_LABELS: Record<string, string> = {
   strong_to_order_demand: 'Є попит, але немає запасу',
   understock: 'Запасу може не вистачити',
   unknown_margin: 'Недостатньо даних про маржу',
+}
+
+export function classLabel(value: string | null | undefined): string {
+  return value && value !== 'unknown' ? value : 'Без класу'
+}
+
+export function regionDisplayName(code: string | null | undefined): string {
+  const trimmed = code?.trim() ?? ''
+  const name = OBLAST_CENTROIDS[trimmed.toUpperCase()]?.name
+  return name ? `${name} (${trimmed})` : trimmed
 }
