@@ -286,7 +286,7 @@ function CompetitorWebSearchPanelContent({
           })}
         </div>
 
-        <PromptDisclosure />
+        {can(PermissionKeys.SystemPages.Roles.View) && <PromptDisclosure />}
       </div>
 
       <div className="competitor-radar__body">
@@ -329,7 +329,7 @@ function PromptDisclosure() {
       <button
         aria-controls={panelId}
         aria-expanded={expanded}
-        aria-label={expanded ? t('Згорнути промпт Anthropic') : t('Показати промпт Anthropic')}
+        aria-label={expanded ? t('Згорнути технічні деталі') : t('Показати технічні деталі')}
         className="competitor-radar__prompt-toggle"
         onClick={() => setExpanded((current) => !current)}
         type="button"
@@ -338,8 +338,8 @@ function PromptDisclosure() {
           <FileCode2 size={16} />
         </span>
         <span className="competitor-radar__prompt-heading">
-          <span className="competitor-radar__prompt-kicker">{t('Системний промпт · лише перегляд')}</span>
-          <span className="competitor-radar__prompt-title">{t('Як Anthropic шукає та перевіряє ціни')}</span>
+          <span className="competitor-radar__prompt-kicker">{t('Технічні деталі')}</span>
+          <span className="competitor-radar__prompt-title">{t('Як система шукає та перевіряє ціни')}</span>
         </span>
         <span className="competitor-radar__prompt-metric">13 {t('правил доказовості')}</span>
         <span className="competitor-radar__prompt-action">

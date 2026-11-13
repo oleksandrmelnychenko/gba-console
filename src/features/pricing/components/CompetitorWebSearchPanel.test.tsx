@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { searchCompetitorPrices } from '../api/pricingApi'
 import { CompetitorWebSearchPanel } from './CompetitorWebSearchPanel'
@@ -43,7 +44,23 @@ describe('CompetitorWebSearchPanel', () => {
     expect(searchCompetitorPricesMock).not.toHaveBeenCalled()
   })
 
-  it('expands and collapses the Anthropic production prompt', () => {
+  it('hides the prompt and the model name from a user without the administrator permission', () => {
+    mocks.can.mockImplementation((key: string) => key !== PermissionKeys.SystemPages.Roles.View)
+
+    const view = render(
+      <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
+        <I18nProvider>
+          <CompetitorWebSearchPanel product={null} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByText('Технічні деталі')).toBeNull()
+    expect(screen.queryByTestId('competitor-search-prompt')).toBeNull()
+    expect(view.container.textContent).not.toMatch(/claude|промпт|Anthropic/i)
+  })
+
+  it('keeps the technical details collapsed by default for an administrator', () => {
     render(
       <MantineProvider env="test" theme={{ respectReducedMotion: true }}>
         <I18nProvider>
@@ -52,13 +69,14 @@ describe('CompetitorWebSearchPanel', () => {
       </MantineProvider>,
     )
 
-    const expandButton = screen.getByRole('button', { name: 'Показати промпт Anthropic' })
+    const expandButton = screen.getByRole('button', { name: 'Показати технічні деталі' })
     expect(expandButton.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByTestId('competitor-search-prompt')).toBeNull()
+    expect(screen.queryByText('claude-sonnet-5')).toBeNull()
 
     fireEvent.click(expandButton)
 
-    const collapseButton = screen.getByRole('button', { name: 'Згорнути промпт Anthropic' })
+    const collapseButton = screen.getByRole('button', { name: 'Згорнути технічні деталі' })
     expect(collapseButton.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByTestId('competitor-search-prompt').textContent)
       .toContain('Ти — GBA Market Radar')
