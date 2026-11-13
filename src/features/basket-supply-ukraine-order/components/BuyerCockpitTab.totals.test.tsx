@@ -66,7 +66,7 @@ function suggestion(overrides: Partial<ReorderSuggestion>): ReorderSuggestion {
   }
 }
 
-function renderCockpit(items: ReorderSuggestion[]) {
+function renderCockpit(items: ReorderSuggestion[], planExtra: Record<string, unknown> = {}) {
   vi.mocked(getPurchaseCockpitSuppliers).mockResolvedValue([{ FullName: 'Acme', Id: 42 }])
   vi.mocked(getProducerPlan).mockResolvedValue({
     as_of_date: '2026-06-15',
@@ -84,6 +84,7 @@ function renderCockpit(items: ReorderSuggestion[]) {
     model_version: 'test',
     producer_id: 42,
     producer_name: 'Acme',
+    ...planExtra,
   } as never)
   vi.mocked(getProducerProfile).mockResolvedValue({
     lead_time_override_days: null, producer_id: 42, service_level_target: null,
@@ -123,6 +124,25 @@ describe('BuyerCockpitTab draft totals', () => {
     await screen.findByText('Створити чернетку замовлення?')
     expect(text()).toContain('2 позицій · €30,00')
     expect(screen.getAllByText('1 рядок без ціни не враховано')).toHaveLength(2)
+  })
+
+  it('says how the lead time was obtained and prints the unit next to the quantity', async () => {
+    renderCockpit(
+      [suggestion({ product_id: 42, unit_cost_eur: 5, line_cost_eur: 30, measure_unit: 'шт' })],
+      { lead_time_basis: 'measured', lead_time_sample_count: 14 },
+    )
+
+    await screen.findByText('#42')
+    expect(screen.getByTestId('lead-time-basis').textContent).toBe('виміряний за 14 поставками')
+    expect(text()).toMatch(/\d шт/)
+  })
+
+  it('keeps the old source badge when the service sends no basis', async () => {
+    renderCockpit([suggestion({ product_id: 42, unit_cost_eur: 5, line_cost_eur: 30 })])
+
+    await screen.findByText('#42')
+    expect(screen.queryByTestId('lead-time-basis')).toBeNull()
+    expect(screen.getByText('за замовч.')).not.toBeNull()
   })
 
   it('drops a dismissed line from every total, not only from the confirmation', async () => {

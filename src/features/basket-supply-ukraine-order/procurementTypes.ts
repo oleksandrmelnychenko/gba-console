@@ -148,6 +148,8 @@ export type ProducerPlan = ProcurementHistoryContract & {
   producer_name: string
   lead_time_days: number
   lead_time_std_days: number
+  lead_time_basis?: 'measured' | 'default' | 'override' | null
+  lead_time_sample_count?: number | null
   lead_time_source: string
   item_count: number
   items: ReorderSuggestion[]

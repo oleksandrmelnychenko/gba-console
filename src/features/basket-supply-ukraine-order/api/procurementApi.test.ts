@@ -47,6 +47,8 @@ describe('getProducerPlan', () => {
     expect(plan.lead_time_days).toBe(14)
     expect(plan.lead_time_std_days).toBe(2.5)
     expect(plan.lead_time_source).toBe('empirical')
+    expect(plan.lead_time_basis).toBeNull()
+    expect(plan.lead_time_sample_count).toBeNull()
     expect(plan.item_count).toBe(1)
     expect(plan.model_version).toBe('v3')
     expect(plan.items).toHaveLength(1)
@@ -106,6 +108,22 @@ describe('getProducerPlan', () => {
         only_needed: true,
       },
     })
+  })
+
+  it.each([
+    ['measured', 14, 'measured', 14],
+    ['default', null, 'default', null],
+    ['override', null, 'override', null],
+    ['guessed', -3, null, null],
+  ])('keeps the lead-time basis %s the service sends', async (basis, samples, expectedBasis, expectedSamples) => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: { ...buildFullPlan(), lead_time_basis: basis, lead_time_sample_count: samples },
+    })
+
+    const plan = await getProducerPlan(42, '2026-06-15')
+
+    expect(plan.lead_time_basis).toBe(expectedBasis)
+    expect(plan.lead_time_sample_count).toBe(expectedSamples)
   })
 
   it('tolerates null or absent optional enriched fields', async () => {

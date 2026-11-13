@@ -27,6 +27,17 @@ describe('BudgetCartTable', () => {
     expect(item.suggested_qty).toBe(quantity)
   })
 
+  it('prints the unit of measure next to the recommended quantity', () => {
+    render(<MantineProvider theme={theme}><I18nProvider>
+      <BudgetCartTable
+        items={[{ ...suggestion(), suggested_qty: 12, unit_cost_eur: 1, line_cost_eur: 12, measure_unit: 'шт' }]}
+        producerNameById={new Map([[501, 'Meyle']])}
+      />
+    </I18nProvider></MantineProvider>)
+
+    expect(screen.getByText(/^12\sшт$/)).not.toBeNull()
+  })
+
   it('flags a line below the reorder point by position including reserves and stock on order', () => {
     const view = (inventory: ReorderSuggestion['inventory']) => render(<MantineProvider theme={theme}><I18nProvider>
       <BudgetCartTable items={[{ ...suggestion(), inventory }]} producerNameById={new Map([[501, 'Meyle']])} />

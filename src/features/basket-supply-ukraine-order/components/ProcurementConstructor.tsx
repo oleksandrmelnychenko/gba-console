@@ -79,7 +79,7 @@ import {
   procurementLineKey,
   type ProcurementDraftQuantities,
 } from '../procurementConstructorModel'
-import { procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
+import { formatProcurementQuantity, procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
 import { compareLineCostUnpricedLast, unpricedLinesNote } from '../procurementTotals'
 import type { CartPlan, ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProductCell } from './ProcurementProductCell'
@@ -1200,13 +1200,14 @@ function usePlanColumns({
               size="xs"
               className="procure-table-qty-input"
               styles={{ input: { textAlign: 'right' } }}
+              suffix={row.measure_unit?.trim() ? `\u00a0${row.measure_unit.trim()}` : undefined}
               value={orderQtyFor(row)}
-              w={82}
+              w={row.measure_unit?.trim() ? 104 : 82}
               onChange={(value) => onDraftQtyChange(row, Number(value) || 0)}
             />
             {isQtyAdjusted(row) && (
               <Text c="dimmed" size="xs">
-                {t('Рекомендовано')}: {quantity.format(row.suggested_qty)}
+                {t('Рекомендовано')}: {formatProcurementQuantity(row.suggested_qty, row.measure_unit, quantity)}
               </Text>
             )}
           </Box>

@@ -51,6 +51,7 @@ import type {
   ReorderSuggestion,
 } from '../procurementTypes'
 import { ProcurementWorkspaceState } from './ProcurementWorkspaceState'
+import { describeLeadTimeBasis, formatProcurementQuantity } from '../procurementQuantityFormat'
 
 type TermsSaveStatus = 'idle' | 'saving' | 'saved'
 
@@ -812,6 +813,7 @@ function BuyerCockpitTabContent() {
 
   const hasSelection = selectedProducerId !== null
   const hasPlan = Boolean(plan) && !isLoading
+  const leadTimeBasisLabel = plan ? describeLeadTimeBasis(plan.lead_time_basis, plan.lead_time_sample_count) : null
   const hasItems = sortedItems.length > 0
 
   return (
@@ -888,7 +890,11 @@ function BuyerCockpitTabContent() {
                     {t('Час постачання')}: {qtyFormatter.format(plan.lead_time_days)} ±{' '}
                     {qtyFormatter.format(plan.lead_time_std_days)} {t('днів')}
                   </Text>
-                  {plan.lead_time_source && (
+                  {leadTimeBasisLabel ? (
+                    <Badge className="app-role-pill is-gray" data-testid="lead-time-basis" size="sm" variant="light">
+                      {t(leadTimeBasisLabel)}
+                    </Badge>
+                  ) : plan.lead_time_source && (
                     <Badge className="app-role-pill is-gray" size="sm" variant="light">
                       {t(LEAD_TIME_SOURCE_LABEL[plan.lead_time_source] ?? plan.lead_time_source)}
                     </Badge>
@@ -1128,7 +1134,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
     <Stack align="flex-end" gap={2}>
       <Group gap={6} justify="flex-end" wrap="nowrap">
         <Text fw={700} size="sm">
-          {qtyFormatter.format(item.suggested_qty)}
+          {formatProcurementQuantity(item.suggested_qty, item.measure_unit, qtyFormatter)}
         </Text>
         {hasRounding && item.raw_qty !== null && (
           <Text c="dimmed" size="xs" td="line-through">

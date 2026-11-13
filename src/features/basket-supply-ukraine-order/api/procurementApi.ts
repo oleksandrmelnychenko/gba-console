@@ -638,9 +638,19 @@ async function normalizeProducerPlan(result: unknown, expectedAsOf?: string): Pr
       data.lead_time_source,
       'producer_plan.lead_time_source',
     ),
+    lead_time_basis: normalizeLeadTimeBasis(data.lead_time_basis),
+    lead_time_sample_count: normalizeLeadTimeSampleCount(data.lead_time_sample_count),
     item_count: itemCount,
     items,
   }
+}
+
+function normalizeLeadTimeBasis(value: unknown): ProducerPlan['lead_time_basis'] {
+  return value === 'measured' || value === 'default' || value === 'override' ? value : null
+}
+
+function normalizeLeadTimeSampleCount(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null
 }
 
 async function normalizeCartPlan(

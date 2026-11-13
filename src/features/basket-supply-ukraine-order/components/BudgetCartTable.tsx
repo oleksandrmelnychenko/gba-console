@@ -5,7 +5,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { buildReorderExplanation } from '../procurementOrderQty'
-import { procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
+import { formatProcurementQuantity, procurementQuantityFormat as qtyFormatter } from '../procurementQuantityFormat'
 import { isBelowReorderPoint } from '../procurementTotals'
 import type { ProcurementUrgency, ReorderSuggestion } from '../procurementTypes'
 import { ProcurementCostBadge, ProcurementCostProof } from './ProcurementCostProof'
@@ -187,7 +187,7 @@ function buildColumns(
           className="app-money"
           size="sm"
         >
-          {qtyFormatter.format(item.suggested_qty)}
+          {formatProcurementQuantity(item.suggested_qty, item.measure_unit, qtyFormatter)}
         </Text>
       ),
     },
