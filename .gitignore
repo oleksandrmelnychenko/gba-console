@@ -33,3 +33,4 @@ playwright-report/
 playwright-report-live-sync/
 test-results/
 output/e2e-reports/
+.vitest/
