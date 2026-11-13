@@ -49,6 +49,8 @@ export type AssortmentRow = SalesFinancials & {
   action_label?: string
   action_reasons?: string[]
   abc: AssortmentAbc
+  abc_status?: string | null
+  abc_label?: string | null
   name?: string | null
   primary_producer_id?: number | null
   primary_producer_name?: string | null
@@ -91,6 +93,8 @@ export type AssortmentOverviewBody = {
   by_band: Record<string, number>
   by_lifecycle: Record<string, number>
   by_abc: Record<string, number>
+  by_abc_status?: Record<string, number>
+  abc_status_labels?: Record<string, string>
   by_xyz: Record<string, number>
   total_eur_value: number
   stock_value_eur?: number | null
@@ -197,7 +201,12 @@ export type AssortmentReturns = ProductHistoryContract & {
   summary: AssortmentMarginSummary
 }
 
-export type ProductDetail = AssortmentRow & ProductHistoryContract & { found: boolean }
+export type ProductDetail = AssortmentRow & ProductHistoryContract & {
+  found: boolean
+  stock_as_of?: string
+  stock_basis?: string
+  stock_matches_as_of?: boolean
+}
 
 export type ProductSubstitutes = ProductHistoryContract & {
   product_id: number

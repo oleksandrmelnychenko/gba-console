@@ -16,7 +16,8 @@ import { useEffect, type ReactNode } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
-import { regionDisplayName } from '../assortmentLabels'
+import { abcUnclassifiedLabel, regionDisplayName, stockAsOfNote } from '../assortmentLabels'
+import { ApiError } from '../../../shared/api/apiClient'
 import { getProduct, getProductAnalytics, getProductRegions, getProductSubstitutes } from '../api/assortmentApi'
 import type { ProductAnalytics, ProductDetail, ProductRegions, ProductSubstitutes } from '../types'
 import { ProductSalesAnalytics } from './ProductSalesAnalytics'
@@ -160,6 +161,17 @@ function scoreStatus(score: number | null): string {
   return score < 40 ? 'Потребує уваги' : score < 70 ? 'Середній рівень' : 'Добрий рівень'
 }
 
+function productLoadErrorMessage(error: unknown, t: (key: string) => string): string {
+  if (error instanceof ApiError && error.status === 404) {
+    const payload = error.payload as { ErrorCode?: unknown; Message?: unknown } | null
+    const reason = payload && typeof payload === 'object' && typeof payload.Message === 'string' ? payload.Message.trim() : ''
+    return payload && typeof payload === 'object' && payload.ErrorCode === 'product_not_found' && reason
+      ? t(reason)
+      : t('Товар не знайдено в аналітиці асортименту')
+  }
+  return error instanceof Error ? error.message : t('Не вдалося завантажити товар')
+}
+
 export function ProductCard({
   productId,
   asOfDate,
@@ -240,7 +252,7 @@ export function ProductCard({
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
+          setError(productLoadErrorMessage(loadError, t))
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -310,11 +322,17 @@ export function ProductCard({
   const actionReasons = toStringArray(detail.action_reasons)
   const producerId = toNumber(detail.primary_producer_id)
   const producerName = typeof detail.primary_producer_name === 'string' ? detail.primary_producer_name : ''
+  const stockNote = stockAsOfNote(detail)
 
   return (
     <Stack className="assort-product-card app-table-chips" gap={12}>
       <ProductHero detail={detail} producerId={producerId} producerName={producerName} />
       <ProductAiAction actionLabel={actionLabel} actionReasons={actionReasons} t={t} />
+      {stockNote && (
+        <Text c="dimmed" data-testid="product-stock-as-of" size="xs">
+          {t(stockNote)}
+        </Text>
+      )}
 
       <SimpleGrid className="assort-product-metrics" cols={{ base: 2, md: 4 }} spacing={12}>
         <Stat label={t('Вільний залишок, од. виміру')} value={formatNullableNumber(detail.qty_on_hand)} />
@@ -439,7 +457,7 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
           />
         </SimpleGrid>
         <Group gap={6}>
-          <TableChip value={`${t('Внесок у продажі')}: ${ABC_LABELS[detail.abc] ? `${t(ABC_LABELS[detail.abc])} (${t('клас')} ${detail.abc})` : t('недостатньо даних')}`} />
+          <TableChip value={`${t('Внесок у продажі')}: ${ABC_LABELS[detail.abc] ? `${t(ABC_LABELS[detail.abc])} (${t('клас')} ${detail.abc})` : t(abcUnclassifiedLabel(detail) ?? 'недостатньо даних')}`} />
           <TableChip value={`${t('Регулярність попиту')}: ${XYZ_LABELS[detail.xyz] ? `${t(XYZ_LABELS[detail.xyz])} (${t('клас')} ${detail.xyz})` : t('недостатньо даних')}`} />
           <TableChip value={`${t('Стан запасу')}: ${t(formatClass(detail.band))}`} />
           <TableChip value={`${t('Стадія попиту')}: ${t(formatClass(detail.lifecycle))}`} />

@@ -1,6 +1,6 @@
 import { financialPeriod } from '../financials'
 import { requireMatchingAssortmentScopes } from '../snapshotScope'
-import { ACTION_LABELS, REASON_LABELS, classLabel, regionDisplayName } from '../assortmentLabels'
+import { ACTION_LABELS, REASON_LABELS, abcMixChips, abcUnclassifiedLabel, classLabel, regionDisplayName } from '../assortmentLabels'
 import {
   Alert,
   Badge,
@@ -272,7 +272,7 @@ function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
           minWidth: 100,
           accessor: (row) => `${row.abc}${row.xyz}`,
           cell: (row) => (
-            <span className="assort-cell-num">
+            <span className="assort-cell-num" title={abcUnclassifiedLabel(row) ?? undefined}>
               {classCode(row.abc)}/{classCode(row.xyz)}
             </span>
           ),
@@ -845,7 +845,7 @@ function AssortmentStructure({
           <span className="assort-gauge__caption">{t('середнє здоровʼя асортименту')}</span>
         </div>
         <div className="assort-mix">
-          <MixGroup counts={body?.by_abc} title="ABC" />
+          <MixGroup chips={abcMixChips(body?.by_abc, body?.by_abc_status, body?.abc_status_labels)} title="ABC" />
           <MixGroup counts={body?.by_xyz} title="XYZ" />
         </div>
       </Card>
@@ -1097,8 +1097,28 @@ function KpiTile({ label, sub, value }: { label: string; sub?: string; value: st
   )
 }
 
-function MixGroup({ counts, title }: { counts?: Record<string, number>; title: string }) {
+function MixGroup({ chips, counts, title }: {
+  chips?: { key: string; label: string; count: number }[]
+  counts?: Record<string, number>
+  title: string
+}) {
   const entries = Object.entries(counts ?? {}).filter(([, value]) => Number(value) > 0)
+
+  if (chips) {
+    if (chips.length === 0) return null
+    return (
+      <div className="assort-mix__group">
+        <span className="assort-mix__title">{title}</span>
+        <div className="assort-mix__chips">
+          {chips.map((chip) => (
+            <span key={chip.key} className="assort-mix__chip">
+              {chip.label} <b>{integer.format(chip.count)}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   if (entries.length === 0) {
     return null

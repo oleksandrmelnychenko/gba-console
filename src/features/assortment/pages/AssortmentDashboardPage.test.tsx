@@ -231,6 +231,28 @@ describe('AssortmentDashboardPage', () => {
     expect(text).toContain('залишок і собівартість — на сьогодні (13.11.2026)')
   })
 
+  it('names why products have no ABC class instead of a bare unknown count', async () => {
+    mockAssortmentData()
+    const base = await vi.mocked(getAssortmentOverview).getMockImplementation()!()
+    vi.mocked(getAssortmentOverview).mockResolvedValue({
+      ...base,
+      overview: {
+        ...base.overview,
+        by_abc: { A: 1, unknown: 7 },
+        by_abc_status: { classified: 1, no_sales: 6, non_positive_contribution: 1 },
+        abc_status_labels: {
+          no_sales: 'Без продажів за період',
+          non_positive_contribution: 'Продажі перекриті поверненнями або коригуваннями',
+        },
+      },
+    })
+    renderPage()
+
+    const chip = (await screen.findByText(/Без продажів за період/)).closest('.assort-mix__chip') as HTMLElement
+    expect(chip.textContent).toBe('Без продажів за період 6')
+    expect(screen.queryByText(/Без класу/)).toBeNull()
+  })
+
   it('says the stock is not valued when no stocked position has a cost', async () => {
     mockAssortmentData()
     const base = await vi.mocked(getAssortmentOverview).getMockImplementation()!()

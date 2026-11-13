@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import {
   getProduct,
@@ -42,6 +43,41 @@ describe('ProductCard', () => {
       regions: [],
       window_days: 365,
     })
+  })
+
+  it('shows the reason the service gives for an unknown product', async () => {
+    const reason = 'Товар не знайдено в каталозі або він не має даних для аналітики асортименту.'
+    vi.mocked(getProduct).mockRejectedValue(
+      new ApiError(reason, 404, { ErrorCode: 'product_not_found', Message: reason }),
+    )
+    render(<MantineProvider><I18nProvider><ProductCard productId={1} /></I18nProvider></MantineProvider>)
+    expect(await screen.findByText(reason)).not.toBeNull()
+  })
+
+  it('replaces a technical 404 text with a readable one', async () => {
+    vi.mocked(getProduct).mockRejectedValue(
+      new ApiError('ProductsApi: requested resource was not found.', 404, { ErrorCode: 'ai_not_found', Message: 'ProductsApi: requested resource was not found.' }),
+    )
+    render(<MantineProvider><I18nProvider><ProductCard productId={1} /></I18nProvider></MantineProvider>)
+    expect(await screen.findByText('Товар не знайдено в аналітиці асортименту')).not.toBeNull()
+    expect(screen.queryByText(/ProductsApi/)).toBeNull()
+  })
+
+  it('names why a product has no ABC class and that stock is current', async () => {
+    vi.mocked(getProduct).mockResolvedValue({
+      ...buildProduct(), abc: 'unknown', abc_status: 'no_sales', abc_label: 'Без продажів за період',
+      stock_as_of: '2026-11-13', stock_basis: 'current', stock_matches_as_of: false,
+    })
+    render(<MantineProvider><I18nProvider><ProductCard productId={18_286} /></I18nProvider></MantineProvider>)
+    expect(await screen.findByText('Внесок у продажі: Без продажів за період')).not.toBeNull()
+    expect(screen.getByTestId('product-stock-as-of').textContent).toBe('залишок і собівартість — на сьогодні (13.11.2026)')
+  })
+
+  it('shows no stock note when stock matches the report date', async () => {
+    vi.mocked(getProduct).mockResolvedValue({ ...buildProduct(), stock_matches_as_of: true })
+    render(<MantineProvider><I18nProvider><ProductCard productId={18_286} /></I18nProvider></MantineProvider>)
+    await screen.findByTestId('sales-analytics')
+    expect(screen.queryByTestId('product-stock-as-of')).toBeNull()
   })
 
   it('keeps substitutes identifiable and preserves precise regional figures when expanding', async () => {
