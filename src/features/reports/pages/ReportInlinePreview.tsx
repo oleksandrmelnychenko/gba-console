@@ -4,7 +4,7 @@ import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-hist
 import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
 import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
-import { effectiveConstructorNumberPresentation, formatReportDecimal, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
+import { effectiveConstructorNumberPresentation, formatReportDecimal, formatReportQuantity, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { settlementAttributeText, type SettlementCounterpartyAttribute } from '../data/settlementSourceAttributes'
 import { Fragment, memo } from 'react'
@@ -79,8 +79,10 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         ? formatReportDecimal(value.Value, semanticsByColumn.get(columnSourceIndex)!, numberPresentation)
       : products && value?.Kind === 'decimal' && typeof value.Value === 'string'
         ? previewNumberText(currentVparivanieQuantityText(value.Value))
-        : amountColumns.has(columnSourceIndex) && value?.Kind === 'decimal' && typeof value.Value === 'string'
-          ? previewAmountText(value.Value) : previewCellText(value)
+        : value?.Kind === 'decimal' && typeof value.Value === 'string'
+          ? formatReportQuantity(value.Value, semanticsByColumn.get(columnSourceIndex))
+            ?? (amountColumns.has(columnSourceIndex) ? previewAmountText(value.Value) : previewCellText(value))
+          : previewCellText(value)
   const unknownColumns = new Set([...preview.Cells, ...(totals?.Values ?? []), ...(totals?.Groups ?? []).flatMap(group => group.Values)]
     .filter(cell => cell.Value?.Kind === 'null').map(cell => cell.ColumnSourceIndex))
   const unknownCaptions = preview.Columns.filter(column => unknownColumns.has(column.SourceIndex)).flatMap(column => column.Values.map(value => value.Caption))

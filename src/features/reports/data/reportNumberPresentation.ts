@@ -86,6 +86,9 @@ export function cloneNumberPresentationAliases(value: object): Partial<ReportReq
 }
 
 const CONSTRUCTOR_NUMBER_DEFAULTS: ReportNumberPresentation = Object.freeze({ version: 1, moneyScale: 1 })
+export function formatReportQuantity(raw: string, semantics: ReportValueSemantics | undefined): string | undefined {
+  return semantics?.kind === 'quantity' ? formatReportDecimal(raw, semantics, CONSTRUCTOR_NUMBER_DEFAULTS) : undefined
+}
 /** Local display choice only: no default is injected into the applied request or cached DTO. */
 export function effectiveConstructorNumberPresentation(source: string | undefined, profile: string | undefined,
   explicit?: ReportNumberPresentation): ReportNumberPresentation | undefined {

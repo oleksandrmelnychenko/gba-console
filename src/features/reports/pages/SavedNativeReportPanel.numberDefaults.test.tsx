@@ -59,7 +59,7 @@ function start() { fireEvent.click(screen.getByRole('button', { name: 'Пока�
 async function expectApplied(profile: SalesConstructorProfile | undefined) {
   const row = (await screen.findByRole('rowheader', { name: 'Товар А' })).closest('tr')!
   expect(within(row).getAllByRole('cell').map(cell => cell.textContent)).toEqual(profile
-    ? ['27', '12,35'] : ['27,0000000000000000000000', '12,3456'])
+    ? ['27', '12,35'] : ['27', '12,3456'])
 }
 function expectCleared() { expect(screen.queryByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeNull() }
 beforeEach(() => { vi.clearAllMocks(); saveSession(caller) })

@@ -6,6 +6,7 @@ import { render, screen, within } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { currentVparivaniePreview } from '../data/currentVparivanie.test-fixtures'
+import { analysisPreview } from '../data/currentVparivanieAnalysis.test-fixtures'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS } from '../data/currentVparivanie'
 import { ReportInlinePreview } from './ReportInlinePreview'
 
@@ -67,4 +68,18 @@ it.each([true, false])('shows known incoming=%s separately from the unconfirmed 
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(incomingKnown ? ['12,5', '—'] : ['—', '12,5'])
   expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('ВО-00041')
   expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
+})
+
+it('prints grouped analysis quantities without padded decimals', () => {
+  const source = analysisPreview()
+  source.Cells[0].Value.Value = '56.00000000'
+  const semantics = { kind: 'quantity', currencyPolicy: 'notApplicable', unitPolicy: 'sourceStorageUnit', aggregation: 'sumWithinCompatibleUnit',
+    scalable: false, defaultDecimalPlaces: 8, defaultMinimumDecimalPlaces: 0 }
+  const preview = normalizeNativeReportPreview({ Preview: { ...source, valueSemantics: [{ columnSourceIndex: 0, measureType: 83, semantics }] } })
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
+  expect([...view.container.querySelectorAll('tbody td')].map(cell => cell.textContent)).toEqual(['56'])
+  source.Cells[0].Value.Value = '3.00000001'
+  view.rerender(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: { ...source,
+    valueSemantics: [{ columnSourceIndex: 0, measureType: 83, semantics }] } })} /></I18nProvider></MantineProvider>)
+  expect([...view.container.querySelectorAll('tbody td')].map(cell => cell.textContent)).toEqual(['3,00000001'])
 })
