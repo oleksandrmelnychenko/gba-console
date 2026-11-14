@@ -249,22 +249,26 @@ function documentMeasureCaption(parent: string, caption: string, measureType: nu
   return DOCUMENT_MEASURE_CAPTIONS.find(([category, items]) => parent.startsWith(category) && items[measureType] !== undefined)?.[1][measureType] ?? caption
 }
 
-// Labels are presentation only: distinct organizations, clients and agreements remain distinguishable even
-// when the source gives them identical names. Existing captioned IDs remain intact.
 function dimensionCaptions(schema: readonly { Caption: string; Identity?: string }[], axes: NativeReportPreviewAxis[]) {
+  const pathKey = (axis: NativeReportPreviewAxis, index: number) => JSON.stringify(axis.Values.slice(0, index + 1).map(value => value?.Caption ?? null))
   const ambiguous = schema.map((field, index) => {
-    const byCaption = new Map<string, Set<string>>()
+    const byPath = new Map<string, Map<string, string | null>>()
     if (['Organization', 'Product', 'CustomerName', 'CustomerContract', 'CurrentFinancialDocument'].includes(field.Identity ?? '')) for (const axis of axes) {
-      const value = axis.Values[index], id = value?.Identity?.Value
-      if (value?.Identity) byCaption.set(value.Caption, (byCaption.get(value.Caption) ?? new Set()).add(`${value.Identity.Kind}:${id}`))
+      const value = axis.Values[index], id = value?.Identity?.Value, path = pathKey(axis, index)
+      if (value?.Identity) byPath.set(path, (byPath.get(path) ?? new Map()).set(`${value.Identity.Kind}:${id}`, id ?? null))
     }
-    return new Set([...byCaption].filter(([, ids]) => ids.size > 1).map(([caption]) => caption))
+    return new Map([...byPath].filter(([, ids]) => ids.size > 1).map(([path, ids]) => [path, sharedIdentityNamespace([...ids.values()])]))
   })
   return (axis: NativeReportPreviewAxis, index: number) => {
-    const value = axis.Values[index]
-    return value && ambiguous[index]?.has(value.Caption) && typeof value.Identity?.Value === 'string'
-      ? `${value.Caption} [${value.Identity.Value}]` : value?.Caption ?? '—'
+    const value = axis.Values[index], path = pathKey(axis, index)
+    return value && ambiguous[index]?.has(path) && typeof value.Identity?.Value === 'string'
+      ? `${value.Caption} [${value.Identity.Value.slice(ambiguous[index].get(path)!.length)}]` : value?.Caption ?? '—'
   }
+}
+
+function sharedIdentityNamespace(identities: readonly (string | null)[]): string {
+  const namespaces = new Set(identities.map(identity => /^([A-Za-z]+:)\d+$/.exec(identity ?? '')?.[1] ?? ''))
+  return namespaces.size === 1 ? [...namespaces][0] : ''
 }
 
 /** Typed raw text axes keep their business captions; entity and legacy labels retain their path. */

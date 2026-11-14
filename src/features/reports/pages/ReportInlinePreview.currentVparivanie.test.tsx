@@ -83,3 +83,22 @@ it('prints grouped analysis quantities without padded decimals', () => {
     valueSemantics: [{ columnSourceIndex: 0, measureType: 83, semantics }] } })} /></I18nProvider></MantineProvider>)
   expect([...view.container.querySelectorAll('tbody td')].map(cell => cell.textContent)).toEqual(['3,00000001'])
 })
+
+it('names a product without its internal key and qualifies only names the row path cannot tell apart', () => {
+  const key = (Value: string) => ({ Kind: 'text', Value, Provenance: 'rowAxisKey' })
+  const rows = (articles: readonly string[]) => articles.map((article, index) => ({ Ordinal: index, SourceIndex: index, Values: [
+    { Caption: article, Identity: key(`text:${article}`) }, { Caption: 'Амортизатор подвески', Identity: key(`product:${38700635 + index}`) }] }))
+  const show = (articles: readonly string[]) => {
+    const source = analysisPreview()
+    const preview = normalizeNativeReportPreview({ Preview: { ...source, Request: { ...source.Request, RowGroupings: ['Артикул', 'Товар'] },
+      RowSchema: [{ Identity: 'Article', Caption: 'Артикул' }, { Identity: 'Product', Caption: 'Товар' }], Rows: rows(articles),
+      Page: { ...source.Page, TotalVisibleRows: 2, ReturnedRows: 2 } } })
+    const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
+    const text = [...view.container.querySelectorAll('tbody th')].map(cell => cell.textContent)
+    view.unmount()
+    return text
+  }
+  expect(show(['900013-AL', '900104-AL'])).toEqual(['900013-AL', 'Амортизатор подвески', '900104-AL', 'Амортизатор подвески'])
+  expect(show(['900013-AL', '900013-AL']).filter(text => text?.startsWith('Амортизатор')))
+    .toEqual(['Амортизатор подвески [38700635]', 'Амортизатор подвески [38700636]'])
+})
