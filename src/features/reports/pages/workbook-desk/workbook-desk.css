@@ -73,6 +73,11 @@
 .workbook-switcher__scroll { flex: 0 0 auto; }
 
 .published-report-workspace { min-width: 0; }
+.published-movement .workbook-settings__grid { align-items: start; }
+.published-movement .workbook-settings__control { padding: 8px; }
+.published-movement .workbook-result { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.published-movement .workbook-result > * { min-width: 0; }
+.published-movement .workbook-result > .app-section-title { margin: 0; font-size: 14px; }
 .published-movement__empty { padding: 24px 12px; color: var(--mantine-color-gray-6); text-align: center; font-size: 13px; }
 
 .workbook-switcher__tabs .app-screen-tab:disabled { cursor: not-allowed; opacity: 0.55; }

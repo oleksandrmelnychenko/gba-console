@@ -1023,7 +1023,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       content: groupingContent },
   ]
   const submenuProps = { onTemplates: () => openDeskTemplates(false), templatesDisabled: !canGenerateReport || isLoading || !!publishedTab,
-    templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy }
+    templatesOpened: deskTemplatesOpened, onCatalogue: () => setPublishedTab(null), catalogueDisabled: isLoading || publishedBusy,
+    published: !!publishedTab }
   const quietActions = <>
     {canGenerateReport && ownerId ? <ReportDraftControl renderTrigger={trigger => <ReportsSubmenu {...submenuProps} onDraft={trigger.onOpen} draftDisabled={trigger.disabled} draftOpened={trigger.opened} />}
       pending={workspaceDraft.recovery === 'pending' || workspaceDraft.recovery === 'blocked'}

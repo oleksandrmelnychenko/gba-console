@@ -1,5 +1,6 @@
 import { unconfirmedBatch } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions.test-fixtures'
 import { MantineProvider } from '@mantine/core'
+import { readFileSync } from 'node:fs'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -226,4 +227,14 @@ it.each([false, true])('keeps unknown warehouse totals and explicit exception th
   await waitFor(() => expect(exportStockMovement).toHaveBeenCalledOnce())
   expect(vi.mocked(exportStockMovement).mock.calls[0][0]).toEqual({ ...previews()[0], Offset: 0, Limit: 1 })
   expect(footer.textContent).toBe('Підсумок———')
+})
+
+it('keeps the result heading at the section-title size of the other reports', async () => {
+  const styles = readFileSync('src/features/reports/pages/workbook-desk/workbook-desk.css', 'utf8')
+  expect(styles).toContain('.published-movement .workbook-result > .app-section-title { margin: 0; font-size: 14px; }')
+  render(panel()); await applyReport()
+  const heading = screen.getByRole('heading', { name: 'Результат' })
+  expect(heading.className).toBe('app-section-title')
+  expect(heading.parentElement?.className).toBe('workbook-result')
+  expect(heading.closest('.published-movement')).not.toBeNull()
 })
