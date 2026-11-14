@@ -1,5 +1,6 @@
 import { unconfirmedBatch } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions.test-fixtures'
 import { MantineProvider } from '@mantine/core'
+// @ts-expect-error Keep the Node type scope out of the application compilation unit.
 import { readFileSync } from 'node:fs'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
