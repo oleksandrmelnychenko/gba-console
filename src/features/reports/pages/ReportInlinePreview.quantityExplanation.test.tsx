@@ -162,3 +162,13 @@ it('uses rendered source attribution rather than a source46 draft to explain qua
   expect(screen.queryByRole('cell', { description: historicalUnitReason })).toBeNull()
   expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(6)
 })
+
+it.each(['NativeCustomerGroupComparison', 'NativePurchases', 'NativeSalesNet'])('shows a %s quantity over several units as its per-unit breakdown, never a bare dash', source => {
+  const breakdown = { Kind: 'text', Value: '14 646 шт · 2 139 компл', Provenance: 'quantityBreakdown' }
+  const value = source === 'NativeCustomerGroupComparison' ? customerPreview(109, breakdown) : preview(source, breakdown)
+  const view = show(value, source === 'NativeCustomerGroupComparison' ? comparisonRequest() : request())
+  const cells = [...view.container.querySelectorAll('td')].filter(cell => cell.textContent?.replace(/\u00a0/g, ' ') === '14 646 шт · 2 139 компл')
+  expect(cells).toHaveLength(3)
+  expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
+  expect(screen.queryByRole('cell', { description: explanation })).toBeNull()
+})
