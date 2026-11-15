@@ -1,6 +1,6 @@
 import { Alert, Box, Button, Checkbox, Group, Loader, Select, SimpleGrid, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { Download, FileUp } from 'lucide-react'
+import { BookOpen, Download, FileUp } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -8,6 +8,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   downloadOneCExportBatch,
+  downloadOneCExportFormatPackage,
   exportToOneC,
   getOneCExportRuns,
   ONE_C_EXPORT_BASE_LABELS,
@@ -76,6 +77,7 @@ export function OneCExportPanel() {
   const [runsLoading, setRunsLoading] = useState(true)
   const [downloading, setDownloading] = useState<string | null>(null)
   const [lastWarnings, setLastWarnings] = useState<OneCExportWarning[]>([])
+  const [packageLoading, setPackageLoading] = useState(false)
   const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
 
   const loadRuns = useCallback((signal?: AbortSignal) => getOneCExportRuns(50, signal)
@@ -158,6 +160,21 @@ export function OneCExportPanel() {
       })
     } finally {
       setDownloading(null)
+    }
+  }
+
+  async function downloadFormatPackage() {
+    if (packageLoading) return
+    setPackageLoading(true)
+    try {
+      saveDownloadedFile(await downloadOneCExportFormatPackage())
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        message: error instanceof Error ? error.message : t('Не вдалося отримати схему формату'),
+      })
+    } finally {
+      setPackageLoading(false)
     }
   }
 
@@ -248,7 +265,20 @@ export function OneCExportPanel() {
           </Stack>
         </Alert>
       )}
-      <Group justify="flex-end" className="sync-action-bar">
+      <Group justify="space-between" align="center" className="sync-action-bar">
+        <Stack gap={2}>
+          <Button
+            variant="default"
+            leftSection={<BookOpen size={16} strokeWidth={1.9} />}
+            loading={packageLoading}
+            onClick={() => void downloadFormatPackage()}
+          >
+            {t('Схема та опис формату')}
+          </Button>
+          <Text size="xs" c="dimmed">
+            {t('Архів для адміністраторів 1С: XSD-схема, опис формату і приклад файлу.')}
+          </Text>
+        </Stack>
         <Button
           color={CREATE_ACTION_COLOR}
           leftSection={<FileUp size={16} strokeWidth={1.9} />}

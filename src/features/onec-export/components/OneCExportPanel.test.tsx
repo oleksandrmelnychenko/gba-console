@@ -1,7 +1,13 @@
 import { MantineProvider } from '@mantine/core'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadOneCExportBatch, exportToOneC, getOneCExportRuns, saveDownloadedFile } from '../api/oneCExportApi'
+import {
+  downloadOneCExportBatch,
+  downloadOneCExportFormatPackage,
+  exportToOneC,
+  getOneCExportRuns,
+  saveDownloadedFile,
+} from '../api/oneCExportApi'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { OneCExportPanel } from './OneCExportPanel'
 
@@ -10,6 +16,7 @@ vi.mock('../api/oneCExportApi', async (importOriginal) => {
   return {
     ...actual,
     downloadOneCExportBatch: vi.fn(),
+    downloadOneCExportFormatPackage: vi.fn(),
     exportToOneC: vi.fn(),
     getOneCExportRuns: vi.fn(),
     saveDownloadedFile: vi.fn(),
@@ -19,6 +26,7 @@ vi.mock('../api/oneCExportApi', async (importOriginal) => {
 const runs = vi.mocked(getOneCExportRuns)
 const exportFile = vi.mocked(exportToOneC)
 const redownload = vi.mocked(downloadOneCExportBatch)
+const formatPackage = vi.mocked(downloadOneCExportFormatPackage)
 const save = vi.mocked(saveDownloadedFile)
 const file = { blob: new Blob(['x']), fileName: 'gba-1c-20261101-20261104.zip', batchNetUid: 'batch-1', warningCount: 0 }
 
@@ -30,6 +38,7 @@ beforeEach(() => {
   runs.mockReset()
   exportFile.mockReset()
   redownload.mockReset()
+  formatPackage.mockReset()
   save.mockReset()
   runs.mockResolvedValue([{
     NetUid: 'run-1', BatchNetUid: 'batch-0', CreatedAtUtc: '2026-11-04T08:00:00Z', UserName: 'Петренко Петро',
@@ -88,6 +97,17 @@ describe('1C export panel', () => {
 
     await waitFor(() => expect(redownload).toHaveBeenCalledWith('batch-0'))
     await waitFor(() => expect(save).toHaveBeenCalledWith(file))
+  })
+
+  it('downloads the format package for the 1C administrators without starting an export', async () => {
+    const formatFile = { blob: new Blob(['z']), fileName: 'gba-1c-format-1.2.zip', batchNetUid: null, warningCount: 0 }
+    formatPackage.mockResolvedValue(formatFile)
+    mount()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Схема та опис формату' }))
+
+    await waitFor(() => expect(save).toHaveBeenCalledWith(formatFile))
+    expect(exportFile).not.toHaveBeenCalled()
   })
 
   it('shows the server-local run time as is and lists the warnings of the export', async () => {

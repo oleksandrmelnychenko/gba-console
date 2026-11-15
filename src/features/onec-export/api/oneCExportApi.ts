@@ -111,6 +111,10 @@ export function downloadOneCExportBatch(batchNetUid: string): Promise<Downloaded
   return downloadFile(`${BASE_PATH}/runs/${encodeURIComponent(batchNetUid)}/file`, 'GET', undefined, 'gba-1c.xml')
 }
 
+export function downloadOneCExportFormatPackage(): Promise<DownloadedFile> {
+  return downloadFile(`${BASE_PATH}/schema`, 'GET', undefined, 'gba-1c-format.zip')
+}
+
 export function fileNameFromDisposition(header: string | null, fallback: string): string {
   if (!header) return fallback
   const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)
