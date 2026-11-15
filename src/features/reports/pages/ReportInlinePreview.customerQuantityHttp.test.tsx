@@ -9,7 +9,7 @@ import fixture from '../data/customerGroups.quantity-server-fixture.json'
 import { ReportPreviewPages } from './ReportPreviewPages'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
-it('renders the actual source44 HTTP response with unknown quantities, known empty zero and independent money intact', async () => {
+it('renders the actual source44 HTTP response with unknown quantities, known empty zero blank like 1C and independent money intact', async () => {
   const api = vi.mocked(apiRequest)
   api.mockResolvedValue([{ Id: 'quantity-fixture', Revision: 1, Name: 'Порівняння', Data: fixture.request }])
   const [template] = await getServerReportTemplates()
@@ -29,7 +29,7 @@ it('renders the actual source44 HTTP response with unknown quantities, known emp
     expect(cells[index].textContent).toBe('—')
     expect(cells[index].getAttribute('aria-description')).toBeNull()
   }
-  expect(cells[6].textContent).toBe('0,00000000')
+  expect(cells[6].textContent).toBe('')
   expect(cells[6].getAttribute('aria-description')).toBeNull()
   expect(cells[3].textContent).toBe('60,00')
   expect(screen.getByText(/Грошові показники розраховано окремо/)).toBeTruthy()

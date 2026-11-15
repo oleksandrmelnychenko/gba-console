@@ -17,7 +17,7 @@ import {
 import {
   buildStockMovementRequest, defaultStockMovementDraft, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
   STOCK_MOVEMENT_ARTICLE_LABELS, STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
-  STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, stockMovementDraftError,
+  STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
   stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE, WAREHOUSE_STOCK_MOVEMENT_TITLE,
   type StockMovementArticleMatch, type StockMovementCapability, type StockMovementComparison, type StockMovementDraft,
   type StockMovementExport, type StockMovementLevel, type StockMovementLookupItem, type StockMovementMeasure, type StockMovementQuantity,
@@ -107,6 +107,8 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
   const measures = STOCK_MOVEMENT_MEASURES.filter(measure => request.Measures.includes(measure) && draftMeasures.includes(measure))
   const deepest = request.Levels.length - 1
   const start = result.Offset, end = result.Offset + result.Rows.length
+  const totalUnknown = grandTotals && measures.some(measure => result.Totals[measureKey[measure]] === null)
+  const totalNote = result.PhysicalQuantityExceptions?.length ? STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE : STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE
   return <Stack gap="xs">
     <ReportTableScrollArea minWidth={760} label={WAREHOUSE_STOCK_MOVEMENT_TITLE}>
       <Table className="app-static-table published-movement__table stock-movement__table" aria-label={WAREHOUSE_STOCK_MOVEMENT_TITLE}>
@@ -134,11 +136,13 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
           <Table.Tr>
             <Table.Th>Підсумок</Table.Th>
             {measures.map(measure => <Table.Th key={measure} className="app-table-cell-number"
-              data-negative={negativeRed && (result.Totals[measureKey[measure]] ?? 0) < 0 ? 'true' : undefined}>{formatStockQuantity(result.Totals[measureKey[measure]])}</Table.Th>)}
+              data-negative={negativeRed && (result.Totals[measureKey[measure]] ?? 0) < 0 ? 'true' : undefined}
+              title={result.Totals[measureKey[measure]] === null ? totalNote : undefined}>{formatStockQuantity(result.Totals[measureKey[measure]])}</Table.Th>)}
           </Table.Tr>
         </Table.Tfoot> : null}
       </Table>
     </ReportTableScrollArea>
+    {totalUnknown ? <Text size="xs" c="dimmed" className="stock-movement__total-note">{totalNote}</Text> : null}
     <footer className="report-preview-footer">
       <Group className="app-paginator report-preview-footer__pagination" gap={4} wrap="nowrap" role="navigation" aria-label="Сторінки звіту">
         <Text size="xs" className="report-preview-footer__range" aria-live="polite">

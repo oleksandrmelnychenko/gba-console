@@ -105,11 +105,11 @@ it.each([111, 112, 113, 114])('does not attribute source44 measure%i null to a m
   expect(screen.getAllByRole('cell', { name: '—' })).toHaveLength(6)
 })
 
-it('keeps source44 known empty-set zero as zero and does not infer a reason from a translated caption', () => {
+it('prints source44 known empty-set zero as an empty cell like 1C and does not infer a reason from a translated caption', () => {
   const value = customerPreview(109, { Kind: 'decimal', Value: '0', Provenance: 'producerCell' })
   const view = show(value, comparisonRequest())
   expect(screen.queryByRole('cell', { description: comparisonExplanation })).toBeNull()
-  expect(screen.getAllByRole('cell', { name: '0' })).toHaveLength(3)
+  expect(screen.queryByRole('cell', { name: '0' })).toBeNull()
   view.unmount()
   const unknown = customerPreview(); delete unknown.valueSemantics
   show(unknown, comparisonRequest())

@@ -84,6 +84,7 @@ describe('native warehouse stock movement', () => {
     expect(within(rows[3]).getAllByRole('cell')[3].textContent).toBe('')
     expect(rows[4].textContent).toContain('· GBA')
     expect(within(rows[5]).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Підсумок', '-2', '10', '3', '5'])
+    expect(screen.queryByText(/у підсумку: кількість/)).toBeNull()
     expect(screen.getByText('1–4 із 4')).toBeTruthy()
     expect(busy).toHaveBeenCalledWith(true)
     await waitFor(() => expect(busy).toHaveBeenLastCalledWith(false))
@@ -224,10 +225,22 @@ it.each([false, true])('keeps unknown warehouse totals and explicit exception th
   const footer = table.querySelector('tfoot')!
   expect(footer.textContent).toBe('Підсумок———')
   expect(footer.querySelector('[data-negative="true"]')).toBeNull()
+  expect(screen.getByText('«—» у підсумку: кількість частини руху не підтверджена партією, тому підсумок не визначено.')).toBeTruthy()
+  expect(footer.querySelectorAll('th[title]')).toHaveLength(3)
   fireEvent.click(screen.getByRole('button', { name: 'Excel' }))
   await waitFor(() => expect(exportStockMovement).toHaveBeenCalledOnce())
   expect(vi.mocked(exportStockMovement).mock.calls[0][0]).toEqual({ ...previews()[0], Offset: 0, Limit: 1 })
   expect(footer.textContent).toBe('Підсумок———')
+})
+
+it('points an undetermined total without unconfirmed batches to the calculation notes', async () => {
+  vi.mocked(previewStockMovement).mockImplementation(async request => ({
+    ...stockMovementResult(request), Totals: { Opening: null, Incoming: null, Outgoing: null, Closing: null },
+  }))
+  render(panel())
+  const table = await applyReport()
+  expect(table.querySelector('tfoot')!.textContent).toBe('Підсумок————')
+  expect(screen.getByText('«—» у підсумку: значення не визначено, причину наведено в «Як розраховано».')).toBeTruthy()
 })
 
 it('keeps the result heading at the section-title size of the other reports', async () => {

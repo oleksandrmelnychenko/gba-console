@@ -73,7 +73,7 @@ describe('1C-like totals and blank zeros in the report preview', () => {
     expect(isZeroPreviewScalar(amount(null))).toBe(false)
     expect(isZeroPreviewScalar({ Kind: 'text', Value: '0', Provenance: 'producerCell' })).toBe(false)
     expect(['NativeDayOrganizationGrossProfit', 'NativeSupplierGrossProfit', 'NativeCurrentVparivanie', 'NativeCashPeriod',
-      'NativeSettlementPeriod'].every(previewBlanksZero)).toBe(true)
+      'NativeSettlementPeriod', 'NativeSalesByResponsibles', 'NativeCustomerGroupComparison'].every(previewBlanksZero)).toBe(true)
     expect(previewBlanksZero('NativeSalesNet')).toBe(false)
     expect(previewBlanksZero(undefined)).toBe(false)
   })
