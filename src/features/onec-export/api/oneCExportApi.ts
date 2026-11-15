@@ -25,10 +25,19 @@ export const ONE_C_EXPORT_TYPES = [
   'ReSale',
   'ServiceIncome',
   'SupplyOrder',
+  'SupplyReturn',
+  'CustomerOrder',
+  'AdvanceOffset',
 ] as const
 export type OneCExportDocumentType = (typeof ONE_C_EXPORT_TYPES)[number]
 
-export const ONE_C_EXPORT_UNCONFIRMED_TYPES: readonly OneCExportDocumentType[] = ['ServiceIncome', 'SupplyOrder']
+export const ONE_C_EXPORT_UNCONFIRMED_TYPES: readonly OneCExportDocumentType[] = [
+  'ServiceIncome',
+  'SupplyOrder',
+  'SupplyReturn',
+  'CustomerOrder',
+  'AdvanceOffset',
+]
 
 export const ONE_C_EXPORT_TYPE_LABELS: Record<OneCExportDocumentType, string> = {
   Sale: 'Видаткові накладні',
@@ -44,6 +53,9 @@ export const ONE_C_EXPORT_TYPE_LABELS: Record<OneCExportDocumentType, string> = 
   ReSale: 'Перепродаж',
   ServiceIncome: 'Послуги постачальників',
   SupplyOrder: 'Замовлення постачальникам',
+  SupplyReturn: 'Повернення постачальникам',
+  CustomerOrder: 'Замовлення покупців',
+  AdvanceOffset: 'Зарахування авансу',
 }
 
 export type OneCExportRequest = {

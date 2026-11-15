@@ -247,7 +247,7 @@ export function OneCExportPanel() {
             </SimpleGrid>
           </Checkbox.Group>
           <Text size="xs" c="dimmed">
-            {t('Вивантажуються лише документи, створені в GBA. Tax-free, SAD і повернення постачальнику не вивантажуються.')}
+            {t('Вивантажуються лише документи, створені в GBA, і нові клієнти, договори та товари GBA. Tax-free і SAD не вивантажуються.')}
           </Text>
         </Stack>
       </Box>
