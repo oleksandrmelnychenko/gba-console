@@ -17,7 +17,7 @@ import {
 import {
   buildStockMovementRequest, defaultStockMovementDraft, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
   STOCK_MOVEMENT_ARTICLE_LABELS, STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
-  STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
+  STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_CELL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
   stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE, WAREHOUSE_STOCK_MOVEMENT_TITLE,
   type StockMovementArticleMatch, type StockMovementCapability, type StockMovementComparison, type StockMovementDraft,
   type StockMovementExport, type StockMovementLevel, type StockMovementLookupItem, type StockMovementMeasure, type StockMovementQuantity,
@@ -96,8 +96,9 @@ function FixedMovementFilter({ label, field, condition, children }: {
     value={children} />
 }
 
-function QuantityCell({ value, negativeRed }: { value: number | null; negativeRed: boolean }) {
-  return <Table.Td className="app-table-cell-number" data-negative={negativeRed && value !== null && value < 0 ? 'true' : undefined}>{formatStockQuantity(value)}</Table.Td>
+function QuantityCell({ value, negativeRed, reason }: { value: number | null; negativeRed: boolean; reason: string }) {
+  return <Table.Td className="app-table-cell-number" data-negative={negativeRed && value !== null && value < 0 ? 'true' : undefined}
+    title={value === null ? reason : undefined}>{formatStockQuantity(value)}</Table.Td>
 }
 
 function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPage }: {
@@ -129,7 +130,8 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
                   : <span>{row.Label}</span>}
               </div>
             </Table.Td>
-            {measures.map(measure => <QuantityCell key={measure} value={row.Quantity[measureKey[measure]]} negativeRed={negativeRed} />)}
+            {measures.map(measure => <QuantityCell key={measure} value={row.Quantity[measureKey[measure]]} negativeRed={negativeRed}
+              reason={row.QuantityStatus === 'unconfirmed_batch' ? STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE : STOCK_MOVEMENT_UNKNOWN_CELL_NOTE} />)}
           </Table.Tr>)}
         </Table.Tbody>
         {grandTotals ? <Table.Tfoot>

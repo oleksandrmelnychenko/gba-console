@@ -227,6 +227,11 @@ it.each([false, true])('keeps unknown warehouse totals and explicit exception th
   expect(footer.querySelector('[data-negative="true"]')).toBeNull()
   expect(screen.getByText('«—» у підсумку: кількість частини руху не підтверджена партією, тому підсумок не визначено.')).toBeTruthy()
   expect(footer.querySelectorAll('th[title]')).toHaveLength(3)
+  if (!empty) {
+    const dashes = [...table.querySelectorAll('tbody td')].filter(cell => cell.textContent === '—')
+    expect(dashes.length).toBeGreaterThan(0)
+    expect(dashes.every(cell => cell.getAttribute('title') === 'Значення не визначено, причину наведено в «Як розраховано».')).toBe(true)
+  }
   fireEvent.click(screen.getByRole('button', { name: 'Excel' }))
   await waitFor(() => expect(exportStockMovement).toHaveBeenCalledOnce())
   expect(vi.mocked(exportStockMovement).mock.calls[0][0]).toEqual({ ...previews()[0], Offset: 0, Limit: 1 })
@@ -241,6 +246,19 @@ it('points an undetermined total without unconfirmed batches to the calculation 
   const table = await applyReport()
   expect(table.querySelector('tfoot')!.textContent).toBe('Підсумок————')
   expect(screen.getByText('«—» у підсумку: значення не визначено, причину наведено в «Як розраховано».')).toBeTruthy()
+})
+
+it('gives a document row with an unconfirmed batch its reason on every «—»', async () => {
+  vi.mocked(previewStockMovement).mockImplementation(async request => ({
+    ...stockMovementResult(request, stockMovementRows.map((row, index) => index === 0
+      ? { ...row, Quantity: { Opening: null, Incoming: 0, Outgoing: null, Closing: null }, QuantityStatus: 'unconfirmed_batch' } : row)),
+  }))
+  render(panel())
+  const table = await applyReport()
+  const dashes = [...table.querySelectorAll('tbody tr')[0].querySelectorAll('td')].filter(cell => cell.textContent === '—')
+  expect(dashes).toHaveLength(3)
+  expect(dashes.every(cell => cell.getAttribute('title') === 'Кількість частини руху не підтверджена партією, тому значення не визначено.')).toBe(true)
+  expect(table.querySelectorAll('tbody td[title]')).toHaveLength(3)
 })
 
 it('keeps the result heading at the section-title size of the other reports', async () => {

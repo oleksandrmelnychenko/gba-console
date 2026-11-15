@@ -34,3 +34,10 @@ it('does not infer a document unit reason when measure semantics or result attri
   const unattributed = preview(); unattributed.Request = null
   expect(reportQuantityExplanations(unattributed).size).toBe(0)
 })
+it.each([97, 100, 103, 106])('explains an unknown stock-period quantity %i as an unconfirmed batch, never as a unit mix', measure => {
+  expect([...reportQuantityExplanations(preview('NativeStockPeriod', measure))])
+    .toEqual([[7, 'Кількість частини руху не підтверджена партією, тому значення не визначено.']])
+})
+it.each([[98, false], [99, true], [97, true]] as const)('gives no stock-period quantity reason to money or non-quantity column %i', (measure, money) => {
+  expect(reportQuantityExplanations(preview('NativeStockPeriod', measure, money)).size).toBe(0)
+})

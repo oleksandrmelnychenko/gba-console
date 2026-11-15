@@ -6,6 +6,8 @@ export const WAREHOUSE_STOCK_MOVEMENT_TITLE = 'Рух товару — зали�
 export const WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE = 200
 export const STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE = '«—» у підсумку: кількість частини руху не підтверджена партією, тому підсумок не визначено.'
 export const STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE = '«—» у підсумку: значення не визначено, причину наведено в «Як розраховано».'
+export const STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE = 'Кількість частини руху не підтверджена партією, тому значення не визначено.'
+export const STOCK_MOVEMENT_UNKNOWN_CELL_NOTE = 'Значення не визначено, причину наведено в «Як розраховано».'
 
 export const STOCK_MOVEMENT_LEVELS = ['warehouse', 'product', 'month', 'day', 'registrar'] as const
 export const STOCK_MOVEMENT_MEASURES = ['opening', 'incoming', 'outgoing', 'closing'] as const
@@ -122,6 +124,7 @@ export type StockMovementRow = {
   Organization: string | null
   Source: '1c' | 'gba' | null
   Quantity: StockMovementQuantity
+  QuantityStatus?: string | null
 }
 export type StockMovementResult = {
   PhysicalCoverage?: PhysicalCoverage[]
