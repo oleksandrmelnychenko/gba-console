@@ -291,7 +291,7 @@ function normalizeTotals(value: unknown, rows: NativeReportPreviewAxis[], column
 }
 
 const ONE_C_BLANK_ZERO_SOURCES = new Set(['NativeDayOrganizationGrossProfit', 'NativeSupplierGrossProfit', 'NativeCurrentVparivanie',
-  'NativeCashPeriod', 'NativeSettlementPeriod', 'NativeSalesByResponsibles', 'NativeCustomerGroupComparison'])
+  'NativeCashPeriod', 'NativeSettlementPeriod', 'NativeSalesByResponsibles', 'NativeCustomerGroupComparison', 'NativeStockPeriod'])
 const NEGATIVE_RED_SOURCES = new Set(['NativeSalesByResponsibles'])
 export const previewNegativeRed = (dataSource: string | undefined): boolean => !!dataSource && NEGATIVE_RED_SOURCES.has(dataSource)
 
