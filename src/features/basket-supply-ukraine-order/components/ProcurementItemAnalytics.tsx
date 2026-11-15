@@ -6,7 +6,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import type { ProductAnalytics } from '../../assortment/types'
 import type { ReorderSuggestion } from '../procurementTypes'
 import { calculateProcurementDecision } from '../procurementDecision'
-import { procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
+import { procurementEstimateFormat as estimate, procurementQuantityFormat as quantity } from '../procurementQuantityFormat'
 import { ProcurementCostProof } from './ProcurementCostProof'
 import { AnalyticsTabs } from '../../../shared/ui/analytics/AnalyticsControls'
 import { AnalyticsSeriesChart } from '../../../shared/ui/analytics/AnalyticsSeriesChart'
@@ -70,7 +70,7 @@ export function ProcurementItemAnalytics({ row, selectedQty, t, onQuantityChange
       </header>
       <div className="procurement-item-analytics__metrics">
         <Metric label={t('Доступно')} value={quantity.format(row.inventory.available)} />
-        <Metric label={t('Покриття, дн.')} value={row.days_of_cover === null ? '—' : quantity.format(row.days_of_cover)} />
+        <Metric label={t('Покриття, дн.')} value={row.days_of_cover === null ? '—' : estimate.format(row.days_of_cover)} />
         <Metric label={t('Рекомендовано')} value={quantity.format(row.suggested_qty)} />
         <Metric label={t('Оцінка партії, без ПДВ')} value={decision.selectedCostEur === null ? '—' : amount.format(decision.selectedCostEur)} currency />
       </div>
@@ -109,21 +109,21 @@ export function ProcurementItemAnalytics({ row, selectedQty, t, onQuantityChange
           <Metric label={t('На складі')} value={quantity.format(row.inventory.on_hand)} />
           <Metric label={t('У резерві')} value={quantity.format(row.inventory.reserved)} />
           <Metric label={t('У дорозі')} value={quantity.format(row.inventory.on_order)} />
-          <Metric label={t('Поставка, дн.')} value={decision.leadTimeDays === null ? '—' : quantity.format(decision.leadTimeDays)} />
+          <Metric label={t('Поставка, дн.')} value={decision.leadTimeDays === null ? '—' : estimate.format(decision.leadTimeDays)} />
         </div>
         <div className="procurement-item-analytics__scenario-label"><span>{t('Прогноз запасу')}</span><TableChip tone="neutral" value={t('Сценарій')} /></div>
-        {scenario.length ? <LineChart h={220} data={scenario} dataKey="day" xAxisProps={{ type: 'number', domain: [0, 'dataMax'], allowDuplicatedCategory: false }} xAxisLabel={t('дні')} series={[{ name: 'withoutOrder', label: t('Без замовлення'), color: 'gray.5' }, { name: 'withOrder', label: t('З обраною партією'), color: 'orange.6' }]} withDots={false} curveType="linear" withLegend valueFormatter={(value) => quantity.format(value)} /> : <div className="procurement-item-analytics__state">{t('Недостатньо історії для прогнозу запасу')}</div>}
+        {scenario.length ? <LineChart h={220} data={scenario} dataKey="day" xAxisProps={{ type: 'number', domain: [0, 'dataMax'], allowDuplicatedCategory: false }} xAxisLabel={t('дні')} series={[{ name: 'withoutOrder', label: t('Без замовлення'), color: 'gray.5' }, { name: 'withOrder', label: t('З обраною партією'), color: 'orange.6' }]} withDots={false} curveType="linear" withLegend valueFormatter={(value) => estimate.format(value)} /> : <div className="procurement-item-analytics__state">{t('Недостатньо історії для прогнозу запасу')}</div>}
       </section>}
       {tab === 'calculation' && <section className="procurement-item-analytics__panel" aria-label={t('Розрахунок')}>
         <div className="procurement-item-analytics__facts procurement-item-analytics__facts--calculation">
-          <Metric label={t('Цільовий запас')} value={quantity.format(decision.orderUpTo)} />
+          <Metric label={t('Цільовий запас')} value={estimate.format(decision.orderUpTo)} />
           <Metric label={t('Позиція зараз')} value={quantity.format(row.inventory.position)} />
-          <Metric label={t('Точка замовлення')} value={quantity.format(row.reorder_point)} />
-          <Metric label={t('Страховий запас')} value={quantity.format(row.safety_stock)} />
-          <Metric label={t('Попит на час поставки')} value={quantity.format(decision.leadDemand)} />
+          <Metric label={t('Точка замовлення')} value={estimate.format(row.reorder_point)} />
+          <Metric label={t('Страховий запас')} value={estimate.format(row.safety_stock)} />
+          <Metric label={t('Попит на час поставки')} value={estimate.format(decision.leadDemand)} />
           <Metric label={t('Мінімальне замовлення')} value={row.moq === null ? '—' : quantity.format(row.moq)} />
           <Metric label={t('Кратність')} value={row.order_multiple === null ? '—' : quantity.format(row.order_multiple)} />
-          <Metric label={t('Середній попит за день')} value={quantity.format(row.forecast.mean_daily)} />
+          <Metric label={t('Середній попит за день')} value={estimate.format(row.forecast.mean_daily)} />
         </div>
         <details className="procurement-item-analytics__details"><summary>{t('Обґрунтування вартості')}</summary><ProcurementCostProof compact item={row} /></details>
       </section>}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeLeadTimeBasis, formatProcurementQuantity } from './procurementQuantityFormat'
+import { describeLeadTimeBasis, formatProcurementQuantity, procurementEstimateFormat } from './procurementQuantityFormat'
 
 describe('formatProcurementQuantity', () => {
   it('appends the unit of measure when the line carries one', () => {
@@ -33,5 +33,13 @@ describe('describeLeadTimeBasis', () => {
   it('stays silent for an older service that does not send the basis', () => {
     expect(describeLeadTimeBasis(null, 5)).toBeNull()
     expect(describeLeadTimeBasis(undefined, undefined)).toBeNull()
+  })
+})
+
+describe('procurementEstimateFormat', () => {
+  it('rounds a computed estimate such as the mean daily demand to two decimals', () => {
+    expect(procurementEstimateFormat.format(1.54166666666667)).toBe('1,54')
+    expect(procurementEstimateFormat.format(12)).toBe('12')
+    expect(procurementEstimateFormat.format(0.005)).toBe('0,01')
   })
 })

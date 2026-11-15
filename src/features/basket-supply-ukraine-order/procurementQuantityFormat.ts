@@ -1,6 +1,7 @@
 import { deskPlural } from '../reports/data/reportCountPresentation'
 /** Display fractional packs without whole-unit rounding or binary arithmetic tail digits. */
 export const procurementQuantityFormat = new Intl.NumberFormat('uk-UA', { maximumSignificantDigits: 15 })
+export const procurementEstimateFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
 
 const WHOLE_UNITS = new Set(['шт', 'компл', 'пар', 'пара', 'уп', 'упак', 'наб'])
 const wholeQuantityFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 0 })
