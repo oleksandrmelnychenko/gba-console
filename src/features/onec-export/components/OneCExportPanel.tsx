@@ -2,6 +2,7 @@ import { Alert, Box, Button, Checkbox, Group, Loader, Select, SimpleGrid, Stack,
 import { notifications } from '@mantine/notifications'
 import { BookOpen, Download, FileUp } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { ApiError } from '../../../shared/api/apiClient'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
@@ -139,8 +140,9 @@ export function OneCExportPanel() {
           .flatMap((run) => (run.Warnings ?? []).map((warning) => ({ ...warning, Message: `${t(run.BaseName)}. ${warning.Message}` }))))
       }
     } catch (error) {
+      const nothingToExport = error instanceof ApiError && error.status === 404
       notifications.show({
-        color: 'red',
+        color: nothingToExport ? 'yellow' : 'red',
         message: error instanceof Error ? error.message : t('Не вдалося сформувати вивантаження в 1С'),
       })
     } finally {
