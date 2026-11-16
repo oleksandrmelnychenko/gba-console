@@ -32,7 +32,6 @@ export type CurrentVparivanieAnalysisMetadata = {
   fieldCoverage: Array<{ field: number; scope: 'grouping' | 'filter'; knownFacts: number; unknownFacts: number; notApplicableFacts: number; reasons: string[] }>
   resultSha256: string; incoming: boolean; outgoing: boolean
 }
-export const ANALYSIS_SCOPE_NOTICE = 'Відбори покупця, договору й менеджера застосовуються до всіх продажів та їхніх підсумків. Залишки не розподіляються між покупцями чи документами. «Не застосовується» — показник не має цього розрізу; «Невідомо» — бракує підтверджених даних.'
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 const ids = (v: unknown): v is number[] => Array.isArray(v) && v.every(x => Number.isSafeInteger(x) && x >= 0 && x <= 1024) && new Set(v).size === v.length
 const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string' && x.length > 0 && x.length <= 1024)
