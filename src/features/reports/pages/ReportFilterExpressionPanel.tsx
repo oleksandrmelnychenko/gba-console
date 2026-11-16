@@ -6,7 +6,7 @@ import { createFilterExpression, editFilterExpression, filterPathContains, filte
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; notice: string | null; onChange: (value: unknown) => void }
 const operators = [{ value: '1', label: 'І — усі умови' }, { value: '2', label: 'АБО — будь-яка умова' }]
-const pathLabel = (path: number[]) => path.length ? `Група ${path.map(index => index + 1).join('.')}` : 'Коренева група'
+const pathLabel = (path: number[]) => path.length ? `Група ${path.map(index => index + 1).join('.')}` : 'Усі умови'
 function selectionLabel(selection: ReportSelection | undefined, index: number, dataset?: ReportDataset) {
   if (!selection) return `№${index + 1}: відсутня умова`
   const field = dataset?.Filters.find(item => item.Type === selection.SelectedField.Type)?.Name ?? selection.SelectedField.Name
