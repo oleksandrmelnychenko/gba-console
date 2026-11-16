@@ -4,7 +4,7 @@ import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 import { expect, it } from 'vitest'
 import { analysisDataset, analysisRequest } from './currentVparivanieAnalysis.test-fixtures'
 import { exactSelection } from './currentVparivanie.test-fixtures'
-import { analysisFilterConditions, analysisGroupIdentity, analysisSelectionValueError, analysisValueIdentity, changeAnalysisSelectionCondition, currentVparivanieAnalysisLayoutError, validAnalysisFilterValue } from './currentVparivanieAnalysis'
+import { ANALYSIS_REPEATED_FIELD, analysisFilterConditions, analysisGroupIdentity, analysisSelectionValueError, analysisValueIdentity, changeAnalysisSelectionCondition, currentVparivanieAnalysisLayoutError, mergedAnalysisSelections, validAnalysisFilterValue } from './currentVparivanieAnalysis'
 import { isMultiValueReportCondition, REPORT_FILTER_CONDITIONS } from './reportOptions'
 
 import { mixedDataset, groupDescriptor } from './currentVparivanieAnalysis.group-selection.test-fixtures'
@@ -65,4 +65,17 @@ it('preserves every value when switching to one group and requires explicit corr
   expect(analysisSelectionValueError({ ...changed, Values: [changed.Values[0]] }, groupDescriptor)).toContain('окремі товари')
   expect(analysisSelectionValueError({ ...changed, Values: [changed.Values[1]] }, groupDescriptor)).toBeNull()
   expect(selection.Values[1].Data).toEqual({ kind: 'productGroup', id: '2' })
+})
+it('reads two group rules joined by АБО as one «У групі зі списку» rule and refuses inexact repeats', () => {
+  const first: ReportSelection = { ...exactSelection(4, 3), Values: [{ Data: { kind: 'productGroup', id: '1' }, Name: 'AL-KO', Value: 0 }] }
+  const second: ReportSelection = { ...exactSelection(4, 6), Values: [{ Data: { Id: '2' }, Name: 'BOSCH', Value: 0 }] }
+  const or = { ...analysisRequest(), selections: [first, second], filterExpression: { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }] } } }
+  expect(currentVparivanieAnalysisLayoutError(or, mixedDataset)).toBeNull()
+  const merged = mergedAnalysisSelections(or)
+  expect(merged).toHaveLength(1)
+  expect(merged[0].FilterCondition.Type).toBe(3)
+  expect(merged[0].Values.map(value => value.Name)).toEqual(['AL-KO', 'BOSCH'])
+  expect(currentVparivanieAnalysisLayoutError({ ...or, filterExpression: undefined }, mixedDataset)).toBe(ANALYSIS_REPEATED_FIELD)
+  const negative = { ...exactSelection(4, 5), Values: [{ Data: { kind: 'productGroup', id: '3' }, Name: 'Інше', Value: 0 }] }
+  expect(currentVparivanieAnalysisLayoutError({ ...or, selections: [first, negative] }, mixedDataset)).toBe(ANALYSIS_REPEATED_FIELD)
 })

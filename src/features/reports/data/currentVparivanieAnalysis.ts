@@ -265,9 +265,10 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
     || cap && all.some(x => x !== 74 && !cap.groupings.some(f => f.type === x))
     || data.sorted.Measurements.length !== 1 || data.sorted.Measurements[0].Type !== 83 || data.sorted.Measurements[0].IsChecked === false)
     return 'Оберіть до восьми різних групувань; показник «Результат» і колонка показників залишаються у звіті.'
-  if (data.selections.length > 24 || new Set(data.selections.filter(s => s.IsChecked !== false).map(s => s.SelectedField.Type)).size !== data.selections.filter(s => s.IsChecked !== false).length) return 'Задайте одне правило на поле відбору, до 24 правил.'
+  if (data.selections.length > 24) return 'Можна задати до 24 умов відбору.'
+  const active = mergedAnalysisSelections(data)
+  if (new Set(active.map(s => s.SelectedField.Type)).size !== active.length) return ANALYSIS_REPEATED_FIELD
   const descriptors = new Map(cap?.filters.map(field => [field.type, field]) ?? [])
-  const active = data.selections.filter(selection => selection.IsChecked !== false)
   if (active.filter(s => s.SelectedField.Type === 4 || s.SelectedField.Type === 1 && GROUP_CONDITIONS.includes(s.FilterCondition.Type)).length > 1)
     return 'Задайте відбір за групами товарів одним правилом: «Товар» або «Товарна група».'
   let anchor = false
@@ -286,6 +287,48 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
     if (selection.Values.length > 4096 || !isMultiValueReportCondition(condition) && selection.Values.length > 1) return 'Кількість значень не відповідає умові відбору.'
   }
   return !draft && !anchor ? 'Оберіть товари або групи товарів для аналізу.' : null
+}
+export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «В списку» чи «В групі зі списку» або через «І» з умовою «Не в списку» чи «Не в групі зі списку».'
+type MergeTerm = { kind: 1 | 2; children: MergeTerm[] } | { kind: 3; leaf: ReportSelection }
+const mergeTarget = (kind: 1 | 2, condition: number) => kind === 2 ? ([0, 2].includes(condition) ? 2 : [3, 6].includes(condition) ? 3 : null)
+  : [1, 4].includes(condition) ? 4 : [5, 7].includes(condition) ? 5 : null
+function mergeTerm(term: MergeTerm): MergeTerm {
+  if (term.kind === 3) return term
+  const children = term.children.map(mergeTerm)
+  const merged: MergeTerm[] = [], taken = new Set<number>()
+  children.forEach((child, index) => {
+    if (taken.has(index)) return
+    const target = child.kind === 3 ? mergeTarget(term.kind, child.leaf.FilterCondition.Type) : null
+    if (child.kind !== 3 || target === null) { merged.push(child); return }
+    const partners = children.flatMap((other, at) => at > index && !taken.has(at) && other.kind === 3
+      && other.leaf.SelectedField.Type === child.leaf.SelectedField.Type && mergeTarget(term.kind, other.leaf.FilterCondition.Type) === target ? [at] : [])
+    if (!partners.length) { merged.push(child); return }
+    partners.forEach(at => taken.add(at))
+    const rows = [child.leaf, ...partners.map(at => (children[at] as { leaf: ReportSelection }).leaf)]
+    const seen = new Set<string>()
+    const Values = rows.flatMap(row => row.Values).filter(value => { const key = JSON.stringify(value.Data); if (seen.has(key)) return false; seen.add(key); return true })
+    merged.push({ kind: 3, leaf: { ...child.leaf, IsChecked: true, FilterCondition: { Type: target, Name: conditions[target] }, Values } })
+  })
+  return merged.length === 1 ? merged[0] : { kind: term.kind, children: merged }
+}
+/** Rows on one field joined exactly like one list rule read as that rule, as the server merges them. */
+export function mergedAnalysisSelections(data: ReportRequestBody): ReportSelection[] {
+  const active = data.selections.filter(selection => selection.IsChecked !== false)
+  if (new Set(active.map(s => s.SelectedField.Type)).size === active.length) return active
+  type Raw = { Kind?: number; SelectionIndex?: number; Children?: Raw[] }
+  const visit = (node: Raw): MergeTerm | null => {
+    if (node.Kind === 3) {
+      const selection = node.SelectionIndex === undefined ? undefined : data.selections[node.SelectionIndex]
+      return selection && selection.IsChecked !== false ? { kind: 3, leaf: selection } : null
+    }
+    const children = (node.Children ?? []).flatMap(child => { const term = visit(child); return term ? [term] : [] })
+    return children.length ? { kind: node.Kind === 2 ? 2 : 1, children } : null
+  }
+  const root = (data.filterExpression as { Root?: Raw } | null | undefined)?.Root
+  const term = root ? visit(root) : { kind: 1 as const, children: active.map(leaf => ({ kind: 3 as const, leaf })) }
+  if (!term) return active
+  const leaves = (item: MergeTerm): ReportSelection[] => item.kind === 3 ? [item.leaf] : item.children.flatMap(leaves)
+  return leaves(mergeTerm(term))
 }
 const conditions = ['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі']
 export function analysisFilterConditions(dataset: ReportDataset | undefined | null, field: number): ReportFilterCondition[] {

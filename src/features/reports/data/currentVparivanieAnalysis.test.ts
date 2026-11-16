@@ -44,7 +44,7 @@ describe('capability-bound flexible stock/sales analysis', () => {
     expect(currentVparivanieAnalysisScopeError(request, currentVparivanieDataset)).toContain('не підтримує')
     expect(currentVparivanieAnalysisLayoutError({ ...request, sorted: { ...request.sorted, Col: [] } }, analysisDataset)).not.toBeNull()
     expect(currentVparivanieAnalysisLayoutError({ ...request, selections: [exactSelection(1, 1)] }, analysisDataset)).toContain('Оберіть товари')
-    expect(currentVparivanieAnalysisLayoutError({ ...request, selections: [exactSelection(1), exactSelection(1)] }, analysisDataset)).toContain('одне правило')
+    expect(currentVparivanieAnalysisLayoutError({ ...request, selections: [exactSelection(1), exactSelection(1)] }, analysisDataset)).toContain('Повторити поле можна')
     const noCapability = { ...analysisDataset, currentVparivanie: { ...analysisDataset.currentVparivanie as object, analysis: { ...(analysisDataset.currentVparivanie as Record<string, unknown>).analysis as object, physicalCalendar: 'UTC' } } }
     expect(currentVparivanieAnalysisCapability(noCapability)).toBeUndefined()
   })
