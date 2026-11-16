@@ -9,10 +9,10 @@ import {
 const draft = () => defaultStockMovementDraft(stockMovementCapability)
 
 describe('warehouse stock movement request', () => {
-  it('starts with all GBA history, all products and the 1C grouping', () => {
+  it('starts with the current month, all products and the 1C grouping', () => {
     const request = buildStockMovementRequest(draft())
     expect(request).toEqual({
-      Version: 1, From: '2025-01-01', To: '2026-10-26', WarehouseIds: [], OrganizationIds: [], ProductIds: [], ArticleMatch: '', Articles: [],
+      Version: 1, From: '2026-10-01', To: '2026-10-26', WarehouseIds: [], OrganizationIds: [], ProductIds: [], ArticleMatch: '', Articles: [],
       ProductGroupIds: [], DocumentKinds: [], DocumentText: null, Conditions: [], Levels: ['warehouse', 'product', 'registrar'],
       Measures: ['opening', 'incoming', 'outgoing', 'closing'], GrandTotals: true, NegativeRed: true, Offset: 0, Limit: 200,
     })

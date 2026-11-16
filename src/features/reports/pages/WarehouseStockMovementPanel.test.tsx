@@ -58,7 +58,7 @@ describe('native warehouse stock movement', () => {
     if (!empty) expect(screen.getByText('СКЛАД -1')).toBeTruthy()
   })
 
-  it('applies all GBA history and renders the 1C layout with totals and red negatives', async () => {
+  it('applies the current month and renders the 1C layout with totals and red negatives', async () => {
     const busy = vi.fn()
     render(panel(true, busy))
     expect(screen.queryByText(/синхронізовано/)).toBeNull()
@@ -72,7 +72,7 @@ describe('native warehouse stock movement', () => {
     }
     expect(previewStockMovement).not.toHaveBeenCalled()
     const table = await applyReport()
-    expect(previews()[0]).toMatchObject({ From: '2025-01-01', To: '2026-10-26', Levels: ['warehouse', 'product', 'registrar'], Offset: 0, Limit: 200 })
+    expect(previews()[0]).toMatchObject({ From: '2026-10-01', To: '2026-10-26', Levels: ['warehouse', 'product', 'registrar'], Offset: 0, Limit: 200 })
     const rows = within(table).getAllByRole('row')
     expect(rows).toHaveLength(1 + stockMovementRows.length + 1)
     expect(rows[1].textContent).toContain('СКЛАД -1')
@@ -166,7 +166,7 @@ describe('native warehouse stock movement', () => {
       fireEvent.click(await screen.findByRole('option', { name: option }))
     }
     await applyReport()
-    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2025-01-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
   })
 
   it('shows a failed product lookup with a retry instead of an empty list', async () => {

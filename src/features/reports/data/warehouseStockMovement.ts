@@ -225,8 +225,9 @@ export function normalizeStockMovementExport(raw: unknown): StockMovementExport 
 }
 
 export function defaultStockMovementDraft(capability: StockMovementCapability): StockMovementDraft {
+  const monthStart = `${capability.Today.slice(0, 7)}-01`
   return {
-    from: capability.MinimumFrom,
+    from: monthStart < capability.MinimumFrom ? capability.MinimumFrom : monthStart,
     to: capability.Today,
     warehouseIds: [],
     organizationIds: [],
