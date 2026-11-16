@@ -6,6 +6,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getReportProductGroups, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets } from '../api/reportWorkspaceApi'
 import { ReportsStocksPage } from './ReportsStocksPage'
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
@@ -33,7 +34,7 @@ it.each([
     lookup: () => expect(searchDatasetReportValues).toHaveBeenCalledWith(45, 4, expect.objectContaining({ offset: 0 }), expect.anything()) },
 ])('picks «Товарна група» in source $source, loads its values and sends the exact group id', async ({ source, workbook, option, lookup }) => {
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: `Відкрити ${workbook}` }))
+  fireEvent.click(await screen.findByRole('button', { name: `Відкрити ${workbookDisplayFileName(workbook)}` }))
   const filters = await screen.findByRole('region', { name: 'Відбори' })
   fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
