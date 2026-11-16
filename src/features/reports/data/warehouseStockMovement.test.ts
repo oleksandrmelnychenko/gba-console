@@ -83,7 +83,7 @@ describe('warehouse stock movement request', () => {
     expect(view.data.selections.map(selection => `${selection.SelectedField.Name} ${selection.FilterCondition.Name} ${selection.Values.map(value => value.Name).join('; ')}`))
       .toEqual(['Склад В списку СКЛАД -1; СКЛАД -3', 'Організація складу В списку Фенікс', 'Артикул Містить 94', 'Вид документа руху В списку Продаж',
         'Товарна група В групі Фільтри', 'Одиниця виміру В списку компл', 'Топ В списку '])
-    expect(view.data.selections.map(selection => selection.IsChecked)).toEqual([true, true, true, true, true, true, false])
+    expect(view.data.selections.map(selection => selection.IsChecked)).toEqual([true, true, true, true, true, true, true])
     expect((view.dataset.FilterExpression as { MaximumLeaves: number }).MaximumLeaves).toBe(30)
   })
 

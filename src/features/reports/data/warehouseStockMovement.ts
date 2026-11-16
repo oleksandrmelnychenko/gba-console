@@ -496,7 +496,7 @@ export function stockMovementExpressionView(draft: StockMovementDraft, capabilit
   const selections: ReportSelection[] = (draft.filterRows ?? []).map(row => {
     const definition = row.field ? STOCK_MOVEMENT_FILTER_DEFINITIONS[row.field] : null
     return {
-      IsChecked: stockMovementRowActive(row),
+      IsChecked: row.enabled,
       SelectedField: { Type: definition?.type ?? -1, Name: definition?.label ?? 'Поле не вибрано' },
       FilterCondition: { Type: 2, Name: stockMovementRowCondition(row) },
       Values: stockMovementRowValueNames(row, capability, names).map((Name, index) => ({ Name, Value: index, Data: { Id: index } })),

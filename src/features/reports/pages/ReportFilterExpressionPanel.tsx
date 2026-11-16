@@ -3,6 +3,7 @@ import { Alert, Button, Group, Select, Stack, Text } from '@mantine/core'
 import { useRef, useState } from 'react'
 import type { ReportDataset, ReportFilterExpression, ReportFilterExpressionCapabilities, ReportFilterNode, ReportRequestBody, ReportSelection } from '../types'
 import { createFilterExpression, editFilterExpression, filterPathContains, filterPathId, filterTreeEntries, readFilterExpressionCapabilities, readReportFilterExpression, reportFilterExpressionError, requestFilterExpression, type FilterNodePath, type FilterTreeEdit } from '../data/reportFilterExpression'
+import { constructorConditionLabel } from '../data/constructorDesk'
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; notice: string | null; onChange: (value: unknown) => void }
 const operators = [{ value: '1', label: 'І — усі умови' }, { value: '2', label: 'АБО — будь-яка умова' }]
@@ -10,8 +11,10 @@ const pathLabel = (path: number[]) => path.length ? `Група ${path.map(index
 function selectionLabel(selection: ReportSelection | undefined, index: number, dataset?: ReportDataset) {
   if (!selection) return `№${index + 1}: відсутня умова`
   const field = dataset?.Filters.find(item => item.Type === selection.SelectedField.Type)?.Name ?? selection.SelectedField.Name
+  if (selection.IsChecked !== false && !selection.Values.length) return `№${index + 1}: ${field} — значення не задано`
+  const condition = dataset?.DataSource === undefined ? selection.FilterCondition.Name : constructorConditionLabel(selection.FilterCondition.Type, selection.FilterCondition.Name)
   const values = selection.Values.map(value => value.Name).join('; ')
-  return `№${index + 1}: ${field} ${selection.FilterCondition.Name} ${values}${selection.IsChecked === false ? ' (вимкнено)' : ''}`
+  return `№${index + 1}: ${field} ${condition} ${values}${selection.IsChecked === false ? ' (вимкнено)' : ''}`
 }
 
 export function ReportFilterExpressionPanel({ data, dataset, disabled, notice, onChange }: Props) {
