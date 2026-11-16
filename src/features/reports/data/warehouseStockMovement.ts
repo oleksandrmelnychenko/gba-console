@@ -84,7 +84,7 @@ export type StockMovementFilterRow = {
   articleMatch?: StockMovementArticleMatch
   text?: string
 }
-export type StockMovementFilterWire = { Field: StockMovementFilterField; Ids?: number[]; Values?: string[]; ArticleMatch?: StockMovementArticleMatch; Text?: string }
+export type StockMovementFilterWire = { Field: StockMovementFilterField; Ids?: number[]; Values?: string[]; ArticleMatch?: StockMovementArticleMatch; Text?: string; Row?: number }
 export type StockMovementNames = { warehouses?: readonly StockMovementLookupItem[]; organizations?: readonly StockMovementLookupItem[]; units?: readonly StockMovementLookupItem[] }
 export const STOCK_MOVEMENT_FILTER_DEFINITIONS: Record<StockMovementFilterField, { type: number; label: string; section?: string; condition: string }> = {
   organization: { type: 0, label: 'Організація складу', condition: 'В списку' },
@@ -377,7 +377,7 @@ function legacyFields(wires: readonly StockMovementFilterWire[]) {
 }
 
 export function buildStockMovementRequest(draft: StockMovementDraft, offset = 0, limit = WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE): StockMovementRequest {
-  const wires = (draft.filterRows ?? []).flatMap(row => { const wire = stockMovementRowWire(row); return wire ? [wire] : [] })
+  const wires = (draft.filterRows ?? []).flatMap((row, index) => { const wire = stockMovementRowWire(row); return wire ? [{ ...wire, Row: index + 1 }] : [] })
   const legacy = legacyFields(draft.listed ? [] : wires)
   const expression = draft.filterExpression ? stockMovementFilterExpression(draft) : undefined
   return {
@@ -427,8 +427,10 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
   if (month >= 0 && day >= 0 && day < month) return 'Групування за днем не може бути вищим за місяць.'
   if (!draft.measures.length) return 'Оберіть хоча б один показник.'
   const rows = draft.filterRows ?? []
-  const articleRow = rows.findIndex(row => row.enabled && row.field === 'article' && (articleOf(row)?.articles.length ?? 0) > 500)
-  if (articleRow >= 0) return `Умова відбору ${articleRow + 1}: можна вказати до 500 артикулів.`
+  for (let index = 0; index < rows.length; index++) {
+    const problem = stockMovementRowLimitError(rows[index])
+    if (problem) return `Умова відбору ${index + 1}: ${problem}`
+  }
   if (!draft.listed) {
     const repeated = rows.find((row, index) => row.field && rows.findIndex(other => other.field === row.field) !== index)
     if (repeated?.field) return `Поле «${STOCK_MOVEMENT_FILTER_DEFINITIONS[repeated.field].label}» можна вибрати лише один раз.`
@@ -440,6 +442,24 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
     const view = stockMovementExpressionView(draft, capability)
     return reportFilterExpressionError(view.data, view.dataset)
   }
+  return null
+}
+
+const STOCK_MOVEMENT_ID_LIMITS: Partial<Record<StockMovementFilterField, [number, string]>> = {
+  organization: [50, 'організацій'], product: [1000, 'товарів'], group: [100, 'груп товарів'], unit: [100, 'одиниць виміру'], warehouse: [500, 'складів'],
+}
+
+export function stockMovementRowLimitError(row: StockMovementFilterRow): string | null {
+  const wire = stockMovementRowWire(row)
+  if (!wire) return null
+  const limit = STOCK_MOVEMENT_ID_LIMITS[wire.Field]
+  if (limit && (wire.Ids?.length ?? 0) > limit[0]) return `можна вибрати до ${limit[0]} ${limit[1]}.`
+  if (wire.Field === 'article') {
+    if ((wire.Values?.length ?? 0) > 500) return 'можна вказати до 500 артикулів.'
+    if (wire.Values?.some(value => value.length > 128)) return 'артикул не може бути довшим за 128 символів.'
+  }
+  if (wire.Field === 'top' && (wire.Values?.length ?? 0) > 100) return 'можна вибрати до 100 значень топу товару.'
+  if (wire.Field === 'documentText' && (wire.Text?.length ?? 0) > 64) return 'текст документа не може бути довшим за 64 символи.'
   return null
 }
 

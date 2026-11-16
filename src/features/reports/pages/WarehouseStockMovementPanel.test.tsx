@@ -223,7 +223,7 @@ describe('native warehouse stock movement', () => {
       for (const option of options) await pick(row, option)
     }
     await applyReport()
-    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[],"OrganizationIds":[],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[],"ProductTops":[],"MeasureUnitIds":[],"Filters":[{"Field":"group","Ids":[7]},{"Field":"warehouse","Ids":[2968,2975]},{"Field":"organization","Ids":[1]},{"Field":"documentKind","Values":["sale","transfer"]},{"Field":"top","Values":["B"]},{"Field":"unit","Ids":[2]}],"DocumentKinds":[],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[],"OrganizationIds":[],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[],"ProductTops":[],"MeasureUnitIds":[],"Filters":[{"Field":"group","Ids":[7],"Row":1},{"Field":"warehouse","Ids":[2968,2975],"Row":2},{"Field":"organization","Ids":[1],"Row":3},{"Field":"documentKind","Values":["sale","transfer"],"Row":4},{"Field":"top","Values":["B"],"Row":5},{"Field":"unit","Ids":[2],"Row":6}],"DocumentKinds":[],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
   })
 
   it('builds «група A АБО група B» from two rows of the same field and shows their values in the tree', async () => {

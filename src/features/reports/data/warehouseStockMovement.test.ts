@@ -49,11 +49,19 @@ describe('warehouse stock movement request', () => {
     const filterExpression = { Version: 1 as const, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 },
       { Kind: 3, SelectionIndex: 2 }, { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 3 }] }] } }
     expect(buildStockMovementRequest({ ...draft(), filterRows, filterExpression })).toMatchObject({
-      ProductGroupIds: [], Filters: [{ Field: 'group', Ids: [7] }, { Field: 'group', Ids: [8] }],
+      ProductGroupIds: [], Filters: [{ Field: 'group', Ids: [7], Row: 1 }, { Field: 'group', Ids: [8], Row: 4 }],
       FilterExpression: { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 1 }] }] } },
     })
     expect(stockMovementDraftError({ ...draft(), filterRows }, stockMovementCapability)).toBeNull()
     expect(stockMovementDraftError({ ...legacyDraft(), filterRows }, stockMovementCapability)).toBe('Поле «Товарна група» можна вибрати лише один раз.')
+    const long = [row('warehouse', { ids: [1] }), row('article', { articleMatch: 'equals', text: 'x'.repeat(129) })]
+    expect(stockMovementDraftError({ ...draft(), filterRows: long }, stockMovementCapability)).toBe('Умова відбору 2: артикул не може бути довшим за 128 символів.')
+    const many = [row('warehouse', { ids: [1] }), row('warehouse', { ids: [2], enabled: false }), row('group', { items: Array.from({ length: 101 }, (_, id) => ({ id: id + 1, label: `g${id}` })) })]
+    expect(stockMovementDraftError({ ...draft(), filterRows: many }, stockMovementCapability)).toBe('Умова відбору 3: можна вибрати до 100 груп товарів.')
+    expect(stockMovementDraftError({ ...draft(), filterRows: [row('organization', { ids: Array.from({ length: 51 }, (_, id) => id + 1) })] }, stockMovementCapability))
+      .toBe('Умова відбору 1: можна вибрати до 50 організацій.')
+    expect(stockMovementDraftError({ ...draft(), filterRows: [row('documentText', { text: 'д'.repeat(65) })] }, stockMovementCapability))
+      .toBe('Умова відбору 1: текст документа не може бути довшим за 64 символи.')
     const copy = copyStockMovementRow(filterRows[0], 99)
     expect(copy).toEqual({ ...filterRows[0], id: 99 })
     expect(copy.items).not.toBe(filterRows[0].items)
