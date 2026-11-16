@@ -329,7 +329,7 @@ export function mergedAnalysisSelections(data: ReportRequestBody): ReportSelecti
   const leaves = (item: MergeTerm): ReportSelection[] => item.kind === 3 ? [item.leaf] : item.children.flatMap(leaves)
   return leaves(mergeTerm(term))
 }
-const conditions = ['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі']
+const conditions = ['Рівне', 'Не рівне', 'В списку', 'В групі зі списку', 'Не в списку', 'Не в групі зі списку', 'В групі', 'Не в групі']
 export function analysisFilterConditions(dataset: ReportDataset | undefined | null, field: number): ReportFilterCondition[] {
   return currentVparivanieAnalysisCapability(dataset)?.filters.find(f => f.type === field)?.conditions.map(Type => ({ Type, Name: conditions[Type] })) ?? []
 }

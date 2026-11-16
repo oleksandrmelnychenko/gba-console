@@ -22,7 +22,7 @@ const selection = (field: number, condition: number, ...data: Record<string, unk
 describe('server hierarchy capability', () => {
   it('offers all eight comparisons wherever the server declares a real hierarchy', () => {
     const labels = analysisFilterConditions(dataset, 21).map(condition => condition.Name)
-    expect(labels).toEqual(['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі'])
+    expect(labels).toEqual(['Рівне', 'Не рівне', 'В списку', 'В групі зі списку', 'Не в списку', 'Не в групі зі списку', 'В групі', 'Не в групі'])
     for (const type of [1, 4, 5, 6, 17, 21]) expect(descriptor(type)?.conditions).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
     for (const type of [0, 2, 3, 7, 8, 9, 11, 12, 13, 14, 16, 60]) {
       expect(descriptor(type)?.conditions).toEqual([0, 1, 2, 4])

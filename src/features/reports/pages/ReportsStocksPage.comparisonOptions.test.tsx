@@ -15,7 +15,7 @@ vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<type
   getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
 
 const rowLabels = ['Рівне', 'Не рівне', 'В списку', 'В групі зі списку', 'Не в списку', 'Не в групі зі списку', 'В групі', 'Не в групі']
-const editorLabels = ['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі']
+const editorLabels = ['Рівне', 'Не рівне', 'В списку', 'В групі зі списку', 'Не в списку', 'Не в групі зі списку', 'В групі', 'Не в групі']
 const sources = [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 35, 36, 38, 39, 40, 41, 43, 44, 45, 46]
 const page = (children: React.ReactNode) => <MantineProvider env="test"><I18nProvider>{children}</I18nProvider></MantineProvider>
 beforeEach(() => {

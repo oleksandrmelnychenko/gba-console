@@ -2,7 +2,7 @@ import { analysisHierarchyIdentity, isAnalysisHierarchy, validAnalysisFilterValu
 import type { ReportDataset, ReportFilterCondition, ReportSelection } from '../types'
 
 const GROUP_CONDITION_TYPES = [3, 5, 6, 7] as const
-const GROUP_CONDITION_NAMES: Record<number, string> = { 3: 'У групі зі списку', 5: 'Не у групі зі списку', 6: 'У групі', 7: 'Не у групі' }
+const GROUP_CONDITION_NAMES: Record<number, string> = { 3: 'В групі зі списку', 5: 'Не в групі зі списку', 6: 'В групі', 7: 'Не в групі' }
 const POSITIVE_GROUPS = [3, 6]
 const NEGATIVE_GROUPS = [5, 7]
 const MAXIMUM_GROUP_VALUES = 100

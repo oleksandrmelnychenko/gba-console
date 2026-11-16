@@ -7,12 +7,11 @@ const availabilityNotice = 'Доступність порівнянь залеж
 
 type Props = Omit<SelectProps, 'data'> & {
   data: { value: string; label: string; disabled?: boolean }[]
-  constructorLabels?: boolean
 }
 
-export function ReportComparisonSelect({ data, constructorLabels = false, description, ...props }: Props) {
+export function ReportComparisonSelect({ data, description, ...props }: Props) {
   const options = labels.map((label, type) => data.find(option => option.value === String(type)) ?? {
-    value: String(type), label: constructorLabels ? constructorConditionLabel(type, label) : label, disabled: true,
+    value: String(type), label: constructorConditionLabel(type, label), disabled: true,
   })
   return <Select {...props} data={options}
     description={description ?? (options.some(option => option.disabled) ? availabilityNotice : undefined)}

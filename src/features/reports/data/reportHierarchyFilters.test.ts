@@ -43,7 +43,7 @@ describe('dataset hierarchy declarations', () => {
   })
   it('adds group comparisons next to the exact ones they extend', () => {
     expect(withDatasetGroupConditions(supplierDataset, 17, REPORT_FILTER_CONDITIONS).map(condition => condition.Name))
-      .toEqual(['Дорівнює', 'Не дорівнює', 'У списку', 'У групі зі списку', 'Не у списку', 'Не у групі зі списку', 'У групі', 'Не у групі'])
+      .toEqual(['Дорівнює', 'Не дорівнює', 'У списку', 'В групі зі списку', 'Не у списку', 'Не в групі зі списку', 'В групі', 'Не в групі'])
     expect(withDatasetGroupConditions(supplierDataset, 0, REPORT_FILTER_CONDITIONS).map(condition => condition.Type)).toEqual([0, 1, 2, 4])
     expect(withDatasetGroupConditions(dayDataset, 6, REPORT_FILTER_CONDITIONS, [0, 2]).map(condition => condition.Type)).toEqual([0, 1, 2, 3, 4, 6])
   })

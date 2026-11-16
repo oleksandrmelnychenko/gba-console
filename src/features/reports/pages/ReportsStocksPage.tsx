@@ -1701,7 +1701,7 @@ export function ReportSelectionsCard({
               <ReportComparisonSelect
                 allowDeselect={false}
                 data={filterConditions.filter(condition => condition.Type === draftSelection.FilterCondition.Type || !analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus)).map((condition) => ({
-                  label: condition.Name,
+                  label: constructorConditionLabel(condition.Type, condition.Name),
                   value: String(condition.Type),
                   disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
                     || !!analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus),
@@ -1827,7 +1827,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       selected={selected} onSelect={onSelect} toggle={
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={fields}
-        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect constructorLabels size="xs" label="Тип порівняння" allowDeselect={false}
+        placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
         data={rowConditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
           disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
@@ -1854,7 +1854,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     </div>
     <div className="workbook-inline-selection__condition"><ReportComparisonSelect label={t('Умова')} allowDeselect={false}
       description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
-      data={conditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: condition.Name,
+      data={conditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
