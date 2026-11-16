@@ -10,7 +10,7 @@ import { currentFinancialAxesCapability, usesCurrentFinancialAxes } from './curr
 import { currentFinancialProductTimeAxesCapability } from './currentFinancialProductTimeAxes'
 import { currentFinancialDocumentAxesCapability } from './currentFinancialDocumentAxes'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
-import { reportConfigurationError } from './reportConfiguration'
+import { reportConfigurationError, returnsOnlyFilterExpressionSupported, returnsOnlyFilterTypes } from './reportConfiguration'
 import { numberPresentationError } from './reportNumberPresentation'
 import { workbookConfigurationError } from './workbookPresentation'
 import { dayOrganizationGrossProfitConfigurationError } from './dayOrganizationGrossProfit'
@@ -198,11 +198,14 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
       || data.sorted.Col.length !== 0
       || data.sorted.Measurements.filter(item => item.IsChecked !== false).map(item => item.Type).join(',') !== '0'
       || data.sorted.Measurements.length !== 1
-      || data.selections.some(selection => selection.IsChecked !== false && (dataset?.customerReturnFilters !== true || ![6, 1, 2, 21, 64].includes(selection.SelectedField.Type)))
-      || data.filterExpression != null || data.ordering != null || data.topGroups != null
+      || data.ordering != null || data.topGroups != null
       || data.threshold != null || data.hideZero != null || data.abcClassification != null
       || data.productClassification != null || data.sourceOrganizations != null || data.sourceBuyerSubtree != null)
-      return 'Режим лише повернень підтримує тільки клієнта, товар, день і кількість з відборами клієнта, товару, складу та причини без додаткових перетворень.'
+      return 'Звіт повернення формується за покупцем, товаром і днем з одним показником кількості.'
+    const filters = returnsOnlyFilterTypes(dataset)
+    if (data.selections.some(selection => selection.IsChecked !== false && (dataset?.customerReturnFilters !== true || !filters.includes(selection.SelectedField.Type)))
+      || data.filterExpression != null && !returnsOnlyFilterExpressionSupported(dataset))
+      return 'Вибраний відбір недоступний у звіті повернення.'
   }
   if (data.dataSource === 1 || data.oneC) return 'Шаблон використовує архівне джерело 1С, яке більше не доступне. Налаштування не застосовано.'
   if (!dataset || (data.dataSource ?? 0) !== dataset.DataSource) return 'Набір даних цього звіту недоступний. Налаштування не застосовано.'

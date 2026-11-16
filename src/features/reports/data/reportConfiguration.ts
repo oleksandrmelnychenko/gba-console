@@ -31,6 +31,14 @@ export function readReportConfiguration(value: unknown): ReportConfiguration | u
       || variant.rowLayouts != null && !layouts(variant.rowLayouts) || variant.columnLayouts != null && !layouts(variant.columnLayouts))) return undefined
   return { ...value, variants: value.variants.map(variant => Object.fromEntries(Object.entries(variant as Record<string, unknown>).filter(([, replacement]) => replacement !== null))) } as ReportConfiguration
 }
+export const CUSTOMER_RETURN_FILTERS = [6, 1, 2, 21, 64] as const
+export function returnsOnlyFilterTypes(dataset: ReportDataset | undefined): readonly number[] {
+  const filters = readReportConfiguration(dataset?.configuration)?.variants.find(variant => variant.key === 'returnsOnly')?.filters
+  return ints(filters) && CUSTOMER_RETURN_FILTERS.every(type => filters.includes(type)) ? filters : CUSTOMER_RETURN_FILTERS
+}
+export function returnsOnlyFilterExpressionSupported(dataset: ReportDataset | undefined): boolean {
+  return returnsOnlyFilterTypes(dataset).some(type => !(CUSTOMER_RETURN_FILTERS as readonly number[]).includes(type))
+}
 function option(data: ReportRequestBody, name: string): unknown {
   const key = Object.keys(data).find(key => key.toLowerCase() === name.toLowerCase())
   return key === undefined ? undefined : (data as unknown as Record<string, unknown>)[key]

@@ -55,7 +55,7 @@ import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
 import { reportSelectionConditions, reportSelectionEditorCardinalityError, reportSelectionListCondition } from '../data/reportSelectionPolicy'
 import { requestNumberPresentation, readNumberPresentation, readValueSemantics, reportValueUnit } from '../data/reportNumberPresentation'
-import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate } from '../data/reportConfiguration'
+import { effectiveReportConfiguration, reportAxesPolicy, reportMaximumDate, returnsOnlyFilterExpressionSupported } from '../data/reportConfiguration'
 import { BUG_1274_ACTIVE_DATA_SOURCES, BUG_1274_DISABLED_MESSAGE } from '../data/reportMigration'
 import { lacksCurrentReadMode, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
 import { withoutProductClassification, withUnifiedSource } from '../data/unifiedReportSource'
@@ -946,7 +946,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       onAdd={() => filterLogic.editSelection({ kind: 'append', selection: createEmptySelection() })}
       onDelete={index => filterLogic.editSelection({ kind: 'delete', index })}
       onCopy={index => { if (selections[index]) filterLogic.editSelection({ kind: 'append', selection: cloneReportSelection(selections[index], dataSource) }) }}
-      footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{returnsOnly !== true ? analysisPanels.filterExpression : null}</>}
+      footer={<><StockQuantityFilterPanel dataset={dataset} request={templateBody} disabled={comparisonSettingsDisabled} onChange={setStockQuantityFilter} />{returnsOnly !== true || returnsOnlyFilterExpressionSupported(dataset) ? analysisPanels.filterExpression : null}</>}
       renderRow={({ index, selected, onSelect }) => <InlineReportSelection variant="row" selected={selected} onSelect={onSelect} dataset={activeWorkbook === 'Впарювання.xls' ? vparivanieSelectionDataset(dataset) : dataset} request={reportBody}
         selection={selections[index]} selections={selections} index={index} dataSource={dataSource} from={lookup.from} to={lookup.to}
         filterFieldOptions={filterFieldOptions} lookupProfitReadMode={lookup.profitReadMode} lookupProfitUnavailable={lookup.profitUnavailable}
@@ -2017,6 +2017,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
   const [debouncedSearch] = useDebouncedValue(search, REPORT_VALUE_SEARCH_DEBOUNCE_MS)
   const [lookupAttempt, setLookupAttempt] = useValueState(0)
   const nativeLookup = usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, selection.SelectedField.Type)
+    || usesSalesAgreementCatalogue(dataSource, selection.SelectedField.Type)
   // Current reservations resolve exact ClientAgreement identities from their own
   // facts; the sales-only dependent customer-agreement picker must not run here.
   const lookupMode = usesSharedProductTopLookup(dataSource, selection.SelectedField.Type) ? 'static'
@@ -2387,6 +2388,10 @@ function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: numbe
   return dataSource === 3 && fieldType === REPORT_FILTER_FIELD_TYPES.warehouse
 }
 
+function usesSalesAgreementCatalogue(dataSource: number, fieldType: number): boolean {
+  return dataSource === 2 && fieldType === REPORT_FILTER_FIELD_TYPES.customerContract
+}
+
 function usesSharedProductTopLookup(dataSource: number, fieldType: number): boolean {
   return (dataSource === 3 || dataSource === 45) && fieldType === REPORT_FILTER_FIELD_TYPES.productTop
 }
@@ -2473,7 +2478,7 @@ async function loadSelectionLookupOptions(
   }
   if (dataSource === 46 && [0,1,2,6,9,20].includes(fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
-  if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType))
+  if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, fieldType)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }

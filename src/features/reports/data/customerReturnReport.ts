@@ -1,8 +1,9 @@
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { datasetGroupings } from './reportDatasets'
+import { CUSTOMER_RETURN_FILTERS } from './reportConfiguration'
 
 export const CUSTOMER_RETURN_WORKBOOK = 'Звіт повернення.xls'
-export const CUSTOMER_RETURN_FILTERS = [6, 1, 2, 21, 64] as const
+export { CUSTOMER_RETURN_FILTERS }
 export function supportsCustomerReturnReport(dataset: ReportDataset): boolean {
   return dataset.DataSource === 2 && dataset.returnsOnly === true && dataset.customerReturnFilters === true
     && CUSTOMER_RETURN_FILTERS.every(type => dataset.Filters.some(field => field.Type === type && field.Selectable !== false))
