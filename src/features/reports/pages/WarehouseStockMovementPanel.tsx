@@ -81,13 +81,15 @@ function SelectionPicker({ label, placeholder, selected, search, disabled, onCha
     onChange={values => onChange(values.map(value => ({ id: Number(value), label: [...options, ...chosen].find(option => option.value === value)?.label ?? value })))} />
 }
 
-function ListPicker({ label, placeholder, data, value, disabled, onChange }: {
+function ListPicker({ label, placeholder, data, value, disabled, failed, onRetry, onChange }: {
   label: string; placeholder: string; data: { value: string; label: string }[]; value: string[]; disabled: boolean
+  failed?: boolean; onRetry?: () => void
   onChange: (value: string[]) => void
 }) {
   const [search, setSearch] = useState('')
   return <ReportValuePicker mode="multi" remote={false} label={label} placeholder={placeholder} data={data}
     selected={value.map(key => data.find(option => option.value === key) ?? { value: key, label: key })}
+    lookupError={failed ? REPORT_VALUE_LOOKUP_FAILED : undefined} onRetry={onRetry}
     search={search} onSearchChange={setSearch} disabled={disabled} onChange={onChange} />
 }
 
@@ -110,21 +112,27 @@ function movementFieldOptions(used: ReadonlySet<StockMovementFilterField>) {
   })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: label(item.value) })) } : { ...entry, label: label(entry.value) })
 }
 
-function useMovementAttributes(enabled: boolean) {
-  const [value, setValue] = useState<{ tops: string[]; units: StockMovementLookupItem[] }>({ tops: [], units: [] })
+function useMovementList<T>(enabled: boolean, load: (signal: AbortSignal) => Promise<T[]>) {
+  const [state, setState] = useState<{ items: T[]; failed: boolean; attempt: number }>({ items: [], failed: false, attempt: 0 })
+  const loader = useEffectEvent(load)
   useEffect(() => {
     if (!enabled) return
     const controller = new AbortController()
-    void getReportProductTop().then(items => {
-      if (!controller.signal.aborted) setValue(current => ({ ...current,
-        tops: [...new Set(items.flatMap(item => typeof item.Name === 'string' && item.Name.trim() ? [item.Name.trim()] : []))].sort() }))
-    }).catch(() => undefined)
-    void getStockMovementMeasureUnits(controller.signal).then(units => {
-      if (!controller.signal.aborted) setValue(current => ({ ...current, units }))
-    }).catch(() => undefined)
+    loader(controller.signal).then(items => {
+      if (!controller.signal.aborted) setState(current => ({ ...current, items, failed: false }))
+    }).catch(() => {
+      if (!controller.signal.aborted) setState(current => ({ ...current, failed: true }))
+    })
     return () => controller.abort()
-  }, [enabled])
-  return value
+  }, [enabled, state.attempt])
+  return { items: state.items, failed: state.failed, retry: () => setState(current => ({ ...current, failed: false, attempt: current.attempt + 1 })) }
+}
+
+function useMovementAttributes(enabled: boolean) {
+  const tops = useMovementList(enabled, async () => [...new Set((await getReportProductTop())
+    .flatMap(item => typeof item.Name === 'string' && item.Name.trim() ? [item.Name.trim()] : []))].sort())
+  const units = useMovementList(enabled, signal => getStockMovementMeasureUnits(signal))
+  return { tops: tops.items, topsFailed: tops.failed, retryTops: tops.retry, units: units.items, unitsFailed: units.failed, retryUnits: units.retry }
 }
 
 function QuantityCell({ value, negativeRed, reason }: { value: number | null; negativeRed: boolean; reason: string }) {
@@ -348,12 +356,12 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         : <TextInput label="Значення" aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
           value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />
       case 'top': return <ListPicker label="Значення" placeholder="Усі значення топу" disabled={locked}
-        data={attributes.tops.map(code => ({ value: code, label: code }))}
+        data={attributes.tops.map(code => ({ value: code, label: code }))} failed={attributes.topsFailed} onRetry={attributes.retryTops}
         value={draft.productTops} onChange={values => update({ productTops: values })} />
       case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи (з підгрупами)" selected={draft.groups}
         search={groups} disabled={locked} onChange={value => update({ groups: value })} />
       case 'unit': return <ListPicker label="Значення" placeholder="Усі одиниці виміру" disabled={locked}
-        data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))}
+        data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))} failed={attributes.unitsFailed} onRetry={attributes.retryUnits}
         value={draft.measureUnitIds.map(String)} onChange={values => update({ measureUnitIds: values.map(Number) })} />
       case 'warehouse': return <ListPicker label="Значення" placeholder="Усі склади" disabled={locked}
         data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${lookupLabel(item)} · ${item.Detail}` : lookupLabel(item) }))}

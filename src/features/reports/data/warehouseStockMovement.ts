@@ -68,7 +68,7 @@ export const STOCK_MOVEMENT_FILTER_FIELDS = ['organization', 'product', 'article
 export type StockMovementFilterField = typeof STOCK_MOVEMENT_FILTER_FIELDS[number]
 export type StockMovementFilterRow = { id: number; field: StockMovementFilterField | null; enabled: boolean }
 export const STOCK_MOVEMENT_FILTER_DEFINITIONS: Record<StockMovementFilterField, { type: number; label: string; section?: string; condition: string }> = {
-  organization: { type: 0, label: 'Організація', condition: 'В списку' },
+  organization: { type: 0, label: 'Організація складу', condition: 'В списку' },
   product: { type: 1, label: 'Товар', section: 'Товар', condition: 'В списку' },
   article: { type: 2, label: 'Артикул', section: 'Товар', condition: 'В списку' },
   top: { type: 3, label: 'Топ', section: 'Товар', condition: 'В списку' },
@@ -404,7 +404,7 @@ export function summarizeStockMovementFilters(draft: StockMovementDraft, warehou
   const request = buildStockMovementRequest(draft)
   const article = articleFilter(draft)
   if (request.OrganizationIds.length)
-    lines.push(`Організація У списку (${request.OrganizationIds.map(id => organizations.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
+    lines.push(`Організація складу У списку (${request.OrganizationIds.map(id => organizations.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
   if (request.ProductIds.length) lines.push(`Товар У списку (${draft.products.map(item => item.label).join('; ')})`)
   if (article.match) lines.push(`Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[article.match]} ${article.articles.join('; ')}`)
   if (request.ProductTops.length) lines.push(`Топ У списку (${request.ProductTops.join('; ')})`)

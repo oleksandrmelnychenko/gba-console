@@ -85,7 +85,7 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
     const listbox = await screen.findByRole('listbox')
     expect([...listbox.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(
-      ['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група (з підгрупами)', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
+      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група (з підгрупами)', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
     expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товар', 'Склад', 'Документ руху'])
     fireEvent.click(within(filters).getByRole('button', { name: 'Видалити умову 1' }))
     for (const name of ['Склади', 'Номенклатура', 'Фільтри']) {
@@ -184,7 +184,7 @@ describe('native warehouse stock movement', () => {
     render(panel())
     fireEvent.change(within(await addFilter('Товарна група (з підгрупами)')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
     fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
-    for (const [field, options] of [['Склад', [/^СКЛАД -1 \[\d+\] · Фенікс$/, /^СКЛАД Н\/П \[\d+\] · Фенікс$/]], ['Організація', [/^Фенікс \[\d+\]$/]],
+    for (const [field, options] of [['Склад', [/^СКЛАД -1 \[\d+\] · Фенікс$/, /^СКЛАД Н\/П \[\d+\] · Фенікс$/]], ['Організація складу', [/^Фенікс \[\d+\]$/]],
       ['Вид документа руху', ['Переміщення', 'Продаж']], ['Топ', ['B']], ['Одиниця виміру', ['компл [2]']]] as const) {
       const row = await addFilter(field)
       for (const option of options) {
@@ -194,6 +194,17 @@ describe('native warehouse stock movement', () => {
     }
     await applyReport()
     expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"ProductTops":["B"],"MeasureUnitIds":[2],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+  })
+
+  it('shows a failed top list with a retry instead of an empty list', async () => {
+    vi.mocked(getReportProductTop).mockRejectedValueOnce(new Error('offline'))
+    render(panel())
+    const value = within(await addFilter('Топ')).getByRole('combobox', { name: 'Значення' })
+    fireEvent.click(value)
+    expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити значення.')
+    fireEvent.click(screen.getByRole('option', { name: 'Спробувати ще раз' }))
+    expect(await screen.findByRole('option', { name: 'A' })).toBeTruthy()
+    expect(getReportProductTop).toHaveBeenCalledTimes(2)
   })
 
   it('switches a row off, deletes it and keeps one row per field', async () => {
