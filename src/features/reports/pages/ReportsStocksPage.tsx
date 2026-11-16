@@ -467,7 +467,9 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const incompleteSelectionMessage =
     incompleteSelectionIndex < 0
       ? ''
-      : t('Умова відбору {position} ({field}): додайте значення або зніміть галочку', {
+      : !selections[incompleteSelectionIndex].SelectedField.Name
+        ? t('Умова відбору {position}: оберіть поле або зніміть галочку', { position: incompleteSelectionIndex + 1 })
+        : t('Умова відбору {position} ({field}): додайте значення або зніміть галочку', {
           field: getReportFieldLabel(selections[incompleteSelectionIndex].SelectedField.Name),
           position: incompleteSelectionIndex + 1,
         })

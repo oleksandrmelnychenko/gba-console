@@ -108,7 +108,7 @@ function FilterGroupChildren({ node, path, groups, unassigned, selections, datas
   return <>
     <Group gap="xs" align="end">
       <Button type="button" size="compact-sm" variant="filled" color="brand" disabled={disabled || path.length + 1 >= cap.MaximumDepth}
-        onClick={() => onEdit({ kind: 'add-group', path })}>Додати групу в {pathLabel(path)}</Button>
+        onClick={() => onEdit({ kind: 'add-group', path })}>{path.length ? `Додати групу в ${pathLabel(path)}` : 'Додати групу'}</Button>
       {unassigned.length ? <Select label={`Додати умову — ${title}`} data={unassigned} value={null} placeholder="Умова поза деревом" disabled={disabled}
         onChange={value => { if (value !== null) onEdit({ kind: 'add-selection', path, index: Number(value) }) }} /> : null}
       {path.length ? <Button type="button" size="compact-sm" variant="subtle" color="gray" disabled={disabled}

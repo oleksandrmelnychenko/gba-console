@@ -151,3 +151,10 @@ it.each(fields)('preserves exact identities and other AND/OR filters when switch
   expect(specificRequest.selections).toEqual(data.selections)
   expect(specificRequest.filterExpression).toEqual(data.filterExpression)
 })
+
+it('asks to choose a field for a new row without empty brackets', async () => {
+  await open('sales')
+  fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
+  expect(await screen.findByText('Умова відбору 1: оберіть поле або зніміть галочку')).toBeTruthy()
+  expect(screen.queryByText(/Умова відбору 1 \(\)/)).toBeNull()
+})
