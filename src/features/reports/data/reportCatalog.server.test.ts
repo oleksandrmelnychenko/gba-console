@@ -64,3 +64,16 @@ describe('the current server report catalog', () => {
     expect(datasetConfigurationError(tree, dataset), `source ${source}`).toBeNull()
   })
 })
+
+describe('catalog resilience', () => {
+  it('keeps the other reports when one dataset carries an unknown field', () => {
+    for (const source of ACTIVE) {
+      const changed = (fixture as Array<Record<string, unknown>>).map(item => item.DataSource === source
+        ? { ...item, Filters: [...(item.Filters as unknown[]), { Type: 99, Name: 'Нове поле' }] }
+        : item)
+      const parsed = parseReportDatasets(changed)
+      expect(parsed.filter(item => item.DataSource !== source).map(item => item.DataSource))
+        .toEqual(datasets.filter(item => item.DataSource !== source).map(item => item.DataSource))
+    }
+  })
+})

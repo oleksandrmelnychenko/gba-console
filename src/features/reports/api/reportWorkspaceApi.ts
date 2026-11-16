@@ -101,11 +101,11 @@ export function parseReportDatasets(result: unknown): ReportDataset[] {
     const cash = sourceGroups ? normalizeGroupedCashDataset(sourceGroups as unknown as Record<string, unknown>) : null
     return cash ? normalizeWorkbookDataset(cash as unknown as Record<string, unknown>) : null
   }) : []
-  if (!normalized.length || !normalized.every((item): item is ReportDataset => item !== null && isDataset(item))
-    || new Set(normalized.map(item => item.DataSource)).size !== normalized.length) {
+  const valid = normalized.filter((item): item is ReportDataset => item !== null && isDataset(item))
+  if (!valid.length || new Set(valid.map(item => item.DataSource)).size !== valid.length) {
     throw new Error('Сервер повернув некоректний список наборів даних звітів.')
   }
-  return normalized
+  return valid
 }
 
 type WireTemplate = Required<Omit<ReportTemplate, 'Data'>> & {
