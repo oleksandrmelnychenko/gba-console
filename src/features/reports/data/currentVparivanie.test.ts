@@ -58,7 +58,7 @@ describe('current native Vparivanie form contract', () => {
     expect(currentVparivanieConfigurationError({ ...request(), from: '2026-01-01', to: '2027-01-01' })).toBeNull()
     expect(currentVparivanieConfigurationError({ ...request(), from: '2026-01-01', to: '2027-01-02' })).toContain('366')
   })
-  it.each(['filterExpression', 'ordering', 'topGroups', 'hideZero', 'abcClassification', 'sourceOrganizations', 'oneC', 'supplierSourceWorld', 'ReturnsOnly'])('rejects unsupported saved option %s', name => {
+  it.each(['ordering', 'topGroups', 'hideZero', 'abcClassification', 'sourceOrganizations', 'oneC', 'supplierSourceWorld', 'ReturnsOnly'])('rejects unsupported saved option %s', name => {
     expect(currentVparivanieConfigurationError({ ...request(), [name]: {} })).not.toBeNull()
   })
   it('requires the exact advertised capability, not a generic source number', () => {

@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getReportProductTop, searchDatasetReportValues } from '../api/reportsApi'
+import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
 import type { ReportSelection } from '../types'
 import { SelectionValuePicker } from './ReportsStocksPage'
 
 vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(),
   getReportProductTop: vi.fn(), searchDatasetReportValues: vi.fn() }))
+vi.mock('../api/customerGroupTopApi', () => ({ searchCustomerGroupTop: vi.fn() }))
 
 function Picker({ source, condition = 0, field = 3 }: { source: number; condition?: number; field?: number }) {
   const [selection, setSelection] = useState<ReportSelection>({ IsChecked: true,
@@ -29,11 +31,11 @@ function selectedValues() {
 beforeEach(() => {
   vi.clearAllMocks()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
-  vi.mocked(getReportProductTop).mockResolvedValue([{ Name: 'A' }, { Name: 'X9' }])
+  vi.mocked(searchCustomerGroupTop).mockImplementation(async value => ['A', 'X9'].filter(code => code.includes(value)))
   vi.mocked(searchDatasetReportValues).mockResolvedValue([{ Id: 123, Name: 'Товар 123' }])
 })
 
-it.each([3, 45])('selects a named TOP code from the shared catalogue for native source %i', async source => {
+it.each([2, 3, 35, 38, 43, 44, 45])('selects a named TOP code from the one shared list for source %i', async source => {
   render(<Picker source={source} />)
   const input = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(input)
@@ -41,11 +43,12 @@ it.each([3, 45])('selects a named TOP code from the shared catalogue for native 
   fireEvent.change(input, { target: { value: 'X9' } })
   fireEvent.click(await screen.findByRole('option', { name: 'X9' }))
   expect(selectedValues()).toEqual([{ Data: { Name: 'X9' }, Name: 'X9', Value: 0 }])
-  expect(getReportProductTop).toHaveBeenCalledOnce()
+  expect(searchCustomerGroupTop).toHaveBeenCalled()
+  expect(getReportProductTop).not.toHaveBeenCalled()
   expect(searchDatasetReportValues).not.toHaveBeenCalled()
 })
 
-it.each([3, 45])('retains named TOP selections when filtering and reopening the list for source %i', async source => {
+it.each([2, 3, 45])('retains named TOP selections when filtering and reopening the list for source %i', async source => {
   render(<Picker source={source} condition={2} />)
   const input = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(input)
@@ -58,7 +61,8 @@ it.each([3, 45])('retains named TOP selections when filtering and reopening the 
     { Data: { Name: 'A' }, Name: 'A', Value: 0 },
     { Data: { Name: 'X9' }, Name: 'X9', Value: 0 },
   ])
-  expect(getReportProductTop).toHaveBeenCalledOnce()
+  expect(searchCustomerGroupTop).toHaveBeenCalled()
+  expect(getReportProductTop).not.toHaveBeenCalled()
   expect(searchDatasetReportValues).not.toHaveBeenCalled()
 })
 

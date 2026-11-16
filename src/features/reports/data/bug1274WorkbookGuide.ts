@@ -1,5 +1,6 @@
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK, profileForWorkbook, salesConstructorTitle } from './salesConstructorProfiles'
 import { previousKyivDay } from './cashPeriod'
+import { PURCHASES_CONSTRUCTOR_FILE } from './bug1274WorkbookLaunch'
 import { SALES_BY_RESPONSIBLES_SOURCE, SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 type WorkbookGuide = { title: string; summary: string }
@@ -53,7 +54,7 @@ export function bug1274WorkbookGuide(fileName: string): WorkbookGuide | undefine
 }
 
 const MONTH_PERIOD_WORKBOOKS: ReadonlySet<string> = new Set(['ВП.xls', 'ВП по постачальниках.xls', 'ДБіторка.xls'])
-const CURRENT_MONTH_WORKBOOKS: ReadonlySet<string> = new Set([SALES_BY_RESPONSIBLES_WORKBOOK_FILE])
+const CURRENT_MONTH_WORKBOOKS: ReadonlySet<string> = new Set([SALES_BY_RESPONSIBLES_WORKBOOK_FILE, PURCHASES_CONSTRUCTOR_FILE])
 const THROUGH_TODAY_SOURCES: ReadonlySet<number> = new Set([39, SALES_BY_RESPONSIBLES_SOURCE])
 
 function monthStart(day: string): string {

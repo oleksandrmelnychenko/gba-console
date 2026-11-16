@@ -122,7 +122,7 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   if (scope?.Version === 2 && dataset && !cashPeriodSupportsManagement(dataset))
     return 'Сервер ще не підтримує управлінські колонки руху коштів.'
   const allowed = new Set(['numberPresentation', 'NumberPresentation', 'dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
-  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'cashReadMode', 'CashReadMode', 'workbookPresentation', 'WorkbookPresentation'].includes(key)) && value != null))
+  if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'cashReadMode', 'CashReadMode', 'workbookPresentation', 'WorkbookPresentation', 'filterExpression', 'FilterExpression'].includes(key)) && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
     || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)

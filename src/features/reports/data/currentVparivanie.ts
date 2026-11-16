@@ -42,7 +42,7 @@ const same = (value: unknown, expected: readonly (string | number)[]) => Array.i
   && value.length === expected.length && value.every((item, index) => item === expected[index])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
-  'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
+  'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'productclassification', 'sourceorganizations', 'sourcebuyersubtree', 'suppliersourceworld',
   'currentvparivanie', 'currentvparivanieproducts', 'returnsonly', 'discountmarkup', 'provideddiscounts', 'priceanalysis'])
 

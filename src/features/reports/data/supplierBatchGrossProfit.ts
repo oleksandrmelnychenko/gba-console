@@ -3,6 +3,7 @@ import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitM
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { exactId } from './exactId'
+import { customerGroupTopName } from './customerGroupTop'
 import { datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { requestSourceBuyerSubtree, sourceBuyerSubtree } from './nativeExactFilters'
 import { readFilterExpressionCapabilities, reportFilterExpressionError, requestFilterExpression } from './reportFilterExpression'
@@ -23,7 +24,8 @@ export function requestSupplierSourceWorld(data: ReportRequestBody): unknown {
 }
 const legacyMeasures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
 const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14, 11, 15]
-const filters = new Set([0, 1, 17])
+const baseFilters = [0, 1, 17]
+const knownFilters = new Set([0, 1, 2, 3, 4, 17, 20, 21])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
@@ -44,10 +46,12 @@ export function isSupplierBatchGrossProfitDataset(dataset: ReportDataset): boole
     && dataset.PeriodSupported === true && isSupplierSourceWorldCapability(dataset.supplierSourceWorld)
     && ['73,4,21', '73,78,4,21'].includes(dataset.Groupings.map(item => item.Type).join(','))
     && [legacyMeasures.join(','), measures.join(',')].includes(dataset.Measurements.map(item => item.Type).join(','))
-    && dataset.Filters.map(item => item.Type).join(',') === '0,1,17'
+    && baseFilters.every(type => dataset.Filters.some(item => item.Type === type))
+    && dataset.Filters.every(item => knownFilters.has(item.Type))
 }
 
 export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
+  const admitted = (field: number | undefined) => field !== undefined && (dataset ? dataset.Filters.some(item => item.Type === field) : baseFilters.includes(field))
   if (data.dataSource !== SUPPLIER_BATCH_GROSS_PROFIT_SOURCE) return null
   const modeError = profitReadModeConfigurationError(data, dataset)
   if (modeError) return modeError
@@ -96,7 +100,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
   const activeFields = new Set<number>()
   for (const selection of data.selections) {
     if (selection && isDatasetGroupSelection(dataset, selection)) {
-      if ((selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !filters.has(selection.SelectedField.Type)
+      if ((selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !admitted(selection.SelectedField.Type)
         || !Array.isArray(selection.Values) || !selection.Values.length) return invalid
       if ([5, 7].includes(selection.FilterCondition.Type) && !advancedFilters)
         return 'Сервер не підтвердив виключення для партійного прибутку. Налаштування не змінено.'
@@ -111,7 +115,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
       continue
     }
     if (!selection || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean')
-      || !filters.has(selection.SelectedField?.Type) || ![0, 1, 2, 4].includes(selection.FilterCondition?.Type)
+      || !admitted(selection.SelectedField?.Type) || ![0, 1, 2, 4].includes(selection.FilterCondition?.Type)
       || !Array.isArray(selection.Values) || !selection.Values.length
       || ([0, 1].includes(selection.FilterCondition.Type) && selection.Values.length !== 1)) return invalid
     if ([1, 4].includes(selection.FilterCondition.Type) && !advancedFilters)
@@ -121,7 +125,7 @@ export function supplierBatchGrossProfitConfigurationError(data: ReportRequestBo
       if (filterExpression == null && activeFields.has(selection.SelectedField.Type)) return invalid
       activeFields.add(selection.SelectedField.Type)
     }
-    if (values > 100 || selection.Values.some(value => !value || !exactId(value.Data)
+    if (values > 100 || selection.Values.some(value => !value || !(selection.SelectedField.Type === 3 ? customerGroupTopName(value.Data) : exactId(value.Data))
       || (value.Value !== undefined && (!Number.isInteger(value.Value)
         || value.Value < -2147483648 || value.Value > 2147483647)))) return invalid
   }

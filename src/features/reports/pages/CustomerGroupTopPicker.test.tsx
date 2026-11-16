@@ -40,6 +40,6 @@ it('retries failed next page at the same offset and leaves saved choices unchang
 it('preserves disabled values and ignores an aborted load; active-only current meaning',async()=>{
  let finish!:(v:unknown)=>void;api.mockImplementation(()=>new Promise(resolve=>{finish=resolve}));const view=render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const signal=api.mock.calls[0][1]?.signal;await userEvent.click(screen.getByRole('button',{name:'Вибрано: 2'}));view.rerender(<Form disabled checked={false}/>);expect(signal?.aborted).toBe(true);finish([{Name:'X9'}]);await userEvent.click(screen.getByRole('option',{name:'Стара назва E'}));expect(selected()).toEqual(raw);expect(screen.queryByText(/TOP у відборі — поточні дані/)).toBeNull()
 })
-it('leaves the existing purchase TOP lookup route unchanged',async()=>{
- api.mockResolvedValue([{Id:1,Name:'X9'}]);render(<Form source={3} values={[]}/>);await waitFor(()=>expect(api).toHaveBeenCalledWith('/products/groups/get/top'));expect(api.mock.calls.some(([path,options])=>path==='/report/datasets/lookup'&&options?.query?.dataSource===44)).toBe(false)
+it('uses the same shared TOP list in purchases',async()=>{
+ api.mockResolvedValue([{Name:'X9'}]);render(<Form source={3} values={[]}/>);await waitFor(()=>expect(api.mock.calls.some(([path,options])=>path==='/report/datasets/lookup'&&options?.query?.dataSource===44&&options?.query?.field===3)).toBe(true));expect(api).not.toHaveBeenCalledWith('/products/groups/get/top')
 })

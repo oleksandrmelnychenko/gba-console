@@ -84,7 +84,7 @@ it('refuses hidden unsupported filters, ambiguous identifiers, foreign settings 
   request.selections = [{ IsChecked: true, SelectedField: { Type: 0, Name: 'Organization' },
     FilterCondition: { Type: 0, Name: 'Equals' }, Values: [{ Data: { Id: '9223372036854775807' }, Name: 'org', Value: 0 }] }]
   expect(dayOrganizationGrossProfitConfigurationError(request, dataset)).toBeNull()
-  expect(dayOrganizationGrossProfitConfigurationError({ ...request, filterExpression: {} })).not.toBeNull()
+  expect(dayOrganizationGrossProfitConfigurationError({ ...request, ordering: {} })).not.toBeNull()
   expect(dayOrganizationGrossProfitConfigurationError({ ...request, from: '2026-08-01' })).toContain('31')
   expect(dayOrganizationGrossProfitConfigurationError({ ...request, selections: [{ ...request.selections[0], IsChecked: false,
     SelectedField: { Type: 17, Name: 'Supplier' } }] })).not.toBeNull()

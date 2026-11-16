@@ -7,6 +7,7 @@ it('opens the month workbooks on the current month, the matrix on the year and t
   expect(bug1274WorkbookPeriod('Впарювання.xls', '2026-10-17')).toEqual({ from: '2026-01-01', to: '2026-10-17' })
   expect(bug1274WorkbookPeriod('gba:sales-constructor:v1', '2026-11-12')).toEqual({ from: '2026-11-01', to: '2026-11-12' })
   expect(bug1274WorkbookPeriod('gba:gross-profit-constructor:v1', '2026-11-01')).toEqual({ from: '2026-11-01', to: '2026-11-01' })
+  expect(bug1274WorkbookPeriod('gba:purchases-constructor:v1', '2026-11-16')).toEqual({ from: '2026-11-01', to: '2026-11-16' })
   expect(bug1274WorkbookPeriod('Взаємороз всі.xls', '2026-10-17')).toBeNull()
   expect(bug1274WorkbookPeriod('Ведомость по денежным средствам.xls', '2026-10-17')).toBeNull()
 })

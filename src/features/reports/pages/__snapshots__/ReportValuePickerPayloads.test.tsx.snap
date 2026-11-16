@@ -44,15 +44,15 @@ exports[`sends the same selection for 3/1 report product c2 1`] = `
 
 exports[`sends the same selection for 3/3 shared TOP list c0 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1}]}]}",
-  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":2,"Name":"BETA"},"Name":"BETA","Value":2}]}]}",
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
 }
 `;
 
 exports[`sends the same selection for 3/3 shared TOP list c2 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1}]}]}",
-  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":1,"Name":"ALFA"},"Name":"ALFA","Value":1},{"Data":{"Id":2,"Name":"BETA"},"Name":"BETA","Value":2}]}]}",
+  "afterFirstChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":3,"selections":[{"IsChecked":true,"SelectedField":{"Type":3,"Name":"Поле 3"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Name":"ALFA"},"Name":"ALFA","Value":0},{"Data":{"Name":"BETA"},"Name":"BETA","Value":0}]}]}",
 }
 `;
 

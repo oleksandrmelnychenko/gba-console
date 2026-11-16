@@ -7,6 +7,7 @@ import { requestProfitReadMode, profitReadModeConfigurationError, currentProfitM
 import { originalNormalPeriodError } from './originalNormalPeriod'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { exactId } from './exactId'
+import { customerGroupTopName } from './customerGroupTop'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, isDatasetGroupSelection } from './reportHierarchyFilters'
 import { dayOrganizationBasisConfigurationError, requestDayOrganizationBasis } from './dayOrganizationBasis'
 import { productClassification, requestProductClassification, requestSourceOrganizations,
@@ -25,10 +26,11 @@ export const DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS = [
 export const DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS = ['88D1B8CB29DC7A6911ECFC60797DF65F'] as const
 const legacyMeasures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
 const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11]
-const filters = new Set([0, 1, 2, 6, 9])
+const baseFilters = [0, 1, 2, 6, 9]
+const knownFilters = new Set([0, 1, 2, 3, 4, 6, 9, 20, 21])
 const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
-  'valuationclientagreementid', 'ordering', 'filterexpression', 'topgroups', 'threshold', 'hidezero',
+  'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
   'abcclassification', 'returnsonly', 'discountmarkup',
   'provideddiscounts', 'priceanalysis'])
 const invalid = 'Валовий прибуток GBA підтримує підтверджені сервером групування, показники й точні відбори.'
@@ -45,7 +47,8 @@ export function isDayOrganizationGrossProfitDataset(dataset: ReportDataset): boo
   return dataset.DataSource === DAY_ORGANIZATION_GROSS_PROFIT_SOURCE && dataset.PeriodRequired === true
     && dataset.PeriodSupported === true && dataset.Groupings.map(field => field.Type).join(',') === '3,4'
     && [legacyMeasures.join(','), measures.join(','), [...measures, 117, 118].join(',')].includes(dataset.Measurements.map(field => field.Type).join(','))
-    && dataset.Filters.map(field => field.Type).join(',') === '0,1,2,6,9'
+    && baseFilters.every(type => dataset.Filters.some(field => field.Type === type))
+    && dataset.Filters.every(field => knownFilters.has(field.Type))
 }
 
 export function dayOrganizationGrossProfitConfigurationError(data: ReportRequestBody, dataset?: ReportDataset): string | null {
@@ -99,9 +102,9 @@ export function dayOrganizationGrossProfitConfigurationError(data: ReportRequest
       if (groupError) return groupError
       continue
     }
-    const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : exactId
+    const reference = field === 60 ? financialBuyerManagerReference : field === 12 ? financialDocumentReference : field === 3 ? customerGroupTopName : exactId
     if (count > 100 || (selection.IsChecked !== undefined && typeof selection.IsChecked !== 'boolean')
-      || !(filters.has(field) || field === 12 || field === 60)
+      || !((dataset ? dataset.Filters.some(item => item.Type === field) : baseFilters.includes(field)) || field === 12 || field === 60)
       || !admittedConditions.has(selection.FilterCondition?.Type) || !selection.Values.length
       || ([0, 1].includes(selection.FilterCondition?.Type) && selection.Values.length !== 1)
       || selection.Values.some(value => !value || !reference(value.Data)
