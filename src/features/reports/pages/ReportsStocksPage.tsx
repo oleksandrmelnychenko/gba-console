@@ -1984,7 +1984,7 @@ function LegacySelectionValuePicker(props: SelectionValuePickerProps) {
     return <NativeSalesProductPicker dataSource={props.dataSource} dataset={props.dataset ?? undefined} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
   if (props.dataSource === 2 && props.selection.SelectedField.Type === 1 && props.dataset?.salesProductLookup !== undefined && [0, 1, 2, 4].includes(props.selection.FilterCondition.Type))
     return <NativeSalesProductPicker dataSource={props.dataSource} dataset={props.dataset} selection={props.selection} onChange={props.onChange} label={props.label} error={props.error} disabled={props.lookupProfitUnavailable} />
-  if ([38, 43, 44].includes(props.dataSource) && props.selection.SelectedField.Type === 3)
+  if ([35, 38, 43, 44].includes(props.dataSource) && props.selection.SelectedField.Type === 3)
     return <CustomerGroupTopPicker selection={props.selection} label={props.label} disabled={props.lookupProfitUnavailable} error={props.error} onChange={props.onChange} />
   const exactField = props.selection.SelectedField.Type
   if (isCustomerGroupExactSelection(props.dataSource, exactField))
