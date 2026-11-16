@@ -60,7 +60,7 @@ const supported = [
     notice: 'Іменовані набори клієнтів за одним періодом GBA; перший набір є еталоном.',
     accepts: (dataset: ReportDataset) => dataset.Groupings.some(field=>field.Type===82) && [109,110,111,112,113,114].every(type=>dataset.Measurements.some(field=>field.Type===type)) },
   { fileName: CUSTOMER_RETURN_WORKBOOK, label: 'Звіт повернення', dataSource: 2,
-    notice: 'Повернення GBA за датою документа. Відбори: контрагент, товар, склад рядка та причина. Кількість — записана в поверненнях, без перерахунку одиниць.',
+    notice: 'Повернення від покупців за датою документа.',
     accepts: supportsCustomerReturnReport },
   { fileName: SALES_CONSTRUCTOR_WORKBOOK, label: 'Звіт по продажам', notice: 'Продажі й повернення GBA за датами документів.', dataSource: 2, accepts: (dataset: ReportDataset) => salesConstructorSupported(dataset, 'sales') },
   { fileName: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, label: 'Валовий прибуток', notice: 'Продажі, повернення і собівартість GBA за датами документів.', dataSource: 2, accepts: (dataset: ReportDataset) => salesConstructorSupported(dataset, 'grossProfit') },
