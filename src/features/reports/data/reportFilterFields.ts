@@ -2,6 +2,11 @@ export type CanonicalFilterField = { label: string; section?: string; order: num
 
 export const REPORT_FILTER_SECTIONS = ['Товар', 'Покупець', 'Документ продажу', 'Постачальник', 'Склад', 'Документ руху', 'Рахунок', 'Інше'] as const
 
+const SECTION_TITLES: Readonly<Record<string, string>> = {
+  'Товар': 'Товари', 'Покупець': 'Покупці', 'Документ продажу': 'Документи продажу', 'Постачальник': 'Постачальники',
+  'Склад': 'Склади', 'Документ руху': 'Документи руху', 'Рахунок': 'Рахунки',
+}
+
 const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string | null, string?]> = [
   [0, 'Організація'],
   [32, 'Організація'],
@@ -75,6 +80,6 @@ export function groupCanonicalFilterOptions(dataSource: number | undefined, opti
   const sections = [...REPORT_FILTER_SECTIONS, ...new Set(described.flatMap(entry => entry.field.section && !(REPORT_FILTER_SECTIONS as readonly string[]).includes(entry.field.section) ? [entry.field.section] : []))]
   return [...plain, ...sections.flatMap(group => {
     const items = described.filter(entry => entry.field.section === group).map(item)
-    return items.length ? [{ group, items }] : []
+    return items.length ? [{ group: SECTION_TITLES[group] ?? group, items }] : []
   })]
 }

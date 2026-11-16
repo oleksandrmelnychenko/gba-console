@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import fixture from './reportCatalog.server-fixture.json'
 import { parseReportDatasets } from '../api/reportWorkspaceApi'
+import { validateStockReportRequest } from '../api/reportsApi'
+import { cashPeriodConfigurationError } from './cashPeriod'
+import { customerReturnRequest } from './customerReturnReport'
+import { groupCanonicalFilterOptions } from './reportFilterFields'
 import { datasetConfigurationError, datasetFilters, defaultDatasetRequest } from './reportDatasets'
 import { effectiveReportConfiguration } from './reportConfiguration'
 import { readFilterExpressionCapabilities } from './reportFilterExpression'
@@ -74,6 +78,31 @@ describe('catalog resilience', () => {
       const parsed = parseReportDatasets(changed)
       expect(parsed.filter(item => item.DataSource !== source).map(item => item.DataSource))
         .toEqual(datasets.filter(item => item.DataSource !== source).map(item => item.DataSource))
+    }
+  })
+})
+
+describe('cash statement forms', () => {
+  it('builds «Рахунок / Тип / Організація» with no filters and the default indicators', () => {
+    const dataset = datasets.find(item => item.DataSource === 40)!
+    const request = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-15')
+    request.sorted.Row = [40, 44, 43].map(type => dataset.Groupings.find(row => row.Type === type)!).map(row => ({ type: row.Type, key: String(row.Type), label: row.Name }))
+    expect(datasetConfigurationError(request, dataset)).toBeNull()
+    expect(() => validateStockReportRequest(request, dataset)).not.toThrow()
+    expect(cashPeriodConfigurationError(request, undefined, '2026-11-16')).toBeNull()
+  })
+})
+
+describe('filter field list names', () => {
+  it('names every group and field once in each report, «Звіт повернення» included', () => {
+    const returns = datasets.find(item => item.DataSource === 2)!
+    const requests = [...ACTIVE.map(source => base(datasets.find(item => item.DataSource === source)!)),
+      customerReturnRequest(defaultDatasetRequest(returns, '2026-10-01', '2026-10-15'), returns)]
+    for (const request of requests) {
+      const dataset = datasets.find(item => item.DataSource === request.dataSource)!
+      const grouped = groupCanonicalFilterOptions(request.dataSource, offered(dataset, request))
+      const names = grouped.flatMap(entry => 'group' in entry ? [entry.group, ...entry.items.map(item => item.label)] : [entry.label])
+      expect(names.filter((name, index) => names.indexOf(name) !== index), `source ${request.dataSource}`).toEqual([])
     }
   })
 })
