@@ -12,10 +12,9 @@ export function reportGroupingPath(type: number): string[] {
   return []
 }
 
-/** Keep the selected resource order across dataset refresh, date changes and template restore. */
 export function retainMeasurementOrder(groups: ReportMeasurementGroup[], selected: ReportMeasurementSelection[]): ReportMeasurementGroup[] {
   const order = new Map<number, number>()
-  for (const item of selected) if (item.IsChecked !== false && !order.has(item.Type)) order.set(item.Type, order.size)
+  for (const item of selected) if (!order.has(item.Type)) order.set(item.Type, order.size)
   if (!order.size) return groups
   const rank = (type: number) => order.get(type) ?? Number.MAX_SAFE_INTEGER
   return groups.map(group => ({ ...group, SubList: group.SubList.toSorted((a, b) => rank(a.Type) - rank(b.Type)) }))

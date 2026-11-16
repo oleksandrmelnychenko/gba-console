@@ -359,7 +359,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [selectedMeasurements, setMeasurements] = useValueState<ReportMeasurementGroup[]>(createDefaultMeasurementGroups)
   const supplierDataset = useMemo(() => supplierBasisFormDataset(dataset, supplierBasis), [dataset, supplierBasis])
   const measurements = useMemo(() => retainStoredMeasurementLabels(retainedData, { dataSource, supplierBasis },
-    datasetMeasurements(salesConstructorDataset(supplierDataset, reportProfile), flattenCheckedMeasurements(selectedMeasurements))),
+    datasetMeasurements(salesConstructorDataset(supplierDataset, reportProfile), selectedMeasurements.flatMap(group => group.SubList.map(item => ({ ...item, parentName: group.Name }))))),
   [dataSource, retainedData, reportProfile, selectedMeasurements, supplierBasis, supplierDataset])
   const groupingOrdering = useReportGroupingOrdering()
   const { rowGroups, setRowGroups, colGroups, setColGroups, ordering } = groupingOrdering

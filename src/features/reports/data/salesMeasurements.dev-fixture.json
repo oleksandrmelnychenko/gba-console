@@ -1,0 +1,254 @@
+[
+  {
+    "Type": 0,
+    "Name": "Кількість з урахуванням повернень",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "quantity",
+      "currencyPolicy": "notApplicable",
+      "unitPolicy": "confirmedCompatibleUnit",
+      "aggregation": "sumWithinCompatibleUnit",
+      "scalable": false,
+      "defaultDecimalPlaces": 3,
+      "defaultMinimumDecimalPlaces": 0
+    }
+  },
+  {
+    "Type": 1,
+    "Name": "Продажі без ПДВ з урахуванням повернень",
+    "Selectable": false,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 2,
+    "Name": "Продажі без ПДВ з урахуванням повернень",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 3,
+    "Name": "ПДВ продажів і повернень",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 4,
+    "Name": "Продажі з ПДВ з урахуванням повернень",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 5,
+    "Name": "Собівартість",
+    "Selectable": false,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 6,
+    "Name": "Собівартість без ПДВ",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 7,
+    "Name": "ПДВ собівартості",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 8,
+    "Name": "Собівартість з ПДВ",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 9,
+    "Name": "Валовий прибуток",
+    "Selectable": false,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 10,
+    "Name": "Валовий прибуток без ПДВ",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 11,
+    "Name": "ПДВ валового прибутку",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 12,
+    "Name": "Валовий прибуток з ПДВ",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 13,
+    "Name": "Націнка, %",
+    "Selectable": false,
+    "valueSemantics": {
+      "kind": "percent",
+      "currencyPolicy": "notApplicable",
+      "unitPolicy": "percentAlreadyMultipliedBy100",
+      "aggregation": "recomputeFromBase",
+      "scalable": false,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 14,
+    "Name": "Націнка без ПДВ, %",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "percent",
+      "currencyPolicy": "notApplicable",
+      "unitPolicy": "percentAlreadyMultipliedBy100",
+      "aggregation": "recomputeFromBase",
+      "scalable": false,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 15,
+    "Name": "Націнка з ПДВ, %",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "percent",
+      "currencyPolicy": "notApplicable",
+      "unitPolicy": "percentAlreadyMultipliedBy100",
+      "aggregation": "recomputeFromBase",
+      "scalable": false,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 115,
+    "Name": "Маржа без ПДВ, %",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  },
+  {
+    "Type": 116,
+    "Name": "Маржа з ПДВ, %",
+    "Selectable": true,
+    "valueSemantics": {
+      "kind": "money",
+      "currencyPolicy": "EUR",
+      "unitPolicy": "currency",
+      "aggregation": "sum",
+      "scalable": true,
+      "defaultDecimalPlaces": 2,
+      "defaultMinimumDecimalPlaces": 2
+    }
+  }
+]
