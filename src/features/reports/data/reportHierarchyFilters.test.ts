@@ -54,7 +54,7 @@ describe('dataset hierarchy declarations', () => {
     expect(datasetGroupSelectionError(settlementDataset, selection(6, 6, { kind: 'buyer', id: '5' }))).toMatch('оберіть групу')
     expect(datasetGroupSelectionError(settlementDataset, selection(6, 6, group, group))).toBe('Оберіть одну групу для цієї умови.')
     expect(datasetGroupSelectionError(settlementDataset, selection(6, 3, group, { kind: 'buyer', id: '5' }))).toBeNull()
-    expect(datasetGroupSelectionError(settlementDataset, selection(6, 2, group))).toMatch('лише в умовах «У групі…»')
+    expect(datasetGroupSelectionError(settlementDataset, selection(6, 2, group))).toMatch('лише в умовах «В групі…»')
     expect(datasetGroupSelectionError(settlementDataset, selection(17, 5, { kind: 'supplier', id: '40' }, group))).toBeNull()
   })
 })

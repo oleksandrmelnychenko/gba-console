@@ -51,10 +51,10 @@ export function datasetGroupSelectionError(dataset: ReportDataset | null | undef
     if ([6, 7].includes(condition) && selection.Values.length > 1) return 'Оберіть одну групу для цієї умови.'
     if (selection.Values.some(value => !validAnalysisFilterValue(field, value.Data, descriptor, condition)))
       return [6, 7].includes(condition)
-        ? 'Для умов «У групі» та «Не у групі» оберіть групу; окремі значення доступні в умовах «У групі зі списку» та «Не у групі зі списку».'
+        ? 'Для умов «В групі» та «Не в групі» оберіть групу; окремі значення доступні в умовах «В групі зі списку» та «Не в групі зі списку».'
         : 'Оберіть групи або значення зі списку ще раз.'
     return null
   }
   return selection.Values.some(value => analysisHierarchyIdentity(field, value.Data))
-    ? 'Групи можна обрати лише в умовах «У групі…»; приберіть групи або змініть умову.' : null
+    ? 'Групи можна обрати лише в умовах «В групі…»; приберіть групи або змініть умову.' : null
 }

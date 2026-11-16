@@ -92,10 +92,10 @@ describe('typed hierarchy values', () => {
     const mixed = { ...grouped, Values: [...grouped.Values, { Data: group('counterpartyGroup'), Name: 'Київ', Value: 0 }] }
     const back = changeAnalysisSelectionCondition(mixed, { Type: 4, Name: 'Не у списку' })
     expect(back.Values.map(value => value.Data)).toEqual([{ Id: 7 }, { Id: '8' }, group('counterpartyGroup')])
-    expect(analysisSelectionValueError(back, descriptor(5))).toBe('Групи можна обрати лише в умовах «У групі…»; приберіть групи або змініть умову.')
+    expect(analysisSelectionValueError(back, descriptor(5))).toBe('Групи можна обрати лише в умовах «В групі…»; приберіть групи або змініть умову.')
     const one = changeAnalysisSelectionCondition(selection(21, 0, { Id: 3 }), { Type: 6, Name: 'У групі' })
     expect(one.Values[0].Data).toEqual({ kind: 'warehouse', id: 3 })
-    expect(analysisSelectionValueError(one, descriptor(21))).toBe('Для умов «У групі» та «Не у групі» оберіть групу; окремі значення доступні в умовах «У групі зі списку» та «Не у групі зі списку».')
+    expect(analysisSelectionValueError(one, descriptor(21))).toBe('Для умов «В групі» та «Не в групі» оберіть групу; окремі значення доступні в умовах «В групі зі списку» та «Не в групі зі списку».')
     expect(analysisSelectionValueError(selection(21, 6, group('warehouseGroup'), group('warehouseGroup', 'amg')), descriptor(21)))
       .toBe('Оберіть одну групу для цієї умови.')
   })

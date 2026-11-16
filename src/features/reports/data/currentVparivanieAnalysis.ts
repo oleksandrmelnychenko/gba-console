@@ -246,11 +246,11 @@ export function analysisSelectionValueError(selection: ReportSelection, descript
   if (cardinality) return cardinality
   const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
   if (selection.Values.some(v => !validAnalysisFilterValue(field, v.Data, descriptor, condition))) {
-    if (field === 4) return 'Для цієї умови оберіть групи товарів; окремі товари доступні в умовах «У групі зі списку» та «Не у групі зі списку».'
+    if (field === 4) return 'Для цієї умови оберіть групи товарів; окремі товари доступні в умовах «В групі зі списку» та «Не в групі зі списку».'
     if (HIERARCHY_ITEMS[field] && [6, 7].includes(condition))
-      return 'Для умов «У групі» та «Не у групі» оберіть групу; окремі значення доступні в умовах «У групі зі списку» та «Не у групі зі списку».'
+      return 'Для умов «В групі» та «Не в групі» оберіть групу; окремі значення доступні в умовах «В групі зі списку» та «Не в групі зі списку».'
     if (HIERARCHY_ITEMS[field] && !GROUP_CONDITIONS.includes(condition) && selection.Values.some(v => analysisHierarchyIdentity(field, v.Data)?.group))
-      return 'Групи можна обрати лише в умовах «У групі…»; приберіть групи або змініть умову.'
+      return 'Групи можна обрати лише в умовах «В групі…»; приберіть групи або змініть умову.'
     return 'Некоректне значення відбору аналізу.'
   }
   return null
@@ -288,7 +288,7 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
   }
   return !draft && !anchor ? 'Оберіть товари або групи товарів для аналізу.' : null
 }
-export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «У списку» чи «У групі зі списку» або через «І» з умовою «Не у списку» чи «Не у групі зі списку».'
+export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «В списку» чи «В групі зі списку» або через «І» з умовою «Не в списку» чи «Не в групі зі списку».'
 type MergeTerm = { kind: 1 | 2; children: MergeTerm[] } | { kind: 3; leaf: ReportSelection }
 const mergeTarget = (kind: 1 | 2, condition: number) => kind === 2 ? ([0, 2].includes(condition) ? 2 : [3, 6].includes(condition) ? 3 : null)
   : [1, 4].includes(condition) ? 4 : [5, 7].includes(condition) ? 5 : null
