@@ -427,6 +427,12 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
   if (month >= 0 && day >= 0 && day < month) return 'Групування за днем не може бути вищим за місяць.'
   if (!draft.measures.length) return 'Оберіть хоча б один показник.'
   const rows = draft.filterRows ?? []
+  const incomplete = rows.findIndex(row => row.enabled && !stockMovementRowActive(row))
+  if (incomplete >= 0) {
+    const field = rows[incomplete].field
+    return field ? `Умова відбору ${incomplete + 1} (${STOCK_MOVEMENT_FILTER_DEFINITIONS[field].label}): додайте значення або зніміть галочку`
+      : `Умова відбору ${incomplete + 1}: оберіть поле або зніміть галочку`
+  }
   for (let index = 0; index < rows.length; index++) {
     const problem = stockMovementRowLimitError(rows[index])
     if (problem) return `Умова відбору №${index + 1}: ${problem}`
