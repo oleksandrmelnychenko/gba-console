@@ -89,12 +89,12 @@ it('does not label a current snapshot with a technical banner', () => {
 it('retains repeated ignored filters and hides exact technical identities', () => {
   const guid = '11111111222233334444555555555555'
   const view = show({ ...request, Notes: ['Повторена примітка', 'Повторена примітка'],
-    IgnoredFilters: [0, 1].map(() => ({ Field: 'Вид товару Fenix', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null })) })
+    IgnoredFilters: [0, 1].map(() => ({ Field: 'Вид товару', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null })) })
   expect(screen.queryByText('Повторена примітка')).toBeNull()
   expect(view.container.textContent).not.toContain(guid)
   expect(view.container.textContent).not.toContain('[Id=42]')
   expect(view.container.textContent).not.toContain('[Id=64]')
-  expect(screen.getAllByText('Вид товару Fenix У списку: Обране точне значення, Обране точне значення, Назва товару')).toHaveLength(2)
+  expect(screen.getAllByText('Вид товару У списку: Обране точне значення, Обране точне значення, Назва товару')).toHaveLength(2)
 })
 
 it('prints decimal cells with 1C thousands separators and a decimal comma', () => {

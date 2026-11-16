@@ -47,7 +47,7 @@ describe('constructor desk vocabulary', () => {
     expect(constructorGroupingField(request(3), 25, 'Договір постачальника').path).toEqual(['Постачальник'])
     expect(constructorGroupingField(request(45), 29, 'Склад').path).toEqual(['Склад'])
     expect(constructorGroupingField(request(45), 34, 'Поточна організація складу').path).toEqual([])
-    expect(constructorGroupingCaption(request(44), 13, 'Поточний регіон клієнта')).toBe('Поточний регіон клієнта')
+    expect(constructorGroupingCaption(request(44), 13, 'Регіон клієнта')).toBe('Регіон клієнта')
   })
 
   it('groups filter fields by category without changing the wire field', () => {

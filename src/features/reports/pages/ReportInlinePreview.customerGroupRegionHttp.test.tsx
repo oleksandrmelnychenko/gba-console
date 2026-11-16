@@ -11,7 +11,7 @@ vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 it('binds actual source44 current-region request and cached pages without changing sets, unknown quantities or per-set grands', async () => {
   const api = vi.mocked(apiRequest)
   api.mockResolvedValue([fixture.dataset]); const [dataset] = await getReportDatasets()
-  expect(dataset.Filters.find(field => field.Type === 7)).toMatchObject({ Name: 'Поточний регіон клієнта' })
+  expect(dataset.Filters.find(field => field.Type === 7)).toMatchObject({ Name: 'Регіон клієнта' })
   expect(dataset.Filters.find(field => field.Type === 7)?.hierarchy).toBeUndefined()
   api.mockResolvedValue([{ Id: 'region44-wire', Revision: 1, Name: 'Набори', Data: fixture.request }])
   const [template] = await getServerReportTemplates()

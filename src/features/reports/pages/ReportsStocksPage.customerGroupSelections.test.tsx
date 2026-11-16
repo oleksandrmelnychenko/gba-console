@@ -21,7 +21,7 @@ function template(condition = 2, checked = true, field = 8): ReportTemplate {
   data.sorted.Row = [{ type: 7, key: 'ProductName', label: 'Назва товару' }, { type: 3, key: 'Day', label: 'День' }]
   data.sorted.Col = [{ type: 82, key: 'CustomerComparisonSource', label: 'Набір клієнтів' }]
   data.sorted.Measurements = [112, 109, 114].map(Type => ({ Type, Name: String(Type), parentName: String(Type), IsChecked: true }))
-  data.selections = [{ IsChecked: true, SelectedField: { Type: 0, Name: 'Organization' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 10 }, Name: 'Організація', Value: 0 }] }, { IsChecked: checked, SelectedField: { Type: field, Name: field === 1 ? 'Товар' : field === 8 ? 'Поточний код регіону клієнта' : 'Поточний основний менеджер клієнта' }, FilterCondition: { Type: condition, Name: condition === 0 ? 'Дорівнює' : condition === 1 ? 'Не дорівнює' : 'У списку' },
+  data.selections = [{ IsChecked: true, SelectedField: { Type: 0, Name: 'Organization' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 10 }, Name: 'Організація', Value: 0 }] }, { IsChecked: checked, SelectedField: { Type: field, Name: field === 1 ? 'Товар' : field === 8 ? 'Код регіону клієнта' : 'Основний менеджер клієнта' }, FilterCondition: { Type: condition, Name: condition === 0 ? 'Дорівнює' : condition === 1 ? 'Не дорівнює' : 'У списку' },
     Values: JSON.parse(String.raw`[{"Data":"{\"Id\":10}","Name":"Старий регіон","Value":10},{"Data":{"Id":30},"Name":"Архівний регіон","Value":30}]`) }]
   return { Id: 'source44-region', Revision: 1, UpdatedAtUtc: '2026-10-29T12:00:00Z', Name: 'Набори з поточними відборами', Data: data }
 }
@@ -47,8 +47,8 @@ async function restore() {
 it('gates code and manager fields by actual metadata; old server stays repairable', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue([{ ...dataset, Filters: dataset.Filters.filter(field => ![8,10].includes(field.Type)) }])
   await ready();fireEvent.click(screen.getByRole('button',{name:'Додати відбір'}));fireEvent.click(screen.getByRole('combobox',{name:'Поле'}))
-  expect(screen.queryByRole('option',{name:'Поточний код регіону клієнта'})).toBeNull()
-  expect(screen.queryByRole('option',{name:'Поточний основний менеджер клієнта'})).toBeNull()
+  expect(screen.queryByRole('option',{name:'Код регіону клієнта'})).toBeNull()
+  expect(screen.queryByRole('option',{name:'Основний менеджер клієнта'})).toBeNull()
 })
 it.each([8,10])('keeps dates, stale raw IDs, cohorts, and sorted measures when saving field%d', async field => {
  vi.mocked(getServerReportTemplates).mockResolvedValue([template(2,true,field)]);await restore()

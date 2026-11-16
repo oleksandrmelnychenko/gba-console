@@ -34,8 +34,8 @@ it('refuses run and save for wrong measure or column grouping before any dispatc
 
 it('restores a lot draft intact and blocks both generation and template save with the lot reason until explicit repair', async () => {
   const request = { ...stockQuantityRequest(), stockQuantityFilter: positiveClosingQuantity }
-  request.sorted.Row.push({ type: 33, key: 'StockConsignmentItem', label: 'Партія GBA' })
-  const dataset = { ...stockQuantityDataset, Groupings: [...stockQuantityDataset.Groupings, { Type: 33, Name: 'Партія GBA' }] }
+  request.sorted.Row.push({ type: 33, key: 'StockConsignmentItem', label: 'Партія' })
+  const dataset = { ...stockQuantityDataset, Groupings: [...stockQuantityDataset.Groupings, { Type: 33, Name: 'Партія' }] }
   const wire = { Id: 'stock-lots', Revision: 1, Name: 'Партії', Data: { DataSource: 45, From: request.from, To: request.to,
     Sorted: request.sorted, Selections: [], StockQuantityFilter: positiveClosingQuantity } }
   api.mockResolvedValue([wire]); const [saved] = await getServerReportTemplates()

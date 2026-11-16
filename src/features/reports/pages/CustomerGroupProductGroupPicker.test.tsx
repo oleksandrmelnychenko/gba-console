@@ -12,7 +12,7 @@ const api=vi.mocked(apiRequest),max='9223372036854775807'
 const saved:ReportSelectedValue[]=JSON.parse(String.raw`[{"Data":"{\"Id\":\"9007199254740993\"}","Name":"Стара група","Value":0},{"Data":{"Id":"9223372036854775807"},"Name":"Відсутня група","Value":0}]`)
 function Form({field=4,condition=2,values=saved,from='2026-10-01',disabled=false,checked=true}:{field?:number;condition?:number;values?:ReportSelectedValue[];from?:string;disabled?:boolean;checked?:boolean}){
  const [selected,setSelected]=useState(values)
- return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} from={from} to="2026-10-27" label="Значення" lookupProfitUnavailable={disabled} selection={{IsChecked:checked,SelectedField:{Type:field,Name:'Поточні прямі групи товару'},FilterCondition:{Type:condition,Name:'Умова'},Values:selected}} selections={[]} onChange={setSelected}/><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
+ return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} from={from} to="2026-10-27" label="Значення" lookupProfitUnavailable={disabled} selection={{IsChecked:checked,SelectedField:{Type:field,Name:'Товарна група'},FilterCondition:{Type:condition,Name:'Умова'},Values:selected}} selections={[]} onChange={setSelected}/><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
 }
 const selected=()=>JSON.parse(screen.getByTestId('selected').textContent!)
 function search(query:string){const box=screen.getByRole('combobox',{name:'Значення'});act(()=>box.focus());fireEvent.change(box,{target:{value:query}})}

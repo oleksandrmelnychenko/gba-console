@@ -144,17 +144,17 @@
       },
       {
         "Type": 3,
-        "Name": "Поточний TOP товару",
+        "Name": "TOP товару",
         "Selectable": true
       },
       {
         "Type": 7,
-        "Name": "Поточний регіон клієнта",
+        "Name": "Регіон клієнта",
         "Selectable": true
       },
       {
         "Type": 8,
-        "Name": "Поточний код регіону клієнта",
+        "Name": "Код регіону клієнта",
         "Selectable": true
       },
       {
@@ -164,7 +164,7 @@
       },
       {
         "Type": 10,
-        "Name": "Поточний основний менеджер клієнта",
+        "Name": "Основний менеджер клієнта",
         "Selectable": true
       }
     ],
@@ -555,7 +555,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний регіон клієнта",
+            "Field": "Регіон клієнта",
             "Condition": "дорівнює",
             "Values": [
               "Регіон"
@@ -563,7 +563,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний код регіону клієнта",
+            "Field": "Код регіону клієнта",
             "Condition": "дорівнює",
             "Values": [
               "SAME"
@@ -571,7 +571,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний основний менеджер клієнта",
+            "Field": "Основний менеджер клієнта",
             "Condition": "дорівнює",
             "Values": [
               "Менеджер"
@@ -596,7 +596,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний TOP товару",
+            "Field": "TOP товару",
             "Condition": "у списку",
             "Values": [
               "X9",
@@ -1613,7 +1613,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний регіон клієнта",
+            "Field": "Регіон клієнта",
             "Condition": "дорівнює",
             "Values": [
               "Регіон"
@@ -1621,7 +1621,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний код регіону клієнта",
+            "Field": "Код регіону клієнта",
             "Condition": "дорівнює",
             "Values": [
               "SAME"
@@ -1629,7 +1629,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний основний менеджер клієнта",
+            "Field": "Основний менеджер клієнта",
             "Condition": "дорівнює",
             "Values": [
               "Менеджер"
@@ -1654,7 +1654,7 @@
             "IgnoredReason": null
           },
           {
-            "Field": "Поточний TOP товару",
+            "Field": "TOP товару",
             "Condition": "у списку",
             "Values": [
               "X9",

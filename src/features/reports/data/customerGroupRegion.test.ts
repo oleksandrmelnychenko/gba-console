@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { customerGroupRegionError, isCustomerGroupRegion } from './customerGroupRegion'
 import type { ReportSelection } from '../types'
-const selection = (condition = 2, checked = true): ReportSelection => ({ IsChecked: checked, SelectedField: { Type: 7, Name: 'Поточний регіон клієнта' },
+const selection = (condition = 2, checked = true): ReportSelection => ({ IsChecked: checked, SelectedField: { Type: 7, Name: 'Регіон клієнта' },
   FilterCondition: { Type: condition, Name: '' }, Values: [11, 22].map(Id => ({ Data: { Id }, Name: 'Однакова назва', Value: 0 })) })
 it('admits only source44 parent Region7, never RegionCode8 or other reports', () => {
   expect(isCustomerGroupRegion(44, 7)).toBe(true); expect(isCustomerGroupRegion(44, 8)).toBe(false); expect(isCustomerGroupRegion(2, 7)).toBe(false)

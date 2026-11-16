@@ -7,7 +7,7 @@ import { customerGroupDirectoryId } from './customerGroupDirectory'
 import type { ReportSelection, ReportSelectedValue } from '../types'
 const max='9223372036854775807'
 const raw:ReportSelectedValue[]=JSON.parse(String.raw`[{"Data":"{\"Id\":\"9007199254740993\"}","Name":"Стара назва","Value":0},{"Data":{"Id":"9223372036854775807"},"Name":"Архівний група","Value":0}]`)
-const selection=(condition=2,checked=true):ReportSelection=>({IsChecked:checked,SelectedField:{Type:4,Name:'Поточні прямі групи товару'},FilterCondition:{Type:condition,Name:'Умова'},Values:raw})
+const selection=(condition=2,checked=true):ReportSelection=>({IsChecked:checked,SelectedField:{Type:4,Name:'Товарна група'},FilterCondition:{Type:condition,Name:'Умова'},Values:raw})
 it.each(['1','9007199254740993',max])('preserves exact Int64 string %s through object and savedJSON',id=>{
  expect(canonicalCustomerGroupInt64Id(id)).toBe(id);expect(customerGroupProductGroupId({Id:id})).toBe(id);expect(customerGroupProductGroupId(JSON.stringify({Id:id}))).toBe(id)
  expect(customerGroupProductGroupQueryError('id:'+id)).toBeNull()

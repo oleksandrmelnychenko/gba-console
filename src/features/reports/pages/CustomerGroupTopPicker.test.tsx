@@ -13,7 +13,7 @@ const raw:ReportSelectedValue[]=JSON.parse(String.raw`[{"Data":"{\"Name\":\"E  \
 function Form({source=44,condition=2,values=raw,from='2026-10-01',disabled=false,checked=true}:{source?:number;condition?:number;values?:ReportSelectedValue[];from?:string;disabled?:boolean;checked?:boolean}){
  const [selected,setSelected]=useState(values)
  return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={source} from={from} to="2026-10-27" label="Значення" lookupProfitUnavailable={disabled}
- selection={{IsChecked:checked,SelectedField:{Type:3,Name:'Поточний TOP товару'},FilterCondition:{Type:condition,Name:'Умова'},Values:selected}} selections={[]} onChange={setSelected}/><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
+ selection={{IsChecked:checked,SelectedField:{Type:3,Name:'TOP товару'},FilterCondition:{Type:condition,Name:'Умова'},Values:selected}} selections={[]} onChange={setSelected}/><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
 }
 const selected=()=>JSON.parse(screen.getByTestId('selected').textContent!)
 function search(value:string){const box=screen.getByRole('combobox',{name:'Значення'});act(()=>box.focus());fireEvent.change(box,{target:{value}})}

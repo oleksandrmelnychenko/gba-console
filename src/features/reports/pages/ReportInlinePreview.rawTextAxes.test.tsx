@@ -125,7 +125,7 @@ const wireMetadata = {
     "RawSchema": {
       "Position": 0,
       "Identity": "ProductDescription",
-      "Caption": "Поточний опис товару",
+      "Caption": "Опис товару",
       "DisplayKind": "Text",
       "KeyKind": "Text",
       "Captioned": false,
@@ -410,7 +410,7 @@ const wireMetadata = {
     "RawSchema": {
       "Position": 1,
       "Identity": "ProductTop",
-      "Caption": "Поточний TOP товару",
+      "Caption": "TOP товару",
       "DisplayKind": "Text",
       "KeyKind": "Text",
       "Captioned": false,
@@ -654,7 +654,7 @@ const wireMetadata = {
     "RawSchema": {
       "Position": 0,
       "Identity": "ProductDescription",
-      "Caption": "Поточний опис товару",
+      "Caption": "Опис товару",
       "DisplayKind": "Text",
       "KeyKind": "Text",
       "Captioned": false,

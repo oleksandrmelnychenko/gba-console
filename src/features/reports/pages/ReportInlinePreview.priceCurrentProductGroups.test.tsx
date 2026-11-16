@@ -10,7 +10,7 @@ import { ReportInlinePreview } from './ReportInlinePreview'
 const currentAxisMetadata: Record<string, { Identity: string; Caption: string; DisplayKind: string; KeyKind: string; Captioned: boolean; AgreementRole: string }> = {
   "ProductDescription": {
     "Identity": "ProductDescription",
-    "Caption": "Поточний опис товару",
+    "Caption": "Опис товару",
     "DisplayKind": "Text",
     "KeyKind": "Text",
     "Captioned": false,
@@ -18,7 +18,7 @@ const currentAxisMetadata: Record<string, { Identity: string; Caption: string; D
   },
   "ProductTop": {
     "Identity": "ProductTop",
-    "Caption": "Поточний TOP товару",
+    "Caption": "TOP товару",
     "DisplayKind": "Text",
     "KeyKind": "Text",
     "Captioned": false,
@@ -92,7 +92,7 @@ it.each(rawAxes)('already preserves raw source46 %s column captions with NULL an
   wire.RowSchema = [wire.RowSchema[0]]
   wire.Rows[0].Values = [wire.Rows[0].Values[0]]
   wire.Request.RowGroupings = ['Товар']
-  wire.Request.ColumnGroupings = [identity === 'ProductTop' ? 'Поточний TOP товару' : 'Поточний опис товару']
+  wire.Request.ColumnGroupings = [identity === 'ProductTop' ? 'TOP товару' : 'Опис товару']
   wire.ColumnSchema = [{ Identity: identity, Caption: wire.Request.ColumnGroupings[0] }, { Identity: '$measure', Caption: 'Показник' }]
   wire.Columns = [
     { Ordinal: 0, SourceIndex: 0, Values: [axisValue(caption), axisValue('Кількість')] },

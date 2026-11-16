@@ -33,7 +33,7 @@ afterEach(cleanup)
 async function ready(){render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage/></I18nProvider></MantineProvider>);fireEvent.click(await screen.findByRole('button',{name:'Відкрити Порівняння роботи клієнтів'}));await waitFor(()=>expect(screen.getByRole('button',{name:'Відкрити Порівняння роботи клієнтів'})).toHaveProperty('ariaCurrent','true'))}
 async function restore(){await ready();fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Набори з TOP'}));await screen.findByRole('group',{name:'Умова відбору 1'})}
 it('only offers TOP3 when actual source44 metadata admits it',async()=>{
- vi.mocked(getReportDatasets).mockResolvedValue([{...dataset,Filters:dataset.Filters.filter(f=>f.Type!==3)}]);await ready();fireEvent.click(screen.getByRole('button',{name:'Додати відбір'}));fireEvent.click(screen.getByRole('combobox',{name:'Поле'}));expect(screen.queryByRole('option',{name:'Поточний TOP товару'})).toBeNull()
+ vi.mocked(getReportDatasets).mockResolvedValue([{...dataset,Filters:dataset.Filters.filter(f=>f.Type!==3)}]);await ready();fireEvent.click(screen.getByRole('button',{name:'Додати відбір'}));fireEvent.click(screen.getByRole('combobox',{name:'Поле'}));expect(screen.queryByRole('option',{name:'TOP товару'})).toBeNull()
 })
 it('restores and saves raw TOP codes/JSON with bounded scoped directory or clearing cohorts/date/order',async()=>{
  await restore();await waitFor(()=>expect(apiRequest).toHaveBeenCalledOnce());expect(vi.mocked(apiRequest).mock.calls[0][0]).toBe('/report/datasets/lookup');const group=screen.getByRole('group',{name:'Умова відбору 1'});fireEvent.click(within(group).getByRole('combobox',{name:'Тип порівняння'}))

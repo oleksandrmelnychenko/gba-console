@@ -8,9 +8,9 @@ describe('report dataset capabilities', () => {
 
   it.each([2, 3, 44, 45, 46])('uses the one canonical filter label mapping in source %i without changing keys', DataSource => {
     const dataset = { ...grossDataset, DataSource, Filters: [
-      { Type: 3, Name: 'Поточний TOP товару' },
-      { Type: 4, Name: 'Поточні прямі групи товару' },
-      { Type: 7, Name: 'Поточний регіон клієнта' },
+      { Type: 3, Name: 'TOP товару' },
+      { Type: 4, Name: 'Товарна група' },
+      { Type: 7, Name: 'Регіон клієнта' },
     ] }
     const before = structuredClone(dataset)
     expect(datasetFilters(dataset)).toEqual([

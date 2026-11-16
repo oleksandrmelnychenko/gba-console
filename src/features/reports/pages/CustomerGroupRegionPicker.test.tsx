@@ -13,8 +13,8 @@ const api = vi.mocked(apiRequest)
 const rawSaved: ReportSelectedValue[] = JSON.parse(String.raw`[{"Data":"{\"Id\":10}","Name":"Стара назва","Value":10},{"Data":{"Id":30},"Name":"Архівний регіон","Value":30}]`)
 function Form({ values = rawSaved, from = '2026-10-01', disabled = false }: { values?: ReportSelectedValue[]; from?: string; disabled?: boolean }) {
   const [selected, setSelected] = useState(values)
-  return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} lookupProfitUnavailable={disabled} from={from} to="2026-10-27" label="Поточний регіон клієнта"
-    selection={{ IsChecked: true, SelectedField: { Type: 7, Name: 'Поточний регіон клієнта' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: selected }}
+  return <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} lookupProfitUnavailable={disabled} from={from} to="2026-10-27" label="Регіон клієнта"
+    selection={{ IsChecked: true, SelectedField: { Type: 7, Name: 'Регіон клієнта' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: selected }}
     selections={[]} onChange={setSelected} /><output data-testid="selected">{JSON.stringify(selected)}</output></I18nProvider></MantineProvider>
 }
 beforeEach(() => { api.mockReset(); api.mockResolvedValue([{ Id: 10, NetUid: 'old-id', Name: 'Нова назва', RegionCodes: [{ Id: 999, Value: 'CHILD-999', Name: 'Дочірній код' }] }, { Id: 20, NetUid: 'other-id', Name: 'Нова назва' }]); Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() }) })
@@ -22,7 +22,7 @@ afterEach(cleanup)
 it('uses parent Region DTO adapter, stable ID choices and preserves absent/JSON-string saved values across dates', async () => {
   const view = render(<Form />)
   await waitFor(() => expect(api).toHaveBeenCalledWith('/regions/all/codes', { signal: expect.any(AbortSignal) }))
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поточний регіон клієнта' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Регіон клієнта' }))
   const other = await screen.findByRole('option', { name: 'Нова назва' })
   expect(screen.getAllByRole('option')).toHaveLength(3)
   expect(screen.queryByRole('option', { name: /Дочірній|CHILD/ })).toBeNull()
@@ -41,14 +41,14 @@ it.each([{ Id: 9007199254740992, Name: 'Небезпечний ID' }, { Id: '10'
 })
 it('keeps two different exact IDs selectable despite equal captions', async () => {
   api.mockResolvedValue([{ Id: 10, Name: 'Одна назва' }, { Id: 20, Name: 'Одна назва' }]); render(<Form values={[]} />)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поточний регіон клієнта' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Регіон клієнта' }))
   const options = await screen.findAllByRole('option', { name: 'Одна назва' }); fireEvent.click(options[0]); fireEvent.click(options[1])
   expect(JSON.parse(screen.getByTestId('selected').textContent!).map((value: ReportSelectedValue) => value.Data.Id)).toEqual([10, 20])
 })
 
 it('keeps safe IDs above Int32 exact in Data and uses only an enum-safe descriptive Value', async () => {
   api.mockResolvedValue([{ Id: 1099511627776, Name: 'Великий ID' }]); render(<Form values={[]} />)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поточний регіон клієнта' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Регіон клієнта' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Великий ID' }))
   expect(JSON.parse(screen.getByTestId('selected').textContent!)).toEqual([{ Data: { Id: 1099511627776 }, Name: 'Великий ID', Value: 0 }])
 })
@@ -63,7 +63,7 @@ it('ignores an aborted old catalogue response after the picker is disabled and r
   view.rerender(<Form values={[]} disabled />)
   expect(signal?.aborted).toBe(true)
   view.rerender(<Form values={[]} />)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поточний регіон клієнта' }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Регіон клієнта' }))
   expect(await screen.findByRole('option', { name: 'Актуальний регіон' })).toBeTruthy()
   resolveOld([{ Id: 10, Name: 'Стара відповідь' }])
   await waitFor(() => expect(screen.queryByRole('option', { name: 'Стара відповідь' })).toBeNull())
@@ -73,7 +73,7 @@ it('ignores an aborted old catalogue response after the picker is disabled and r
 
 it('shows current-region meaning for active selections only without changing stored values', () => {
   const onChange = vi.fn()
-  const selection = { IsChecked: true, SelectedField: { Type: 7, Name: 'Поточний регіон клієнта' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: rawSaved }
+  const selection = { IsChecked: true, SelectedField: { Type: 7, Name: 'Регіон клієнта' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: rawSaved }
   const element = (checked:boolean) => <MantineProvider env="test"><I18nProvider><SelectionValuePicker dataSource={44} from="2026-10-01" to="2026-10-27" selection={{...selection,IsChecked:checked}} selections={[]} onChange={onChange} /></I18nProvider></MantineProvider>
   const view=render(element(true)); expect(screen.getByText(CUSTOMER_GROUP_REGION_NOTE)).toBeTruthy()
   view.rerender(element(false)); expect(screen.queryByText(CUSTOMER_GROUP_REGION_NOTE)).toBeNull(); expect(onChange).not.toHaveBeenCalled()
@@ -81,7 +81,7 @@ it('shows current-region meaning for active selections only without changing sto
 
 it('uses the exact retained normal Region DTO parent ID, never its child RegionCode IDs', async () => {
   api.mockResolvedValue(actualDirectory);render(<Form values={[]} />)
-  fireEvent.click(screen.getByRole('combobox',{name:'Поточний регіон клієнта'}))
+  fireEvent.click(screen.getByRole('combobox',{name:'Регіон клієнта'}))
   fireEvent.click(await screen.findByRole('option',{name:actualDirectory[0].Name}))
   expect(JSON.parse(screen.getByTestId('selected').textContent!)).toEqual([{Data:{Id:actualDirectory[0].Id},Name:actualDirectory[0].Name,Value:0}])
   expect(actualDirectory[0].RegionCodes.map(code=>code.Id)).not.toContain(actualDirectory[0].Id)
