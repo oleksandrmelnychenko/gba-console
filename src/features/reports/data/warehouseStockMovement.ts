@@ -64,6 +64,20 @@ export type StockMovementCapability = {
 export type StockMovementLookupItem = { Id: number; Name: string; Detail: string | null }
 type StockMovementCondition = { Measure: StockMovementMeasure; Comparison: StockMovementComparison; Value: number }
 export type StockMovementSelection = { id: number; label: string }
+export const STOCK_MOVEMENT_FILTER_FIELDS = ['organization', 'product', 'article', 'top', 'group', 'unit', 'warehouse', 'documentKind', 'documentText'] as const
+export type StockMovementFilterField = typeof STOCK_MOVEMENT_FILTER_FIELDS[number]
+export type StockMovementFilterRow = { id: number; field: StockMovementFilterField | null; enabled: boolean }
+export const STOCK_MOVEMENT_FILTER_DEFINITIONS: Record<StockMovementFilterField, { type: number; label: string; section?: string; condition: string }> = {
+  organization: { type: 0, label: 'Організація', condition: 'В списку' },
+  product: { type: 1, label: 'Товар', section: 'Товар', condition: 'В списку' },
+  article: { type: 2, label: 'Артикул', section: 'Товар', condition: 'В списку' },
+  top: { type: 3, label: 'Топ', section: 'Товар', condition: 'В списку' },
+  group: { type: 4, label: 'Товарна група', section: 'Товар', condition: 'В групі' },
+  unit: { type: 20, label: 'Одиниця виміру', section: 'Товар', condition: 'В списку' },
+  warehouse: { type: 21, label: 'Склад', section: 'Склад', condition: 'В списку' },
+  documentKind: { type: 1001, label: 'Вид документа руху', section: 'Документ руху', condition: 'В списку' },
+  documentText: { type: 1002, label: 'Документ руху', section: 'Документ руху', condition: 'Містить' },
+}
 
 export type StockMovementDraft = {
   from: string
@@ -75,6 +89,9 @@ export type StockMovementDraft = {
   articleList: string[]
   products: StockMovementSelection[]
   groups: StockMovementSelection[]
+  productTops: string[]
+  measureUnitIds: number[]
+  filterRows: StockMovementFilterRow[]
   documentKinds: string[]
   documentText: string
   conditions: StockMovementCondition[]
@@ -94,6 +111,8 @@ export type StockMovementRequest = {
   ArticleMatch: StockMovementArticleMatch | ''
   Articles: string[]
   ProductGroupIds: number[]
+  ProductTops: string[]
+  MeasureUnitIds: number[]
   DocumentKinds: string[]
   DocumentText: string | null
   Conditions: StockMovementCondition[]
@@ -236,6 +255,9 @@ export function defaultStockMovementDraft(capability: StockMovementCapability): 
     articleList: [],
     products: [],
     groups: [],
+    productTops: [],
+    measureUnitIds: [],
+    filterRows: [],
     documentKinds: [],
     documentText: '',
     conditions: [],
@@ -257,7 +279,26 @@ export function parseArticleList(text: string): string[] {
   })
 }
 
+export function stockMovementFilterApplies(draft: StockMovementDraft, field: StockMovementFilterField): boolean {
+  return !(draft.filterRows ?? []).some(row => row.field === field && !row.enabled)
+}
+
+export function clearStockMovementFilter(draft: StockMovementDraft, field: StockMovementFilterField): Partial<StockMovementDraft> {
+  switch (field) {
+    case 'organization': return { organizationIds: [] }
+    case 'product': return { products: [] }
+    case 'article': return { articleMatch: draft.articleMatch, articleText: '', articleList: [] }
+    case 'top': return { productTops: [] }
+    case 'group': return { groups: [] }
+    case 'unit': return { measureUnitIds: [] }
+    case 'warehouse': return { warehouseIds: [] }
+    case 'documentKind': return { documentKinds: [] }
+    case 'documentText': return { documentText: '' }
+  }
+}
+
 function articleFilter(draft: StockMovementDraft): { match: StockMovementArticleMatch | ''; articles: string[] } {
+  if (!stockMovementFilterApplies(draft, 'article')) return { match: '', articles: [] }
   if (draft.articleMatch === 'inList') {
     return draft.articleList.length ? { match: 'inList', articles: draft.articleList } : { match: '', articles: [] }
   }
@@ -267,18 +308,22 @@ function articleFilter(draft: StockMovementDraft): { match: StockMovementArticle
 
 export function buildStockMovementRequest(draft: StockMovementDraft, offset = 0, limit = WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE): StockMovementRequest {
   const article = articleFilter(draft)
-  const text = draft.documentText.trim()
+  const applies = (field: StockMovementFilterField) => stockMovementFilterApplies(draft, field)
+  const ids = (field: StockMovementFilterField, values: readonly number[]) => applies(field) ? [...new Set(values)].sort((left, right) => left - right) : []
+  const text = applies('documentText') ? draft.documentText.trim() : ''
   return {
     Version: 1,
     From: draft.from,
     To: draft.to,
-    WarehouseIds: [...new Set(draft.warehouseIds)].sort((left, right) => left - right),
-    OrganizationIds: [...new Set(draft.organizationIds)].sort((left, right) => left - right),
-    ProductIds: [...new Set(draft.products.map(item => item.id))].sort((left, right) => left - right),
+    WarehouseIds: ids('warehouse', draft.warehouseIds),
+    OrganizationIds: ids('organization', draft.organizationIds),
+    ProductIds: ids('product', draft.products.map(item => item.id)),
     ArticleMatch: article.match,
     Articles: article.articles,
-    ProductGroupIds: [...new Set(draft.groups.map(item => item.id))].sort((left, right) => left - right),
-    DocumentKinds: [...draft.documentKinds].sort(),
+    ProductGroupIds: ids('group', draft.groups.map(item => item.id)),
+    ProductTops: applies('top') ? [...new Set(draft.productTops ?? [])].sort() : [],
+    MeasureUnitIds: ids('unit', draft.measureUnitIds ?? []),
+    DocumentKinds: applies('documentKind') ? [...draft.documentKinds].sort() : [],
     DocumentText: text ? text : null,
     Conditions: draft.conditions.filter(condition => Number.isFinite(condition.Value)),
     Levels: [...draft.levels],
@@ -354,19 +399,23 @@ export function stockMovementPeriodPresets(today: string, minimum: string): { la
 }
 
 export function summarizeStockMovementFilters(draft: StockMovementDraft, warehouses: readonly StockMovementLookupItem[],
-  organizations: readonly StockMovementLookupItem[], kinds: readonly StockMovementDocumentKind[]): string[] {
+  organizations: readonly StockMovementLookupItem[], kinds: readonly StockMovementDocumentKind[], units: readonly StockMovementLookupItem[] = []): string[] {
   const lines: string[] = []
+  const request = buildStockMovementRequest(draft)
   const article = articleFilter(draft)
-  if (article.match) lines.push(`Номенклатура.Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[article.match]} ${article.articles.join('; ')}`)
-  if (draft.products.length) lines.push(`Номенклатура У списку (${draft.products.map(item => item.label).join('; ')})`)
-  if (draft.groups.length) lines.push(`Група товарів У списку (${draft.groups.map(item => item.label).join('; ')})`)
-  if (draft.warehouseIds.length)
-    lines.push(`Склад У списку (${draft.warehouseIds.map(id => warehouses.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
-  if (draft.organizationIds.length)
-    lines.push(`Організація складу У списку (${draft.organizationIds.map(id => organizations.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
-  if (draft.documentKinds.length)
-    lines.push(`Вид документа руху У списку (${draft.documentKinds.map(code => kinds.find(kind => kind.Code === code)?.Name ?? code).join('; ')})`)
-  if (draft.documentText.trim()) lines.push(`Документ руху Містить ${draft.documentText.trim()}`)
+  if (request.OrganizationIds.length)
+    lines.push(`Організація У списку (${request.OrganizationIds.map(id => organizations.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
+  if (request.ProductIds.length) lines.push(`Товар У списку (${draft.products.map(item => item.label).join('; ')})`)
+  if (article.match) lines.push(`Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[article.match]} ${article.articles.join('; ')}`)
+  if (request.ProductTops.length) lines.push(`Топ У списку (${request.ProductTops.join('; ')})`)
+  if (request.ProductGroupIds.length) lines.push(`Товарна група У групі (${draft.groups.map(item => item.label).join('; ')})`)
+  if (request.MeasureUnitIds.length)
+    lines.push(`Одиниця виміру У списку (${request.MeasureUnitIds.map(id => units.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
+  if (request.WarehouseIds.length)
+    lines.push(`Склад У списку (${request.WarehouseIds.map(id => warehouses.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
+  if (request.DocumentKinds.length)
+    lines.push(`Вид документа руху У списку (${request.DocumentKinds.map(code => kinds.find(kind => kind.Code === code)?.Name ?? code).join('; ')})`)
+  if (request.DocumentText) lines.push(`Документ руху Містить ${request.DocumentText}`)
   for (const condition of draft.conditions)
     lines.push(`Кількість ${STOCK_MOVEMENT_MEASURE_LABELS[condition.Measure].toLocaleLowerCase('uk')} ${STOCK_MOVEMENT_COMPARISON_LABELS[condition.Comparison]} ${condition.Value}`)
   return lines

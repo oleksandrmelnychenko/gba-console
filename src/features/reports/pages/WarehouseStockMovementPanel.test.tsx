@@ -7,9 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 import {
-  exportStockMovement, getStockMovementCapability, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
+  exportStockMovement, getStockMovementCapability, getStockMovementMeasureUnits, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
   searchStockMovementGroups, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
+import { getReportProductTop } from '../api/reportsApi'
 import type { StockMovementRequest } from '../data/warehouseStockMovement'
 import {
   stockMovementCapability, stockMovementExport, stockMovementGroups, stockMovementOrganizations, stockMovementProducts, stockMovementResult,
@@ -18,13 +19,25 @@ import {
 import { WarehouseStockMovementPanel } from './WarehouseStockMovementPanel'
 
 vi.mock('../api/warehouseStockMovementApi', () => ({
-  getStockMovementCapability: vi.fn(), getStockMovementWarehouses: vi.fn(), getStockMovementOrganizations: vi.fn(),
+  getStockMovementCapability: vi.fn(), getStockMovementWarehouses: vi.fn(), getStockMovementOrganizations: vi.fn(), getStockMovementMeasureUnits: vi.fn(),
   searchStockMovementProducts: vi.fn(), searchStockMovementGroups: vi.fn(), previewStockMovement: vi.fn(), exportStockMovement: vi.fn(),
 }))
 
 const panel = (allowed = true, onBusyChange?: (busy: boolean) => void) => <MantineProvider env="test"><I18nProvider>
   <WarehouseStockMovementPanel callerKey={allowed ? 'owner' : null} canGenerate={allowed} onBusyChange={onBusyChange} />
 </I18nProvider></MantineProvider>
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), getReportProductTop: vi.fn() }))
+
+async function addFilter(field: string) {
+  const filters = await screen.findByRole('region', { name: 'Відбори' })
+  fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
+  const rows = within(filters).getAllByRole('group', { name: /^Умова відбору \d+$/ })
+  const row = rows[rows.length - 1]
+  fireEvent.click(within(row).getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(await screen.findByRole('option', { name: field }))
+  return row
+}
+
 const previews = () => vi.mocked(previewStockMovement).mock.calls.map(call => call[0])
 
 async function applyReport() {
@@ -37,6 +50,8 @@ beforeEach(() => {
   vi.mocked(getStockMovementCapability).mockResolvedValue(structuredClone(stockMovementCapability))
   vi.mocked(getStockMovementWarehouses).mockResolvedValue(structuredClone(stockMovementWarehouses))
   vi.mocked(getStockMovementOrganizations).mockResolvedValue(structuredClone(stockMovementOrganizations))
+  vi.mocked(getStockMovementMeasureUnits).mockResolvedValue([{ Id: 1, Name: 'шт', Detail: null }, { Id: 2, Name: 'компл', Detail: null }])
+  vi.mocked(getReportProductTop).mockResolvedValue([{ Id: 1, Name: 'A' }, { Id: 2, Name: 'B' }])
   vi.mocked(searchStockMovementProducts).mockResolvedValue(structuredClone(stockMovementProducts))
   vi.mocked(searchStockMovementGroups).mockResolvedValue(structuredClone(stockMovementGroups))
   vi.mocked(previewStockMovement).mockImplementation(async (request: StockMovementRequest) => stockMovementResult(request))
@@ -63,10 +78,16 @@ describe('native warehouse stock movement', () => {
     render(panel(true, busy))
     expect(screen.queryByText(/синхронізовано/)).toBeNull()
     const filters = await screen.findByRole('group', { name: 'Відбори' })
-    for (const label of ['Склад у списку', 'Організація складу', 'Номенклатура у списку', 'Група товарів (з підгрупами)', 'Вид документа руху', 'Документ руху містить']) {
-      expect(within(filters).getByLabelText(label)).toBeTruthy()
-    }
-    expect(within(filters).getByRole('group', { name: 'Фільтр артикула' })).toBeTruthy()
+    expect(within(filters).getByText('Відборів немає. Натисніть «Додати», щоб звузити звіт.')).toBeTruthy()
+    for (const action of ['Додати відбір', 'Змінити вибраний відбір', 'Видалити вибраний відбір', 'Копіювати вибраний відбір'])
+      expect(within(filters).getByRole('button', { name: action })).toBeTruthy()
+    fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
+    fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
+    const listbox = await screen.findByRole('listbox')
+    expect([...listbox.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(
+      ['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
+    expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товар', 'Склад', 'Документ руху'])
+    fireEvent.click(within(filters).getByRole('button', { name: 'Видалити умову 1' }))
     for (const name of ['Склади', 'Номенклатура', 'Фільтри']) {
       expect(screen.queryByRole('group', { name })).toBeNull()
     }
@@ -93,18 +114,21 @@ describe('native warehouse stock movement', () => {
   it('filters by article as you type once a table exists, after the 400 ms debounce', async () => {
     render(panel())
     await applyReport()
+    await addFilter('Артикул')
     fireEvent.change(screen.getByLabelText('Значення артикула'), { target: { value: '9400' } })
     fireEvent.change(screen.getByLabelText('Значення артикула'), { target: { value: '94000' } })
     expect(previewStockMovement).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(previewStockMovement).toHaveBeenCalledTimes(2))
     expect(previews()[1]).toMatchObject({ ArticleMatch: 'equals', Articles: ['94000'], Offset: 0 })
-    fireEvent.change(screen.getByLabelText('Документ руху містить'), { target: { value: 'ВН-7' } })
+    const document = await addFilter('Документ руху')
+    fireEvent.change(within(document).getByRole('textbox', { name: 'Значення' }), { target: { value: 'ВН-7' } })
     await waitFor(() => expect(previewStockMovement).toHaveBeenCalledTimes(3))
     expect(previews()[2]).toMatchObject({ Articles: ['94000'], DocumentText: 'ВН-7' })
   })
 
   it('does not query before the first apply and does not repeat an unchanged search', async () => {
     render(panel())
+    await addFilter('Артикул')
     fireEvent.change(await screen.findByLabelText('Значення артикула'), { target: { value: '94000' } })
     await new Promise(resolve => setTimeout(resolve, 500))
     expect(previewStockMovement).not.toHaveBeenCalled()
@@ -141,7 +165,7 @@ describe('native warehouse stock movement', () => {
 
   it('searches products remotely after the shared delay and sends the chosen ids', async () => {
     render(panel())
-    const products = await screen.findByRole('combobox', { name: 'Номенклатура у списку' })
+    const products = within(await addFilter('Товар')).getByRole('combobox', { name: 'Значення' })
     fireEvent.focus(products)
     expect((await screen.findAllByText('Почніть вводити назву')).length).toBeGreaterThan(0)
     fireEvent.change(products, { target: { value: '94' } })
@@ -158,21 +182,48 @@ describe('native warehouse stock movement', () => {
 
   it('sends the chosen warehouses, organizations, document kinds and groups', async () => {
     render(panel())
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Група товарів (з підгрупами)' }), { target: { value: 'Філ' } })
+    fireEvent.change(within(await addFilter('Товарна група')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
     fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
-    for (const [label, option] of [['Склад у списку', 'СКЛАД -1 · Фенікс'], ['Склад у списку', 'СКЛАД Н/П · Фенікс'],
-      ['Організація складу', 'Фенікс'], ['Вид документа руху', 'Переміщення'], ['Вид документа руху', 'Продаж']]) {
-      fireEvent.click(screen.getByRole('combobox', { name: label }))
-      fireEvent.click(await screen.findByRole('option', { name: option }))
+    for (const [field, options] of [['Склад', [/^СКЛАД -1 \[\d+\] · Фенікс$/, /^СКЛАД Н\/П \[\d+\] · Фенікс$/]], ['Організація', [/^Фенікс \[\d+\]$/]],
+      ['Вид документа руху', ['Переміщення', 'Продаж']], ['Топ', ['B']], ['Одиниця виміру', ['компл [2]']]] as const) {
+      const row = await addFilter(field)
+      for (const option of options) {
+        fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))
+        fireEvent.click(await screen.findByRole('option', { name: option }))
+      }
     }
     await applyReport()
-    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"ProductTops":["B"],"MeasureUnitIds":[2],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+  })
+
+  it('switches a row off, deletes it and keeps one row per field', async () => {
+    render(panel())
+    const row = await addFilter('Топ')
+    fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'A' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
+    const second = screen.getAllByRole('group', { name: /^Умова відбору \d+$/ })[1]
+    fireEvent.click(within(second).getByRole('combobox', { name: 'Поле' }))
+    expect((await screen.findByRole('option', { name: 'Топ' })).getAttribute('data-combobox-disabled')).toBe('true')
+    fireEvent.click(screen.getByRole('option', { name: 'Склад' }))
+    fireEvent.click(within(row).getByRole('checkbox', { name: 'Увімкнути умову 1' }))
+    await applyReport()
+    expect(previews()[0]).toMatchObject({ ProductTops: [], WarehouseIds: [] })
+    fireEvent.click(within(row).getByRole('checkbox', { name: 'Увімкнути умову 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previews()).toHaveLength(2))
+    expect(previews()[1]).toMatchObject({ ProductTops: ['A'] })
+    fireEvent.click(screen.getByRole('button', { name: 'Видалити умову 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previews()).toHaveLength(3))
+    expect(previews()[2]).toMatchObject({ ProductTops: [] })
+    expect(screen.getAllByRole('group', { name: /^Умова відбору \d+$/ })).toHaveLength(1)
   })
 
   it('shows a failed product lookup with a retry instead of an empty list', async () => {
     vi.mocked(searchStockMovementProducts).mockRejectedValueOnce(new Error('offline'))
     render(panel())
-    const products = await screen.findByRole('combobox', { name: 'Номенклатура у списку' })
+    const products = within(await addFilter('Товар')).getByRole('combobox', { name: 'Значення' })
     fireEvent.focus(products)
     fireEvent.change(products, { target: { value: '940' } })
     expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити значення.')

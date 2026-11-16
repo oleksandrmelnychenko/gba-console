@@ -172,11 +172,12 @@ import { ReportDraftControl } from './ReportDraftControl'
 import { ReportMeasureTree } from './ReportMeasureTree'
 import { reportGroupingPath } from '../data/reportConstructorTree'
 import { ReportGroupingPanel } from './ReportGroupingPanel'
-import { constructorConditionLabel, constructorFilterGroups, constructorGroupingCaption, constructorGroupingField, constructorMeasureGroupCaption, constructorMeasureItemCaption, constructorProfile, PROPERTIES_AND_CATEGORIES_UNAVAILABLE, usesConstructorDesk, type ConstructorField } from '../data/constructorDesk'
+import { constructorConditionLabel, constructorGroupingCaption, constructorGroupingField, constructorMeasureGroupCaption, constructorMeasureItemCaption, constructorProfile, PROPERTIES_AND_CATEGORIES_UNAVAILABLE, usesConstructorDesk, type ConstructorField } from '../data/constructorDesk'
 import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
+import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -1776,9 +1777,8 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   const itemSearch = useDatasetItemSearch(dataSource, selection.SelectedField.Type, documentLookup.mode)
   const valueError = returnItemStatusSelectionError(request, dataset, selection) ?? (analysis ? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? analysisSelectionValueError(selection, descriptor)
     : scopedSelectionValueError(dataSource, selection, dataset) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
-  const fields = analysis ? [...new Set(analysis.filters.map(field => field.path.join(' / ')))].map(group => ({ group,
-    items: analysis.filters.filter(field => field.path.join(' / ') === group).map(field => ({ value: String(field.type), label: field.name,
-      disabled: field.available === false })) })) : filterFieldOptions
+  const fields = groupCanonicalFilterOptions(dataSource, analysis ? analysis.filters.map(field => ({ value: String(field.type), label: field.name,
+    disabled: field.available === false, field: { Type: field.type } })) : filterFieldOptions)
   const changeField = (value: string | null) => {
     const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
     const option = filterFieldOptions.find(item => item.value === value)
@@ -1820,12 +1820,11 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       : valuePicker}
   </Stack> : valuePicker
   if (variant === 'row' && request) {
-    const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
     return <ReportFilterRow label={t('Умова відбору {position}', { position: index + 1 })}
       selected={selected} onSelect={onSelect} toggle={
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
-        onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={rowFields}
+        onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={fields}
         placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect constructorLabels size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
         data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),

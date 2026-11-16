@@ -39,7 +39,7 @@ async function ready() {
 
 it('uses the actual source3 receipt label in grouping and offers only four flat filter operators', async () => {
   expect(datasetGroupings(dataset).find(field => field.type === 29)?.label).toBe('Склад надходження')
-  expect(datasetFilters(dataset).find(field => field.field.Type === 21)?.label).toBe('Склад надходження')
+  expect(datasetFilters(dataset).find(field => field.field.Type === 21)?.label).toBe('Склад')
   expect(dataset.Filters.find(field => field.Type === 21)?.hierarchy).toBeUndefined()
   await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Додати поле: Групування рядків' }))
@@ -49,7 +49,7 @@ it('uses the actual source3 receipt label in grouping and offers only four flat 
   expect(screen.getByRole('button', { name: 'Видалити Склад надходження' })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Склад надходження' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Склад' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
   expect(screen.getAllByRole('option').filter(option => option.getAttribute('data-combobox-disabled') !== 'true').map(option => option.textContent)).toEqual(['Рівне', 'Не рівне', 'В списку', 'Не в списку'])
 })

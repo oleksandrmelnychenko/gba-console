@@ -1,4 +1,5 @@
 
+import { canonicalFilterLabel } from './reportFilterFields'
 import { requestReportProfile, salesConstructorDataset, salesConstructorError } from './salesConstructorProfiles'
 import { retainMeasurementOrder } from './reportConstructorTree'
 import { SALES_BY_RESPONSIBLES_COLUMNS, SALES_BY_RESPONSIBLES_MEASURES, SALES_BY_RESPONSIBLES_ROWS, SALES_BY_RESPONSIBLES_SOURCE } from './salesByResponsibles'
@@ -119,7 +120,7 @@ export function datasetFilters(dataset: ReportDataset | undefined, data?: object
   const manager = currentFinancialBuyerManagerFilterSupported(dataset, data) ? currentFinancialBuyerManagerFilterCapability(dataset)!.field : undefined
   return [...(dataset?.Filters ?? []), ...(document ? [document] : []), ...(manager ? [manager] : [])]
     .filter(field => dataset?.DataSource !== 44 || field.Type !== 11)
-    .filter(field => dataset?.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: field.Type === 3 ? 'Топ' : field.Type === 4 ? 'Товарна група' : field.Name, value: String(field.Type), field: {
+    .filter(field => dataset?.DataSource !== 39 || field.Type !== 60 || currentVparivanieManagerSupported(dataset)).map(field => ({ label: canonicalFilterLabel(dataset?.DataSource, field.Type, field.Name), value: String(field.Type), field: {
     Name: FILTER_KEYS.get(field.Type) ?? field.Name, Type: field.Type,
   } }))
 }

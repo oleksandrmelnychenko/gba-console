@@ -17,6 +17,10 @@ export async function getStockMovementOrganizations(signal?: AbortSignal): Promi
   return normalizeStockMovementLookup(await apiRequest<unknown>(`${WAREHOUSE_STOCK_MOVEMENT_ROUTE}/organizations`, { signal }))
 }
 
+export async function getStockMovementMeasureUnits(signal?: AbortSignal): Promise<StockMovementLookupItem[]> {
+  return normalizeStockMovementLookup(await apiRequest<unknown>(`${WAREHOUSE_STOCK_MOVEMENT_ROUTE}/measure-units`, { signal }))
+}
+
 export async function searchStockMovementProducts(query: string, signal?: AbortSignal): Promise<StockMovementLookupItem[]> {
   return normalizeStockMovementLookup(await apiRequest<unknown>(`${WAREHOUSE_STOCK_MOVEMENT_ROUTE}/products`,
     { signal, query: { query, offset: 0, limit: 50 } }))

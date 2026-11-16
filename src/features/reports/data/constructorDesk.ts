@@ -1,5 +1,6 @@
 import { constructorPresentationRequestSupported, constructorPresentationSupported } from './constructorPresentation'
 import { readReportProfile, requestReportProfile, type SalesConstructorProfile } from './salesConstructorProfiles'
+import { canonicalFilterField, groupCanonicalFilterOptions } from './reportFilterFields'
 import type { ReportDataset, ReportMeasurementGroup, ReportMeasurementItem, ReportRequestBody } from '../types'
 
 export const CONSTRUCTOR_CONDITION_LABELS: Readonly<Record<number, string>> = {
@@ -87,57 +88,13 @@ export function constructorGroupingCaption(request: ReportRequestBody, type: num
   return known.caption ?? (known.path ? `${known.path}. ${known.label}` : known.label)
 }
 
-const SALES_FILTER_LABELS: Readonly<Record<number, { label: string; path?: string }>> = {
-  0: { label: 'Організація' },
-  1: { label: 'Товар', path: 'Товар' },
-  2: { label: 'Артикул', path: 'Товар' },
-  3: { label: 'Топ', path: 'Товар' },
-  4: { label: 'Товарна група', path: 'Товар' },
-  20: { label: 'Одиниця виміру', path: 'Товар' },
-  6: { label: 'Покупець', path: 'Покупець' },
-  7: { label: 'Покупець. Регіон', path: 'Покупець' },
-  8: { label: 'Покупець. Код по регіону', path: 'Покупець' },
-  9: { label: 'Покупець. Договір', path: 'Покупець' },
-  10: { label: 'Покупець. Відповідальний менеджер покупця', path: 'Покупець' },
-  11: { label: 'Покупець. Тип цін', path: 'Покупець' },
-  12: { label: 'Документ продажу', path: 'Документ продажу' },
-  14: { label: 'Повернення від клієнта', path: 'Документ продажу' },
-  15: { label: 'Відповідальний менеджер що забив товар', path: 'Документ продажу' },
-  16: { label: 'Відповідальний менеджер що перевів в статус накладної', path: 'Документ продажу' },
-  21: { label: 'Склад', path: 'Склад' },
-  64: { label: 'Причина повернення', path: 'Документ продажу' },
-}
-
-function filterCategory(type: number): string | undefined {
-  if (type === 0 || type === 23 || type === 28) return undefined
-  if ([1, 2, 3, 4, 20].includes(type)) return 'Товар'
-  if ([5, 6, 7, 8, 9, 10, 11].includes(type)) return 'Покупець'
-  if ([12, 13, 14, 15, 16, 64].includes(type)) return 'Документ продажу'
-  if ([17, 18, 19, 24, 27].includes(type)) return 'Постачальник'
-  if ([21, 22].includes(type)) return 'Склад'
-  return 'Інше'
-}
-
 export function constructorFilterField(request: ReportRequestBody, type: number, name: string): ConstructorField {
-  if (constructorProfile(request)) {
-    const known = SALES_FILTER_LABELS[type]
-    if (known) return { type, label: known.label, path: known.path ? [known.path] : [] }
-  }
-  const category = filterCategory(type)
-  return { type, label: name, path: category ? [category] : [] }
+  const field = canonicalFilterField(request.dataSource, type, name)
+  return { type, label: field.label, path: field.section ? [field.section] : [] }
 }
 
-type FilterOption = { value: string; label: string }
-export function constructorFilterGroups(request: ReportRequestBody, options: ReadonlyArray<{ value: string; label: string; field: { Type: number } }>): Array<FilterOption | { group: string; items: FilterOption[] }> {
-  const plain: FilterOption[] = []
-  const groups = new Map<string, FilterOption[]>()
-  for (const option of options) {
-    const field = constructorFilterField(request, option.field.Type, option.label)
-    const item = { value: option.value, label: field.label }
-    if (!field.path.length) plain.push(item)
-    else groups.set(field.path[0], [...groups.get(field.path[0]) ?? [], item])
-  }
-  return [...plain, ...[...groups.entries()].map(([group, items]) => ({ group, items }))]
+export function constructorFilterGroups(request: ReportRequestBody, options: ReadonlyArray<{ value: string; label: string; disabled?: boolean; field: { Type: number } }>) {
+  return groupCanonicalFilterOptions(request.dataSource, options)
 }
 
 type MeasureCaption = { group: string; items?: Readonly<Record<number, string>> }

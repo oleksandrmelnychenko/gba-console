@@ -59,7 +59,15 @@ describe('constructor desk vocabulary', () => {
       { group: 'Покупець', items: [{ value: '7', label: 'Покупець. Регіон' }] },
       { group: 'Документ продажу', items: [{ value: '12', label: 'Документ продажу' }, { value: '15', label: 'Відповідальний менеджер що забив товар' }] },
     ])
-    expect(constructorFilterField(request(46), 15, 'Користувач, який додав товар у продаж').label).toBe('Користувач, який додав товар у продаж')
+    expect(constructorFilterField(request(46), 15, 'Користувач, який додав товар у продаж').label).toBe('Відповідальний менеджер що забив товар')
+    expect(constructorFilterField(request(3), 21, 'Склад надходження')).toEqual({ type: 21, label: 'Склад', path: ['Склад'] })
+    expect(constructorFilterField(request(40), 32, 'Організація рахунку')).toEqual({ type: 32, label: 'Організація', path: [] })
+    expect(constructorFilterGroups(request(45), [21, 20, 3, 0, 19, 2, 1, 4, 23].map(type => ({ value: String(type), label: `Поле ${type}`, field: { Type: type } })))).toEqual([
+      { value: '0', label: 'Організація' },
+      { group: 'Товар', items: ['Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру'].map((label, index) => ({ value: String([1, 2, 3, 4, 20][index]), label })) },
+      { group: 'Постачальник', items: [{ value: '19', label: 'Документ надходження' }] },
+      { group: 'Склад', items: [{ value: '21', label: 'Склад' }, { value: '23', label: 'Склад. Організація' }] },
+    ])
   })
 
   it('renames sales and gross-profit measures without changing their types', () => {

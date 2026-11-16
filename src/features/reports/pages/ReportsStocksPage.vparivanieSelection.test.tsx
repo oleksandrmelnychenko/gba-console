@@ -23,9 +23,9 @@ vi.mock("../api/currentVparivanieAnalysisApi", async original => ({ ...await ori
 const dataset = { ...analysisDataset, currentVparivanie: { ...analysisDataset.currentVparivanie as object, analysis: hierarchy } }
 const choices = [
   { field: 21, label: "Склад", id: "id:2962", name: "Автопарк Конкорд [2962]", data: { Id: 2962 } },
-  { field: 1, label: "Номенклатура", id: "id:38182879", name: "Акумулятор RITAR RT1270 [38182879]", data: { Id: 38182879 } },
-  { field: 5, label: "Контрагент", id: "id:630804", name: "AMG CONCORD LLC [630804]", data: { Id: 630804 } },
-  { field: 60, label: "Основний менеджер покупця", id: "EC8D2243AED0D54794502E1DAFA56A68", name: "Administrator Local [10193]", data: { Id: "EC8D2243AED0D54794502E1DAFA56A68" } },
+  { field: 1, label: "Товар", id: "id:38182879", name: "Акумулятор RITAR RT1270 [38182879]", data: { Id: 38182879 } },
+  { field: 5, label: "Покупець", id: "id:630804", name: "AMG CONCORD LLC [630804]", data: { Id: 630804 } },
+  { field: 60, label: "Покупець. Відповідальний менеджер покупця", id: "EC8D2243AED0D54794502E1DAFA56A68", name: "Administrator Local [10193]", data: { Id: "EC8D2243AED0D54794502E1DAFA56A68" } },
 ]
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
@@ -60,7 +60,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   for (const name of ["Показники", "Групування"]) expect(screen.queryByRole("group", { name })).toBeNull()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
-  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(choices.map(choice => choice.label))
+  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець", "Покупець. Відповідальний менеджер покупця", "Склад"])
 })
 it("submits all four selected identities through the existing inline sales-style controls", async () => {
   await open()
@@ -92,7 +92,7 @@ it("preserves the preset product group under nomenclature and accepts several ex
   changeReportPeriod({ from: "2026-10-01", to: "2026-10-27" })
   await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(4, "", "2026-10-01", "2026-10-27", undefined, expect.any(AbortSignal)))
   const group = within(screen.getByRole("group", { name: "Умова відбору 1" }))
-  expect(group.getByRole("combobox", { name: "Поле" })).toHaveProperty("value", "Номенклатура")
+  expect(group.getByRole("combobox", { name: "Поле" })).toHaveProperty("value", "Товар")
   expect(group.getByRole("combobox", { name: "Тип порівняння" })).toHaveProperty("value", "В групі")
   expect(group.getByText("Група: AL-KO [4317]")).toBeTruthy()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))

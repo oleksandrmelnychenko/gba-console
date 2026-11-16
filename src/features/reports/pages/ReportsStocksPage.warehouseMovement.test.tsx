@@ -17,7 +17,7 @@ import { findOpenedWorkbook } from '../testing/workbookDesk'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
 vi.mock('../api/warehouseStockMovementApi', () => ({
-  getStockMovementCapability: vi.fn(), getStockMovementWarehouses: vi.fn(), getStockMovementOrganizations: vi.fn(),
+  getStockMovementCapability: vi.fn(), getStockMovementWarehouses: vi.fn(), getStockMovementOrganizations: vi.fn(), getStockMovementMeasureUnits: vi.fn().mockResolvedValue([]),
   searchStockMovementProducts: vi.fn(), searchStockMovementGroups: vi.fn(), previewStockMovement: vi.fn(), exportStockMovement: vi.fn(),
 }))
 let allowed = true
@@ -58,8 +58,7 @@ describe('native warehouse stock movement on the reports page', () => {
     expect(screen.queryByRole('button', { name: 'Шаблони' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Каталог' }).getAttribute('aria-pressed')).toBe('false')
     expect(await within(form).findByRole('button', { name: /^Період:/ })).toBeTruthy()
-    expect(within(within(form).getByRole('group', { name: 'Відбори' })).getByRole('group', { name: 'Фільтр складу' })).toBeTruthy()
-    expect(within(within(form).getByRole('group', { name: 'Відбори' })).getByRole('group', { name: 'Фільтр номенклатури' })).toBeTruthy()
+    expect(within(within(form).getByRole('group', { name: 'Відбори' })).getByRole('button', { name: 'Додати відбір' })).toBeTruthy()
     expect(within(form).getByRole('group', { name: 'Групування рядків' })).toBeTruthy()
     changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
     fireEvent.click(within(form).getByRole('button', { name: 'Застосувати й показати' }))

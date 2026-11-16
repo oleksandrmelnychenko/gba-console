@@ -39,7 +39,7 @@ it('does not offer document filtering when the optional capability is absent', a
   const filters = screen.getByRole('group', { name: 'Фільтри' })
   fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
-  expect(screen.queryByRole('option', { name: 'Документ' })).toBeNull()
+  expect(screen.queryByRole('option', { name: 'Документ продажу' })).toBeNull()
   expect(searchCurrentFinancialDocuments).not.toHaveBeenCalled()
 })
 it('offers the document and all four conditions in the actual workbook inline editor', async () => {
@@ -50,7 +50,7 @@ it('offers the document and all four conditions in the actual workbook inline ed
   const filters = screen.getByRole('group', { name: 'Фільтри' })
   fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(screen.getByRole('option', { name: 'Документ' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Документ продажу' }))
   fireEvent.click(within(filters).getByRole('combobox', { name: 'Тип порівняння' }))
   for (const name of ['Рівне', 'Не рівне', 'В списку', 'Не в списку']) expect(screen.getByRole('option', { name })).toBeTruthy()
   fireEvent.click(screen.getByRole('option', { name: 'Не в списку' }))

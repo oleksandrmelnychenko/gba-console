@@ -11,18 +11,22 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/paginator/paginator.css'
 import {
-  exportStockMovement, getStockMovementCapability, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
+  exportStockMovement, getStockMovementCapability, getStockMovementMeasureUnits, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
   searchStockMovementGroups, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
 import {
-  buildStockMovementRequest, defaultStockMovementDraft, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
-  STOCK_MOVEMENT_ARTICLE_LABELS, STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
+  buildStockMovementRequest, clearStockMovementFilter, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
+  STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
   STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_CELL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
   stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE, WAREHOUSE_STOCK_MOVEMENT_TITLE,
   type StockMovementArticleMatch, type StockMovementCapability, type StockMovementComparison, type StockMovementDraft,
   type StockMovementExport, type StockMovementLevel, type StockMovementLookupItem, type StockMovementMeasure, type StockMovementQuantity,
-  type StockMovementRequest, type StockMovementResult, type StockMovementSelection,
+  type StockMovementRequest, type StockMovementResult, type StockMovementSelection, type StockMovementFilterField, type StockMovementFilterRow,
 } from '../data/warehouseStockMovement'
+import { getReportProductTop } from '../api/reportsApi'
+import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
+import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
+import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_LOOKUP_FAILED, useReportValueSearch } from './reportValueSearch'
@@ -87,13 +91,39 @@ function ListPicker({ label, placeholder, data, value, disabled, onChange }: {
     search={search} onSearchChange={setSearch} disabled={disabled} onChange={onChange} />
 }
 
-function FixedMovementFilter({ label, field, condition, children }: {
-  label: string; field: string; condition: string; children: ReactNode
-}) {
-  return <ReportFilterRow label={label}
-    field={<Select label="Поле" value={field} data={[field]} readOnly />}
-    condition={<Select label="Тип порівняння" value={condition} data={[condition]} readOnly />}
-    value={children} />
+const MOVEMENT_COPY_UNAVAILABLE = 'У русі товару кожне поле задається одним рядком: додайте значення до наявної умови.'
+const MOVEMENT_ARTICLE_CONDITIONS: Record<StockMovementArticleMatch, string> = { equals: 'Рівне', contains: 'Містить', inList: 'В списку' }
+
+function nextRowId(rows: readonly StockMovementFilterRow[]): number {
+  return rows.reduce((maximum, row) => Math.max(maximum, row.id), 0) + 1
+}
+
+function lookupLabel(item: StockMovementLookupItem): string {
+  return `${item.Name} [${item.Id}]`
+}
+
+function movementFieldOptions(used: ReadonlySet<StockMovementFilterField>) {
+  return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.map(field => {
+    const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
+    return { value: field, label: definition.label, section: definition.section, disabled: used.has(field), field: { Type: definition.type } }
+  }))
+}
+
+function useMovementAttributes(enabled: boolean) {
+  const [value, setValue] = useState<{ tops: string[]; units: StockMovementLookupItem[] }>({ tops: [], units: [] })
+  useEffect(() => {
+    if (!enabled) return
+    const controller = new AbortController()
+    void getReportProductTop().then(items => {
+      if (!controller.signal.aborted) setValue(current => ({ ...current,
+        tops: [...new Set(items.flatMap(item => typeof item.Name === 'string' && item.Name.trim() ? [item.Name.trim()] : []))].sort() }))
+    }).catch(() => undefined)
+    void getStockMovementMeasureUnits(controller.signal).then(units => {
+      if (!controller.signal.aborted) setValue(current => ({ ...current, units }))
+    }).catch(() => undefined)
+    return () => controller.abort()
+  }, [enabled])
+  return value
 }
 
 function QuantityCell({ value, negativeRed, reason }: { value: number | null; negativeRed: boolean; reason: string }) {
@@ -192,6 +222,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   const enabled = canGenerate && !!callerKey
   const products = useLookupSearch(searchStockMovementProducts, enabled)
   const groups = useLookupSearch(searchStockMovementGroups, enabled)
+  const attributes = useMovementAttributes(enabled)
   const [articleText] = useDebouncedValue(draft?.articleText ?? '', 400)
   const [documentText] = useDebouncedValue(draft?.documentText ?? '', 400)
   const [articleList] = useDebouncedValue(articleListText, 400)
@@ -287,7 +318,52 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
 
   const { warehouses, organizations } = setup.value
   const update = (patch: Partial<StockMovementDraft>) => setDraft(current => current ? { ...current, ...patch } : current)
-  const filters = summarizeStockMovementFilters(current, warehouses, organizations, capability.DocumentKinds)
+  const filters = summarizeStockMovementFilters(current, warehouses, organizations, capability.DocumentKinds, attributes.units)
+  const setRow = (index: number, patch: Partial<StockMovementFilterRow>) =>
+    update({ filterRows: draft.filterRows.map((row, position) => position === index ? { ...row, ...patch } : row) })
+  const removeRow = (index: number) => {
+    const row = draft.filterRows[index]
+    if (!row) return
+    if (row.field === 'article') setArticleListText('')
+    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}), filterRows: draft.filterRows.filter((_, position) => position !== index) })
+  }
+  const changeRowField = (index: number, field: StockMovementFilterField | null) => {
+    const row = draft.filterRows[index]
+    if (!row || row.field === field) return
+    if (row.field === 'article') setArticleListText('')
+    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}),
+      filterRows: draft.filterRows.map((item, position) => position === index ? { ...item, field } : item) })
+  }
+  const movementValue = (field: StockMovementFilterField): ReactNode => {
+    switch (field) {
+      case 'organization': return <ListPicker label="Значення" placeholder="Усі організації" disabled={locked}
+        data={organizations.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))}
+        value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
+      case 'product': return <SelectionPicker label="Значення" placeholder="Пошук за артикулом або назвою" selected={draft.products}
+        search={products} disabled={locked} onChange={value => update({ products: value })} />
+      case 'article': return draft.articleMatch === 'inList'
+        ? <Textarea label="Значення" aria-label="Артикули списку" placeholder="Артикули через кому або з нового рядка" autosize minRows={1} maxRows={6}
+          disabled={locked} value={articleListText} onChange={event => setArticleListText(event.currentTarget.value)} />
+        : <TextInput label="Значення" aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
+          value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />
+      case 'top': return <ListPicker label="Значення" placeholder="Усі значення топу" disabled={locked}
+        data={attributes.tops.map(code => ({ value: code, label: code }))}
+        value={draft.productTops} onChange={values => update({ productTops: values })} />
+      case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи (з підгрупами)" selected={draft.groups}
+        search={groups} disabled={locked} onChange={value => update({ groups: value })} />
+      case 'unit': return <ListPicker label="Значення" placeholder="Усі одиниці виміру" disabled={locked}
+        data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))}
+        value={draft.measureUnitIds.map(String)} onChange={values => update({ measureUnitIds: values.map(Number) })} />
+      case 'warehouse': return <ListPicker label="Значення" placeholder="Усі склади" disabled={locked}
+        data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${lookupLabel(item)} · ${item.Detail}` : lookupLabel(item) }))}
+        value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
+      case 'documentKind': return <ListPicker label="Значення" placeholder="Усі документи" disabled={locked}
+        data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
+        value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
+      case 'documentText': return <TextInput label="Значення" placeholder="Номер, вид або контрагент" disabled={locked}
+        value={draft.documentText} onChange={event => update({ documentText: event.currentTarget.value })} />
+    }
+  }
   const pending = run ? JSON.stringify({ ...buildStockMovementRequest(current), Offset: 0 }) !== JSON.stringify({ ...run.request, Offset: 0 }) : false
   const presets = stockMovementPeriodPresets(capability.Today, capability.MinimumFrom)
 
@@ -312,43 +388,29 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
           </Stack> },
         { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
-            <FixedMovementFilter label="Фільтр складу" field="Склад" condition="У списку">
-              <ListPicker label="Склад у списку" placeholder="Усі склади" disabled={locked}
-                data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} · ${item.Detail}` : item.Name }))}
-                value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
-            </FixedMovementFilter>
-            <FixedMovementFilter label="Фільтр організації складу" field="Організація складу" condition="У списку">
-              <ListPicker label="Організація складу" placeholder="Усі організації" disabled={locked}
-                data={organizations.map(item => ({ value: String(item.Id), label: item.Name }))}
-                value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
-            </FixedMovementFilter>
-            <ReportFilterRow label="Фільтр артикула"
-              field={<Select label="Поле" value="Номенклатура.Артикул" data={['Номенклатура.Артикул']} readOnly />}
-              condition={<Select label="Артикул" disabled={locked} allowDeselect={false} value={draft.articleMatch}
-                data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: STOCK_MOVEMENT_ARTICLE_LABELS[match] }))}
-                onChange={value => { if (value) update({ articleMatch: value as StockMovementArticleMatch }) }} />}
-              value={draft.articleMatch === 'inList'
-                ? <Textarea aria-label="Артикули списку" placeholder="Артикули через кому або з нового рядка" autosize minRows={2} maxRows={6}
-                  disabled={locked} value={articleListText} onChange={event => setArticleListText(event.currentTarget.value)} />
-                : <TextInput aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
-                  value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />} />
-            <FixedMovementFilter label="Фільтр номенклатури" field="Номенклатура" condition="У списку">
-              <SelectionPicker label="Номенклатура у списку" placeholder="Пошук за артикулом або назвою" selected={draft.products}
-                search={products} disabled={locked} onChange={value => update({ products: value })} />
-            </FixedMovementFilter>
-            <FixedMovementFilter label="Фільтр групи товарів" field="Група товарів" condition="У групі з підгрупами">
-              <SelectionPicker label="Група товарів (з підгрупами)" placeholder="Пошук групи" selected={draft.groups}
-                search={groups} disabled={locked} onChange={value => update({ groups: value })} />
-            </FixedMovementFilter>
-            <FixedMovementFilter label="Фільтр виду документа" field="Вид документа руху" condition="У списку">
-              <ListPicker label="Вид документа руху" placeholder="Усі документи" disabled={locked}
-                data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
-                value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
-            </FixedMovementFilter>
-            <FixedMovementFilter label="Фільтр документа" field="Документ руху" condition="Містить">
-              <TextInput label="Документ руху містить" placeholder="Номер, вид або контрагент" disabled={locked}
-                value={draft.documentText} onChange={event => update({ documentText: event.currentTarget.value })} />
-            </FixedMovementFilter>
+            <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
+              copyUnavailable={MOVEMENT_COPY_UNAVAILABLE}
+              onAdd={() => update({ filterRows: [...draft.filterRows, { id: nextRowId(draft.filterRows), field: null, enabled: true }] })}
+              onDelete={index => removeRow(index)}
+              onCopy={() => undefined}
+              renderRow={({ index, selected, onSelect }) => {
+                const row = draft.filterRows[index]
+                const used = new Set(draft.filterRows.flatMap(item => item.field && item.id !== row.id ? [item.field] : []))
+                const definition = row.field ? STOCK_MOVEMENT_FILTER_DEFINITIONS[row.field] : null
+                return <ReportFilterRow label={`Умова відбору ${index + 1}`} selected={selected} onSelect={onSelect}
+                  toggle={<Checkbox size="xs" aria-label={`Увімкнути умову ${index + 1}`} checked={row.enabled} disabled={locked}
+                    onChange={event => setRow(index, { enabled: event.currentTarget.checked })} />}
+                  field={<Select size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
+                    data={movementFieldOptions(used)} value={row.field}
+                    onChange={value => changeRowField(index, value as StockMovementFilterField | null)} />}
+                  condition={row.field === 'article'
+                    ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={draft.articleMatch}
+                      data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: MOVEMENT_ARTICLE_CONDITIONS[match] }))}
+                      onChange={value => { if (value) update({ articleMatch: value as StockMovementArticleMatch }) }} />
+                    : <Select size="xs" label="Тип порівняння" readOnly value={definition?.condition ?? null} data={definition ? [definition.condition] : []} />}
+                  value={row.field ? movementValue(row.field) : <Text size="sm">Оберіть поле відбору.</Text>}
+                  action={locked ? null : <TableRowAction action="delete" label={`Видалити умову ${index + 1}`} onClick={() => removeRow(index)} />} />
+              }} />
             {draft.conditions.map((condition, index) => <ReportFilterRow key={index} label={`Умова за показником ${index + 1}`}
               field={<Select label="Поле" aria-label="Показник умови" disabled={locked} allowDeselect={false} value={condition.Measure}
                 data={STOCK_MOVEMENT_MEASURES.map(measure => ({ value: measure, label: `Кількість ${STOCK_MOVEMENT_MEASURE_LABELS[measure].toLocaleLowerCase('uk')}` }))}

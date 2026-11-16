@@ -3,7 +3,7 @@ import { stockMovementCapability, stockMovementResult } from '../testing/warehou
 import {
   buildStockMovementRequest, defaultStockMovementDraft, displayDateTime, formatStockQuantity, moveLevel, normalizeStockMovementCapability,
   normalizeStockMovementExport, normalizeStockMovementLookup, normalizeStockMovementResult, parseArticleList, stockMovementDraftError,
-  stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel,
+  stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, clearStockMovementFilter,
 } from './warehouseStockMovement'
 
 const draft = () => defaultStockMovementDraft(stockMovementCapability)
@@ -13,7 +13,7 @@ describe('warehouse stock movement request', () => {
     const request = buildStockMovementRequest(draft())
     expect(request).toEqual({
       Version: 1, From: '2026-10-01', To: '2026-10-26', WarehouseIds: [], OrganizationIds: [], ProductIds: [], ArticleMatch: '', Articles: [],
-      ProductGroupIds: [], DocumentKinds: [], DocumentText: null, Conditions: [], Levels: ['warehouse', 'product', 'registrar'],
+      ProductGroupIds: [], ProductTops: [], MeasureUnitIds: [], DocumentKinds: [], DocumentText: null, Conditions: [], Levels: ['warehouse', 'product', 'registrar'],
       Measures: ['opening', 'incoming', 'outgoing', 'closing'], GrandTotals: true, NegativeRed: true, Offset: 0, Limit: 200,
     })
   })
@@ -69,8 +69,17 @@ describe('warehouse stock movement request', () => {
     expect(summarizeStockMovementFilters({ ...draft(), articleText: '94000', warehouseIds: [2968, 5], documentKinds: ['sale'],
       conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }] }, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [],
     stockMovementCapability.DocumentKinds)).toEqual([
-      'Номенклатура.Артикул Дорівнює 94000', 'Склад У списку (СКЛАД -1; #5)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
+      'Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
     ])
+  })
+
+  it('sends top and unit lists and leaves out a switched-off row', () => {
+    const value = { ...draft(), productTops: ['B', 'A', 'B'], measureUnitIds: [2, 1], warehouseIds: [2968],
+      filterRows: [{ id: 1, field: 'top' as const, enabled: true }, { id: 2, field: 'warehouse' as const, enabled: false }] }
+    expect(buildStockMovementRequest(value)).toMatchObject({ ProductTops: ['A', 'B'], MeasureUnitIds: [1, 2], WarehouseIds: [] })
+    expect(summarizeStockMovementFilters(value, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [], stockMovementCapability.DocumentKinds,
+      [{ Id: 1, Name: 'шт', Detail: null }])).toEqual(['Топ У списку (A; B)', 'Одиниця виміру У списку (шт; #2)'])
+    expect(clearStockMovementFilter(value, 'top')).toEqual({ productTops: [] })
   })
 })
 
