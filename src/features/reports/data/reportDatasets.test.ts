@@ -6,6 +6,21 @@ import { createSalesReportPreset } from '../testing/reportPresets'
 
 describe('report dataset capabilities', () => {
 
+  it.each([2, 3, 44, 45, 46])('uses canonical product filter labels in source %i without changing keys or other captions', DataSource => {
+    const dataset = { ...grossDataset, DataSource, Filters: [
+      { Type: 3, Name: 'Поточний TOP товару' },
+      { Type: 4, Name: 'Поточні прямі групи товару' },
+      { Type: 7, Name: 'Поточний регіон клієнта' },
+    ] }
+    const before = structuredClone(dataset)
+    expect(datasetFilters(dataset)).toEqual([
+      { label: 'Топ', value: '3', field: { Type: 3, Name: 'ProductTop' } },
+      { label: 'Товарна група', value: '4', field: { Type: 4, Name: 'ProductGroup' } },
+      { label: 'Поточний регіон клієнта', value: '7', field: { Type: 7, Name: 'CustomerRegion' } },
+    ])
+    expect(dataset).toEqual(before)
+  })
+
   it.each(currentStockDatasets)('refuses saved historical dates in current source $DataSource without mutating the template', dataset => {
     const data = { ...defaultDatasetRequest(dataset, '', ''), from: '2026-06-01', to: '2026-06-30' }
     const before = structuredClone(data)
