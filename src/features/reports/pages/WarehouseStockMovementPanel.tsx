@@ -103,10 +103,11 @@ function lookupLabel(item: StockMovementLookupItem): string {
 }
 
 function movementFieldOptions(used: ReadonlySet<StockMovementFilterField>) {
+  const label = (value: string) => STOCK_MOVEMENT_FILTER_DEFINITIONS[value as StockMovementFilterField].label
   return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.map(field => {
     const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
     return { value: field, label: definition.label, section: definition.section, disabled: used.has(field), field: { Type: definition.type } }
-  }))
+  })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: label(item.value) })) } : { ...entry, label: label(entry.value) })
 }
 
 function useMovementAttributes(enabled: boolean) {
