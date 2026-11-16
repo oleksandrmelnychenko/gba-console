@@ -35,8 +35,8 @@ export function currentFinancialFilterConditionsError(data: ReportRequestBody, d
   if (data.dataSource !== 35 || !Array.isArray(data.selections)
     || !data.selections.some(selection => ![12, 60].includes(selection?.SelectedField?.Type) && [1, 4, 5, 7].includes(selection?.FilterCondition?.Type))) return null
   if (!usesCurrentFinancialAxes(data))
-    return 'Умови «Не дорівнює» та «Не у списку» доступні лише для поточних документів GBA та основи «Продажі мінус повернення». Поверніть цей режим або змініть умову; відбори й дати збережено.'
+    return 'Умови «Не рівне» та «Не в списку» доступні лише для поточних документів GBA та основи «Продажі мінус повернення». Поверніть цей режим або змініть умову; відбори й дати збережено.'
   if (!currentFinancialFilterConditionsCapability(dataset))
-    return 'Поточний сервер не підтвердив умови «Не дорівнює» та «Не у списку» для валового прибутку. Налаштування збережено без змін.'
+    return 'Поточний сервер не підтвердив умови «Не рівне» та «Не в списку» для валового прибутку. Налаштування збережено без змін.'
   return null
 }

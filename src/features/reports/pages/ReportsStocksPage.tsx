@@ -41,7 +41,7 @@ import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_LOOKUP_FAILED, REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import type { ReportFilterCondition } from '../types'
-import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyUnavailableReason, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, datasetHierarchyDescriptor, isDatasetGroupSelection, withDatasetGroupConditions } from '../data/reportHierarchyFilters'
 import type { AnalysisItemSearch } from './CurrentVparivanieAnalysisValuePicker'
@@ -1700,14 +1700,14 @@ export function ReportSelectionsCard({
             <div className="reports-stocks-selection-modal__controls">
               <ReportComparisonSelect
                 allowDeselect={false}
-                data={filterConditions.map((condition) => ({
+                data={filterConditions.filter(condition => condition.Type === draftSelection.FilterCondition.Type || !analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus)).map((condition) => ({
                   label: condition.Name,
                   value: String(condition.Type),
                   disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
                     || !!analysisConditionUnavailableReason(draftDescriptor, condition.Type, hierarchyStatus),
                 }))}
                 label={t('Умова')}
-                description={groupConditionsNotice(draftDescriptor, hierarchyStatus, draftSelection.FilterCondition.Type)}
+                description={groupConditionsNotice(draftDescriptor, draftSelection.FilterCondition.Type)}
                 value={String(draftSelection.FilterCondition.Type)}
                 onChange={(value) => {
                   const condition = filterConditions.find((item) => String(item.Type) === value) || filterConditions[0]
@@ -1828,8 +1828,8 @@ export function InlineReportSelection({ dataset, request, selection, selections,
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<Select size="xs" label={t('Поле')} searchable allowDeselect={false} data={fields}
         placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect constructorLabels size="xs" label="Тип порівняння" allowDeselect={false}
-        description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
-        data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
+        description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
+        data={rowConditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
           disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
             || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
         value={String(selection.FilterCondition.Type)} onChange={changeCondition} />} value={displayedValuePicker} action={<>
@@ -1840,7 +1840,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
           }}><Ellipsis size={14} /></ActionIcon></Tooltip>
         <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
       </>} error={selection.IsChecked !== false && (valueError || admittedConditions?.has(selection.FilterCondition.Type) === false)
-        ? <Alert color="yellow" p="xs">{valueError ?? groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)
+        ? <Alert color="yellow" p="xs">{valueError ?? groupConditionsNotice(descriptor, selection.FilterCondition.Type)
           ?? 'Ця умова недоступна для вибраного поля. Виберіть доступну умову або вимкніть відбір.'}</Alert> : null} />
   }
   return <section className="workbook-inline-selection" role="group" aria-label={t('Умова відбору {position}', { position: index + 1 })}>
@@ -1853,8 +1853,8 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       {analysis?.filters.filter(field => field.available === false && selection.SelectedField.Name && field.type === selection.SelectedField.Type).map(field => <Text size="xs" c="dimmed" key={field.type}>{field.name}: {field.unavailabilityReason}</Text>)}
     </div>
     <div className="workbook-inline-selection__condition"><ReportComparisonSelect label={t('Умова')} allowDeselect={false}
-      description={groupConditionsNotice(descriptor, hierarchyStatus, selection.FilterCondition.Type)}
-      data={conditions.map(condition => ({ value: String(condition.Type), label: condition.Name,
+      description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
+      data={conditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: condition.Name,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
@@ -1887,11 +1887,10 @@ function hierarchyStatusError(descriptor: AnalysisFieldDescriptor | undefined, c
   return status ? analysisConditionUnavailableReason(descriptor, condition, status) : null
 }
 
-function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, status: AnalysisHierarchyStatus | null, condition?: number): string | undefined {
+function groupConditionsNotice(descriptor: AnalysisFieldDescriptor | undefined, condition?: number): string | undefined {
   if (!analysisHierarchy(descriptor) && condition !== undefined && [3, 5, 6, 7].includes(condition))
     return 'Сервер не підтвердив групи для цього поля. Збережену умову не змінено; виберіть доступну умову або вимкніть відбір.'
-  const reason = analysisHierarchyUnavailableReason(descriptor, status)
-  return reason ? `Умови «У групі…» недоступні: ${reason}` : undefined
+  return undefined
 }
 
 function cloneReportSelection(selection: ReportSelection, dataSource: number): ReportSelection {

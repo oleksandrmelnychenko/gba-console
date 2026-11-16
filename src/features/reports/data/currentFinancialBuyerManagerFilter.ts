@@ -61,7 +61,7 @@ export function currentFinancialBuyerManagerFilterError(data: ReportRequestBody,
     if (!conditions.some(type => type === selection.FilterCondition?.Type) || !Array.isArray(selection.Values)
       || (!draft && selection.Values.length < 1) || selection.Values.length > 100
       || [0, 1].includes(selection.FilterCondition.Type) && (draft ? selection.Values.length > 1 : selection.Values.length !== 1))
-      return 'Оберіть одного менеджера для «Дорівнює / Не дорівнює» або до 100 різних значень для списку.'
+      return 'Оберіть одного менеджера для «Рівне / Не рівне» або до 100 різних значень для списку.'
     const ids = new Set<string>()
     for (const value of selection.Values) {
       const reference = financialBuyerManagerReference(value?.Data)

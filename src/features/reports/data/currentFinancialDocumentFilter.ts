@@ -75,7 +75,7 @@ export function currentFinancialDocumentFilterError(data: ReportRequestBody, dat
     || !Array.isArray(selection.Values) || !draft && selection.Values.length < 1 || selection.Values.length > 100
     || [0, 1].includes(selection.FilterCondition.Type) && (draft ? selection.Values.length > 1 : selection.Values.length !== 1)
     || selection.Values.some(value => !financialDocumentReference(value?.Data))))
-    return 'Оберіть точні документи продажу або повернення: одне значення для «Дорівнює / Не дорівнює» або до 100 для списку.'
+    return 'Оберіть точні документи продажу або повернення: одне значення для «Рівне / Не рівне» або до 100 для списку.'
   return null
 }
 

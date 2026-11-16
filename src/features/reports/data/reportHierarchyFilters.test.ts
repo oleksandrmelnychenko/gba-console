@@ -85,7 +85,7 @@ describe('dataset validators', () => {
       selections: [selection(1, 6, { kind: 'productGroup', id: 42 })] }
     expect(dayOrganizationGrossProfitConfigurationError(request, dayDataset)).toBeNull()
     const negative = { ...request, selections: [selection(6, 7, group)] }
-    expect(dayOrganizationGrossProfitConfigurationError(negative, dayDataset)).toMatch('«Не дорівнює» та «Не у списку»')
+    expect(dayOrganizationGrossProfitConfigurationError(negative, dayDataset)).toMatch('«Не рівне» та «Не в списку»')
   })
 })
 
