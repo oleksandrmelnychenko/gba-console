@@ -250,7 +250,7 @@ function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportData
   if (currentVparivanieError) throw new Error(currentVparivanieError)
   const settlementPeriodError = settlementPeriodConfigurationError(request)
   if (settlementPeriodError) throw new Error(settlementPeriodError)
-  const cashPeriodError = cashPeriodConfigurationError(request)
+  const cashPeriodError = cashPeriodConfigurationError(request, dataset)
   if (cashPeriodError) throw new Error(cashPeriodError)
   if (request.dataSource === 39 && !requestCurrentVparivanieAnalysis(request)) for (const selection of request.selections) {
     if (selection.SelectedField.Type === 60) for (const value of selection.Values)

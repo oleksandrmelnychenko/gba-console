@@ -126,7 +126,7 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
   if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
     || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
-      || grouped && groupedCashWorkbookSupported(dataset) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS)
+      || grouped && (!dataset || groupedCashWorkbookSupported(dataset)) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS)
       || grouped && requestWorkbookPresentation(data) != null && (exact(data.sorted.Row?.map(item => item.type), [40])
         || exact(data.sorted.Row?.map(item => item.type), [42]) && (!dataset || cashCurrencyRecordWorkbookSupported(dataset))))
     || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
