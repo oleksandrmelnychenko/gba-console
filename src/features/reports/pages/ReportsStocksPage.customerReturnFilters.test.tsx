@@ -5,7 +5,9 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { returnStatusDataset } from '../data/returnItemStatuses.test-fixtures'
-import { CUSTOMER_RETURN_FILTERS } from '../data/customerReturnReport'
+import { CUSTOMER_RETURN_FILTERS, customerReturnRequest } from '../data/customerReturnReport'
+import { defaultDatasetRequest } from '../data/reportDatasets'
+import { changeReportPeriod } from '../testing/reportPeriod'
 import type { ReportDataset } from '../types'
 import { ReportsStocksPage } from './ReportsStocksPage'
 
@@ -81,4 +83,25 @@ it('keeps the original five fields and no І/АБО panel on a server that has n
   expect(fieldOptions(row)).toEqual(['Товар', 'Артикул', 'Покупець', 'Причина повернення', 'Склад'])
   expect(screen.queryByRole('region', { name: 'Логіка умов відбору' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Налаштувати групи І/АБО' })).toBeNull()
+})
+
+it('sends the returns request with the new fields and their І/АБО tree', async () => {
+  const dataset = serverDataset(RETURN_FILTERS)
+  const data = customerReturnRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-27'), dataset)
+  data.selections = [
+    { IsChecked: true, SelectedField: { Type: 0, Name: 'Організація' }, FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Name: 'Фірма', Data: { Id: 1, Name: 'Фірма' }, Value: 1 }] },
+    { IsChecked: true, SelectedField: { Type: 7, Name: 'Регіон клієнта' }, FilterCondition: { Type: 0, Name: 'Дорівнює' }, Values: [{ Name: 'Київ', Data: { Id: 32, Name: 'Київ' }, Value: 32 }] }]
+  const filterExpression = { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }] } }
+  vi.mocked(getReportDatasets).mockResolvedValue([dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Повернення АБО', Data: { ...data, filterExpression } }])
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  await screen.findByRole('button', { name: /Відкрити Звіт повернення/ })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Повернення АБО' }))
+  expect(await screen.findByRole('button', { name: 'Очистити групи: усі умови через І' })).toBeTruthy()
+  changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, returnsOnly: true, from: '2026-09-01', filterExpression,
+    selections: [{ SelectedField: { Type: 0 }, Values: [{ Data: { Id: 1 } }] }, { SelectedField: { Type: 7 }, Values: [{ Data: { Id: 32 } }] }] })
 })
