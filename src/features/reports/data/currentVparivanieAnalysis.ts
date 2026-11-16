@@ -288,7 +288,7 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
   }
   return !draft && !anchor ? 'Оберіть товари або групи товарів для аналізу.' : null
 }
-export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «В списку» чи «В групі зі списку» або через «І» з умовою «Не в списку» чи «Не в групі зі списку».'
+export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «У списку» чи «У групі зі списку» або через «І» з умовою «Не у списку» чи «Не у групі зі списку».'
 type MergeTerm = { kind: 1 | 2; children: MergeTerm[] } | { kind: 3; leaf: ReportSelection }
 const mergeTarget = (kind: 1 | 2, condition: number) => kind === 2 ? ([0, 2].includes(condition) ? 2 : [3, 6].includes(condition) ? 3 : null)
   : [1, 4].includes(condition) ? 4 : [5, 7].includes(condition) ? 5 : null
@@ -311,7 +311,6 @@ function mergeTerm(term: MergeTerm): MergeTerm {
   })
   return merged.length === 1 ? merged[0] : { kind: term.kind, children: merged }
 }
-/** Rows on one field joined exactly like one list rule read as that rule, as the server merges them. */
 export function mergedAnalysisSelections(data: ReportRequestBody): ReportSelection[] {
   const active = data.selections.filter(selection => selection.IsChecked !== false)
   if (new Set(active.map(s => s.SelectedField.Type)).size === active.length) return active

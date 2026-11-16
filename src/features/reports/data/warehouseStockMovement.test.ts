@@ -52,11 +52,11 @@ describe('warehouse stock movement request', () => {
       ProductGroupIds: [], Filters: [{ Field: 'group', Ids: [7], Row: 1 }, { Field: 'group', Ids: [8], Row: 4 }],
       FilterExpression: { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 1 }] }] } },
     })
-    expect(stockMovementDraftError({ ...draft(), filterRows }, stockMovementCapability)).toBe('Умова відбору 3 (Товарна група): додайте значення або зніміть галочку')
-    expect(stockMovementDraftError({ ...draft(), filterRows: [...filterRows, row(null)] }, stockMovementCapability)).toBe('Умова відбору 3 (Товарна група): додайте значення або зніміть галочку')
+    expect(stockMovementDraftError({ ...draft(), filterRows }, stockMovementCapability)).toBe('Умова відбору №3 (Товарна група): додайте значення або зніміть галочку')
+    expect(stockMovementDraftError({ ...draft(), filterRows: [...filterRows, row(null)] }, stockMovementCapability)).toBe('Умова відбору №3 (Товарна група): додайте значення або зніміть галочку')
     const finished = filterRows.map((item, index) => index === 2 ? { ...item, enabled: false } : item)
     expect(stockMovementDraftError({ ...draft(), filterRows: finished }, stockMovementCapability)).toBeNull()
-    expect(stockMovementDraftError({ ...draft(), filterRows: [...finished, row(null)] }, stockMovementCapability)).toBe('Умова відбору 5: оберіть поле або зніміть галочку')
+    expect(stockMovementDraftError({ ...draft(), filterRows: [...finished, row(null)] }, stockMovementCapability)).toBe('Умова відбору №5: оберіть поле або зніміть галочку')
     expect(stockMovementDraftError({ ...legacyDraft(), filterRows: finished }, stockMovementCapability)).toBe('Поле «Товарна група» можна вибрати лише один раз.')
     const long = [row('warehouse', { ids: [1] }), row('article', { articleMatch: 'equals', text: 'x'.repeat(129) })]
     expect(stockMovementDraftError({ ...draft(), filterRows: long }, stockMovementCapability)).toBe('Умова відбору №2: артикул не може бути довшим за 128 символів.')

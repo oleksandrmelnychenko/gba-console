@@ -325,7 +325,7 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(within(second).getByRole('combobox', { name: 'Поле' }))
     expect((await screen.findByRole('option', { name: 'Топ' })).getAttribute('data-combobox-disabled')).toBe('true')
     fireEvent.click(screen.getByRole('option', { name: 'Склад' }))
-    expect(await screen.findByText('Умова відбору 2 (Склад): додайте значення або зніміть галочку')).toBeTruthy()
+    expect(await screen.findByText('Умова відбору №2 (Склад): додайте значення або зніміть галочку')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
     fireEvent.click(within(second).getByRole('checkbox', { name: 'Увімкнути умову 2' }))
     fireEvent.click(within(row).getByRole('checkbox', { name: 'Увімкнути умову 1' }))
