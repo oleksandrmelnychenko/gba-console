@@ -429,7 +429,7 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
   const rows = draft.filterRows ?? []
   for (let index = 0; index < rows.length; index++) {
     const problem = stockMovementRowLimitError(rows[index])
-    if (problem) return `Умова відбору ${index + 1}: ${problem}`
+    if (problem) return `Умова відбору №${index + 1}: ${problem}`
   }
   if (!draft.listed) {
     const repeated = rows.find((row, index) => row.field && rows.findIndex(other => other.field === row.field) !== index)
