@@ -64,7 +64,7 @@ function ThresholdFields({ data, dataset, value, disabled, onChange }: Props & {
   if (!groups.some(field => field.value === String(value.Grouping))) groups.push({ value: String(value.Grouping), label: `Поза рядками або недоступне: ${dataset.Groupings.find(field => field.Type === value.Grouping)?.Name ?? `[${value.Grouping}]`}` })
   if (!measures.some(field => field.value === String(value.Measure))) measures.push({ value: String(value.Measure), label: `Вимкнений або недоступний показник: ${dataset.Measurements.find(field => field.Type === value.Measure)?.Name ?? `[${value.Measure}]`}` })
   const change = (patch: Partial<ReportThresholdDraft>) => onChange({ ...value, ...patch })
-  return <SimpleGrid className="reports-constructor-rule-fields" cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs" style={{ alignItems: 'end' }}>
+  return <SimpleGrid className="reports-constructor-rule-fields" type="container" cols={{ base: 1, '36em': 2, '54em': 3 }} spacing="xs" style={{ alignItems: 'end' }}>
     <Select label="Поле рядків для порогу" data={groups} value={String(value.Grouping)} disabled={disabled} allowDeselect={false}
       onChange={item => { const type = Number(item); if (item !== null && rows.has(type) && cap.GroupingTypes.includes(type)) change({ Grouping: type }) }} />
     <Select label="Показник для порогу" data={measures} value={String(value.Measure)} disabled={disabled} allowDeselect={false}

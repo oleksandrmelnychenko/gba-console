@@ -134,6 +134,10 @@ export const PermissionKeys = {
     OneCExport: {
       Run: 'integration.onec_export.documents.export',
     },
+    DataSync: {
+      RunOutcomeOrders: 'administration.data_sync.outcome_orders.run',
+      SetAllHistoryProducts: 'administration.data_sync.history_products.set_all',
+    },
   },
   SupplyCart: {
     Document: {
@@ -1253,6 +1257,7 @@ export type OperationalPermissionKey =
   | Values<typeof PermissionKeys.Operational.ShopOrders>
   | Values<typeof PermissionKeys.Operational.GbaData>
   | Values<typeof PermissionKeys.Operational.OneCExport>
+  | Values<typeof PermissionKeys.Operational.DataSync>
 
 export type SupplyCartPermissionKey =
   | Values<typeof PermissionKeys.SupplyCart.Document>
@@ -1619,6 +1624,7 @@ const eventPermissionKeyList = [
   ...Object.values(PermissionKeys.Operational.ShopOrders),
   ...Object.values(PermissionKeys.Operational.GbaData),
   ...Object.values(PermissionKeys.Operational.OneCExport),
+  ...Object.values(PermissionKeys.Operational.DataSync),
   ...Object.values(PermissionKeys.ActReconciliations.Page),
   ...Object.values(PermissionKeys.ActReconciliations.Act),
   ...Object.values(PermissionKeys.ActReconciliations.History),
