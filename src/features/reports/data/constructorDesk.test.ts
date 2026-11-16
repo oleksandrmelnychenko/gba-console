@@ -65,8 +65,8 @@ describe('constructor desk vocabulary', () => {
     expect(constructorFilterGroups(request(45), [21, 20, 3, 0, 19, 2, 1, 4, 23].map(type => ({ value: String(type), label: `Поле ${type}`, field: { Type: type } })))).toEqual([
       { value: '0', label: 'Організація' },
       { group: 'Товар', items: ['Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру'].map((label, index) => ({ value: String([1, 2, 3, 4, 20][index]), label })) },
-      { group: 'Постачальник', items: [{ value: '19', label: 'Документ надходження' }] },
-      { group: 'Склад', items: [{ value: '21', label: 'Склад' }, { value: '23', label: 'Склад. Організація' }] },
+      { group: 'Постачальник', items: [{ value: '19', label: 'Поле 19' }] },
+      { group: 'Склад', items: [{ value: '21', label: 'Склад' }, { value: '23', label: 'Поле 23' }] },
     ])
   })
 

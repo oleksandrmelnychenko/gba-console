@@ -2,7 +2,7 @@ export type CanonicalFilterField = { label: string; section?: string; order: num
 
 export const REPORT_FILTER_SECTIONS = ['Товар', 'Покупець', 'Документ продажу', 'Постачальник', 'Склад', 'Документ руху', 'Рахунок', 'Інше'] as const
 
-const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string, string?]> = [
+const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string | null, string?]> = [
   [0, 'Організація'],
   [32, 'Організація'],
   [1, 'Товар', 'Товар'],
@@ -20,32 +20,28 @@ const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string, string?]> = [
   [60, 'Покупець. Відповідальний менеджер покупця', 'Покупець'],
   [11, 'Покупець. Тип цін', 'Покупець'],
   [12, 'Документ продажу', 'Документ продажу'],
-  [13, 'Документ продажу. Номер, дата, час', 'Документ продажу'],
+  [13, null, 'Документ продажу'],
   [14, 'Повернення від клієнта', 'Документ продажу'],
   [15, 'Відповідальний менеджер що забив товар', 'Документ продажу'],
   [16, 'Відповідальний менеджер що перевів в статус накладної', 'Документ продажу'],
-  [62, 'Документ продажу. Відповідальний', 'Документ продажу'],
-  [63, 'Замовлення покупця. Відповідальний', 'Документ продажу'],
+  [62, null, 'Документ продажу'],
+  [63, null, 'Документ продажу'],
   [64, 'Причина повернення', 'Документ продажу'],
-  [17, 'Постачальник', 'Постачальник'],
-  [18, 'Постачальник. Договір', 'Постачальник'],
-  [19, 'Документ надходження', 'Постачальник'],
-  [24, 'Документ повернення постачальнику', 'Постачальник'],
-  [27, 'Тип повернення постачальнику', 'Постачальник'],
+  [17, null, 'Постачальник'],
+  [18, null, 'Постачальник'],
+  [19, null, 'Постачальник'],
+  [24, null, 'Постачальник'],
+  [27, null, 'Постачальник'],
   [21, 'Склад', 'Склад'],
-  [23, 'Склад. Організація', 'Склад'],
-  [22, 'Склад. Рядок партії', 'Склад'],
-  [29, 'Рахунок', 'Рахунок'],
-  [30, 'Рахунок. Валюта', 'Рахунок'],
-  [33, 'Рахунок. Вид', 'Рахунок'],
+  [23, null, 'Склад'],
+  [22, null, 'Склад'],
+  [29, null, 'Рахунок'],
+  [30, null, 'Рахунок'],
+  [33, null, 'Рахунок'],
 ]
 
 const BY_TYPE = new Map(CANONICAL_FIELDS.map(([type, label, section], order) => [type, { label, section, order }]))
 
-const SOURCE_OVERRIDES: Readonly<Record<number, Readonly<Record<number, string>>>> = {
-  39: { 6: 'Покупець. Назва' },
-  41: { 30: 'Валюта взаєморозрахунків' },
-}
 
 function fallbackSection(type: number): string | undefined {
   if (type === 28) return undefined
@@ -55,9 +51,9 @@ function fallbackSection(type: number): string | undefined {
 
 export function canonicalFilterField(dataSource: number | undefined, type: number, name: string): CanonicalFilterField {
   const known = BY_TYPE.get(type)
-  const override = dataSource === undefined ? undefined : SOURCE_OVERRIDES[dataSource]?.[type]
-  if (known) return { label: override ?? known.label, section: dataSource === 41 && type === 30 ? undefined : known.section, order: known.order }
-  return { label: override ?? name, section: fallbackSection(type), order: CANONICAL_FIELDS.length }
+  const own = dataSource === 39 && type === 6
+  if (known && !own) return { label: known.label ?? name, section: dataSource === 41 && type === 30 ? undefined : known.section, order: known.order }
+  return { label: name, section: own ? 'Покупець' : fallbackSection(type), order: known?.order ?? CANONICAL_FIELDS.length }
 }
 
 export function canonicalFilterLabel(dataSource: number | undefined, type: number, name: string): string {

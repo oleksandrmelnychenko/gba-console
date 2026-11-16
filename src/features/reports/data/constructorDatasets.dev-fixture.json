@@ -2586,6 +2586,11 @@
     "Selectable": true
    },
    {
+    "Type": 4,
+    "Name": "Група товару",
+    "Selectable": true
+   },
+   {
     "Type": 19,
     "Name": "Документ надходження",
     "Selectable": true
@@ -3049,6 +3054,11 @@
    {
     "Type": 3,
     "Name": "Топ товару",
+    "Selectable": true
+   },
+   {
+    "Type": 4,
+    "Name": "Група товару",
     "Selectable": true
    },
    {
