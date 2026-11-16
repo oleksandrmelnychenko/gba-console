@@ -507,7 +507,6 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     return <Alert color="yellow" role="status">
       {blockedBy ? t('Налаштування змінено. Звіт поки не можна сформувати: {reason}', { reason: blockedBy })
         : workbookResolving ? t('Налаштування змінено.') : t('Налаштування змінено. Натисніть «{action}», щоб оновити звіт.', { action: t(action) })}
-      {lastRun ? <> {t('Показаний результат та його експорт відповідають попередньому застосованому набору.')}</> : null}
     </Alert>
   }
   const emptyRunNotice =
@@ -1818,7 +1817,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       </Button>
     </Group>
     {selection.IsChecked === false
-      ? <Text size="xs" c="dimmed">{t('Усі покупці за цим полем. Інші умови відбору діють.')}</Text>
+      ? null
       : valuePicker}
   </Stack> : valuePicker
   if (variant === 'row' && request) {

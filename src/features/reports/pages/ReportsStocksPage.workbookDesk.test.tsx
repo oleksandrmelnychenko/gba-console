@@ -496,7 +496,7 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
   expect(screen.queryByRole('link', { name: 'Завантажити PDF' })).toBeNull()
   expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
   expect(dateInput('Від').value).toBe('2026-10-02')
-  expect(screen.getByText(/Показаний результат та його експорт відповідають попередньому/)).toBeTruthy()
+  expect(screen.queryByText(/Показаний результат та його експорт відповідають попередньому/)).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
   await waitFor(() => expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession, 'table'], [resultSession, 'sheets']]))
   await screen.findByRole('link', { name: 'Завантажити Excel' })

@@ -23,7 +23,7 @@ afterEach(cleanup)
 it.each([[12, 'sale'], [14, 'return']] as const)('uses source44 field%d document capability and keeps saved ID/date on failed lookup', async (field, Kind) => {
   const Name = 'Документ №17 · 19.10.2026 13:14:53'
   api.mockResolvedValue([{ Id: '9007199254740993', Kind, Name }]); render(<Picker field={field} />)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' })); fireEvent.click(await screen.findByRole('option', { name: Name }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' })); fireEvent.click(await screen.findByRole('option', { name: Name.replace(/ \[\d+\]$/,'') }))
   const expected = [rawSaved, { Data: { Id: '9007199254740993' }, Name, Value: 0 }]
   expect(changed.mock.calls.at(-1)?.[0]).toEqual(expected)
   api.mockRejectedValue(new Error('offline')); fireEvent.click(screen.getByRole('button', { name: 'Змінити дату' }))

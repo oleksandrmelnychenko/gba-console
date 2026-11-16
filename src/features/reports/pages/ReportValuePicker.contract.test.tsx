@@ -55,7 +55,7 @@ describe('dropdown', () => {
   it.each(['multi', 'single'] as const)('renders the %s options in a portal outside the scrollable filter table', async mode => {
     render(<Harness mode={mode} portals />)
     await userEvent.click(box())
-    const option = await screen.findByRole('option', { name: options[0].label })
+    const option = await screen.findByRole('option', { name: options[0].label.replace(/ \[\d+\]$/,'') })
     expect(screen.getByTestId('filters-table').contains(option)).toBe(false)
     expect(screen.getByRole('listbox').contains(option)).toBe(true)
     expect(box().getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id)
@@ -67,7 +67,7 @@ describe('dropdown', () => {
   it('selects the highlighted option of the portalled list with the keyboard', async () => {
     render(<Harness portals />)
     await userEvent.type(box(), 'AKK')
-    await screen.findByRole('option', { name: options[0].label })
+    await screen.findByRole('option', { name: options[0].label.replace(/ \[\d+\]$/,'') })
     await userEvent.keyboard('{ArrowDown}{Enter}')
     expect(keys()).toEqual(['1'])
   })
@@ -82,7 +82,7 @@ describe('dropdown', () => {
   it('filters a locally loaded directory by the typed text and leaves remote results untouched', async () => {
     const view = render(<Harness remote={false} />)
     await userEvent.type(box(), 'benefit')
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[1].label])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[1].label.replace(/ \[\d+\]$/, '')])
     view.unmount()
     render(<Harness />)
     await userEvent.type(box(), 'benefit')
@@ -96,20 +96,20 @@ describe('choosing', () => {
     await userEvent.click(box())
     await userEvent.keyboard('{ArrowUp}{Enter}')
     expect(keys()).toEqual(['3'])
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label))
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label.replace(/ \[\d+\]$/, '')))
     await userEvent.keyboard('{ArrowUp}{Enter}')
     expect(keys()).toEqual(['3', '2'])
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label))
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => option.label.replace(/ \[\d+\]$/, '')))
   })
 
   it('multi: mouse toggles values, keeps the list open and keeps the typed text', async () => {
     render(<Harness />)
     await userEvent.type(box(), 'a')
-    await userEvent.click(screen.getByRole('option', { name: options[0].label }))
-    await userEvent.click(screen.getByRole('option', { name: options[1].label }))
+    await userEvent.click(screen.getByRole('option', { name: options[0].label.replace(/ \[\d+\]$/,'') }))
+    await userEvent.click(screen.getByRole('option', { name: options[1].label.replace(/ \[\d+\]$/,'') }))
     expect(keys()).toEqual(['1', '2'])
     expect(box().value).toBe('a')
-    await userEvent.click(screen.getByRole('option', { name: options[0].label }))
+    await userEvent.click(screen.getByRole('option', { name: options[0].label.replace(/ \[\d+\]$/,'') }))
     expect(keys()).toEqual(['2'])
     expect(screen.getAllByRole('option').length).toBeGreaterThan(0)
   })
@@ -117,7 +117,7 @@ describe('choosing', () => {
   it('single: a choice replaces the value, closes the list and clears the typed text', async () => {
     render(<Harness mode="single" initial={['1']} />)
     await userEvent.type(box(), 'c')
-    await userEvent.click(screen.getByRole('option', { name: options[2].label }))
+    await userEvent.click(screen.getByRole('option', { name: options[2].label.replace(/ \[\d+\]$/,'') }))
     expect(keys()).toEqual(['3'])
     expect(box().value).toBe('')
     expect(screen.queryByRole('option')).toBeNull()
@@ -160,7 +160,7 @@ describe('list stability', () => {
     render(<Harness data={many} />)
     await userEvent.click(box())
     const before = labels()
-    const target = screen.getByRole('option', { name: many[24].label })
+    const target = screen.getByRole('option', { name: many[24].label.replace(/ \[\d+\]$/,'') })
     viewport().scrollTop = 480
     await userEvent.click(target)
     expect(keys()).toEqual(['m25'])
@@ -219,7 +219,7 @@ describe('selected values', () => {
     expect(keys()).toEqual(['3'])
     expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => `${option.label} current`))
     await userEvent.click(screen.getByRole('button', { name: 'Вибрано: 1' }))
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[2].label])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[2].label.replace(/ \[\d+\]$/, '')])
   })
 
   it.each(['multi', 'single'] as const)('%s: shows «Вибрано: N» with removable pills', async mode => {
@@ -296,7 +296,7 @@ describe('paging and failures', () => {
   it('keeps already loaded options when only the next page failed', async () => {
     render(<Harness lookupError="Не вдалося завантажити значення." />)
     await userEvent.click(box())
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([...options.map(option => option.label), 'Спробувати ще раз'])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([...options.map(option => option.label.replace(/ \[\d+\]$/, '')), 'Спробувати ще раз'])
   })
 })
 

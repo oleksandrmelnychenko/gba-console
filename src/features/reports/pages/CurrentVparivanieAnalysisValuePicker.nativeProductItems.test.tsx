@@ -82,7 +82,7 @@ it.each([3, 5])(
     await waitFor(() => expect(apiRequest).toHaveBeenCalledOnce())
     expect(searchAnalysisValues).toHaveBeenCalledOnce()
     await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-    await userEvent.click(await screen.findByRole('option', { name: 'Product · SKU [1]' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Product · SKU' }))
     expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual([
       { Data: { kind: 'productGroup', id: '1' }, Name: 'Group', Value: 0 },
       { Data: { kind: 'product', id: '1' }, Name: 'Product · SKU', Value: 0 },

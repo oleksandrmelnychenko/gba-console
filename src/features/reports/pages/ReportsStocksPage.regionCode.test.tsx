@@ -100,7 +100,7 @@ it('shows the buyer name through the sales navigation and report filter row from
   fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
   const row = screen.getByRole('group', { name: 'Умова відбору 1' })
   fireEvent.click(within(row).getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: field.Name }))
+  fireEvent.click(await screen.findByRole('option', { name: field.Name.replace(/ \[\d+\]$/,'') }))
   fireEvent.click(await search('BCE00604'))
   expect(screen.getByRole('group', { name: 'Умова відбору 1' }).textContent).toContain(caption)
 })

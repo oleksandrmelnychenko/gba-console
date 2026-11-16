@@ -70,8 +70,8 @@ it('keeps a lower product group in place when checked and unchecked in the sales
     lookups = vi.mocked(apiRequest).mock.calls.length
     expect(settled).toBe(true)
   }, { interval: 600 })
-  await waitFor(() => expect(screen.getByRole('option', { name: hobi.Name }).closest('.mantine-ScrollArea-viewport')).toBeTruthy())
-  const option = screen.getByRole('option', { name: hobi.Name })
+  await waitFor(() => expect(screen.getByRole('option', { name: hobi.Name.replace(/ \[\d+\]$/,'') }).closest('.mantine-ScrollArea-viewport')).toBeTruthy())
+  const option = screen.getByRole('option', { name: hobi.Name.replace(/ \[\d+\]$/,'') })
   const viewport = option.closest('.mantine-ScrollArea-viewport') as HTMLElement
   expect(viewport).toBeTruthy()
   const order = () => screen.getAllByRole('option').map(item => item.textContent)

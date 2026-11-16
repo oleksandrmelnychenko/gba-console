@@ -82,7 +82,7 @@ it('shows current-region meaning for active selections only without changing sto
 it('uses the exact retained normal Region DTO parent ID, never its child RegionCode IDs', async () => {
   api.mockResolvedValue(actualDirectory);render(<Form values={[]} />)
   fireEvent.click(screen.getByRole('combobox',{name:'Регіон клієнта'}))
-  fireEvent.click(await screen.findByRole('option',{name:actualDirectory[0].Name}))
+  fireEvent.click(await screen.findByRole('option',{name:actualDirectory[0].Name.replace(/ \[\d+\]$/,'')}))
   expect(JSON.parse(screen.getByTestId('selected').textContent!)).toEqual([{Data:{Id:actualDirectory[0].Id},Name:actualDirectory[0].Name,Value:0}])
   expect(actualDirectory[0].RegionCodes.map(code=>code.Id)).not.toContain(actualDirectory[0].Id)
 })

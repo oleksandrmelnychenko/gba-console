@@ -44,11 +44,11 @@ it.each([
   expect(screen.getByRole('option', { name: 'Топ' })).toBeTruthy()
   expect(screen.getByRole('option', { name: 'Товарна група' })).toBeTruthy()
   expect(screen.queryByRole('option', { name: 'TOP товару' })).toBeNull()
-  fireEvent.click(screen.getByRole('option', { name: label }))
+  fireEvent.click(screen.getByRole('option', { name: label.replace(/ \[\d+\]$/,'') }))
   expect(screen.getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', label)
   await waitFor(() => expect(searchNativePriceFilters).toHaveBeenCalledWith(46, field, expect.objectContaining({ value: '', offset: 0, limit: 30 }), expect.any(AbortSignal)))
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-  fireEvent.click(await screen.findByRole('option', { name: value }))
+  fireEvent.click(await screen.findByRole('option', { name: value.replace(/ \[\d+\]$/,'') }))
   fireEvent.submit(view.container.querySelector('form.workbook-desk__form')!)
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 46, selections: [{

@@ -53,7 +53,7 @@ export function ReportValuePicker({
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
   const failed = !selectedOnly && !busy && !!lookupError
   const retrying = failed && !!onRetry
-  const shared = previewSharedNames(selected.map(item => item.label))
+  const shared = previewSharedNames([...data, ...selected].map(item => item.label))
   const shown = (item: ReportValueOption) => previewCaptionText(item.label, shared)
 
   function remove(key: string) {
@@ -117,7 +117,7 @@ export function ReportValuePicker({
                 {visible.map(item => <Combobox.Option key={item.value} value={item.value} active={keys.has(item.value)} disabled={locked}>
                   <Group gap="xs" wrap="nowrap">
                     {mode === 'multi' || selectedOnly ? <Checkbox checked={keys.has(item.value)} readOnly size="xs" tabIndex={-1} aria-hidden /> : null}
-                    <span>{item.label}</span>
+                    <span>{shown(item)}</span>
                   </Group>
                 </Combobox.Option>)}
                 {failed ? combobox.dropdownOpened ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty> : null

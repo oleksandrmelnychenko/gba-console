@@ -85,7 +85,7 @@ async function addBuyer(field: typeof fields[number]) {
   fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
   const row = screen.getByRole('group', { name: 'Умова відбору 1' })
   fireEvent.click(within(row).getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: field.Name }))
+  fireEvent.click(await screen.findByRole('option', { name: field.Name.replace(/ \[\d+\]$/,'') }))
   return within(row)
 }
 
@@ -102,7 +102,7 @@ it.each(['sales', 'grossProfit'] as const)('includes all buyers in %s without se
   fireEvent.click(row.getByRole('button', { name: 'Усі покупці' }))
   expect(row.getByRole('button', { name: 'Усі покупці' }).getAttribute('aria-pressed')).toBe('true')
   expect(row.getByRole('checkbox', { name: 'Увімкнути умову 1' })).toHaveProperty('checked', false)
-  expect(row.getByText('Усі покупці за цим полем. Інші умови відбору діють.')).toBeTruthy()
+  expect(row.queryByText('Усі покупці за цим полем. Інші умови відбору діють.')).toBeNull()
   expect(row.queryByPlaceholderText('Пошук значення')).toBeNull()
   expect(option.isConnected).toBe(false)
   await act(async () => fireEvent.submit(container.querySelector('form')!))

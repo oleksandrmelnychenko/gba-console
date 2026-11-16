@@ -35,7 +35,7 @@ it.each(['Муляр', 'XM06001'])('searches the sales buyer by %s, shows code a
   fireEvent.change(input, { target: { value: query } })
   fireEvent.click(input)
   await waitFor(() => expect(apiRequest).toHaveBeenCalledWith('/report/datasets/lookup', expect.objectContaining({ query: { dataSource: 2, field: 6, value: query, offset: 0, limit: 30 } })))
-  fireEvent.click(await screen.findByRole('option', { name: client.Name }))
+  fireEvent.click(await screen.findByRole('option', { name: client.Name.replace(/ \[\d+\]$/,'') }))
   fireEvent.keyDown(input, { key: 'Escape' })
   expect(within(row).getByRole('button', { name: `Видалити ${client.Name.replace(/ \[\d+\]$/, '')}` })).toBeTruthy()
   expect(within(row).getByRole('button', { name: `Видалити ${other.Name.replace(/ \[\d+\]$/, '')}` })).toBeTruthy()

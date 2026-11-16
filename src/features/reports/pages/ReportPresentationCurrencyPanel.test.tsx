@@ -19,7 +19,7 @@ it('selects from catalog, preserves the NetUid and explicitly resets to legacy E
  expect(change).toHaveBeenLastCalledWith(undefined)
  view.rerender(<MantineProvider env="test"><ReportPresentationCurrencyPanel dataset={currencyDataset} request={{ ...currencyRequest(), presentationCurrency: undefined }} disabled={false} onChange={change} /></MantineProvider>)
  fireEvent.click(screen.getByRole('combobox', { name: 'Валюта звіту' }))
- fireEvent.click(screen.getByRole('option', { name: cad.label }))
+ fireEvent.click(screen.getByRole('option', { name: cad.label.replace(/ \[\d+\]$/,'') }))
  expect(change).toHaveBeenLastCalledWith(currencySelection)
 })
 it('keeps unavailable selections on failed lookup and retries without changing request', async () => {

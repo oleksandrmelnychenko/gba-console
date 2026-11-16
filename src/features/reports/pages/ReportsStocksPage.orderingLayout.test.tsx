@@ -52,7 +52,7 @@ it('shows complete selected values and preserves independent row and column orde
   const panel = await openOrdering()
   const choose = async (name: string, option: string) => {
     fireEvent.click(within(panel).getByRole('combobox', { name }))
-    fireEvent.click(await screen.findByRole('option', { name: option }))
+    fireEvent.click(await screen.findByRole('option', { name: option.replace(/ \[\d+\]$/,'') }))
     await waitFor(() => expect(within(panel).getByRole('combobox', { name })).toHaveProperty('value', option))
   }
   await choose('Сортування — Рядки: Організація', 'За підсумком показника')

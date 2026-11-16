@@ -19,7 +19,7 @@ it('finds a client set member by code and stores only the exact id',async()=>{
   const input=screen.getByRole('combobox',{name:'Клієнти: Еталон'})
   fireEvent.click(input);fireEvent.change(input,{target:{value:'XM06001'}})
   await waitFor(()=>expect(searchDatasetReportValues).toHaveBeenCalledWith(44,6,{value:'XM06001',offset:0,limit:30},expect.any(AbortSignal)))
-  fireEvent.click(await screen.findByRole('option',{name:coded}))
+  fireEvent.click(await screen.findByRole('option',{name:coded.replace(/ \[\d+\]$/,'')}))
   expect(onChange).toHaveBeenLastCalledWith({Version:1,Groups:[{Name:'Еталон',ClientIds:[633729]},{Name:'Порівнюваний набір',ClientIds:[]}]})
 })
 
@@ -28,8 +28,8 @@ it('restores saved client sets with the code and keeps a client without code by 
     params.value==='id:633729'?[{Id:633729,Name:coded}]:params.value==='id:635176'?[{Id:635176,Name:plain}]:[])
   const value=initialCustomerGroups();value.Groups[0].ClientIds=[633729];value.Groups[1].ClientIds=[635176]
   render(<MantineProvider env="test"><CustomerGroupsPanel value={value} onChange={vi.fn()} disabled={false}/></MantineProvider>)
-  await waitFor(()=>expect(screen.getAllByText(coded).length).toBeGreaterThan(0))
-  await waitFor(()=>expect(screen.getAllByText(plain).length).toBeGreaterThan(0))
+  await waitFor(()=>expect(screen.getAllByText(coded.replace(/ \[\d+\]$/,'')).length).toBeGreaterThan(0))
+  await waitFor(()=>expect(screen.getAllByText(plain.replace(/ \[\d+\]$/,'')).length).toBeGreaterThan(0))
   expect(screen.queryByText('Клієнт [633729]')).toBeNull()
 })
 
@@ -39,9 +39,9 @@ it('shows the same code label in options, pills and the selected list while valu
   render(<MantineProvider env="test"><I18nProvider><ReportValuePicker mode="multi" data={options} selected={[options[0]]} search="" onSearchChange={vi.fn()} onChange={onChange}/></I18nProvider></MantineProvider>)
   expect(screen.getByRole('button',{name:`Видалити ${coded.replace(/ \[\d+\]$/, '')}`})).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'Вибрано: 1'}))
-  expect(screen.getByRole('option',{name:coded})).toBeTruthy()
-  expect(screen.queryByRole('option',{name:plain})).toBeNull()
+  expect(screen.getByRole('option',{name:coded.replace(/ \[\d+\]$/,'')})).toBeTruthy()
+  expect(screen.queryByRole('option',{name:plain.replace(/ \[\d+\]$/,'')})).toBeNull()
   fireEvent.click(screen.getByRole('button',{name:'Вибрано: 1'}))
-  fireEvent.click(screen.getByRole('option',{name:plain}))
+  fireEvent.click(screen.getByRole('option',{name:plain.replace(/ \[\d+\]$/,'')}))
   expect(onChange).toHaveBeenLastCalledWith(['633729','635176'])
 })

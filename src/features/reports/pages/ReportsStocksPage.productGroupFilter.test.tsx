@@ -49,7 +49,7 @@ it.each([
   fireEvent.click(value)
   fireEvent.change(value, { target: { value: 'AL' } })
   await waitFor(lookup)
-  fireEvent.click(await screen.findByRole('option', { name: option }))
+  fireEvent.click(await screen.findByRole('option', { name: option.replace(/ \[\d+\]$/,'') }))
   fireEvent.click(screen.getAllByRole('button', { name: /^Сформувати$|Застосувати й показати/ }).at(-1)!)
   await waitFor(() => expect(previewStockReport).toHaveBeenCalled())
   expect(vi.mocked(previewStockReport).mock.calls.at(-1)![0]).toMatchObject({ dataSource: source, selections: [{

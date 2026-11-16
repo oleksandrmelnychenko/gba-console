@@ -19,7 +19,7 @@ afterEach(()=>{cleanup();vi.restoreAllMocks()})
 const input=()=>screen.getByRole('combobox',{name:'Значення'})as HTMLInputElement
 const values=()=>JSON.parse(screen.getByTestId('values').textContent!)
 it('selects a valid exact document by id: token, then clears only the search without a red error or extra GET',async()=>{
- api.mockImplementation(async(_path,options)=>options?.query?.exactId===row.Id?[row]:[]);render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());expect(screen.queryByRole('radio')).toBeNull();await userEvent.type(input(),'id:'+row.Id);await screen.findByRole('option',{name:row.Name});const count=api.mock.calls.length;await userEvent.click(screen.getByRole('option',{name:row.Name}));await waitFor(()=>expect(input().value).toBe(''))
+ api.mockImplementation(async(_path,options)=>options?.query?.exactId===row.Id?[row]:[]);render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());expect(screen.queryByRole('radio')).toBeNull();await userEvent.type(input(),'id:'+row.Id);await screen.findByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')});const count=api.mock.calls.length;await userEvent.click(screen.getByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')}));await waitFor(()=>expect(input().value).toBe(''))
  expect(screen.queryByText(/Вкажіть точний позитивний ID/)).toBeNull();expect(input().getAttribute('aria-invalid')).not.toBe('true');expect(values()).toEqual(selected);expect(api.mock.calls.filter(call=>call[1]?.query?.exactId)).toHaveLength(count-1)
 })
 it('an empty input is never an exact-ID error, with or without a stored document',async()=>{

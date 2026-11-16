@@ -137,7 +137,7 @@ it.each(availableFields.flatMap(descriptor => [0, 1].map(condition => ({ descrip
       selection={{ IsChecked: true, SelectedField: { Type: descriptor.type, Name: descriptor.name }, FilterCondition: { Type: condition, Name: 'Condition' }, Values: [first] }}
       selections={[]} from="2026-01-01" to="2026-10-24" onChange={onChange} /></I18nProvider></MantineProvider>)
     fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-    fireEvent.click(await screen.findByRole('option', { name: second.Name }))
+    fireEvent.click(await screen.findByRole('option', { name: second.Name.replace(/ \[\d+\]$/,'') }))
     expect(onChange).toHaveBeenCalledWith([first, second])
   },
 )
@@ -156,7 +156,7 @@ it.each([0, 2])('ignores a detached old-period option and accepts only the repla
     <CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-29" />
   </I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-  const staleOption = await screen.findByRole('option', { name: oldValue.name })
+  const staleOption = await screen.findByRole('option', { name: oldValue.name.replace(/ \[\d+\]$/,'') })
   view.rerender(<MantineProvider env="test"><I18nProvider>
     <CurrentVparivanieAnalysisValuePicker {...props} from="2026-10-01" />
   </I18nProvider></MantineProvider>)
@@ -165,6 +165,6 @@ it.each([0, 2])('ignores a detached old-period option and accepts only the repla
   fireEvent.click(staleOption)
   expect(onChange).not.toHaveBeenCalled()
   await act(async () => { resolveCurrent([newValue]) })
-  fireEvent.click(await screen.findByRole('option', { name: newValue.name }))
+  fireEvent.click(await screen.findByRole('option', { name: newValue.name.replace(/ \[\d+\]$/,'') }))
   expect(onChange).toHaveBeenCalledExactlyOnceWith([{ Data: newValue.data, Name: newValue.name, Value: 0 }])
 })

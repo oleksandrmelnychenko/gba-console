@@ -19,7 +19,7 @@ it.each([[12,'sale','Продаж'],[14,'return','Повернення']] as con
  api.mockResolvedValue([{Id:'9007199254740993',Kind,Name}])
  render(<Picker field={field}/>)
  fireEvent.click(screen.getByRole('combobox',{name:'Значення'}))
- fireEvent.click(await screen.findByRole('option',{name:Name}))
+ fireEvent.click(await screen.findByRole('option',{name:Name.replace(/ \[\d+\]$/,'')}))
  expect(changed.mock.calls.at(-1)?.[0]).toEqual([{Data:{Id:'9007199254740993'},Name,Value:0}])
  fireEvent.click(screen.getByRole('button',{name:'Змінити дату'}))
  await waitFor(()=>expect(api).toHaveBeenLastCalledWith('/report/datasets/sales/documents/lookup',expect.objectContaining({query:expect.objectContaining({field,from:'2026-10-19'})})))

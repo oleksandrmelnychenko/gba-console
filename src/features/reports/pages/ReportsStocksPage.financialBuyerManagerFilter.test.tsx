@@ -98,7 +98,7 @@ it('keys restored manager chips by identity even when a directory caption change
   }
   render(<MantineProvider env="test"><I18nProvider><Picker /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('combobox', { name: 'Менеджери' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Інший менеджер [43]' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Інший менеджер' }))
   expect(captured.mock.lastCall?.[0]).toEqual([
     { Data: { Id: managerId }, Name: 'Стара назва [42]', Value: 0 },
     { Data: { Id: secondId }, Name: 'Інший менеджер [43]', Value: 0 },

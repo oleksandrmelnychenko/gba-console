@@ -34,7 +34,7 @@ async function addFilter(field: string) {
   const rows = within(filters).getAllByRole('group', { name: /^Умова відбору \d+$/ })
   const row = rows[rows.length - 1]
   fireEvent.click(within(row).getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: field }))
+  fireEvent.click(await screen.findByRole('option', { name: field.replace(/ \[\d+\]$/,'') }))
   return row
 }
 
@@ -204,7 +204,7 @@ describe('native warehouse stock movement', () => {
       const row = await addFilter(field)
       for (const option of options) {
         fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))
-        fireEvent.click(await screen.findByRole('option', { name: option }))
+        fireEvent.click(await screen.findByRole('option', { name: option.replace(/ \[\d+\]$/,'') }))
       }
     }
     await applyReport()
