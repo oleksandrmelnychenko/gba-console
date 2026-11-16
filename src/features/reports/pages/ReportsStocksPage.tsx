@@ -1802,6 +1802,23 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       from={from} to={to} label={t('Значення')} selection={selection} selections={selections} width="100%"
       onSelectionChange={change}
       onChange={Values => change({ ...selection, Values })} />
+  const buyerIdentityField = dataSource === 2 && (selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName
+    || selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerRegionCode)
+  const displayedValuePicker = buyerIdentityField ? <Stack gap={4}>
+    <Group gap={4}>
+      <Button size="compact-xs" variant={selection.IsChecked === false ? 'light' : 'subtle'}
+        aria-pressed={selection.IsChecked === false} onClick={() => change({ ...selection, IsChecked: false })}>
+        {t('Усі покупці')}
+      </Button>
+      <Button size="compact-xs" variant={selection.IsChecked !== false ? 'light' : 'subtle'}
+        aria-pressed={selection.IsChecked !== false} onClick={() => change({ ...selection, IsChecked: true })}>
+        {t('Вибрати покупців')}
+      </Button>
+    </Group>
+    {selection.IsChecked === false
+      ? <Text size="xs" c="dimmed">{t('Усі покупці за цим полем. Інші умови відбору діють.')}</Text>
+      : valuePicker}
+  </Stack> : valuePicker
   if (variant === 'row' && request) {
     const rowFields = analysis ? fields : constructorFilterGroups(request, filterFieldOptions)
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
@@ -1814,7 +1831,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
         data={rowConditions.map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
           disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
             || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
-        value={String(selection.FilterCondition.Type)} onChange={changeCondition} />} value={valuePicker} action={<>
+        value={String(selection.FilterCondition.Type)} onChange={changeCondition} />} value={displayedValuePicker} action={<>
         <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
           aria-label={t('Вибрати значення умови {position}', { position: index + 1 })} onClick={event => {
             const input = event.currentTarget.closest('.constructor-selection-row')?.querySelector<HTMLInputElement>('.constructor-selection-row__value input:not([type="hidden"]):not([disabled])')
@@ -1840,7 +1857,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
-    <div className="workbook-inline-selection__value">{valuePicker}</div>
+    <div className="workbook-inline-selection__value">{displayedValuePicker}</div>
     <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
     {valueError && selection.IsChecked !== false ? <div className="workbook-inline-selection__error"><Alert color="yellow">{valueError}</Alert></div> : null}
   </section>

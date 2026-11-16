@@ -1,0 +1,153 @@
+import { MantineProvider } from '@mantine/core'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { apiRequest } from '../../../shared/api/apiClient'
+import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PageHeaderActionsProvider, PageSubmenuActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { previewStockReport } from '../api/reportsApi'
+import { getReportDatasets, getServerReportTemplates, parseReportDatasets } from '../api/reportWorkspaceApi'
+import catalog from '../data/constructorDatasets.dev-fixture.json'
+import { defaultDatasetRequest } from '../data/reportDatasets'
+import { createFilterExpression } from '../data/reportFilterExpression'
+import type { ReportSelection } from '../types'
+import { ReportsStocksPage } from './ReportsStocksPage'
+
+vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
+vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
+vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn() }))
+vi.mock('../api/reportWorkspaceApi', async original => ({ ...await original<typeof import('../api/reportWorkspaceApi')>(),
+  getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn() }))
+
+const buyers = ([
+  [633122, 901645, "ОК-АВТО ТОВ", "BCK02805"],
+  [632723, 901404, "Передоплата - ЕНКОМ ПАРТС ТОВ", "BCK05803"],
+  [632752, 901421, "КУЛИК ВОЛОДИМИР ВАСИЛЬОВИЧ ФОП", "BCK06603"],
+  [632247, 901058, "АВТОСЕРВІС \"РУХ\" ТОВ", "BDP12201"],
+  [633362, 901782, "РУБІН-92 ПП", "BDP15101"],
+  [632740, 901412, "БАРВ ТІР ПАРТС ТОВ", "BGT01505"],
+  [633501, 901851, "ІНТЕР ЛОГІСТИК ЛТД ТОВ", "BGT05401"],
+  [632501, 901254, "АНІЦОЙ ІГОР ОЛЕКСАНДРОВИЧ ФОП", "BKD04001"],
+  [633044, 901593, "ТРАКПОСТ ТІР ТОВ", "BKI04906"],
+  [631639, 900528, "Київ - ТОВ \"Торговий дім \"Авторезерв\"", "BKI45002"],
+  [631289, 900226, "СКУБА УКРАЇНА ТОВ", "BKI52901"],
+  [631969, 900819, "ЄФРЕМЕНКО ЮРІЙ СЕРГІЙОВИЧ ФОП", "BKI59901"],
+  [632076, 900912, "ВЛАД ТРАНС ТОВ", "BKI61801"],
+  [632315, 901113, "ОНТРАК ТОВ", "BKI64501"],
+  [632374, 901156, "ТК С.В.С.-2006 ТОВ", "BKI64901"],
+  [632593, 901328, "АВТОТРАНС АВК ТОВ", "BKI66801"],
+  [632826, 901475, "ТРАК СПЕЙС СЕРВІС ТОВ", "BKI68701"],
+  [633176, 901673, "ТРАК СПЕЙС СЕРВІС + ТОВ", "BKI68702"],
+  [632911, 901518, "СОЛЮШЕНЗ ХАБ ТОВ", "BKI69101"],
+  [632995, 901566, "ЮРИДИЧНА ФІРМА \"ІНЮРКОНСАЛТ\" ТОВ", "BKI69801"],
+  [633236, 901711, "АВТОСІТІ-БЦ ПЛЮС ПЛЮС ТОВ", "BKI70302"],
+  [633321, 901757, "СБ ПЛЮС ПП", "BKI72201"],
+  [633345, 901769, "ТРАК СТАЙЛ ТОВ", "BKI72301"],
+  [633422, 901811, "ЛЕГІОН РЕПАІР ТРАК ТОВ", "BKI73001"],
+  [633481, 901839, "ПК ТРАНС ЛОГІСТ ТОВ", "BKI73401"],
+  [632722, 901403, "ЛІДЕРТРАНСАГРО ТОВ", "BMI03505"],
+  [631325, 900260, "Миколаїв - ФОП Вакуленко Валентин Миколайович", "BMI04502"],
+  [632939, 901532, "ЛЕЩУК ВІКТОРІЯ ОЛЕКСАНДРІВНА ФОП", "BOD01704"],
+  [632716, 901398, "3В ГРУП ОДЕСА ТОВ", "BOD03404"],
+  [631567, 900473, "///ТРАК///СЕТ  ТОВ", "BOD05702"]
+] as const).map(([Id, RegionCodeId, Name, Value]) => ({ Id, Name, RegionCodeId, RegionCode: { Id: RegionCodeId, Value } }))
+const buyer = buyers[0]
+const organization: ReportSelection = { IsChecked: true, SelectedField: { Type: 0, Name: 'Організація' },
+  FilterCondition: { Type: 0, Name: 'Рівне' }, Values: [{ Name: 'ТОВ «АМГ «КОНКОРД»', Value: 10565, Data: { Id: 10565 } }] }
+const fields = [{ Type: 6, Name: 'Покупець. Контрагент' }, { Type: 8, Name: 'Покупець. Код по регіону' }]
+
+beforeEach(() => {
+  vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
+  vi.mocked(getReportDatasets).mockResolvedValue(parseReportDatasets(catalog))
+  vi.mocked(getServerReportTemplates).mockResolvedValue([])
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/clients/reports/stocks/search' ? buyers : [])
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+  } })
+})
+afterEach(cleanup)
+
+async function open(profile: 'sales' | 'grossProfit') {
+  const view = render(<MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
+    <PageSubmenuActionsSlot /><ReportsStocksPage />
+  </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
+  const nav = await screen.findByRole('navigation', { name: 'Розділи звітів' })
+  const sales = within(nav).getByRole('button', { name: 'Продажі' })
+  await waitFor(() => expect(sales).toHaveProperty('disabled', false))
+  fireEvent.click(sales)
+  fireEvent.click(await screen.findByRole('menuitem', { name: profile === 'sales' ? 'Звіт по продажам' : 'Валовий прибуток' }))
+  return view
+}
+
+async function addBuyer(field: typeof fields[number]) {
+  fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
+  const row = screen.getByRole('group', { name: 'Умова відбору 1' })
+  fireEvent.click(within(row).getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(await screen.findByRole('option', { name: field.Name }))
+  return within(row)
+}
+
+it.each(['sales', 'grossProfit'] as const)('includes all buyers in %s without selecting a truncated lookup page and restores specific selection', async profile => {
+  const { container } = await open(profile)
+  const row = await addBuyer(fields[1])
+  const search = row.getByPlaceholderText('Пошук значення')
+  act(() => search.focus())
+  fireEvent.change(search, { target: { value: '45' } })
+  const option = await screen.findByRole('option', { name: 'BCK02805 — ОК-АВТО ТОВ' }, { timeout: 4000 })
+  expect(screen.getAllByRole('option')).toHaveLength(30)
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  expect(previewStockReport).not.toHaveBeenCalled()
+  fireEvent.click(row.getByRole('button', { name: 'Усі покупці' }))
+  expect(row.getByRole('button', { name: 'Усі покупці' }).getAttribute('aria-pressed')).toBe('true')
+  expect(row.getByRole('checkbox', { name: 'Увімкнути умову 1' })).toHaveProperty('checked', false)
+  expect(row.getByText('Усі покупці за цим полем. Інші умови відбору діють.')).toBeTruthy()
+  expect(row.queryByPlaceholderText('Пошук значення')).toBeNull()
+  expect(option.isConnected).toBe(false)
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  const allRequest = vi.mocked(previewStockReport).mock.calls[0][0]
+  expect(allRequest).toMatchObject({ dataSource: 2, reportProfile: profile, selections: [] })
+  fireEvent.click(row.getByRole('button', { name: 'Вибрати покупців' }))
+  expect(row.getByRole('checkbox', { name: 'Увімкнути умову 1' })).toHaveProperty('checked', true)
+  const restoredSearch = row.getByPlaceholderText('Пошук значення')
+  act(() => restoredSearch.focus())
+  fireEvent.change(restoredSearch, { target: { value: '45' } })
+  fireEvent.click(await screen.findByRole('option', { name: 'BCK02805 — ОК-АВТО ТОВ' }, { timeout: 4000 }))
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(previewStockReport).mock.calls[1][0].selections).toMatchObject([{ IsChecked: true,
+    SelectedField: { Type: 8 }, Values: [{ Value: 901645, Data: { Id: 901645, RegionCodeId: 901645 } }] }])
+  expect(vi.mocked(apiRequest).mock.calls.filter(([path]) => path === '/clients/reports/stocks/search')
+    .every(([, options]) => options?.query?.offset === 0 && options.query.limit === 30)).toBe(true)
+})
+
+it.each(fields)('preserves exact identities and other AND/OR filters when switching all buyers for $Name', async field => {
+  const dataset = parseReportDatasets(catalog).find(item => item.DataSource === 2)!
+  const data = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-31')
+  data.reportProfile = 'grossProfit'
+  const buyerSelection: ReportSelection = { IsChecked: true, SelectedField: field, FilterCondition: { Type: 0, Name: 'Рівне' },
+    Values: [{ Name: 'BCK02805 — ОК-АВТО ТОВ', Value: field.Type === 6 ? buyer.Id : buyer.RegionCodeId,
+      Data: field.Type === 6 ? buyer : buyer.RegionCode }] }
+  data.selections = [organization, buyerSelection]
+  data.filterExpression = createFilterExpression(data.selections, 2)
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'buyers', Revision: 1, Name: 'Покупці', Data: data }])
+  const { container } = await open('grossProfit')
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Покупці' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 2' }))
+  expect(within(screen.getByRole('group', { name: 'Умова відбору 1' })).queryByRole('button', { name: 'Усі покупці' })).toBeNull()
+  fireEvent.click(row.getByRole('button', { name: 'Усі покупці' }))
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  const allRequest = vi.mocked(previewStockReport).mock.calls[0][0]
+  expect(allRequest.selections).toEqual([organization, { ...buyerSelection, IsChecked: false }])
+  expect(allRequest.filterExpression).toEqual(data.filterExpression)
+  fireEvent.click(row.getByRole('button', { name: 'Вибрати покупців' }))
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
+  const specificRequest = vi.mocked(previewStockReport).mock.calls[1][0]
+  expect(specificRequest.selections).toEqual(data.selections)
+  expect(specificRequest.filterExpression).toEqual(data.filterExpression)
+})
