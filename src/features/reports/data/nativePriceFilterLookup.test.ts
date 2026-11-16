@@ -40,5 +40,5 @@ it('keeps inactive unverified raw selections and rejects active missing-cap sele
  const selection={...priceSelectionFixture(4),Values:[{Data:{Id:'9007199254740993'},Name:'Архів',Value:0}]}
  expect(nativePriceFilterSelectionError(46,[selection],{...priceDatasetFixture(),priceFilterLookup:undefined})).toBe(PRICE_FILTER_UNAVAILABLE)
  expect(nativePriceFilterSelectionError(46,[{...selection,IsChecked:false}],undefined)).toBeNull()
- expect(nativePriceFilterSelectionError(44,[selection],undefined)).toBeNull();expect(isNativePriceFilterField(46,11)).toBe(false)
+ expect(nativePriceFilterSelectionError(44,[selection],undefined)).toBeNull();expect(isNativePriceFilterField(46,11)).toBe(true);expect(isNativePriceFilterField(46,13)).toBe(false)
 })

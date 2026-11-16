@@ -12,8 +12,8 @@ import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
 const api=vi.mocked(apiRequest),route='/report/datasets/price-comparison/filters/lookup'
 function legacyDataset(){const dataset=priceDatasetFixture();const cap=priceCapabilityFixture();cap.fields=cap.fields.filter(field=>field.fieldType!==21);dataset.priceFilterLookup=cap;dataset.Filters=dataset.Filters.filter(field=>field.Type!==21);return dataset}
-it.each([false,true])('admits the exact prior9 or new10 owned descriptors (new=%s)',current=>{
- const dataset=current?priceDatasetFixture():legacyDataset();expect(nativePriceFilterCapability(dataset,46)).toHaveLength(current?10:9)
+it.each([false,true])('admits the prior descriptors without the warehouse or the current ones (new=%s)',current=>{
+ const dataset=current?priceDatasetFixture():legacyDataset();expect(nativePriceFilterCapability(dataset,46)).toHaveLength(current?11:10)
  expect(nativePriceFilterDescriptor(dataset,46,4)?.fieldType).toBe(4);expect(nativePriceFilterDescriptor(dataset,46,21)?.fieldType).toBe(current?21:undefined)
 })
 const badCaps=[

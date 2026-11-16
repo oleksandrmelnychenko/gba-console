@@ -45,7 +45,7 @@ function NativePriceFieldPicker({ field, ...props }: Props & { field: NativePric
       error={props.error || (exact === '' ? undefined : page.queryError ?? undefined)}
       emptyMessage={exact === '' ? field === 3 ? 'Введіть позначку TOP після id:' : 'Введіть ID після id:' : undefined}
       lookupError={pending ? undefined : page.error} onRetry={page.retry} hasMore={!pending && page.more} onLoadMore={page.loadMore} />
-    <Text size="sm" c="dimmed">{PRICE_FILTER_HELP[field]}</Text>
+    {PRICE_FILTER_HELP[field] ? <Text size="sm" c="dimmed">{PRICE_FILTER_HELP[field]}</Text> : null}
   </Stack>
 }
 export function NativePriceFilterValuePicker(props: Props) {
