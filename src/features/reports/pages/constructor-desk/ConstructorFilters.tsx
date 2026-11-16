@@ -13,10 +13,10 @@ type Props = {
   onAdd: () => void
   onDelete: (index: number) => void
   onCopy: (index: number) => void
-  copyUnavailable?: string
+  copyDisabled?: boolean
 }
 
-export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow, footer, onAdd, onDelete, onCopy, copyUnavailable }: Props) {
+export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow, footer, onAdd, onDelete, onCopy, copyDisabled = false }: Props) {
   const [expanded, setExpanded] = useState(true)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const selected = selectedKey === null ? -1 : rowKeys.indexOf(selectedKey)
@@ -27,7 +27,7 @@ export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow
   const tools = [
     { label: 'Змінити вибраний відбір', icon: <Pencil size={15} />, disabled: selected < 0, onClick: edit },
     { label: 'Видалити вибраний відбір', icon: <Trash2 size={15} />, disabled: selected < 0, onClick: () => { if (selected >= 0) { onDelete(selected); setSelectedKey(null) } } },
-    { label: 'Копіювати вибраний відбір', tooltip: copyUnavailable, icon: <Copy size={15} />, disabled: selected < 0 || !!copyUnavailable, onClick: () => { if (selected >= 0 && !copyUnavailable) onCopy(selected) } },
+    { label: 'Копіювати вибраний відбір', icon: <Copy size={15} />, disabled: selected < 0 || copyDisabled, onClick: () => { if (selected >= 0 && !copyDisabled) onCopy(selected) } },
   ]
   return <section className="constructor-panel constructor-filters" aria-label="Відбори">
     <div className="constructor-section-head">
@@ -41,7 +41,7 @@ export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow
       <div className="constructor-filters__toolbar" role="group" aria-label="Дії з відборами">
         <Button type="button" variant="subtle" color="dark" size="compact-sm" leftSection={<Plus size={15} aria-hidden="true" />}
           aria-label="Додати відбір" disabled={disabled} onClick={onAdd}>Додати</Button>
-        {tools.map(tool => <Tooltip key={tool.label} label={'tooltip' in tool && tool.tooltip ? tool.tooltip : tool.label}>
+        {tools.map(tool => <Tooltip key={tool.label} label={tool.label}>
           <ActionIcon type="button" variant="subtle" color={tool.label.startsWith('Видалити') ? 'red' : 'gray'} size={26}
             aria-label={tool.label} disabled={disabled || tool.disabled} onClick={tool.onClick}>{tool.icon}</ActionIcon>
         </Tooltip>)}

@@ -95,7 +95,6 @@ function ListPicker({ label, placeholder, data, value, disabled, failed, onRetry
     search={search} onSearchChange={setSearch} disabled={disabled} onChange={onChange} />
 }
 
-const MOVEMENT_COPY_UNAVAILABLE = 'У русі товару кожне поле задається одним рядком: додайте значення до наявної умови.'
 const MOVEMENT_ARTICLE_CONDITIONS: Record<StockMovementArticleMatch, string> = { equals: 'Рівне', contains: 'Містить', inList: 'В списку' }
 
 function nextRowId(rows: readonly StockMovementFilterRow[]): number {
@@ -103,7 +102,7 @@ function nextRowId(rows: readonly StockMovementFilterRow[]): number {
 }
 
 function lookupLabel(item: StockMovementLookupItem): string {
-  return `${item.Name} [${item.Id}]`
+  return item.Name
 }
 
 function movementFieldOptions(used: ReadonlySet<StockMovementFilterField>) {
@@ -361,7 +360,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
       case 'top': return <ListPicker label="Значення" placeholder="Усі значення топу" disabled={locked}
         data={attributes.tops.map(code => ({ value: code, label: code }))} failed={attributes.topsFailed} onRetry={attributes.retryTops}
         value={draft.productTops} onChange={values => update({ productTops: values })} />
-      case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи (з підгрупами)" selected={draft.groups}
+      case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи" selected={draft.groups}
         search={groups} disabled={locked} onChange={value => update({ groups: value })} />
       case 'unit': return <ListPicker label="Значення" placeholder="Усі одиниці виміру" disabled={locked}
         data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))} failed={attributes.unitsFailed} onRetry={attributes.retryUnits}
@@ -401,7 +400,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
             <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
-              copyUnavailable={MOVEMENT_COPY_UNAVAILABLE}
+              copyDisabled
               footer={capability.FilterExpression || draft.filterExpression ? (view => <ReportFilterExpressionPanel data={view.data} dataset={view.dataset}
                 disabled={locked} notice={null} onChange={value => update({ filterExpression: value == null ? null : value as StockMovementDraft['filterExpression'] })} />)(stockMovementExpressionView(draft, capability)) : null}
               onAdd={() => update({ filterRows: [...draft.filterRows, { id: nextRowId(draft.filterRows), field: null, enabled: true }] })}

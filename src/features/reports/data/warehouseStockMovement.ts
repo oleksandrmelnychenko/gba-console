@@ -78,7 +78,7 @@ export const STOCK_MOVEMENT_FILTER_DEFINITIONS: Record<StockMovementFilterField,
   product: { type: 1, label: 'Товар', section: 'Товар', condition: 'В списку' },
   article: { type: 2, label: 'Артикул', section: 'Товар', condition: 'В списку' },
   top: { type: 3, label: 'Топ', section: 'Товар', condition: 'В списку' },
-  group: { type: 4, label: 'Товарна група (з підгрупами)', section: 'Товар', condition: 'В групі' },
+  group: { type: 4, label: 'Товарна група', section: 'Товар', condition: 'В групі' },
   unit: { type: 20, label: 'Одиниця виміру', section: 'Товар', condition: 'В списку' },
   warehouse: { type: 21, label: 'Склад', section: 'Склад', condition: 'В списку' },
   documentKind: { type: 1001, label: 'Вид документа руху', section: 'Документ руху', condition: 'В списку' },
@@ -477,7 +477,7 @@ export function summarizeStockMovementFilters(draft: StockMovementDraft, warehou
   if (request.ProductIds.length) lines.push(`Товар У списку (${draft.products.map(item => item.label).join('; ')})`)
   if (article.match) lines.push(`Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[article.match]} ${article.articles.join('; ')}`)
   if (request.ProductTops.length) lines.push(`Топ У списку (${request.ProductTops.join('; ')})`)
-  if (request.ProductGroupIds.length) lines.push(`Товарна група (з підгрупами) У групі (${draft.groups.map(item => item.label).join('; ')})`)
+  if (request.ProductGroupIds.length) lines.push(`Товарна група У групі (${draft.groups.map(item => item.label).join('; ')})`)
   if (request.MeasureUnitIds.length)
     lines.push(`Одиниця виміру У списку (${request.MeasureUnitIds.map(id => units.find(item => item.Id === id)?.Name ?? `#${id}`).join('; ')})`)
   if (request.WarehouseIds.length)

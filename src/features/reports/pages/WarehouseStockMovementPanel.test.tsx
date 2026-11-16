@@ -85,7 +85,7 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
     const listbox = await screen.findByRole('listbox')
     expect([...listbox.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(
-      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група (з підгрупами)', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
+      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
     expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товар', 'Склад', 'Документ руху'])
     fireEvent.click(within(filters).getByRole('button', { name: 'Видалити умову 1' }))
     for (const name of ['Склади', 'Номенклатура', 'Фільтри']) {
@@ -182,10 +182,10 @@ describe('native warehouse stock movement', () => {
 
   it('sends the chosen warehouses, organizations, document kinds and groups', async () => {
     render(panel())
-    fireEvent.change(within(await addFilter('Товарна група (з підгрупами)')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
+    fireEvent.change(within(await addFilter('Товарна група')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
     fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
-    for (const [field, options] of [['Склад', [/^СКЛАД -1 \[\d+\] · Фенікс$/, /^СКЛАД Н\/П \[\d+\] · Фенікс$/]], ['Організація складу', [/^Фенікс \[\d+\]$/]],
-      ['Вид документа руху', ['Переміщення', 'Продаж']], ['Топ', ['B']], ['Одиниця виміру', ['компл [2]']]] as const) {
+    for (const [field, options] of [['Склад', ['СКЛАД -1 · Фенікс', 'СКЛАД Н/П · Фенікс']], ['Організація складу', ['Фенікс']],
+      ['Вид документа руху', ['Переміщення', 'Продаж']], ['Топ', ['B']], ['Одиниця виміру', ['компл']]] as const) {
       const row = await addFilter(field)
       for (const option of options) {
         fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))
@@ -202,7 +202,7 @@ describe('native warehouse stock movement', () => {
     render(panel())
     const warehouse = await addFilter('Склад')
     fireEvent.click(within(warehouse).getByRole('combobox', { name: 'Значення' }))
-    fireEvent.click(await screen.findByRole('option', { name: /^СКЛАД -1 \[\d+\] · Фенікс$/ }))
+    fireEvent.click(await screen.findByRole('option', { name: 'СКЛАД -1 · Фенікс' }))
     const top = await addFilter('Топ')
     fireEvent.click(within(top).getByRole('combobox', { name: 'Значення' }))
     fireEvent.click(await screen.findByRole('option', { name: 'A' }))
@@ -228,7 +228,7 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
     const unit = await addFilter('Одиниця виміру')
     fireEvent.click(within(unit).getByRole('combobox', { name: 'Значення' }))
-    fireEvent.click(await screen.findByRole('option', { name: 'шт [1]' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'шт' }))
     expect((await screen.findAllByText(/не включено до логіки/)).length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
   })
