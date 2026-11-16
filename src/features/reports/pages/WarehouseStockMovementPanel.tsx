@@ -23,7 +23,7 @@ import {
   type StockMovementExport, type StockMovementLevel, type StockMovementLookupItem, type StockMovementMeasure, type StockMovementQuantity,
   type StockMovementRequest, type StockMovementResult, type StockMovementSelection, type StockMovementFilterField, type StockMovementFilterRow,
 } from '../data/warehouseStockMovement'
-import { getReportProductTop } from '../api/reportsApi'
+import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
 import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -128,8 +128,15 @@ function useMovementList<T>(enabled: boolean, load: (signal: AbortSignal) => Pro
 }
 
 function useMovementAttributes(enabled: boolean) {
-  const tops = useMovementList(enabled, async () => [...new Set((await getReportProductTop())
-    .flatMap(item => typeof item.Name === 'string' && item.Name.trim() ? [item.Name.trim()] : []))].sort())
+  const tops = useMovementList(enabled, async signal => {
+    const codes: string[] = []
+    for (let offset = 0; offset <= 10000; offset += 30) {
+      const page = await searchCustomerGroupTop('', offset, signal)
+      codes.push(...page)
+      if (page.length < 30) break
+    }
+    return codes
+  })
   const units = useMovementList(enabled, signal => getStockMovementMeasureUnits(signal))
   return { tops: tops.items, topsFailed: tops.failed, retryTops: tops.retry, units: units.items, unitsFailed: units.failed, retryUnits: units.retry }
 }

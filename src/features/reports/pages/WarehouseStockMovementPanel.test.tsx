@@ -10,7 +10,7 @@ import {
   exportStockMovement, getStockMovementCapability, getStockMovementMeasureUnits, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
   searchStockMovementGroups, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
-import { getReportProductTop } from '../api/reportsApi'
+import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
 import type { StockMovementRequest } from '../data/warehouseStockMovement'
 import {
   stockMovementCapability, stockMovementExport, stockMovementGroups, stockMovementOrganizations, stockMovementProducts, stockMovementResult,
@@ -26,7 +26,7 @@ vi.mock('../api/warehouseStockMovementApi', () => ({
 const panel = (allowed = true, onBusyChange?: (busy: boolean) => void) => <MantineProvider env="test"><I18nProvider>
   <WarehouseStockMovementPanel callerKey={allowed ? 'owner' : null} canGenerate={allowed} onBusyChange={onBusyChange} />
 </I18nProvider></MantineProvider>
-vi.mock('../api/reportsApi', async original => ({ ...await original<typeof import('../api/reportsApi')>(), getReportProductTop: vi.fn() }))
+vi.mock('../api/customerGroupTopApi', () => ({ searchCustomerGroupTop: vi.fn() }))
 
 async function addFilter(field: string) {
   const filters = await screen.findByRole('region', { name: 'Відбори' })
@@ -67,7 +67,7 @@ beforeEach(() => {
   vi.mocked(getStockMovementWarehouses).mockResolvedValue(structuredClone(stockMovementWarehouses))
   vi.mocked(getStockMovementOrganizations).mockResolvedValue(structuredClone(stockMovementOrganizations))
   vi.mocked(getStockMovementMeasureUnits).mockResolvedValue([{ Id: 1, Name: 'шт', Detail: null }, { Id: 2, Name: 'компл', Detail: null }])
-  vi.mocked(getReportProductTop).mockResolvedValue([{ Id: 1, Name: 'A' }, { Id: 2, Name: 'B' }])
+  vi.mocked(searchCustomerGroupTop).mockResolvedValue(['A', 'B'])
   vi.mocked(searchStockMovementProducts).mockResolvedValue(structuredClone(stockMovementProducts))
   vi.mocked(searchStockMovementGroups).mockResolvedValue(structuredClone(stockMovementGroups))
   vi.mocked(previewStockMovement).mockImplementation(async (request: StockMovementRequest) => stockMovementResult(request))
@@ -304,14 +304,14 @@ describe('native warehouse stock movement', () => {
   })
 
   it('shows a failed top list with a retry instead of an empty list', async () => {
-    vi.mocked(getReportProductTop).mockRejectedValueOnce(new Error('offline'))
+    vi.mocked(searchCustomerGroupTop).mockRejectedValueOnce(new Error('offline'))
     render(panel())
     const value = within(await addFilter('Топ')).getByRole('combobox', { name: 'Значення' })
     fireEvent.click(value)
     expect((await screen.findByRole('alert')).textContent).toBe('Не вдалося завантажити значення.')
     fireEvent.click(screen.getByRole('option', { name: 'Спробувати ще раз' }))
     expect(await screen.findByRole('option', { name: 'A' })).toBeTruthy()
-    expect(getReportProductTop).toHaveBeenCalledTimes(2)
+    expect(searchCustomerGroupTop).toHaveBeenCalledTimes(2)
   })
 
   it('switches a row off, deletes it and keeps one row per field for an older server', async () => {
