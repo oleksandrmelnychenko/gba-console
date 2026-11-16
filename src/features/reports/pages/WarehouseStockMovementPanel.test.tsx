@@ -40,6 +40,21 @@ async function addFilter(field: string) {
 
 const previews = () => vi.mocked(previewStockMovement).mock.calls.map(call => call[0])
 
+function oldServer(tree = false) {
+  const { MaximumFilterRows: _rows, ...old } = structuredClone(stockMovementCapability)
+  void _rows
+  vi.mocked(getStockMovementCapability).mockResolvedValue(tree ? { ...old, FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } } : old)
+}
+
+const treeCapability = () => vi.mocked(getStockMovementCapability).mockResolvedValue({ ...structuredClone(stockMovementCapability),
+  FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } })
+
+async function pick(row: HTMLElement, option: string) {
+  fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))
+  const options = await screen.findAllByRole('option', { name: option })
+  fireEvent.click(options[options.length - 1])
+}
+
 async function applyReport() {
   fireEvent.click(await screen.findByRole('button', { name: 'Застосувати й показати' }))
   return screen.findByRole('table', { name: 'Рух товару — залишки, прихід і розхід' })
@@ -120,11 +135,11 @@ describe('native warehouse stock movement', () => {
     fireEvent.change(screen.getByLabelText('Значення артикула'), { target: { value: '94000' } })
     expect(previewStockMovement).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(previewStockMovement).toHaveBeenCalledTimes(2))
-    expect(previews()[1]).toMatchObject({ ArticleMatch: 'equals', Articles: ['94000'], Offset: 0 })
+    expect(previews()[1]).toMatchObject({ Filters: [{ Field: 'article', ArticleMatch: 'equals', Values: ['94000'] }], Offset: 0 })
     const document = await addFilter('Документ руху')
     fireEvent.change(within(document).getByRole('textbox', { name: 'Значення' }), { target: { value: 'ВН-7' } })
     await waitFor(() => expect(previewStockMovement).toHaveBeenCalledTimes(3))
-    expect(previews()[2]).toMatchObject({ Articles: ['94000'], DocumentText: 'ВН-7' })
+    expect(previews()[2]).toMatchObject({ Filters: [{ Field: 'article', Values: ['94000'] }, { Field: 'documentText', Text: 'ВН-7' }] })
   })
 
   it('does not query before the first apply and does not repeat an unchanged search', async () => {
@@ -134,7 +149,7 @@ describe('native warehouse stock movement', () => {
     await new Promise(resolve => setTimeout(resolve, 500))
     expect(previewStockMovement).not.toHaveBeenCalled()
     await applyReport()
-    expect(previews()[0]).toMatchObject({ Articles: ['94000'] })
+    expect(previews()[0]).toMatchObject({ Filters: [{ Field: 'article', Values: ['94000'] }] })
     await new Promise(resolve => setTimeout(resolve, 500))
     expect(previewStockMovement).toHaveBeenCalledTimes(1)
   })
@@ -177,11 +192,12 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(await screen.findByRole('option', { name: '94000 — Фільтр масляний' }))
     expect(screen.getByRole('button', { name: 'Видалити 94000 — Фільтр масляний' })).toBeTruthy()
     await applyReport()
-    expect(previews()[0]).toMatchObject({ ProductIds: [38221591] })
+    expect(previews()[0]).toMatchObject({ ProductIds: [], Filters: [{ Field: 'product', Ids: [38221591] }] })
     expect(searchStockMovementGroups).not.toHaveBeenCalled()
   })
 
-  it('sends the chosen warehouses, organizations, document kinds and groups', async () => {
+  it('sends the chosen warehouses, organizations, document kinds and groups as separate fields to an older server', async () => {
+    oldServer()
     render(panel())
     fireEvent.change(within(await addFilter('Товарна група')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
     fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
@@ -197,9 +213,63 @@ describe('native warehouse stock movement', () => {
     expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"ProductTops":["B"],"MeasureUnitIds":[2],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
   })
 
-  it('combines movement filters with І/АБО groups and sends the named tree', async () => {
-    vi.mocked(getStockMovementCapability).mockResolvedValue({ ...structuredClone(stockMovementCapability),
-      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } })
+  it('sends the chosen rows as the filter list with their own values', async () => {
+    render(panel())
+    fireEvent.change(within(await addFilter('Товарна група')).getByRole('combobox', { name: 'Значення' }), { target: { value: 'Філ' } })
+    fireEvent.click(await screen.findByRole('option', { name: 'Фільтри' }))
+    for (const [field, options] of [['Склад', ['СКЛАД -1 · Фенікс', 'СКЛАД Н/П · Фенікс']], ['Організація складу', ['Фенікс']],
+      ['Вид документа руху', ['Переміщення', 'Продаж']], ['Топ', ['B']], ['Одиниця виміру', ['компл']]] as const) {
+      const row = await addFilter(field)
+      for (const option of options) await pick(row, option)
+    }
+    await applyReport()
+    expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[],"OrganizationIds":[],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[],"ProductTops":[],"MeasureUnitIds":[],"Filters":[{"Field":"group","Ids":[7]},{"Field":"warehouse","Ids":[2968,2975]},{"Field":"organization","Ids":[1]},{"Field":"documentKind","Values":["sale","transfer"]},{"Field":"top","Values":["B"]},{"Field":"unit","Ids":[2]}],"DocumentKinds":[],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
+  })
+
+  it('builds «група A АБО група B» from two rows of the same field and shows their values in the tree', async () => {
+    treeCapability()
+    render(panel())
+    const first = await addFilter('Склад')
+    await pick(first, 'СКЛАД -1 · Фенікс')
+    const filters = await screen.findByRole('region', { name: 'Відбори' })
+    fireEvent.click(within(filters).getByRole('button', { name: 'Додати відбір' }))
+    const second = within(filters).getAllByRole('group', { name: /^Умова відбору \d+$/ })[1]
+    fireEvent.click(within(second).getByRole('combobox', { name: 'Поле' }))
+    expect((await screen.findByRole('option', { name: 'Склад' })).getAttribute('data-combobox-disabled')).toBeNull()
+    fireEvent.click(screen.getByRole('option', { name: 'Склад' }))
+    await pick(second, 'СКЛАД Н/П · Фенікс')
+    fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Оператор — Коренева група' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'АБО — будь-яка умова' }))
+    const logic = screen.getByRole('region', { name: 'Логіка умов відбору' })
+    expect(logic.textContent).toContain('№1: Склад В списку СКЛАД -1')
+    expect(logic.textContent).toContain('№2: Склад В списку СКЛАД Н/П')
+    expect(logic.textContent).not.toContain('· Фенікс')
+    await applyReport()
+    expect(previews()[0]).toMatchObject({ WarehouseIds: [], Filters: [{ Field: 'warehouse', Ids: [2968] }, { Field: 'warehouse', Ids: [2975] }],
+      FilterExpression: { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }] } } })
+  })
+
+  it('copies a row with its values and blocks the run until the copy is placed in the tree', async () => {
+    treeCapability()
+    render(panel())
+    const top = await addFilter('Топ')
+    await pick(top, 'A')
+    fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
+    fireEvent.mouseDown(top)
+    const filters = await screen.findByRole('region', { name: 'Відбори' })
+    const copy = within(filters).getByRole('button', { name: 'Копіювати вибраний відбір' })
+    expect(copy).toHaveProperty('disabled', false)
+    fireEvent.click(copy)
+    const rows = within(filters).getAllByRole('group', { name: /^Умова відбору \d+$/ })
+    expect(rows).toHaveLength(2)
+    expect(within(rows[1]).getByRole('button', { name: 'Видалити A' })).toBeTruthy()
+    expect((await screen.findAllByText(/Увімкнену умову №2 не включено до логіки/)).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+  })
+
+  it('combines movement filters with І/АБО groups and sends the named tree to an older server', async () => {
+    oldServer(true)
     render(panel())
     const warehouse = await addFilter('Склад')
     fireEvent.click(within(warehouse).getByRole('combobox', { name: 'Значення' }))
@@ -220,8 +290,7 @@ describe('native warehouse stock movement', () => {
   })
 
   it('blocks a filter left outside the І/АБО tree', async () => {
-    vi.mocked(getStockMovementCapability).mockResolvedValue({ ...structuredClone(stockMovementCapability),
-      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } })
+    treeCapability()
     render(panel())
     const top = await addFilter('Топ')
     fireEvent.click(within(top).getByRole('combobox', { name: 'Значення' }))
@@ -245,7 +314,8 @@ describe('native warehouse stock movement', () => {
     expect(getReportProductTop).toHaveBeenCalledTimes(2)
   })
 
-  it('switches a row off, deletes it and keeps one row per field', async () => {
+  it('switches a row off, deletes it and keeps one row per field for an older server', async () => {
+    oldServer()
     render(panel())
     const row = await addFilter('Топ')
     fireEvent.click(within(row).getByRole('combobox', { name: 'Значення' }))

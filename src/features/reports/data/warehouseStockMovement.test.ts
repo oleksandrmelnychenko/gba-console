@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { stockMovementCapability, stockMovementResult } from '../testing/warehouseStockMovementFixtures'
 import {
   buildStockMovementRequest, defaultStockMovementDraft, displayDateTime, formatStockQuantity, moveLevel, normalizeStockMovementCapability,
-  normalizeStockMovementExport, normalizeStockMovementLookup, normalizeStockMovementResult, parseArticleList, stockMovementDraftError,
-  stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, clearStockMovementFilter,
+  normalizeStockMovementExport, normalizeStockMovementLookup, normalizeStockMovementResult, stockMovementDraftError,
+  stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, stockMovementExpressionView, copyStockMovementRow,
+  type StockMovementFilterRow,
 } from './warehouseStockMovement'
 
 const draft = () => defaultStockMovementDraft(stockMovementCapability)
+const legacyDraft = () => defaultStockMovementDraft({ ...stockMovementCapability, MaximumFilterRows: undefined })
+let nextId = 0
+const row = (field: StockMovementFilterRow['field'], patch: Partial<StockMovementFilterRow> = {}): StockMovementFilterRow =>
+  ({ id: ++nextId, field, enabled: true, ...patch })
 
 describe('warehouse stock movement request', () => {
   it('starts with the current month, all products and the 1C grouping', () => {
@@ -19,20 +24,53 @@ describe('warehouse stock movement request', () => {
   })
 
   it('normalizes ids, articles, text and measures into a stable request', () => {
-    const request = buildStockMovementRequest({
-      ...draft(), warehouseIds: [2975, 2968, 2975], organizationIds: [3, 1], products: [{ id: 9, label: 'b' }, { id: 4, label: 'a' }],
-      groups: [{ id: 7, label: 'g' }], articleMatch: 'contains', articleText: ' 940 ', documentKinds: ['transfer', 'sale'], documentText: '  ВН-7 ',
-      conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }, { Measure: 'opening', Comparison: 'equal', Value: Number.NaN }],
-      measures: ['closing', 'opening'],
-    }, 400)
-    expect(request).toMatchObject({
+    const filterRows = [row('warehouse', { ids: [2975, 2968, 2975] }), row('organization', { ids: [3, 1] }),
+      row('product', { items: [{ id: 9, label: 'b' }, { id: 4, label: 'a' }] }), row('group', { items: [{ id: 7, label: 'g' }] }),
+      row('article', { articleMatch: 'contains', text: ' 940 ' }), row('documentKind', { values: ['transfer', 'sale'] }), row('documentText', { text: '  ВН-7 ' })]
+    const rest = { conditions: [{ Measure: 'closing' as const, Comparison: 'less' as const, Value: 0 }, { Measure: 'opening' as const, Comparison: 'equal' as const, Value: Number.NaN }],
+      measures: ['closing' as const, 'opening' as const] }
+    expect(buildStockMovementRequest({ ...legacyDraft(), filterRows, ...rest }, 400)).toMatchObject({
       WarehouseIds: [2968, 2975], OrganizationIds: [1, 3], ProductIds: [4, 9], ProductGroupIds: [7], ArticleMatch: 'contains', Articles: ['940'],
       DocumentKinds: ['sale', 'transfer'], DocumentText: 'ВН-7', Conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }],
       Measures: ['opening', 'closing'], Offset: 400,
     })
-    expect(buildStockMovementRequest({ ...draft(), articleMatch: 'inList', articleText: 'ignored', articleList: parseArticleList('94000, 94001\n94000;') }))
+    const listed = buildStockMovementRequest({ ...draft(), filterRows, ...rest }, 400)
+    expect(listed).toMatchObject({ WarehouseIds: [], OrganizationIds: [], ProductIds: [], ArticleMatch: '', Articles: [], DocumentText: null, Filters: [
+      { Field: 'warehouse', Ids: [2968, 2975] }, { Field: 'organization', Ids: [1, 3] }, { Field: 'product', Ids: [4, 9] }, { Field: 'group', Ids: [7] },
+      { Field: 'article', ArticleMatch: 'contains', Values: ['940'] }, { Field: 'documentKind', Values: ['sale', 'transfer'] }, { Field: 'documentText', Text: 'ВН-7' }] })
+    expect(buildStockMovementRequest({ ...legacyDraft(), filterRows: [row('article', { articleMatch: 'inList', text: '94000, 94001\n94000;' })] }))
       .toMatchObject({ ArticleMatch: 'inList', Articles: ['94000', '94001'] })
-    expect(buildStockMovementRequest({ ...draft(), articleMatch: 'inList', articleList: [] })).toMatchObject({ ArticleMatch: '', Articles: [] })
+    expect(buildStockMovementRequest({ ...draft(), filterRows: [row('article', { articleMatch: 'inList', text: ' ;' })] })).not.toHaveProperty('Filters')
+  })
+
+  it('sends repeated fields as separate rows and remaps the tree past switched-off and empty rows', () => {
+    const filterRows = [row('group', { items: [{ id: 7, label: 'Фільтри' }] }), row('warehouse', { ids: [1], enabled: false }), row('group'),
+      row('group', { items: [{ id: 8, label: 'Подушки' }] })]
+    const filterExpression = { Version: 1 as const, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 },
+      { Kind: 3, SelectionIndex: 2 }, { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 3 }] }] } }
+    expect(buildStockMovementRequest({ ...draft(), filterRows, filterExpression })).toMatchObject({
+      ProductGroupIds: [], Filters: [{ Field: 'group', Ids: [7] }, { Field: 'group', Ids: [8] }],
+      FilterExpression: { Version: 1, Root: { Kind: 2, Children: [{ Kind: 3, SelectionIndex: 0 }, { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 1 }] }] } },
+    })
+    expect(stockMovementDraftError({ ...draft(), filterRows }, stockMovementCapability)).toBeNull()
+    expect(stockMovementDraftError({ ...legacyDraft(), filterRows }, stockMovementCapability)).toBe('Поле «Товарна група» можна вибрати лише один раз.')
+    const copy = copyStockMovementRow(filterRows[0], 99)
+    expect(copy).toEqual({ ...filterRows[0], id: 99 })
+    expect(copy.items).not.toBe(filterRows[0].items)
+  })
+
+  it('names the chosen values in the І/АБО tree labels like the sales report', () => {
+    const filterRows = [row('warehouse', { ids: [2975, 2968] }), row('organization', { ids: [1] }), row('article', { articleMatch: 'contains', text: '94' }),
+      row('documentKind', { values: ['sale'] }), row('group', { items: [{ id: 7, label: 'Фільтри' }] }), row('unit', { ids: [2] }), row('top')]
+    const view = stockMovementExpressionView({ ...draft(), filterRows }, { ...stockMovementCapability,
+      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } },
+    { warehouses: [{ Id: 2968, Name: 'СКЛАД -1', Detail: 'Фенікс' }, { Id: 2975, Name: 'СКЛАД -3', Detail: 'Фенікс' }],
+      organizations: [{ Id: 1, Name: 'Фенікс', Detail: null }], units: [{ Id: 2, Name: 'компл', Detail: null }] })
+    expect(view.data.selections.map(selection => `${selection.SelectedField.Name} ${selection.FilterCondition.Name} ${selection.Values.map(value => value.Name).join('; ')}`))
+      .toEqual(['Склад В списку СКЛАД -1; СКЛАД -3', 'Організація складу В списку Фенікс', 'Артикул Містить 94', 'Вид документа руху В списку Продаж',
+        'Товарна група В групі Фільтри', 'Одиниця виміру В списку компл', 'Топ В списку '])
+    expect(view.data.selections.map(selection => selection.IsChecked)).toEqual([true, true, true, true, true, true, false])
+    expect((view.dataset.FilterExpression as { MaximumLeaves: number }).MaximumLeaves).toBe(30)
   })
 
   it('validates the period, grouping order, measures and conditions', () => {
@@ -66,20 +104,20 @@ describe('warehouse stock movement request', () => {
   })
 
   it('summarizes filters as the 1C header does', () => {
-    expect(summarizeStockMovementFilters({ ...draft(), articleText: '94000', warehouseIds: [2968, 5], documentKinds: ['sale'],
-      conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }] }, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [],
+    expect(summarizeStockMovementFilters({ ...draft(), filterRows: [row('article', { text: '94000' }), row('warehouse', { ids: [2968, 5] }),
+      row('documentKind', { values: ['sale'] })],
+    conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }] }, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [],
     stockMovementCapability.DocumentKinds)).toEqual([
       'Номенклатура.Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
     ])
   })
 
   it('sends top and unit lists and leaves out a switched-off row', () => {
-    const value = { ...draft(), productTops: ['B', 'A', 'B'], measureUnitIds: [2, 1], warehouseIds: [2968],
-      filterRows: [{ id: 1, field: 'top' as const, enabled: true }, { id: 2, field: 'warehouse' as const, enabled: false }] }
+    const value = { ...legacyDraft(), filterRows: [row('top', { values: ['B', 'A', 'B'] }), row('warehouse', { ids: [2968], enabled: false }),
+      row('unit', { ids: [2, 1] })] }
     expect(buildStockMovementRequest(value)).toMatchObject({ ProductTops: ['A', 'B'], MeasureUnitIds: [1, 2], WarehouseIds: [] })
     expect(summarizeStockMovementFilters(value, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [], stockMovementCapability.DocumentKinds,
       [{ Id: 1, Name: 'шт', Detail: null }])).toEqual(['Топ У списку (A; B)', 'Одиниця виміру У списку (шт; #2)'])
-    expect(clearStockMovementFilter(value, 'top')).toEqual({ productTops: [] })
   })
 })
 
@@ -88,6 +126,11 @@ describe('warehouse stock movement responses', () => {
     const camel = Object.fromEntries(Object.entries(stockMovementCapability).map(([key, value]) => [key.charAt(0).toLowerCase() + key.slice(1), value]))
     expect(normalizeStockMovementCapability(camel)).toEqual(stockMovementCapability)
     expect(() => normalizeStockMovementCapability({ ...stockMovementCapability, Levels: ['warehouse', 'region'] })).toThrow()
+    const { MaximumFilterRows: _rows, ...old } = stockMovementCapability
+    void _rows
+    expect(normalizeStockMovementCapability(old).MaximumFilterRows).toBeUndefined()
+    expect(defaultStockMovementDraft(normalizeStockMovementCapability(old)).listed).toBe(false)
+    expect(defaultStockMovementDraft(normalizeStockMovementCapability(stockMovementCapability)).listed).toBe(true)
     expect(normalizeStockMovementLookup([{ id: 1, name: 'A' }])).toEqual([{ Id: 1, Name: 'A', Detail: null }])
     expect(() => normalizeStockMovementLookup([{ Id: -1, Name: 'A' }])).toThrow()
     expect(normalizeStockMovementExport({ DocumentURL: '/f.xlsx', FileName: 'f.xlsx', TotalRows: 3 })).toEqual({ DocumentURL: '/f.xlsx', FileName: 'f.xlsx', TotalRows: 3 })

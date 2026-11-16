@@ -15,8 +15,8 @@ import {
   searchStockMovementGroups, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
 import {
-  buildStockMovementRequest, clearStockMovementFilter, stockMovementExpressionView, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
-  STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
+  buildStockMovementRequest, copyStockMovementRow, stockMovementExpressionView, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel,
+  STOCK_MOVEMENT_ARTICLE_CONDITIONS, STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS, stockMovementSearchKey, stockMovementTypedText,
   STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_CELL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
   stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE, WAREHOUSE_STOCK_MOVEMENT_TITLE,
   type StockMovementArticleMatch, type StockMovementCapability, type StockMovementComparison, type StockMovementDraft,
@@ -40,7 +40,6 @@ type Props = { callerKey: string | null; canGenerate: boolean; onBusyChange?: (b
 type Setup = { capability: StockMovementCapability; warehouses: StockMovementLookupItem[]; organizations: StockMovementLookupItem[] }
 type Run = { request: StockMovementRequest; result: StockMovementResult }
 
-const searchKey = (request: StockMovementRequest) => `${request.ArticleMatch}|${request.Articles.join('\n')}|${request.DocumentText ?? ''}`
 
 const measureKey: Record<StockMovementMeasure, keyof StockMovementQuantity> = {
   opening: 'Opening', incoming: 'Incoming', outgoing: 'Outgoing', closing: 'Closing',
@@ -70,10 +69,11 @@ function useLookupSearch(search: (query: string, signal: AbortSignal) => Promise
     loading: !!query.trim() && pending || !settled, retry: () => setAttempt(value => value + 1) }
 }
 
-function SelectionPicker({ label, placeholder, selected, search, disabled, onChange }: {
-  label: string; placeholder: string; selected: StockMovementSelection[]; disabled: boolean
-  search: ReturnType<typeof useLookupSearch>; onChange: (value: StockMovementSelection[]) => void
+function SelectionPicker({ label, placeholder, selected, lookup, enabled, disabled, onChange }: {
+  label: string; placeholder: string; selected: StockMovementSelection[]; disabled: boolean; enabled: boolean
+  lookup: (query: string, signal: AbortSignal) => Promise<StockMovementLookupItem[]>; onChange: (value: StockMovementSelection[]) => void
 }) {
+  const search = useLookupSearch(lookup, enabled)
   const options = search.items.map(item => ({ value: String(item.Id), label: item.Detail ? `${item.Name} — ${item.Detail}` : item.Name }))
   const chosen = selected.map(item => ({ value: String(item.id), label: item.label }))
   return <ReportValuePicker mode="multi" label={label} placeholder={placeholder} data={options} selected={chosen}
@@ -95,8 +95,6 @@ function ListPicker({ label, placeholder, data, value, disabled, failed, onRetry
     search={search} onSearchChange={setSearch} disabled={disabled} onChange={onChange} />
 }
 
-const MOVEMENT_ARTICLE_CONDITIONS: Record<StockMovementArticleMatch, string> = { equals: 'Рівне', contains: 'Містить', inList: 'В списку' }
-
 function nextRowId(rows: readonly StockMovementFilterRow[]): number {
   return rows.reduce((maximum, row) => Math.max(maximum, row.id), 0) + 1
 }
@@ -105,7 +103,7 @@ function lookupLabel(item: StockMovementLookupItem): string {
   return item.Name
 }
 
-function movementFieldOptions(used: ReadonlySet<StockMovementFilterField>) {
+function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>) {
   const label = (value: string) => STOCK_MOVEMENT_FILTER_DEFINITIONS[value as StockMovementFilterField].label
   return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.map(field => {
     const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
@@ -221,7 +219,6 @@ function LevelsEditor({ levels, disabled, onChange }: { levels: StockMovementLev
 export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChange }: Props) {
   const [setup, setSetup] = useState<{ value: Setup | null; error: string | null; attempt: number }>({ value: null, error: null, attempt: 0 })
   const [draft, setDraft] = useState<StockMovementDraft | null>(null)
-  const [articleListText, setArticleListText] = useState('')
   const [run, setRun] = useState<Run | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'exporting'>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -230,12 +227,9 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   const active = useRef<AbortController | null>(null)
   const alive = useRef(true)
   const enabled = canGenerate && !!callerKey
-  const products = useLookupSearch(searchStockMovementProducts, enabled)
-  const groups = useLookupSearch(searchStockMovementGroups, enabled)
   const attributes = useMovementAttributes(enabled)
-  const [articleText] = useDebouncedValue(draft?.articleText ?? '', 400)
-  const [documentText] = useDebouncedValue(draft?.documentText ?? '', 400)
-  const [articleList] = useDebouncedValue(articleListText, 400)
+  const typed = draft ? stockMovementTypedText(draft) : ''
+  const [typedText] = useDebouncedValue(typed, 400)
   const busy = status !== 'idle'
   const locked = status === 'exporting'
 
@@ -264,7 +258,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   }, [enabled, setup.attempt])
 
   const capability = setup.value?.capability ?? null
-  const current = draft ? { ...draft, articleList: parseArticleList(articleListText) } : null
+  const current = draft
   const validation = current && capability ? stockMovementDraftError(current, capability) : null
   const appliedSearch = useRef<string | null>(null)
 
@@ -285,7 +279,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
 
   async function load(request: StockMovementRequest) {
     if (!enabled) return
-    appliedSearch.current = searchKey(request)
+    appliedSearch.current = stockMovementSearchKey(request)
     const owner = begin('loading')
     try {
       const result = await previewStockMovement(request, owner.signal)
@@ -311,13 +305,12 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     } finally { finish(owner) }
   }
 
-  const searchChanged = useEffectEvent((article: string, list: string, document: string) => {
-    if (!draft || appliedSearch.current === null) return
-    const source = { ...draft, articleText: article, articleList: parseArticleList(list), documentText: document }
-    if (searchKey(buildStockMovementRequest(source)) !== appliedSearch.current) apply(source)
+  const searchChanged = useEffectEvent((settled: string) => {
+    if (!draft || appliedSearch.current === null || settled !== stockMovementTypedText(draft)) return
+    if (stockMovementSearchKey(buildStockMovementRequest(draft)) !== appliedSearch.current) apply(draft)
   })
 
-  useEffect(() => { searchChanged(articleText, articleList, documentText) }, [articleText, articleList, documentText])
+  useEffect(() => { searchChanged(typedText) }, [typedText])
 
   if (!enabled) return <Text>Немає права формування звітів по складу.</Text>
   if (setup.error) return <Alert color="yellow">
@@ -332,47 +325,50 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   const setRow = (index: number, patch: Partial<StockMovementFilterRow>) =>
     update({ filterRows: draft.filterRows.map((row, position) => position === index ? { ...row, ...patch } : row) })
   const removeRow = (index: number) => {
-    const row = draft.filterRows[index]
-    if (!row) return
-    if (row.field === 'article') setArticleListText('')
-    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}), filterRows: draft.filterRows.filter((_, position) => position !== index),
+    if (!draft.filterRows[index]) return
+    update({ filterRows: draft.filterRows.filter((_, position) => position !== index),
       ...(draft.filterExpression ? { filterExpression: removeFilterSelection(draft.filterExpression, index) as StockMovementDraft['filterExpression'] } : {}) })
+  }
+  const copyRow = (index: number) => {
+    const row = draft.filterRows[index]
+    if (!row || !draft.listed) return
+    update({ filterRows: [...draft.filterRows, copyStockMovementRow(row, nextRowId(draft.filterRows))] })
   }
   const changeRowField = (index: number, field: StockMovementFilterField | null) => {
     const row = draft.filterRows[index]
     if (!row || row.field === field) return
-    if (row.field === 'article') setArticleListText('')
-    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}),
-      filterRows: draft.filterRows.map((item, position) => position === index ? { ...item, field } : item) })
+    update({ filterRows: draft.filterRows.map((item, position) => position === index ? { id: item.id, enabled: item.enabled, field } : item) })
   }
-  const movementValue = (field: StockMovementFilterField): ReactNode => {
-    switch (field) {
+  const movementValue = (row: StockMovementFilterRow, index: number): ReactNode => {
+    const set = (patch: Partial<StockMovementFilterRow>) => setRow(index, patch)
+    switch (row.field) {
+      case null: return <Text size="sm">Оберіть поле відбору.</Text>
       case 'organization': return <ListPicker label="Значення" placeholder="Усі організації" disabled={locked}
         data={organizations.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))}
-        value={draft.organizationIds.map(String)} onChange={values => update({ organizationIds: values.map(Number) })} />
-      case 'product': return <SelectionPicker label="Значення" placeholder="Пошук за артикулом або назвою" selected={draft.products}
-        search={products} disabled={locked} onChange={value => update({ products: value })} />
-      case 'article': return draft.articleMatch === 'inList'
+        value={(row.ids ?? []).map(String)} onChange={values => set({ ids: values.map(Number) })} />
+      case 'product': return <SelectionPicker label="Значення" placeholder="Пошук за артикулом або назвою" selected={row.items ?? []}
+        lookup={searchStockMovementProducts} enabled={enabled} disabled={locked} onChange={value => set({ items: value })} />
+      case 'article': return row.articleMatch === 'inList'
         ? <Textarea label="Значення" aria-label="Артикули списку" placeholder="Артикули через кому або з нового рядка" autosize minRows={1} maxRows={6}
-          disabled={locked} value={articleListText} onChange={event => setArticleListText(event.currentTarget.value)} />
+          disabled={locked} value={row.text ?? ''} onChange={event => set({ text: event.currentTarget.value })} />
         : <TextInput label="Значення" aria-label="Значення артикула" placeholder="Напр. 94000" disabled={locked}
-          value={draft.articleText} onChange={event => update({ articleText: event.currentTarget.value })} />
+          value={row.text ?? ''} onChange={event => set({ text: event.currentTarget.value })} />
       case 'top': return <ListPicker label="Значення" placeholder="Усі значення топу" disabled={locked}
         data={attributes.tops.map(code => ({ value: code, label: code }))} failed={attributes.topsFailed} onRetry={attributes.retryTops}
-        value={draft.productTops} onChange={values => update({ productTops: values })} />
-      case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи" selected={draft.groups}
-        search={groups} disabled={locked} onChange={value => update({ groups: value })} />
+        value={row.values ?? []} onChange={values => set({ values })} />
+      case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи" selected={row.items ?? []}
+        lookup={searchStockMovementGroups} enabled={enabled} disabled={locked} onChange={value => set({ items: value })} />
       case 'unit': return <ListPicker label="Значення" placeholder="Усі одиниці виміру" disabled={locked}
         data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))} failed={attributes.unitsFailed} onRetry={attributes.retryUnits}
-        value={draft.measureUnitIds.map(String)} onChange={values => update({ measureUnitIds: values.map(Number) })} />
+        value={(row.ids ?? []).map(String)} onChange={values => set({ ids: values.map(Number) })} />
       case 'warehouse': return <ListPicker label="Значення" placeholder="Усі склади" disabled={locked}
         data={warehouses.map(item => ({ value: String(item.Id), label: item.Detail ? `${lookupLabel(item)} · ${item.Detail}` : lookupLabel(item) }))}
-        value={draft.warehouseIds.map(String)} onChange={values => update({ warehouseIds: values.map(Number) })} />
+        value={(row.ids ?? []).map(String)} onChange={values => set({ ids: values.map(Number) })} />
       case 'documentKind': return <ListPicker label="Значення" placeholder="Усі документи" disabled={locked}
         data={capability.DocumentKinds.map(kind => ({ value: kind.Code, label: kind.Name }))}
-        value={draft.documentKinds} onChange={values => update({ documentKinds: values })} />
+        value={row.values ?? []} onChange={values => set({ values })} />
       case 'documentText': return <TextInput label="Значення" placeholder="Номер, вид або контрагент" disabled={locked}
-        value={draft.documentText} onChange={event => update({ documentText: event.currentTarget.value })} />
+        value={row.text ?? ''} onChange={event => set({ text: event.currentTarget.value })} />
     }
   }
   const pending = run ? JSON.stringify({ ...buildStockMovementRequest(current), Offset: 0 }) !== JSON.stringify({ ...run.request, Offset: 0 }) : false
@@ -400,15 +396,16 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
           content: <Stack gap={6}>
             <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
-              copyDisabled
+              copyDisabled={!draft.listed}
               footer={capability.FilterExpression || draft.filterExpression ? (view => <ReportFilterExpressionPanel data={view.data} dataset={view.dataset}
-                disabled={locked} notice={null} onChange={value => update({ filterExpression: value == null ? null : value as StockMovementDraft['filterExpression'] })} />)(stockMovementExpressionView(draft, capability)) : null}
+                disabled={locked} notice={null} onChange={value => update({ filterExpression: value == null ? null : value as StockMovementDraft['filterExpression'] })} />)(
+                stockMovementExpressionView(draft, capability, { warehouses, organizations, units: attributes.units })) : null}
               onAdd={() => update({ filterRows: [...draft.filterRows, { id: nextRowId(draft.filterRows), field: null, enabled: true }] })}
               onDelete={index => removeRow(index)}
-              onCopy={() => undefined}
+              onCopy={copyRow}
               renderRow={({ index, selected, onSelect }) => {
                 const row = draft.filterRows[index]
-                const used = new Set(draft.filterRows.flatMap(item => item.field && item.id !== row.id ? [item.field] : []))
+                const used = new Set(draft.listed ? [] : draft.filterRows.flatMap(item => item.field && item.id !== row.id ? [item.field] : []))
                 const definition = row.field ? STOCK_MOVEMENT_FILTER_DEFINITIONS[row.field] : null
                 return <ReportFilterRow label={`Умова відбору ${index + 1}`} selected={selected} onSelect={onSelect}
                   toggle={<Checkbox size="xs" aria-label={`Увімкнути умову ${index + 1}`} checked={row.enabled} disabled={locked}
@@ -417,11 +414,11 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                     data={movementFieldOptions(used)} value={row.field}
                     onChange={value => changeRowField(index, value as StockMovementFilterField | null)} />}
                   condition={row.field === 'article'
-                    ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={draft.articleMatch}
-                      data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: MOVEMENT_ARTICLE_CONDITIONS[match] }))}
-                      onChange={value => { if (value) update({ articleMatch: value as StockMovementArticleMatch }) }} />
+                    ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={row.articleMatch ?? 'equals'}
+                      data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: STOCK_MOVEMENT_ARTICLE_CONDITIONS[match] }))}
+                      onChange={value => { if (value) setRow(index, { articleMatch: value as StockMovementArticleMatch }) }} />
                     : <Select size="xs" label="Тип порівняння" readOnly value={definition?.condition ?? null} data={definition ? [definition.condition] : []} />}
-                  value={row.field ? movementValue(row.field) : <Text size="sm">Оберіть поле відбору.</Text>}
+                  value={movementValue(row, index)}
                   action={locked ? null : <TableRowAction action="delete" label={`Видалити умову ${index + 1}`} onClick={() => removeRow(index)} />} />
               }} />
             {draft.conditions.map((condition, index) => <ReportFilterRow key={index} label={`Умова за показником ${index + 1}`}

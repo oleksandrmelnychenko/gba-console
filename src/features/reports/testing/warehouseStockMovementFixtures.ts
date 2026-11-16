@@ -14,6 +14,7 @@ export const stockMovementCapability: StockMovementCapability = {
   ArticleMatches: ['equals', 'contains', 'inList'],
   DocumentKinds: [{ Code: 'sale', Name: 'Продаж' }, { Code: 'receipt', Name: 'Прихід від постачальника' }, { Code: 'transfer', Name: 'Переміщення' }],
   MaximumLimit: 1000,
+  MaximumFilterRows: 30,
   Notes: ['Кінцевий залишок на сьогодні дорівнює фізичному залишку партій GBA.'],
 }
 
