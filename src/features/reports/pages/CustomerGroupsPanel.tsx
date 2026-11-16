@@ -3,7 +3,6 @@ import { Button, Group, MultiSelect, Stack, Text, TextInput } from '@mantine/cor
 import { useDebouncedValue } from '@mantine/hooks'
 import { searchDatasetReportValues } from '../api/reportsApi'
 import { initialCustomerGroups, type CustomerGroups } from '../data/customerGroups'
-import { previewCaptionText, previewSharedNames } from '../data/nativeReportPreview'
 
 type ClientOption = { value:string; label:string }
 type Props = { value: CustomerGroups | undefined; onChange: (value: CustomerGroups) => void; disabled: boolean }
@@ -65,8 +64,7 @@ function CustomerGroupEditor({group,index,disabled,onChange,onRemove,known,onFou
     return ()=>abort.abort()
   },[search,disabled,onFound])
   const listed=[...options,...group.ClientIds.filter(id=>!options.some(option=>option.value===String(id))).map(id=>known[String(id)]??{value:String(id),label:`Клієнт [${id}]`})]
-  const shared=previewSharedNames(listed.map(option=>option.label))
-  const data=listed.map(option=>option.label.startsWith('Клієнт [')?option:{...option,label:previewCaptionText(option.label,shared)})
+  const data=listed
   return <Stack gap="xs">
     <Group align="end"><TextInput label={index===0?'Назва еталонного набору':'Назва набору'} value={group.Name} disabled={disabled}
       maxLength={80} onChange={event=>onChange({...group,Name:event.currentTarget.value})} />

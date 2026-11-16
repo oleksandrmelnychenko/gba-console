@@ -9,9 +9,9 @@ import { ReportValuePicker, type ReportValuePickerProps } from './ReportValuePic
 import { REPORT_VALUE_SEARCH_DEBOUNCE_MS, REPORT_VALUE_VISIBLE_PILLS, reportValueExactId, useReportValueSearch } from './reportValueSearch'
 
 const options = [
-  { value: '1', label: 'AKKUS DOKUM [1]' },
-  { value: '2', label: 'BENEFIT OTOMOTIV [2]' },
-  { value: '3', label: 'CEVAHIR [3]' },
+  { value: '1', label: 'AKKUS DOKUM' },
+  { value: '2', label: 'BENEFIT OTOMOTIV' },
+  { value: '3', label: 'CEVAHIR' },
 ]
 const events = { more: vi.fn(), retry: vi.fn(), added: vi.fn() }
 
@@ -70,6 +70,12 @@ describe('dropdown', () => {
     await screen.findByRole('option', { name: options[0].label.replace(/ \[\d+\]$/,'') })
     await userEvent.keyboard('{ArrowDown}{Enter}')
     expect(keys()).toEqual(['1'])
+  })
+
+  it('keeps the id the server sent for a name that two values share', async () => {
+    render(<Harness data={[{ value: '2990', label: 'Автопарк Конкорд [2990]' }, { value: '3001', label: 'Автопарк Конкорд [3001]' }]} />)
+    await userEvent.click(box())
+    expect((await screen.findAllByRole('option')).map(option => option.textContent)).toEqual(['Автопарк Конкорд [2990]', 'Автопарк Конкорд [3001]'])
   })
 
   it('shows a loading line instead of stale or empty results while a lookup is running', async () => {

@@ -53,5 +53,5 @@ it('does not refetch a date-independent warehouse directory after the report per
 it('selects a new exactInt64 warehouse through the visible picker and preserves old rawJSON',async()=>{
  const row={Id:'9223372036854775807',Name:'Склад [9223372036854775807]'};api.mockImplementation(async(_path,options)=>options?.query?.exactId?[row]:[])
  render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());expect(screen.queryByRole('radio')).toBeNull();await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:'+row.Id)
- await userEvent.click(await screen.findByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')}));expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual([...retained,{Data:{Id:row.Id},Name:row.Name,Value:0}]);expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({dataSource:46,field:21,exactId:row.Id,offset:0,limit:30})
+ await userEvent.click(await screen.findByRole('option',{name:row.Name}));expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual([...retained,{Data:{Id:row.Id},Name:row.Name,Value:0}]);expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({dataSource:46,field:21,exactId:row.Id,offset:0,limit:30})
 })

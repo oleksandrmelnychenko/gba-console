@@ -22,15 +22,17 @@ function show(empty: boolean, complete = false, unconfirmed = false) {
   } })
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
-it.each([true, false])('does not show an import coverage banner with empty result=%s and keeps native rows', empty => {
+it.each([true, false])('shows one short partial-coverage line with empty result=%s and keeps native rows', empty => {
   const view = show(empty)
   expect(screen.queryByText('Імпортована історія не покриває весь вибраний період')).toBeNull()
+  expect(screen.getByText('Рух товару за частину періоду недоступний')).toBeTruthy()
   expect(view.container.textContent).not.toMatch(/private-publication|private-receipt|2996/)
   if (!empty) expect(screen.getByText('Пізніший документ GBA')).toBeTruthy()
 })
 it('does not warn when the imported period is complete', () => {
   show(false, true)
   expect(screen.queryByText('Імпортована історія не покриває весь вибраний період')).toBeNull()
+  expect(screen.queryByText('Рух товару за частину періоду недоступний')).toBeNull()
 })
 
 it.each([true, false])('retains the exact batch exception in Preview even with empty rows=%s and complete period', empty => {

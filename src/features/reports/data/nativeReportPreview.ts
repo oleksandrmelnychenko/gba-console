@@ -43,6 +43,7 @@ export type NativeReportPreviewRequest = {
   Filters: NativeReportPreviewFilter[] | null
   IgnoredFilters: NativeReportPreviewFilter[] | null
   Notes: string[] | null
+  Warnings?: string[] | null
 }
 type NativeReportPreviewColumnWindow = { ColumnOffset: number; ColumnLimit: number; TotalColumns: number; ReturnedColumns: number; HasMoreColumns: boolean }
 type NativeReportPreviewPage = { Offset: number; Limit: number; TotalVisibleRows: number; ReturnedRows: number; HasMore: boolean }
@@ -165,6 +166,7 @@ function normalizeRequest(value: unknown): NativeReportPreviewRequest | null {
     RowGroupings: strings(value.RowGroupings), ColumnGroupings: strings(value.ColumnGroupings),
     Measures: strings(value.Measures), Filters: filters(value.Filters), IgnoredFilters: filters(value.IgnoredFilters),
     Notes: strings(value.Notes),
+    ...(Array.isArray(value.Warnings) && value.Warnings.length ? { Warnings: strings(value.Warnings) } : {}),
   }
 }
 

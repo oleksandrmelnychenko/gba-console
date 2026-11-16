@@ -15,7 +15,7 @@ const panel = (request: ReportRequestBody = regionalRequest(), dataset: ReportDa
   <MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={dataset} request={request}
     enabled={enabled} disabled={false} /></I18nProvider></MantineProvider>
 
-it.each([false, true])('shows no import coverage banner above the regional table, empty=%s', async empty => {
+it.each([false, true])('shows one short partial-coverage line above the regional table, empty=%s', async empty => {
   vi.clearAllMocks()
   const result = regionalResult()
   if (empty) { result.Rows = []; result.ProductCount = 0 }
@@ -25,6 +25,7 @@ it.each([false, true])('shows no import coverage banner above the regional table
   fireEvent.click(screen.getByRole('button', { name: 'Показати регіональну форму' }))
   await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalled())
   expect(screen.queryByText('Імпортована історія не покриває весь вибраний період')).toBeNull()
+  expect(await screen.findByText('Рух товару за частину періоду недоступний')).toBeTruthy()
   expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
   if (!empty) expect(screen.getByText('9007199254740993.00000001')).toBeTruthy()
 })

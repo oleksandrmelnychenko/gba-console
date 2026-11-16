@@ -32,7 +32,7 @@ it.each(mixedCases)('preserves exact2-key product/group kind identities under re
  render(<Form source={source} condition={condition}/>);await waitFor(()=>expect(groups).toHaveBeenCalledOnce());expect(api).not.toHaveBeenCalled()
  await userEvent.click(screen.getByRole('radio',{name:'Товари'}));await waitFor(()=>expect(api).toHaveBeenCalledOnce())
  expect(api.mock.calls[0][0]).toBe('/report/datasets/products/lookup');expect(api.mock.calls[0][1]?.query?.dataSource).toBe(source)
- await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Товар · SKU'}))
+ await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Товар · SKU [9007199254740993]'}))
  expect(JSON.parse(screen.getByTestId('values').textContent!)).toEqual([
   {Data:{kind:'productGroup',id},Name:'Збережена група',Value:0},
   {Data:{kind:'product',id},Name:'Товар · SKU',Value:0},

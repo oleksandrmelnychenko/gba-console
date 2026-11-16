@@ -1,3 +1,4 @@
+import { PartialCoverageLine } from '../../../shared/ui/product-movement-history/PartialCoverageLine'
 import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { deskCount } from '../data/reportCountPresentation'
 import { ActionIcon, Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, Textarea, TextInput } from '@mantine/core'
@@ -459,6 +460,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     <section className="workbook-result" aria-label="Результат">
       <h2 className="app-section-title">Результат</h2>
       {run ? <Stack gap={8}>
+        <PartialCoverageLine coverage={run.result.PhysicalCoverage} />
         <PhysicalQuantityExceptionNotice exceptions={run.result.PhysicalQuantityExceptions} />
         <Group gap={8} justify="space-between" wrap="wrap">
           <Text size="sm" fw={600}>{displayDate(run.result.From)} — {displayDate(run.result.To)}</Text>

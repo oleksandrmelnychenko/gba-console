@@ -19,7 +19,7 @@ function search(query:string){const box=screen.getByRole('combobox',{name:'Зн�
 beforeEach(()=>{api.mockReset();Object.defineProperty(HTMLElement.prototype,'scrollIntoView',{configurable:true,value:vi.fn()})})
 afterEach(cleanup)
 it('loads bounded empty group catalogue and selects exact maxInt64 without hierarchy/customer/primary inference',async()=>{
- api.mockResolvedValue([{Id:max,Name:'Група ['+max+']'}]);render(<Form values={[]} condition={0}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Група'}))
+ api.mockResolvedValue([{Id:max,Name:'Група ['+max+']'}]);render(<Form values={[]} condition={0}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:'Група ['+max+']'}))
  expect(selected()).toEqual([{Data:{Id:max},Name:'Група ['+max+']',Value:0}]);expect(api.mock.calls[0][1]?.query).toEqual({dataSource:44,field:4,value:'',offset:0,limit:30});expect(screen.getByText(/поточні прямі зв’язки картки товару/)).toBeTruthy();expect(screen.queryByText(/до договору в документі/)).toBeNull();expect(screen.queryByText(/Регіон, код регіону/)).toBeNull()
 })
 it('pages same-caption IDs by normal pointer without losing raw missing choices or date state',async()=>{
@@ -29,7 +29,7 @@ it('pages same-caption IDs by normal pointer without losing raw missing choices 
 })
 it('rejects stale group response after changing field without widening numeric manager identity',async()=>{
  let finish!:(value:unknown)=>void;api.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve})).mockResolvedValue([{Id:20,LastName:'Менеджер'}]);const view=render(<Form values={[]}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());const signal=api.mock.calls[0][1]?.signal
- view.rerender(<Form field={10} values={[]}/>);expect(signal?.aborted).toBe(true);search('менеджер');await screen.findByRole('option',{name:'Менеджер'});finish([{Id:max,Name:'Запізніла група'}]);await waitFor(()=>expect(screen.queryByRole('option',{name:'Запізніла група'})).toBeNull());expect(selected()).toEqual([])
+ view.rerender(<Form field={10} values={[]}/>);expect(signal?.aborted).toBe(true);search('менеджер');await screen.findByRole('option',{name:'Менеджер [20]'});finish([{Id:max,Name:'Запізніла група'}]);await waitFor(()=>expect(screen.queryByRole('option',{name:'Запізніла група'})).toBeNull());expect(selected()).toEqual([])
 })
 it('retries failed next page at the same offset and preserves values while disabled',async()=>{
  let retried=false;api.mockImplementation(async(_path,options)=>{if(options?.query?.offset===30&&!retried){retried=true;throw Error('temporary')}return options?.query?.offset===30?[{Id:'200',Name:'Остання'}]:Array.from({length:30},(_,i)=>({Id:String(i+1),Name:'Група '+i}))});const view=render(<Form/>);await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await screen.findByRole('option',{name:'Група 0'});await userEvent.click(screen.getByRole('option',{name:'Ще значення'}));await userEvent.click(await screen.findByRole('option',{name:'Спробувати ще раз'}));await waitFor(()=>expect(api.mock.calls.map(x=>x[1]?.query?.offset)).toEqual([0,30,30]));view.rerender(<Form disabled/>);expect(selected()).toEqual(saved);expect(screen.getByRole('combobox',{name:'Значення'})).toHaveProperty('disabled',true)

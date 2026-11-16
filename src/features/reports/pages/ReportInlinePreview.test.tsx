@@ -29,6 +29,15 @@ function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
 
+it('shows each data-gap line from the server and nothing when there is no gap', () => {
+  const view = show({ ...request, Warnings: ['Собівартість не визначено: 12 рядків', 'Повернення без продажу не враховано: 3'] })
+  expect(screen.getByText('Собівартість не визначено: 12 рядків')).toBeTruthy()
+  expect(screen.getByText('Повернення без продажу не враховано: 3')).toBeTruthy()
+  view.unmount()
+  show()
+  expect(screen.queryByText(/не визначено:|без продажу/)).toBeNull()
+})
+
 it('shows the result without server notes or technical report descriptions', () => {
   const view = show()
   expect(screen.queryByText('Про дані звіту')).toBeNull()

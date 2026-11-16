@@ -75,7 +75,7 @@ beforeEach(() => {
 })
 
 describe('native warehouse stock movement', () => {
-  it.each([false, true])('shows physical coverage outside collapsed notes, empty=%s', async empty => {
+  it.each([false, true])('shows one short partial-coverage line, empty=%s', async empty => {
     vi.mocked(previewStockMovement).mockImplementation(async request => ({
       ...stockMovementResult(request, empty ? [] : stockMovementRows),
       PhysicalCoverage: [partialPhysicalCoverage],
@@ -83,6 +83,7 @@ describe('native warehouse stock movement', () => {
     render(panel())
     await applyReport()
     expect(screen.queryByText('Імпортована історія не покриває весь вибраний період')).toBeNull()
+  expect(await screen.findByText('Рух товару за частину періоду недоступний')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/private-publication|private-receipt/)
     if (!empty) expect(screen.getByText('СКЛАД -1')).toBeTruthy()
   })

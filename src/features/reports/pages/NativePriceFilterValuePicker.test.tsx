@@ -23,7 +23,7 @@ const cases=NATIVE_PRICE_FILTER_FIELDS.flatMap(field=>[0,1,2,4].map(condition=>(
 it.each(cases)('selects source46 field$field condition$condition through exact owner and writes only its correct key namespace',async({field,condition})=>{
  const row=field===3?{Id:'01',Name:'01'}:{Id:'9007199254740993',Name:'Значення [9007199254740993]'}
  api.mockResolvedValue([row]);render(<Form field={field} condition={condition}/>)
- await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')}))
+ await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await userEvent.click(await screen.findByRole('option',{name:row.Name}))
  expect(values()).toEqual([{Data:field===3?{Name:row.Id}:{Id:row.Id},Name:row.Name,Value:0}])
  expect(api.mock.calls.every(call=>call[0]===route&&call[1]?.query?.dataSource===46&&call[1]?.query?.field===field)).toBe(true)
  if(field===12||field===14)expect(api.mock.calls[0][1]?.query).toMatchObject({from:'2026-10-01',to:'2026-10-31'})
@@ -41,7 +41,7 @@ it('preserves padded TOP saved identity exactly',async()=>{
 it('selects an explicit Int64 maximum by keyboard and trusts the complete supplied caption once',async()=>{
  const row={Id:'9223372036854775807',Name:'Підтверджувач [9223372036854775807]'};api.mockImplementation(async(_path,options)=>options?.query?.exactId?[row]:[])
  render(<Form field={16}/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());
- await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:'+row.Id);await screen.findByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')});await userEvent.keyboard('{ArrowDown}{Enter}')
+ await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:'+row.Id);await screen.findByRole('option',{name:row.Name});await userEvent.keyboard('{ArrowDown}{Enter}')
  expect(values()).toEqual([{Data:{Id:row.Id},Name:row.Name,Value:0}]);expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({dataSource:46,field:16,exactId:row.Id,offset:0,limit:30})
 })
 it('preserves archived JSON and date-independent directory scope without hydration',async()=>{
@@ -57,7 +57,7 @@ it('shows missing capability as unavailable without any legacy request or saved-
 })
 function portalGeometry(){vi.spyOn(HTMLElement.prototype,'clientWidth','get').mockReturnValue(640);vi.spyOn(HTMLElement.prototype,'clientHeight','get').mockReturnValue(320)}
 it.each([0,2])('portals condition%i options outside a clipping Card and keeps large IDs on normal selection',async condition=>{
- portalGeometry();const row={Id:'9223372036854775807',Name:'Пряма група [9223372036854775807]'};api.mockResolvedValue([row]);render(<Form condition={condition} initial={condition===2?saved:[]} portal/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));const option=await screen.findByRole('option',{name:row.Name.replace(/ \[\d+\]$/,'')});expect(screen.getByTestId('filter-card').contains(option)).toBe(false)
+ portalGeometry();const row={Id:'9223372036854775807',Name:'Пряма група [9223372036854775807]'};api.mockResolvedValue([row]);render(<Form condition={condition} initial={condition===2?saved:[]} portal/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce());await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));const option=await screen.findByRole('option',{name:row.Name});expect(screen.getByTestId('filter-card').contains(option)).toBe(false)
  if(condition===0)await userEvent.keyboard('{ArrowDown}{Enter}');else await userEvent.click(option)
  expect(values()).toEqual([...(condition===2?saved:[]),{Data:{Id:row.Id},Name:row.Name,Value:0}])
 })

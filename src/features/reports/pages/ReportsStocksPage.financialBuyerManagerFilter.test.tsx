@@ -77,7 +77,7 @@ it('keeps assigned and unassigned manager chips distinct across period changes i
   ])
   fireEvent.click(screen.getByRole('button', { name: 'Наступний день' }))
   await waitFor(() => expect(searchCurrentFinancialBuyerManagers).toHaveBeenCalledWith(expect.any(Object), expect.any(AbortSignal)))
-  expect(screen.getByRole('button', { name: 'Видалити Менеджер' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Видалити Менеджер [42]' })).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Видалити Без основного менеджера покупця' })).toBeTruthy()
   expect(captured).toHaveBeenCalledTimes(1)
 })
@@ -98,10 +98,10 @@ it('keys restored manager chips by identity even when a directory caption change
   }
   render(<MantineProvider env="test"><I18nProvider><Picker /></I18nProvider></MantineProvider>)
   fireEvent.click(screen.getByRole('combobox', { name: 'Менеджери' }))
-  fireEvent.click(await screen.findByRole('option', { name: 'Інший менеджер' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Інший менеджер [43]' }))
   expect(captured.mock.lastCall?.[0]).toEqual([
     { Data: { Id: managerId }, Name: 'Стара назва [42]', Value: 0 },
     { Data: { Id: secondId }, Name: 'Інший менеджер [43]', Value: 0 },
   ])
-  expect(screen.getByRole('button', { name: 'Видалити Стара назва' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Видалити Стара назва [42]' })).toBeTruthy()
 })

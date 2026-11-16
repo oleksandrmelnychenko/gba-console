@@ -9,8 +9,8 @@ import { ReportValuePicker } from './ReportValuePicker'
 
 vi.mock('../api/reportsApi',()=>({searchDatasetReportValues:vi.fn()}))
 afterEach(cleanup)
-const coded='XM06001 — Хмельницький - ПП Муляр Ю.А. [633729]'
-const plain='Вуляр Сергій Олександрович [635176]'
+const coded='XM06001 — Хмельницький - ПП Муляр Ю.А.'
+const plain='Вуляр Сергій Олександрович'
 
 it('finds a client set member by code and stores only the exact id',async()=>{
   vi.mocked(searchDatasetReportValues).mockImplementation(async(_source,_field,params)=>params.value==='XM06001'?[{Id:633729,Name:coded}]:[{Id:635176,Name:plain}])

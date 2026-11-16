@@ -229,7 +229,7 @@ it.each(screenshotChoices)('retains both $name values from the screenshot and su
   const rule = screen.getByRole('group', { name: 'Умова відбору 2' })
   fireEvent.click(within(rule).getByRole('combobox', { name: 'Значення' }))
   await waitFor(() => {
-    fireEvent.click(within(rule).getByRole('option', { name: values[1].name.replace(/ \[\d+\]$/,'') }))
+    fireEvent.click(within(rule).getByRole('option', { name: values[1].name }))
     expect(within(rule).getByRole('button', { name: 'Вибрано: 2' })).toBeTruthy()
   })
   fireEvent.keyDown(within(rule).getByRole('combobox', { name: 'Значення' }), { key: 'Escape' })
@@ -239,7 +239,7 @@ it.each(screenshotChoices)('retains both $name values from the screenshot and su
     Values: values.map(value => ({ Data: value.data, Name: value.name, Value: 0 })),
   })
   fireEvent.click(within(rule).getByRole('button', { name: 'Вибрано: 2' }))
-  fireEvent.click(within(rule).getByRole('option', { name: values[0].name.replace(/ \[\d+\]$/,'') }))
+  fireEvent.click(within(rule).getByRole('option', { name: values[0].name }))
   fireEvent.keyDown(within(rule).getByRole('combobox', { name: 'Значення' }), { key: 'Escape' })
   await apply()
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))

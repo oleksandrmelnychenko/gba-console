@@ -1,3 +1,4 @@
+import { PartialCoverageLine } from '../../../shared/ui/product-movement-history/PartialCoverageLine'
 import { compactMeasureCaptions, isMeasureOnlyColumnSchema } from '../data/reportMeasureHeading'
 import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
@@ -143,6 +144,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
       {wide && columnWindow ? <Text size="sm" className="report-inline-preview__count" data-testid="report-preview-column-window">
         {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
+    <PartialCoverageLine coverage={preview.PhysicalCoverage} />
+    {preview.Request?.Warnings?.map(warning => <Text key={warning} size="sm" c="orange.8" role="status">{warning}</Text>)}
     <PhysicalQuantityExceptionNotice exceptions={preview.PhysicalQuantityExceptions} />
     <IgnoredFilterAttribution filters={preview.Request?.IgnoredFilters ?? null} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}</Text> : null}

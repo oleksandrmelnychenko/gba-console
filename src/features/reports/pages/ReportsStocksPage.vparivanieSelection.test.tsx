@@ -69,13 +69,13 @@ it("submits all four selected identities through the existing inline sales-style
     fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
     const row = within(screen.getByRole("group", { name: `Умова відбору ${index + 1}` }))
     fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
-    fireEvent.click(await screen.findByRole("option", { name: choice.label.replace(/ \[\d+\]$/,'') }))
+    fireEvent.click(await screen.findByRole("option", { name: choice.label }))
     // The date fields update before their debounced lookup scope. Do not select
     // an option from the previous period while its replacement is arriving.
     await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(choice.field, "", "2026-10-01", "2026-10-27",
       index > 2 ? "630804" : undefined, expect.any(AbortSignal)))
     fireEvent.click(row.getByRole("combobox", { name: "Значення" }))
-    fireEvent.click(await row.findByRole("option", { name: choice.name.replace(/ \[\d+\]$/,'') }))
+    fireEvent.click(await row.findByRole("option", { name: choice.name }))
     await waitFor(() => expect(row.getByRole("button", { name: "Вибрано: 1" })).toBeTruthy())
   }
   fireEvent.click(screen.getByRole("button", { name: "Застосувати й показати" }))
@@ -94,7 +94,7 @@ it("preserves the preset product group under nomenclature and accepts several ex
   const group = within(screen.getByRole("group", { name: "Умова відбору 1" }))
   expect(group.getByRole("combobox", { name: "Поле" })).toHaveProperty("value", "Товар")
   expect(group.getByRole("combobox", { name: "Тип порівняння" })).toHaveProperty("value", "В групі")
-  expect(group.getByText("Група: AL-KO")).toBeTruthy()
+  expect(group.getByText("Група: AL-KO [4317]")).toBeTruthy()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   const row = within(screen.getByRole("group", { name: "Умова відбору 2" }))
   fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
