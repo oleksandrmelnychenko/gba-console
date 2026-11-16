@@ -4,7 +4,6 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { defaultAbcClassification, readAbcCapabilities, readAbcDraft, reportAbcClassificationError, requestAbcClassification, type ReportAbcDraft } from '../data/reportAbcClassification'
 import { ReportRankingPrerequisites } from './ReportRankingPrerequisites'
 import { getRankingPrerequisites } from './reportRankingReadiness'
-import { ReportRuleHelp } from './ReportRuleHelp'
 
 type Props = {
   data: ReportRequestBody
@@ -26,7 +25,7 @@ export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, 
       {<AbcToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
         descriptionId={prerequisites.reasons ? reasonId : undefined} onChange={onChange} />}
     </Group>
-    <Text size="xs" c="dimmed">{'Ділить групи на A, B і C після TOP. Усі залишені факти й загальний підсумок зберігаються.'}</Text>
+    <Text size="xs" c="dimmed">Ділить групи на класи A, B і C.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Text role="status" size="sm">{notice}</Text> : null}
     <ReportRankingPrerequisites kind="ABC" reasonId={reasonId} {...prerequisites} disabled={disabled}
@@ -34,11 +33,6 @@ export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, 
     {raw != null ? <Text size="xs" c="dimmed">Вимкнення ABC прибере його правило, поле «ABC-клас» і сортування лише цього поля. Інші налаштування залишаться.</Text>
       : cap ? <Text size="xs" c="dimmed">Увімкнення додасть поле «ABC-клас» першим у рядках; його порядок можна змінити кнопками групування.</Text> : null}
     {draft && cap && dataset ? <AbcFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
-    {<ReportRuleHelp title="Як працює ABC">
-        <Text size="xs" c="dimmed">Сервер класифікує один початковий ключ рядків глобально, разом за всіма батьківськими групами й стовпцями, після TOP. Поле «ABC-клас» утворює групи A, B і C; усі залишені факти та загальний підсумок зберігаються. Окремі рядки підсумків A/B/C у файлі з’являються, лише коли «ABC-клас» стоїть першим у групуванні рядків.</Text>
-        <Text size="xs" c="dimmed">Групи ранжуються від найбільшого показника, за рівності — за меншим ключем. Клас визначається накопиченою сумою до поточної групи: нижче межі A — клас A, нижче A+B — клас B, решта — C. Група може перетнути межу цілком; нульовий хвіст належить C.</Text>
-        <Text size="xs" c="dimmed">Потрібні відомі невід’ємні суми груп і додатний загальний показник в одній підтвердженій валюті чи одиниці. За потреби звузьте відбір. ABC підтримує лише рядки; відбору за класом немає. Відсотки вводяться окремо, їхня сума має дорівнювати 100.</Text>
-    </ReportRuleHelp>}
   </Stack>
 }
 

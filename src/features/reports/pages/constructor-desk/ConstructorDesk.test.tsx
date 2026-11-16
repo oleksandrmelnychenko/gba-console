@@ -17,7 +17,7 @@ const wrap = (node: React.ReactNode) => render(<MantineProvider env="test"><I18n
 const item = (type: number, label: string) => ({ type, key: String(type), label })
 
 function GroupingHarness({ onAdd }: { onAdd: (axis: ReportGroupingAxis, types: number[]) => void }) {
-  const [layout, setLayout] = useState<ReportGroupingLayout>({ Row: [item(4, 'Організація'), item(10, 'Група товару'), item(84, 'Детальний запис GBA')], Col: [item(2, 'По місяцях')] })
+  const [layout, setLayout] = useState<ReportGroupingLayout>({ Row: [item(4, 'Організація'), item(10, 'Група товару'), item(84, 'Детальний запис')], Col: [item(2, 'По місяцях')] })
   const allowed = new Set([2, 4, 10, 12, 21, 84])
   const fields: ConstructorField[] = [{ type: 12, label: 'Назва', path: ['Покупець'] }, { type: 21, label: 'Постачальник', path: [] }]
   return <ConstructorGroupingPanels layout={layout} allowed={allowed} locked={new Set([84])} rowsOnly={false} measures={<p>Показники</p>}
@@ -36,15 +36,15 @@ it('selects, reorders, deletes and moves groupings between rows and columns with
   expect(within(rows).getByRole('button', { name: 'Видалити вибране поле' })).toHaveProperty('disabled', true)
   fireEvent.click(within(rows).getByRole('button', { name: 'Група товару' }))
   fireEvent.click(within(rows).getByRole('button', { name: 'Перемістити Група товару вище' }))
-  expect(within(rows).getAllByRole('listitem').map(node => node.textContent)).toEqual(['Група товаруЕлементи', 'ОрганізаціяЕлементи', 'Детальний запис GBAЕлементи'])
+  expect(within(rows).getAllByRole('listitem').map(node => node.textContent)).toEqual(['Група товаруЕлементи', 'ОрганізаціяЕлементи', 'Детальний записЕлементи'])
   expect(within(rows).getByRole('button', { name: 'Перемістити Група товару вище' })).toHaveProperty('disabled', true)
   fireEvent.click(screen.getByRole('button', { name: 'Перенести Група товару до колонок' }))
   expect(within(columns).getAllByRole('listitem').map(node => node.textContent)).toEqual(['По місяцяхЕлементи', 'Група товаруЕлементи'])
   fireEvent.click(screen.getByRole('button', { name: 'Перенести Група товару до рядків' }))
-  expect(within(rows).getAllByRole('listitem').map(node => node.textContent)).toEqual(['ОрганізаціяЕлементи', 'Група товаруЕлементи', 'Детальний запис GBAЕлементи'])
-  fireEvent.click(within(rows).getByRole('button', { name: 'Детальний запис GBA (закріплено)' }))
-  expect(within(rows).getByRole('button', { name: 'Видалити Детальний запис GBA' })).toHaveProperty('disabled', true)
-  expect(screen.getByRole('button', { name: 'Перенести Детальний запис GBA до колонок' })).toHaveProperty('disabled', true)
+  expect(within(rows).getAllByRole('listitem').map(node => node.textContent)).toEqual(['ОрганізаціяЕлементи', 'Група товаруЕлементи', 'Детальний записЕлементи'])
+  fireEvent.click(within(rows).getByRole('button', { name: 'Детальний запис (закріплено)' }))
+  expect(within(rows).getByRole('button', { name: 'Видалити Детальний запис' })).toHaveProperty('disabled', true)
+  expect(screen.getByRole('button', { name: 'Перенести Детальний запис до колонок' })).toHaveProperty('disabled', true)
   fireEvent.click(within(rows).getByRole('button', { name: 'Організація' }))
   fireEvent.click(within(rows).getByRole('button', { name: 'Видалити Організація' }))
   expect(within(rows).queryByRole('button', { name: 'Організація' })).toBeNull()

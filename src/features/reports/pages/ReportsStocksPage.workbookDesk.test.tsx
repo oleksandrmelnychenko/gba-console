@@ -209,7 +209,7 @@ it('keeps the report list beside the open report instead of hiding the report be
   changeReportPeriod({ from: day })
   const switcher = screen.getByRole('navigation', { name: 'Звіти' })
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
-  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
+  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП' }).getAttribute('aria-current')).toBe('true')
   expect(screen.queryByRole('button', { name: 'Усі звіти' })).toBeNull()
   expect(screen.queryByRole('button', { name: /^Повернутися до звіту/ })).toBeNull()
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toBeTruthy()
@@ -368,7 +368,7 @@ it('does not reset a configured workbook when its active tab is clicked, but exp
   await openDayWorkbook()
   const original = readReportDateInput('Від').value
   changeReportPeriod({ from: '2026-09-02' })
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП' }))
   expect(readReportDateInput('Від').value).toBe('2026-09-02')
   fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
   await waitFor(() => expect(readReportDateInput('Від').value).toBe(original))

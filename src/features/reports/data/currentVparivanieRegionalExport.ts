@@ -21,9 +21,8 @@ export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
   const columns = currentVparivanieV2Columns(result)
   const about: string[][] = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`],
     ['Залишки', currentVparivanieStockLabel(result.StockAnchor)], ['Товарів', String(result.ProductCount)],
-    ['Порожня клітинка', 'Факт відсутній'], ['∅', 'Кількість невідома'],
-    ...result.Request.Filters.map(filter => [filter.Field, filter.Condition, ...filter.Values]),
-    ...result.Request.Notes.map(note => [note])]
+    ['∅', 'Кількість невідома'],
+    ...result.Request.Filters.map(filter => [filter.Field, filter.Condition, ...filter.Values])]
   const matrix: Array<Array<string | number>> = [[CURRENT_REGIONAL_TITLE], ['Період продажів', `${result.From} — ${result.To}`], [],
     [...CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, ...columns.map(currentRegionalColumnCaption)],
     ...result.Rows.map(row => {
@@ -31,10 +30,7 @@ export function currentRegionalSheets(result: CurrentVparivanieRegionalResult) {
       return [row.Article ?? '', row.Name ?? '', row.Description ?? '', row.Group ?? '',
         row.OE ?? '', row.Size ?? '', row.Top ?? '', ...columns.map(key => currentRegionalCellValue(cells.get(key)))]
     })]
-  const facts: Array<Array<string | number>> = [['ProductId', 'Column', 'RegionCode', 'Quantity', 'UnitId', 'FactCount'],
-    ...result.Rows.flatMap(row => row.Cells.map(cell => [row.ProductId, cell.Column, cell.RegionCode ?? '',
-      currentRegionalCellValue(cell), cell.UnitId ?? '', String(cell.FactCount)]))]
-  return { about, matrix, facts }
+  return { about, matrix }
 }
 
 export function currentRegionalCsv(result: CurrentVparivanieRegionalResult): string {
@@ -50,7 +46,7 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
     { text: CURRENT_REGIONAL_TITLE, style: 'title' },
     { text: `Період продажів: ${result.From} — ${result.To}. ${currentVparivanieStockSentence(result.StockAnchor)}`, margin: [0, 3, 0, 6] },
     ...result.Request.Filters.map(filter => ({ text: `${filter.Field} · ${filter.Condition}: ${filter.Values.join(', ')}` })),
-    { text: 'Порожня клітинка: факт відсутній. н/д: кількість невідома.', margin: [0, 4, 0, 8] },
+    { text: 'н/д — кількість невідома.', margin: [0, 4, 0, 8] },
   ]
   const bands = columns.length ? Array.from({ length: Math.ceil(columns.length / 8) }, (_, index) =>
     columns.slice(index * 8, index * 8 + 8)) : [[]]
@@ -78,7 +74,7 @@ export function currentRegionalPdfDefinition(result: CurrentVparivanieRegionalRe
 export async function currentRegionalXlsx(result: CurrentVparivanieRegionalResult): Promise<Blob> {
   const XLSX = await import('xlsx')
   const sheets = currentRegionalSheets(result), book = XLSX.utils.book_new()
-  for (const [name, rows] of Object.entries({ 'Звіт': sheets.matrix, 'Про звіт': sheets.about, 'Клітинки': sheets.facts }))
+  for (const [name, rows] of Object.entries({ 'Звіт': sheets.matrix, 'Про звіт': sheets.about }))
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), name)
   return new Blob([XLSX.write(book, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer],
     { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })

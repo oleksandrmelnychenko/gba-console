@@ -155,7 +155,7 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
-import { workbookDisplayFileName, bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from '../data/bug1274WorkbookGuide'
+import { bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from '../data/bug1274WorkbookGuide'
 import { supportedAnalysisRules } from '../data/supportedAnalysisRules'
 import { reportFileBaseName } from '../data/reportFileName'
 import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
@@ -560,7 +560,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         name: templateName.trim(),
         fileName: reportFileBaseName(activeWorkbook ?? dataset?.Name ?? '', from, to, periodSupported),
         title: activeWorkbook && bug1274WorkbookGuide(activeWorkbook)
-          ? `${workbookDisplayFileName(activeWorkbook)} — ${t(bug1274WorkbookGuide(activeWorkbook)!.title)}` : dataset?.Name ?? '',
+          ? t(bug1274WorkbookGuide(activeWorkbook)!.title) : dataset?.Name ?? '',
         rowGroupings: rowGroups.map((group) => group.label || getReportFieldLabel(group.key)),
         to,
       }
@@ -825,7 +825,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     if (!canGenerateReport || isLoading || workbookResolving) return false
     const token = ++workbookLaunchToken.current
     const guide = bug1274WorkbookGuide(item.fileName)
-    const title = guide ? `${workbookDisplayFileName(item.fileName)} — ${t(guide.title)}` : undefined
+    const title = guide ? t(guide.title) : undefined
     const notice = guide ? t(guide.summary) : `${item.fileName}: ${item.notice}`
     if (!resolvesWorkbookFilters(item.fileName)) {
       changeDataset(item.dataset, item)

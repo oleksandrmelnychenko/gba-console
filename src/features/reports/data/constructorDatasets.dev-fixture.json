@@ -123,7 +123,7 @@
   "Measurements": [
    {
     "Type": 0,
-    "Name": "Кількість продажів мінус повернення (GBA)",
+    "Name": "Кількість продажів мінус повернення",
     "Selectable": true,
     "valueSemantics": {
      "kind": "quantity",
@@ -1662,22 +1662,22 @@
    "additionalFields": [
     {
      "type": 2,
-     "caption": "Артикул (поточний товар)",
+     "caption": "Артикул",
      "placement": "column"
     },
     {
      "type": 3,
-     "caption": "TOP (поточний товар)",
+     "caption": "TOP",
      "placement": "column"
     },
     {
      "type": 65,
-     "caption": "Опис (поточний товар)",
+     "caption": "Опис",
      "placement": "column"
     },
     {
      "type": 66,
-     "caption": "Розмір (поточний товар)",
+     "caption": "Розмір",
      "placement": "column"
     }
    ],
@@ -1697,27 +1697,27 @@
    "additionalFields": [
     {
      "type": 2,
-     "caption": "Артикул (поточний товар)",
+     "caption": "Артикул",
      "placement": "column"
     },
     {
      "type": 3,
-     "caption": "TOP (поточний товар)",
+     "caption": "TOP",
      "placement": "column"
     },
     {
      "type": 65,
-     "caption": "Опис (поточний товар)",
+     "caption": "Опис",
      "placement": "column"
     },
     {
      "type": 66,
-     "caption": "Розмір (поточний товар)",
+     "caption": "Розмір",
      "placement": "column"
     },
     {
      "type": 67,
-     "caption": "Групи (поточний товар)",
+     "caption": "Групи",
      "placement": "column"
     }
    ],
@@ -1737,52 +1737,52 @@
    "additionalFields": [
     {
      "type": 2,
-     "caption": "Артикул (поточний товар)",
+     "caption": "Артикул",
      "placement": "column"
     },
     {
      "type": 3,
-     "caption": "TOP (поточний товар)",
+     "caption": "TOP",
      "placement": "column"
     },
     {
      "type": 65,
-     "caption": "Опис (поточний товар)",
+     "caption": "Опис",
      "placement": "column"
     },
     {
      "type": 66,
-     "caption": "Розмір (поточний товар)",
+     "caption": "Розмір",
      "placement": "column"
     },
     {
      "type": 67,
-     "caption": "Групи (поточний товар)",
+     "caption": "Групи",
      "placement": "column"
     },
     {
      "type": 68,
-     "caption": "Основна назва (поточний товар)",
+     "caption": "Основна назва",
      "placement": "column"
     },
     {
      "type": 69,
-     "caption": "Назва (укр., поточний товар)",
+     "caption": "Назва (укр.)",
      "placement": "column"
     },
     {
      "type": 70,
-     "caption": "Нотатки (поточний товар)",
+     "caption": "Нотатки",
      "placement": "column"
     },
     {
      "type": 73,
-     "caption": "Основний оригінальний номер (поточний товар)",
+     "caption": "Основний оригінальний номер",
      "placement": "column"
     },
     {
      "type": 74,
-     "caption": "Код УКТ ЗЕД (поточний товар)",
+     "caption": "Код УКТ ЗЕД",
      "placement": "column"
     }
    ],
@@ -1818,7 +1818,7 @@
     },
     {
      "Type": 84,
-     "Name": "Детальний запис GBA",
+     "Name": "Детальний запис",
      "Selectable": true
     }
    ],
@@ -1830,7 +1830,7 @@
     },
     {
      "Type": 84,
-     "Name": "Детальний запис GBA",
+     "Name": "Детальний запис",
      "Selectable": true
     }
    ]

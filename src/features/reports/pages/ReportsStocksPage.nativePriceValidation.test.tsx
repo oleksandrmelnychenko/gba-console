@@ -89,7 +89,7 @@ it('warns after clearing a selection and returns to pristine validation after re
 it('keeps catalogue loading failures visible before a price has been selected', async () => {
   vi.mocked(searchDatasetReportValues).mockRejectedValue(new Error('Unavailable'))
   await openReport()
-  expect(await screen.findByText('Не вдалося завантажити типи цін GBA.')).toBeTruthy()
+  expect(await screen.findByText('Не вдалося завантажити типи цін.')).toBeTruthy()
   expectBlocked()
 })
 

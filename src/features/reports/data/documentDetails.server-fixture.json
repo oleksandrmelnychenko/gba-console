@@ -625,7 +625,7 @@
         },
         {
           "Type": 84,
-          "Name": "Детальний запис GBA",
+          "Name": "Детальний запис",
           "Selectable": true
         }
       ],
@@ -637,7 +637,7 @@
         },
         {
           "Type": 84,
-          "Name": "Детальний запис GBA",
+          "Name": "Детальний запис",
           "Selectable": true
         }
       ]
@@ -1148,7 +1148,7 @@
           "ComparisonPeriodTo": null,
           "RowGroupings": [
             "Товар",
-            "Детальний запис GBA"
+            "Детальний запис"
           ],
           "ColumnGroupings": [],
           "Measures": [
@@ -1182,7 +1182,7 @@
           {
             "Position": 1,
             "Identity": "GbaDocumentDetail",
-            "Caption": "Детальний запис GBA",
+            "Caption": "Детальний запис",
             "DisplayKind": "Text",
             "KeyKind": "Text",
             "Captioned": true,
@@ -1641,7 +1641,7 @@
           "ComparisonPeriodTo": null,
           "RowGroupings": [
             "Товар",
-            "Детальний запис GBA"
+            "Детальний запис"
           ],
           "ColumnGroupings": [],
           "Measures": [
@@ -1675,7 +1675,7 @@
           {
             "Position": 1,
             "Identity": "GbaDocumentDetail",
-            "Caption": "Детальний запис GBA",
+            "Caption": "Детальний запис",
             "DisplayKind": "Text",
             "KeyKind": "Text",
             "Captioned": true,

@@ -51,7 +51,7 @@ it('offers the report tabs without the 1C catalogue or the 1C snapshot tab', asy
 it('does not re-render the finished preview while the template name is typed', async () => {
   render(page())
   await findWorkbookLanding()
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП' }))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(false))
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByRole('region', { name: 'Попередній перегляд звіту' })
@@ -69,8 +69,8 @@ it('does not re-render the finished preview while the template name is typed', a
 it('uses the active tab without a repeated title or technical about section', async () => {
   render(page())
   await findWorkbookLanding()
-  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true'))
+  fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити ВП' }).getAttribute('aria-current')).toBe('true'))
   expect(screen.queryByRole('heading', { name: 'Валовий прибуток' })).toBeNull()
   expect(screen.queryByText('Про звіт')).toBeNull()
   expect(screen.queryByText(/По днях і організаціях, період до 62 днів/)).toBeNull()

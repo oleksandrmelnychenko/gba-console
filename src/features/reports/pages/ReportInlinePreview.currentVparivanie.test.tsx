@@ -22,9 +22,9 @@ it('shows the actual seven flat attributes and separate customer identities with
   expect(within(row).getAllByRole('rowheader')).toHaveLength(7)
   expect(view.container.querySelectorAll('script')).toHaveLength(0)
   expect(screen.getByText('<script>name</script>')).toBeTruthy()
-  expect(screen.getByText('Залишки на кінець періоду та період продажів')).toBeTruthy()
-  expect(screen.getByText(/на дату раніше 01\.01\.2025 вони порожні/)).toBeTruthy()
-  expect(screen.getByText(/Вибраний період стосується продажів/)).toBeTruthy()
+  expect(screen.queryByText('Залишки на кінець періоду та період продажів')).toBeNull()
+  expect(screen.queryByText(/на дату раніше 01\.01\.2025 вони порожні/)).toBeNull()
+  expect(screen.queryByText(/Вибраний період стосується продажів/)).toBeNull()
   expect(screen.queryByText('Період розрахунку: 01.09.2026 — 27.09.2026')).toBeNull()
   expect(view.container.textContent).not.toContain('a'.repeat(64))
 })
@@ -48,8 +48,8 @@ it('shows physical movement columns with explicit incomplete history rather than
   render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('columnheader', { name: 'Прихід' })).toBeTruthy()
   expect(screen.getByRole('columnheader', { name: 'Розхід' })).toBeTruthy()
-  expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
-  expect(screen.getByText(/щоб не подвоїти рух/)).toBeTruthy()
+  expect(screen.queryByText(/Неповне підтвердження руху/)).toBeNull()
+  expect(screen.queryByText(/щоб не подвоїти рух/)).toBeNull()
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(['—', '—'])
 })
@@ -67,7 +67,7 @@ it.each([true, false])('shows known incoming=%s separately from the unconfirmed 
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(incomingKnown ? ['12,5', '—'] : ['—', '12,5'])
   expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('ВО-00041')
-  expect(screen.getByText(/Неповне підтвердження руху: 1 із 1 товарів/)).toBeTruthy()
+  expect(screen.queryByText(/Неповне підтвердження руху/)).toBeNull()
 })
 
 it('prints grouped analysis quantities without padded decimals', () => {

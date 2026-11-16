@@ -22,9 +22,9 @@ function show(empty: boolean, complete = false, unconfirmed = false) {
   } })
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
-it.each([true, false])('explains partial imported coverage with empty result=%s without losing native rows', empty => {
+it.each([true, false])('does not show an import coverage banner with empty result=%s and keeps native rows', empty => {
   const view = show(empty)
-  expect(screen.getByText('Імпортована історія не покриває весь вибраний період').closest('[role="alert"]')?.textContent).toContain('01.01.2025 — 02.11.2026')
+  expect(screen.queryByText('Імпортована історія не покриває весь вибраний період')).toBeNull()
   expect(view.container.textContent).not.toMatch(/private-publication|private-receipt|2996/)
   if (!empty) expect(screen.getByText('Пізніший документ GBA')).toBeTruthy()
 })

@@ -5,22 +5,22 @@
     "additionalFields": [
       {
         "type": 2,
-        "caption": "Артикул (поточний товар)",
+        "caption": "Артикул",
         "placement": "column"
       },
       {
         "type": 3,
-        "caption": "TOP (поточний товар)",
+        "caption": "TOP",
         "placement": "column"
       },
       {
         "type": 65,
-        "caption": "Опис (поточний товар)",
+        "caption": "Опис",
         "placement": "column"
       },
       {
         "type": 66,
-        "caption": "Розмір (поточний товар)",
+        "caption": "Розмір",
         "placement": "column"
       }
     ],
@@ -382,22 +382,22 @@
         "fields": [
           {
             "type": 66,
-            "caption": "Розмір (поточний товар)",
+            "caption": "Розмір",
             "placement": "column"
           },
           {
             "type": 2,
-            "caption": "Артикул (поточний товар)",
+            "caption": "Артикул",
             "placement": "column"
           },
           {
             "type": 65,
-            "caption": "Опис (поточний товар)",
+            "caption": "Опис",
             "placement": "column"
           },
           {
             "type": 3,
-            "caption": "TOP (поточний товар)",
+            "caption": "TOP",
             "placement": "column"
           }
         ],
@@ -785,22 +785,22 @@
         "fields": [
           {
             "type": 66,
-            "caption": "Розмір (поточний товар)",
+            "caption": "Розмір",
             "placement": "column"
           },
           {
             "type": 2,
-            "caption": "Артикул (поточний товар)",
+            "caption": "Артикул",
             "placement": "column"
           },
           {
             "type": 65,
-            "caption": "Опис (поточний товар)",
+            "caption": "Опис",
             "placement": "column"
           },
           {
             "type": 3,
-            "caption": "TOP (поточний товар)",
+            "caption": "TOP",
             "placement": "column"
           }
         ],

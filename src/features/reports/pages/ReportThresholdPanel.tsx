@@ -4,7 +4,6 @@ import type { ReportDataset, ReportRequestBody, ReportThresholdCapabilities } fr
 import { ABC_CLASS_GROUPING } from '../data/reportAbcClassification'
 import { defaultReportThreshold, readThresholdCapabilities, readThresholdDraft, reportThresholdError, requestThreshold, type ReportThresholdDraft } from '../data/reportThreshold'
 import { REPORT_RULE_LOCK_REASON } from './reportRankingReadiness'
-import { ReportRuleHelp } from './ReportRuleHelp'
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; onChange: (value: unknown) => void }
 export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Props) {
@@ -19,16 +18,10 @@ export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Prop
       <ThresholdToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
         descriptionId={reason ? reasonId : undefined} onChange={onChange} />
     </Group>
-    <Text size="xs" c="dimmed">Об’єднує групи з малою часткою суми в «Інше (поріг)». Усі факти після TOP залишаються в підсумку.</Text>
+    <Text size="xs" c="dimmed">Об’єднує групи з малою часткою суми в «Інше (поріг)».</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}
     {draft && cap && dataset ? <ThresholdFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
-    <ReportRuleHelp title="Як працює поріг групування">
-      <Text size="xs" c="dimmed">Сервер залишає окремо групи, частка яких у точній сумі показника не менша за поріг. Менші групи об’єднуються в «Інше (поріг)». Звичайні відбори діють перед TOP, потім застосовуються поріг, ABC та сортування. Усі факти після TOP залишаються в підсумку.</Text>
-      <Text size="xs" c="dimmed">Потрібні одне початкове поле рядків, жодного поля стовпців і один увімкнений показник. ABC-клас можна додати окремо з тим самим ключем і показником. «Інше (поріг)» є синтетичною групою; відбору за нею немає. Звичайні відбори за товарами, договорами та іншими полями залишаються доступними.</Text>
-      <Text size="xs" c="dimmed">Потрібні відомі невід’ємні суми в одній підтвердженій валюті чи одиниці та додатний загальний показник. Порожній звіт залишається порожнім. Об’єднання лише нульових груп сервер відхилить, щоб не втратити факти; за потреби звузьте відбір або вимкніть поріг.</Text>
-      <Text size="xs" c="dimmed">Увімкнення порогу не змінює ваші поля автоматично.</Text>
-    </ReportRuleHelp>
   </Stack>
 }
 

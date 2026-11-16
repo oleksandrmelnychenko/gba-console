@@ -1,7 +1,7 @@
-import { Alert, Stack, Text } from '@mantine/core'
+import { Alert, Stack } from '@mantine/core'
 import type { ReportDataset, ReportSelectedValue, ReportSelection } from '../types'
 import type { NativePriceFilterOption } from '../api/nativePriceFilterLookup'
-import { isNativePriceFilterField, nativePriceFilterDescriptor, nativePriceSavedKey, PRICE_FILTER_HELP, PRICE_FILTER_UNAVAILABLE, type NativePriceFilterField } from '../data/nativePriceFilterLookup'
+import { isNativePriceFilterField, nativePriceFilterDescriptor, nativePriceSavedKey, PRICE_FILTER_UNAVAILABLE, type NativePriceFilterField } from '../data/nativePriceFilterLookup'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_EXACT_ID_PLACEHOLDER, reportValueExactId, useReportValueSearch } from './reportValueSearch'
@@ -45,7 +45,6 @@ function NativePriceFieldPicker({ field, ...props }: Props & { field: NativePric
       error={props.error || (exact === '' ? undefined : page.queryError ?? undefined)}
       emptyMessage={exact === '' ? field === 3 ? 'Введіть позначку TOP після id:' : 'Введіть ID після id:' : undefined}
       lookupError={pending ? undefined : page.error} onRetry={page.retry} hasMore={!pending && page.more} onLoadMore={page.loadMore} />
-    {PRICE_FILTER_HELP[field] ? <Text size="sm" c="dimmed">{PRICE_FILTER_HELP[field]}</Text> : null}
   </Stack>
 }
 export function NativePriceFilterValuePicker(props: Props) {

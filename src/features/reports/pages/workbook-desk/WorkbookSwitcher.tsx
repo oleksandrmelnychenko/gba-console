@@ -1,7 +1,6 @@
 import { ActionIcon, VisuallyHidden } from '@mantine/core'
 import { ArrowLeftRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { publishedReportTabs, type PublishedReportTab } from './publishedReportTabs'
-import { workbookDisplayFileName } from '../../data/bug1274WorkbookGuide'
 import { workbookIcon } from './workbookIcons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -61,11 +60,12 @@ export function WorkbookSwitcher({ compact = false, launches, active, disabled, 
       {launches.map(launch => {
         const current = launch.fileName === active
         const Icon = workbookIcon(launch.fileName, launch.dataset.DataSource)
+        const name = t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)
         return <button key={launch.fileName} type="button" className={`app-screen-tab${current ? ' is-active' : ''}`}
-          aria-current={current ? 'true' : undefined} disabled={disabled} title={workbookDisplayFileName(launch.fileName)}
-          aria-label={t('Відкрити {file}', { file: workbookDisplayFileName(launch.fileName) })} onClick={() => { if (!current) onOpen(launch) }}>
+          aria-current={current ? 'true' : undefined} disabled={disabled}
+          aria-label={t('Відкрити {file}', { file: name })} onClick={() => { if (!current) onOpen(launch) }}>
           <Icon size={16} strokeWidth={1.7} aria-hidden="true" />
-          {t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)}
+          {name}
         </button>
       })}
       {onOpenPublished ? publishedReportTabs.map(tab => {

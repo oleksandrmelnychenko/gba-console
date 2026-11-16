@@ -6,10 +6,10 @@ import type { WorkbookPreview } from './workbookPreview'
 
 export const productCapability = { version: 2, attributeKind: 'currentProductScalar', requiredRowGroupings: [5, 7],
   supportedReportProfiles: ['sales', 'grossProfit'], orderings: [], additionalFields: [
-    { type: 2, caption: 'Артикул (поточний товар)', placement: 'column' },
-    { type: 3, caption: 'Топ (поточний товар)', placement: 'column' },
-    { type: 65, caption: 'Опис (поточний товар)', placement: 'column' },
-    { type: 66, caption: 'Розмір (поточний товар)', placement: 'column' }] }
+    { type: 2, caption: 'Артикул', placement: 'column' },
+    { type: 3, caption: 'Топ', placement: 'column' },
+    { type: 65, caption: 'Опис', placement: 'column' },
+    { type: 66, caption: 'Розмір', placement: 'column' }] }
 export const productDataset: ReportDataset = { ...netDataset, Groupings: grossDataset.Groupings,
   reportProfiles: ['sales', 'grossProfit'], workbookPresentation: productCapability,
   constructorPresentation: { version: 1, fields: ['negativeRed', 'grandTotals'] } }

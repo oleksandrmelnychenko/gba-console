@@ -608,22 +608,22 @@
       "additionalFields": [
         {
           "type": 2,
-          "caption": "Артикул (поточний товар)",
+          "caption": "Артикул",
           "placement": "column"
         },
         {
           "type": 3,
-          "caption": "TOP (поточний товар)",
+          "caption": "TOP",
           "placement": "column"
         },
         {
           "type": 65,
-          "caption": "Опис (поточний товар)",
+          "caption": "Опис",
           "placement": "column"
         },
         {
           "type": 66,
-          "caption": "Розмір (поточний товар)",
+          "caption": "Розмір",
           "placement": "column"
         }
       ],
@@ -643,27 +643,27 @@
       "additionalFields": [
         {
           "type": 2,
-          "caption": "Артикул (поточний товар)",
+          "caption": "Артикул",
           "placement": "column"
         },
         {
           "type": 3,
-          "caption": "TOP (поточний товар)",
+          "caption": "TOP",
           "placement": "column"
         },
         {
           "type": 65,
-          "caption": "Опис (поточний товар)",
+          "caption": "Опис",
           "placement": "column"
         },
         {
           "type": 66,
-          "caption": "Розмір (поточний товар)",
+          "caption": "Розмір",
           "placement": "column"
         },
         {
           "type": 67,
-          "caption": "Групи (поточний товар)",
+          "caption": "Групи",
           "placement": "column"
         }
       ],
@@ -699,7 +699,7 @@
         },
         {
           "Type": 84,
-          "Name": "Детальний запис GBA",
+          "Name": "Детальний запис",
           "Selectable": true
         }
       ],
@@ -711,7 +711,7 @@
         },
         {
           "Type": 84,
-          "Name": "Детальний запис GBA",
+          "Name": "Детальний запис",
           "Selectable": true
         }
       ]

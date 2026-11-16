@@ -151,7 +151,7 @@ export function workbookConfigurationError(data: ReportRequestBody, dataset?: Re
     ? readProductGroupListCapability(dataset.currentProductGroupLists) : readWorkbookCapability(dataset.workbookPresentation, data.dataSource ?? -1))))
     return 'Поточний сервер не підтвердив ці налаштування форми.'
   if (data.dataSource === 2 && !isSalesProductProfile(data))
-    return 'Поточні поля товару доступні лише у звітах продажів і валового прибутку.'
+    return 'Додаткові поля доступні лише у звітах продажів і валового прибутку.'
   if (data.dataSource === 2 && !hasProductRow(data))
     return 'Додайте «Товар» або «Назва товару» до рядків або приберіть додаткові поля товару.'
   if (dataset && data.dataSource === 40 && !cashWorkbookPresentationSupported(dataset))

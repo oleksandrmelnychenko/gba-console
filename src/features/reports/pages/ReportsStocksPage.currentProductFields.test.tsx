@@ -30,8 +30,8 @@ async function ready() {
 }
 it('retains field order and all settings across dates and refuses a removed product row without clearing saved selection', async () => {
   const { container } = await ready()
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' }))
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Артикул (поточний товар)' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Розмір' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Артикул' }))
   changeReportPeriod({ from: '2026-10-18', to: '2026-10-27' })
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
@@ -40,11 +40,11 @@ it('retains field order and all settings across dates and refuses a removed prod
   expect(request).toMatchObject({ from: '2026-10-18', to: '2026-10-27', reportProfile: 'sales' })
   removeGrouping('Назва товару')
   expect(screen.getAllByText(/Додайте «Товар» або «Назва товару»/).length).toBeGreaterThan(0)
-  expect(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' })).toHaveProperty('checked', true)
+  expect(screen.getByRole('checkbox', { name: 'Розмір' })).toHaveProperty('checked', true)
   expect(generateButton()).toHaveProperty('disabled', true)
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' }))
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Артикул (поточний товар)' }))
-  expect(screen.queryByRole('button', { name: 'Прибрати поточні поля товару' })).toBeNull()
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Розмір' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Артикул' }))
+  expect(screen.queryByRole('button', { name: 'Прибрати додаткові поля' })).toBeNull()
 })
 it('restores an actual saved profile template and keeps field selection when period changes', async () => {
   const saved = productRequest('grossProfit'); delete saved.workbookPresentation
@@ -53,7 +53,7 @@ it('restores an actual saved profile template and keeps field selection when per
   const { container } = await ready()
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Поточні реквізити' }))
-  await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Розмір (поточний товар)' })).toHaveProperty('checked', true))
+  await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Розмір' })).toHaveProperty('checked', true))
   changeReportPeriod({ from: '2026-09-01', to: '2026-09-30' })
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())

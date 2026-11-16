@@ -1,8 +1,5 @@
 import { compactMeasureCaptions, isMeasureOnlyColumnSchema } from '../data/reportMeasureHeading'
 import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
-import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
-import { ANALYSIS_SCOPE_NOTICE } from '../data/currentVparivanieAnalysis'
-import { MOVEMENT_FILTER_NOTICE } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { effectiveConstructorNumberPresentation, formatReportDecimal, formatReportQuantity, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -10,7 +7,7 @@ import { settlementAttributeText, type SettlementCounterpartyAttribute } from '.
 import { Fragment, memo } from 'react'
 import { Alert, Text } from '@mantine/core'
 import { columnWindowText } from '../data/reportWideColumns'
-import { isPartialColumnWindow, previewColumnWindow, isNegativePreviewScalar, isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewNegativeRed, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewRequest, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
+import { isPartialColumnWindow, previewColumnWindow, isNegativePreviewScalar, isZeroPreviewScalar, previewAmountText, previewBlanksZero, previewNegativeRed, previewCaptionText, previewCellText, previewNumberText, previewSharedNames, type CurrentVparivanieProduct, type NativeReportPreview, type NativeReportPreviewAxis, type NativeReportPreviewCell, type NativeReportPreviewFilter, type NativeReportPreviewScalar } from '../data/nativeReportPreview'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, CURRENT_VPARIVANIE_PRODUCT_FIELDS, currentVparivanieQuantityText } from '../data/currentVparivanie'
 import { currentVparivanieSecondTier } from '../data/currentVparivanieColumns'
 import './report-inline-preview.css'
@@ -20,7 +17,6 @@ import type { SalesConstructorProfile } from '../data/salesConstructorProfiles'
 import { CurrentProductGroupsValue } from './CurrentProductGroupsValue'
 import { reportQuantityExplanations } from '../data/reportQuantityExplanations'
 import { reportAxisCaption, type ReportCaptionAxisSchema } from '../data/reportAxisCaption'
-import { orderReportNotes } from '../data/reportNotesOrder'
 import { QUANTITY_BREAKDOWN_PROVENANCE, isNegativeSingleUnitQuantity, isSingleUnitQuantity, quantityBreakdownText } from '../data/quantityBreakdown'
 
 export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, embedded = false, showPageNote = true, previewReportProfile }: { preview: NativeReportPreview; embedded?: boolean; showPageNote?: boolean; previewReportProfile?: SalesConstructorProfile }) {
@@ -83,9 +79,6 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
           ? formatReportQuantity(value.Value, semanticsByColumn.get(columnSourceIndex))
             ?? (amountColumns.has(columnSourceIndex) ? previewAmountText(value.Value) : previewCellText(value))
           : previewCellText(value)
-  const unknownColumns = new Set([...preview.Cells, ...(totals?.Values ?? []), ...(totals?.Groups ?? []).flatMap(group => group.Values)]
-    .filter(cell => cell.Value?.Kind === 'null').map(cell => cell.ColumnSourceIndex))
-  const unknownCaptions = preview.Columns.filter(column => unknownColumns.has(column.SourceIndex)).flatMap(column => column.Values.map(value => value.Caption))
   const quantityExplanations = reportQuantityExplanations(preview, previewReportProfile)
   const quantityDescription = (value: NativeReportPreviewScalar | undefined, column: number) =>
     value?.Kind === 'null' ? quantityExplanations.get(column) : undefined
@@ -151,24 +144,8 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
         {columnWindowText(columnWindow.ColumnOffset, columnWindow.ReturnedColumns, columnWindow.TotalColumns)}</Text> : null}
     </div>
     <PhysicalQuantityExceptionNotice exceptions={preview.PhysicalQuantityExceptions} />
-    {preview.PhysicalCoverage?.some(item => !item.ImportedPeriodComplete) ? <PhysicalCoverageNotice coverage={preview.PhysicalCoverage} /> : null}
-    <ReportAttributionWarnings request={preview.Request} unknownCaptions={unknownCaptions} />
-    <CurrentProductFieldsNotice version={workbook?.version} />
-    {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}. Комерційний курс GBA на дату кожного документа, включно з поверненнями.</Text> : null}
-    {preview.currentVparivanieAnalysis ? <Alert color={preview.currentVparivanieAnalysis.fieldCoverage.some(f => f.unknownFacts > 0) ? 'yellow' : 'blue'} title="Розрізи та покриття звіту">
-      <Text size="sm">{ANALYSIS_SCOPE_NOTICE}</Text>
-      {preview.currentVparivanieAnalysis.fieldCoverage.filter(f => f.unknownFacts > 0).map(f => <Text size="sm" key={`${f.scope}:${f.field}`}>
-        Для одного з вибраних розрізів не підтверджено реквізити {f.unknownFacts} записів. Вони залишаються у категорії «Невідомо».
-      </Text>)}
-    </Alert> : null}
-    {preview.CurrentVparivanieMovements ? <Alert color={preview.CurrentVparivanieMovements.IncompleteProducts ? 'yellow' : 'blue'} title="Покриття руху товару">
-      <Text size="sm">{MOVEMENT_FILTER_NOTICE}</Text>
-      <Text size="sm">Неповне підтвердження руху: {preview.CurrentVparivanieMovements.IncompleteProducts} із {preview.CurrentVparivanieMovements.TotalProducts} товарів. Прочерк — кількість невідома або клітинка відсутня.</Text>
-      {preview.CurrentVparivanieMovements.ProductCoverage.some(product => product.Reasons.includes('MultipleSourceWorldsWithoutPhysicalOwnership'))
-        ? <Text size="sm">Для частини товарів на цій сторінці фізичний рух між контурами обліку не розмежовано. Їхні кількості не додаються, щоб не подвоїти рух.</Text> : null}
-      {preview.CurrentVparivanieMovements.OldestCapturedAtUtc && preview.CurrentVparivanieMovements.NewestCapturedAtUtc
-        ? <Text size="sm">Історію прочитано: {kyivTimestamp(preview.CurrentVparivanieMovements.OldestCapturedAtUtc)} — {kyivTimestamp(preview.CurrentVparivanieMovements.NewestCapturedAtUtc)}.</Text> : null}
-    </Alert> : null}
+    <IgnoredFilterAttribution filters={preview.Request?.IgnoredFilters ?? null} />
+    {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}</Text> : null}
     <ReportTableScrollArea label="Таблиця попереднього перегляду">
       <table className={tiers > 1 ? 'app-static-table report-inline-preview__table--tiered' : 'app-static-table'}>
         <thead><tr>
@@ -324,77 +301,10 @@ function filterText(filter: NativeReportPreviewFilter): string {
   const description = `${filter.Field} ${filter.Condition}: ${values.length ? values.join(', ') : '—'}`
   return filter.IgnoredReason ? `${description} (${filter.IgnoredReason})` : description
 }
-function ReportAttributionWarnings({ request, unknownCaptions }: { request: NativeReportPreviewRequest | null | undefined; unknownCaptions: readonly string[] }) {
-  if (!request) return <Alert color="yellow" title="Опис розрахунку відсутній">
-    Сервер не передав опис розрахунку. Період, застосовані фільтри й обмеження цього результату не зазначені.
-  </Alert>
-  return <>
-    <SnapshotAttribution request={request} />
-    <IgnoredFilterAttribution filters={request.IgnoredFilters} />
-    <ReturnParentGapAttribution notes={request.Notes} />
-    <ReportNotes notes={request.Notes} unknownCaptions={unknownCaptions} />
-  </>
-}
-
-const RETURN_PARENT_GAP_NOTE = 'Повернень без підтвердженого первинного продажу в GBA:'
-function ReturnParentGapAttribution({ notes }: { notes: string[] | null }) {
-  const gaps = (notes ?? []).filter(note => note.startsWith(RETURN_PARENT_GAP_NOTE))
-  if (gaps.length === 0) return null
-  return <Alert color="yellow" title="Частину повернень не віднесено до первинного продажу">
-    {gaps.map(note => <Text key={note} size="sm">{note}</Text>)}
-  </Alert>
-}
-
-const VISIBLE_NOTES = 3
-function ReportNotes({ notes, unknownCaptions }: { notes: string[] | null; unknownCaptions: readonly string[] }) {
-  const items = orderReportNotes([...new Set((notes ?? []).map(note => note.trim()).filter(note => note && !note.startsWith(RETURN_PARENT_GAP_NOTE)))], unknownCaptions)
-  if (items.length === 0) return null
-  const visible = items.length > VISIBLE_NOTES ? items.slice(0, VISIBLE_NOTES) : items
-  const rest = items.slice(visible.length)
-  return <aside className="report-inline-preview__notes" aria-label="Примітки до звіту">
-    <Text component="h3" size="xs" fw={600} className="report-inline-preview__notes-title">Примітки</Text>
-    <ul>{visible.map(note => <li key={note}>{note}</li>)}</ul>
-    {rest.length ? <details>
-      <summary>Ще примітки: {rest.length}</summary>
-      <ul>{rest.map(note => <li key={note}>{note}</li>)}</ul>
-    </details> : null}
-  </aside>
-}
-
-function SnapshotAttribution({ request }: { request: NativeReportPreviewRequest }) {
-  if (request.DataSource === 'NativeCurrentVparivanie') return <Alert color="blue" title={request.CurrentVparivanieMovements ? 'Залишки, продажі та рух товару' : 'Залишки на кінець періоду та період продажів'}>
-    Залишки показують вільний залишок GBA на кінець вибраного періоду; на дату раніше 01.01.2025 вони порожні. {request.CurrentVparivanieMovements ? 'Вибраний період стосується продажів, приходу та розходу.' : 'Вибраний період стосується продажів.'}
-    {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
-      ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
-      : null}
-  </Alert>
-  if (!request.IsCurrentSnapshot) return null
-  return <Alert color="blue" title="Поточний стан">
-    Поточний знімок даних, а не історичний стан на вибрану дату.
-    {request.ObservationStartedAtUtc && request.ObservationCompletedAtUtc
-      ? <Text size="sm">Дані прочитано: {kyivTimestamp(request.ObservationCompletedAtUtc)}</Text>
-      : <Text size="sm">Час читання даних сервер не передав.</Text>}
-  </Alert>
-}
-
 function IgnoredFilterAttribution({ filters }: { filters: NativeReportPreviewFilter[] | null }) {
-  if (filters === null) return <Alert color="yellow" title="Відомості про незастосовані фільтри відсутні">
-    Сервер не передав перелік незастосованих фільтрів.
-  </Alert>
-  if (filters.length === 0) return null
-  return <Alert color="yellow" title="Увага: фільтри не застосовано">
+  if (!filters?.length) return null
+  return <Alert color="yellow" title="Відбори не застосовано">
     <ul>{entries(filters.map(filterText)).map(item => <li key={item.key}>{item.text}</li>)}</ul>
   </Alert>
 }
 
-function kyivTimestamp(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit',
-    day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date).map(part => [part.type, part.value]))
-  return `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`
-}
-
-function CurrentProductFieldsNotice({ version }: { version?: number }) {
-  return version === 2 || version === 3 || version === 4 ? <Text size="sm">Поточні поля товару з довідника на час формування звіту. ∅ означає незаповнене поле, тире — недоступне значення.</Text> : null
-}

@@ -1,7 +1,7 @@
 import type { ReportDataset, ReportGroupingItem, ReportRequestBody } from '../types'
 
 export const DOCUMENT_DETAIL_GROUPING = 84
-export const DOCUMENT_DETAIL_LABEL = 'Детальний запис GBA'
+export const DOCUMENT_DETAIL_LABEL = 'Детальний запис'
 type DetailCapability = { version: 1; grouping: 84; profiles: ['sales', 'grossProfit']; maximumUserRows: 2; maximumColumns: 1; deepestRowOnly: true; unsupportedTransforms: string[]; unallocatedCaption: string }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
 export function readDocumentDetails(value: unknown): DetailCapability | undefined {

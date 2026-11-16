@@ -4,7 +4,6 @@ import type { ReportDataset, ReportRequestBody, ReportTopGroupsCapabilities } fr
 import { defaultReportTopGroups, readTopGroupsCapabilities, readTopGroupsDraft, reportTopGroupsError, requestTopGroups, type ReportTopGroupsDraft } from '../data/reportTopGroups'
 import { ReportRankingPrerequisites } from './ReportRankingPrerequisites'
 import { getRankingPrerequisites } from './reportRankingReadiness'
-import { ReportRuleHelp } from './ReportRuleHelp'
 
 type Props = {
   data: ReportRequestBody
@@ -30,16 +29,11 @@ export function ReportTopGroupsPanel({ data, dataset, disabled, onChange, onConf
         <Button type="button" variant="default" size="compact-sm" disabled={disabled || !initial}
           aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => { if (initial) onChange(initial) }}>Увімкнути TOP цілих груп</Button> : null}
     </Group>
-    <Text size="xs" c="dimmed">Залишає цілі групи рядків за одним показником. Підсумки рахуються лише за відібраними групами.</Text>
+    <Text size="xs" c="dimmed">Залишає групи з найбільшим показником; підсумки — лише за ними.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     <ReportRankingPrerequisites kind="TOP" reasonId={reasonId} {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />
     {draft && cap ? <TopGroupsFields data={data} dataset={dataset!} value={draft} cap={cap} disabled={disabled} onChange={onChange} /> : null}
-    <ReportRuleHelp title="Як працює TOP">
-        <Text size="xs" c="dimmed">Сервер обирає значення одного поля рядків за одним показником у всьому звіті: разом за всіма батьківськими групами й стовпцями. Усі рядки обраного значення залишаються; підсумки рахуються лише за ними. Порядок показу задає окреме сортування.</Text>
-        <Text size="xs" c="dimmed">Відсоток стосується кількості груп із округленням угору: 50% від 3 груп — це 2 групи, незалежно від їхніх сум. За рівних показників першим є менший ключ поля; порожній ключ — перший.</Text>
-        <Text size="xs" c="dimmed">Для порівняння потрібні відомі значення всіх груп. Якщо змішані одиниці або валюти, звузьте відбір до однієї одиниці чи валюти. Сервер відхилить невизначений рейтинг. Примітки про джерело описують відбір до TOP; кількість відібраних груп і рядків буде в звіті.</Text>
-    </ReportRuleHelp>
   </Stack>
 }
 

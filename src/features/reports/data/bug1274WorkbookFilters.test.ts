@@ -79,7 +79,7 @@ it('refuses ambiguous or failed lookups instead of guessing an identity', async 
   const resolved = await resolveBug1274WorkbookFilters(SUPPLIER_WORKBOOK_FILE, profitSupplierDataset, lookup)
   expect(resolved.selections.map(selection => selection.SelectedField.Type)).toEqual([])
   expect(resolved.unresolved).toHaveLength(SUPPLIER_WORKBOOK_ORGANIZATIONS.length + SUPPLIER_WORKBOOK_SUPPLIERS.length)
-  expect(workbookFiltersNotice(resolved)).toContain('Не знайдено однозначно в GBA')
+  expect(workbookFiltersNotice(resolved)).toContain('Не знайдено, тому не застосовано')
   expect(workbookFiltersNotice({ ...resolved, unresolved: [] })).toBe('')
   expect(workbookFiltersNotice(undefined)).toBe('')
 })

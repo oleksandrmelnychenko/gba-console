@@ -48,7 +48,7 @@ it('opens «Продажі по менеджерах» as a workbook tab and pre
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
   const switcher = await findOpenedWorkbook('ВП.xls')
   expect(within(switcher).queryByRole('button', { name: 'Знімок 1С: продажі за відповідальними' })).toBeNull()
-  fireEvent.click(within(switcher).getByRole('button', { name: 'Відкрити Продажі по менеджерам.xls' }))
+  fireEvent.click(within(switcher).getByRole('button', { name: 'Відкрити Продажі по менеджерах' }))
   await findOpenedWorkbook('Продажі по менеджерам.xls')
   await waitFor(() => expect(screen.queryByText(/застосовуються відбори книги/i)).toBeNull())
   expect(searchDatasetReportValues).toHaveBeenCalledWith(43, 0, expect.objectContaining({ value: '' }), undefined, undefined,

@@ -11,7 +11,7 @@ it('renders every direct group as a separate name without identity clutter or ca
   const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: raw })} previewReportProfile="sales" /></I18nProvider></MantineProvider>)
   const list = screen.getByRole('list', { name: 'Групи поточного товару' })
   expect(within(list).getAllByRole('listitem').map(item => item.textContent)).toEqual(['Однакова назва', 'Однакова назва'])
-  expect(screen.getByRole('columnheader', { name: 'Групи (поточний товар)' })).toBeTruthy()
+  expect(screen.getByRole('columnheader', { name: 'Групи' })).toBeTruthy()
   expect(view.container.textContent).not.toContain('9007199254740993')
   expect(view.container.textContent).not.toContain('11111111-1111')
 })

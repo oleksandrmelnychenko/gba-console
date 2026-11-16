@@ -3,6 +3,7 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { REPORT_VALUE_VISIBLE_PILLS } from './reportValueSearch'
+import { previewCaptionText, previewSharedNames } from '../data/nativeReportPreview'
 
 type ReportValueOption = { value: string; label: string }
 
@@ -52,6 +53,8 @@ export function ReportValuePicker({
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
   const failed = !selectedOnly && !busy && !!lookupError
   const retrying = failed && !!onRetry
+  const shared = previewSharedNames(selected.map(item => item.label))
+  const shown = (item: ReportValueOption) => previewCaptionText(item.label, shared)
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))
@@ -140,9 +143,9 @@ export function ReportValuePicker({
           combobox.openDropdown()
         }}>{t('Вибрано')}: {selected.length}</Button>
       {selected.slice(0, REPORT_VALUE_VISIBLE_PILLS).map(item => <span key={item.value} className="report-value-picker__pill"
-        title={item.label} data-disabled={disabled || undefined}>
-        <span className="report-value-picker__pill-label">{item.label}</span>
-        {locked ? null : <CloseButton size="xs" type="button" aria-label={`${t('Видалити')} ${item.label}`}
+        title={shown(item)} data-disabled={disabled || undefined}>
+        <span className="report-value-picker__pill-label">{shown(item)}</span>
+        {locked ? null : <CloseButton size="xs" type="button" aria-label={`${t('Видалити')} ${shown(item)}`}
           onMouseDown={event => event.preventDefault()} onClick={() => remove(item.value)} />}
       </span>)}
       {selected.length > REPORT_VALUE_VISIBLE_PILLS

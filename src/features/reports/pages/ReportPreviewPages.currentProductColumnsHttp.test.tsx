@@ -22,7 +22,7 @@ it('binds actual ten-field escaped HTTP pages0→2→0 with exact field order, f
  expect(stock?.stockQuantityFilter).toEqual(stockFixture.dataset.stockQuantityFilter)
  const dataset=datasets.find(item=>item.DataSource===2)
  if(!dataset)throw new Error('Missing actual source2 dataset')
- expect(currentProductCapability(dataset)?.additionalFields.find(field=>field.type===70)?.caption).toBe('Нотатки (поточний товар)')
+ expect(currentProductCapability(dataset)?.additionalFields.find(field=>field.type===70)?.caption).toBe('Нотатки')
  expect(dataset.workbookPresentation).toEqual(previous.dataset.workbookPresentation)
  expect(dataset.currentProductGroupLists).toEqual(previous.dataset.currentProductGroupLists)
  const request=await requestFromServer(fixture.request), first=fixture.page0, second=fixture.page2
@@ -61,7 +61,7 @@ it('renders actual Notes independently from Description and preserves empty stri
  expect(rows[1].values.find(value=>value.type===70)).toMatchObject({state:'null',values:[]})
  render(<MantineProvider env="test"><I18nProvider><ReportPreviewPages initial={preview} request={request}/></I18nProvider></MantineProvider>)
  expect(screen.getByRole('rowheader',{name:'Comment, not description'})).toBeTruthy()
- expect(screen.getByRole('columnheader',{name:'Нотатки (поточний товар)'})).toBeTruthy()
- expect(screen.getByRole('columnheader',{name:'Опис (поточний товар)'})).toBeTruthy()
+ expect(screen.getByRole('columnheader',{name:'Нотатки'})).toBeTruthy()
+ expect(screen.getByRole('columnheader',{name:'Опис'})).toBeTruthy()
  expect(screen.queryByText('NameUA')).toBeNull()
 })

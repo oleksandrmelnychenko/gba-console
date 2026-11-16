@@ -1,6 +1,6 @@
 import { productGroupsCapability, productGroupsDataset, productGroupsPreview, productGroupsRequest } from './currentProductGroups.test-fixtures'
 export const productColumnsCapability = { ...productGroupsCapability, version: 4, additionalFields: [...productGroupsCapability.additionalFields,
-  ...([[68, 'Основна назва (поточний товар)'], [69, 'Назва (укр., поточний товар)'], [70, 'Нотатки (поточний товар)'], [73, 'Основний оригінальний номер (поточний товар)'], [74, 'Код УКТ ЗЕД (поточний товар)']] as const).map(([type, caption]) => ({ type, caption, placement: 'column' }))] }
+  ...([[68, 'Основна назва'], [69, 'Назва (укр.)'], [70, 'Нотатки'], [73, 'Основний оригінальний номер'], [74, 'Код УКТ ЗЕД']] as const).map(([type, caption]) => ({ type, caption, placement: 'column' }))] }
 export const productColumnsDataset = { ...productGroupsDataset, currentProductColumns: productColumnsCapability }
 export function productColumnsRequest() { return { ...productGroupsRequest(), workbookPresentation: { version: 4, additionalFields: [70, 67, 68, 69, 73, 74], ordering: null } } }
 export function productColumnsPreview() {

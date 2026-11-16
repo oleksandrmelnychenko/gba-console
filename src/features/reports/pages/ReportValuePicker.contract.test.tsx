@@ -225,7 +225,7 @@ describe('selected values', () => {
   it.each(['multi', 'single'] as const)('%s: shows «Вибрано: N» with removable pills', async mode => {
     render(<Harness mode={mode} initial={['1', '2']} />)
     expect(screen.getByRole('button', { name: 'Вибрано: 2' })).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: `Видалити ${options[0].label}` }))
+    await userEvent.click(screen.getByRole('button', { name: `Видалити ${options[0].label.replace(/ \[\d+\]$/, '')}` }))
     expect(keys()).toEqual(['2'])
     expect(screen.getByRole('button', { name: 'Вибрано: 1' })).toBeTruthy()
   })

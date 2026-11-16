@@ -22,7 +22,7 @@ beforeEach(()=>{
  vi.mocked(previewStockReport).mockResolvedValue({result:{document:{},raw:{}},preview:{Version:1,ResultSha256:'a'.repeat(64),PresentationOnly:true,Request:null,Page:{Offset:0,Limit:50,TotalVisibleRows:0,ReturnedRows:0,HasMore:false},RowSchema:[],ColumnSchema:[],Rows:[],Columns:[],Cells:[]}})
 })
 afterEach(cleanup)
-async function ready(){const view=render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage/></I18nProvider></MantineProvider>);fireEvent.click(await screen.findByRole('button',{name:'Відкрити gba:stock-period-constructor:v1'}));await screen.findByRole('checkbox',{name:'Кінцевий залишок: кількість > 0'});return view}
+async function ready(){const view=render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage/></I18nProvider></MantineProvider>);fireEvent.click(await screen.findByRole('button',{name:'Відкрити Звіт по залишкам'}));await screen.findByRole('checkbox',{name:'Кінцевий залишок: кількість > 0'});return view}
 it('opts in explicitly, retains dates, and blocks missing measure until repaired without clearing filter',async()=>{
  const view=await ready();const checkbox=screen.getByRole('checkbox',{name:'Кінцевий залишок: кількість > 0'});expect(checkbox).toHaveProperty('checked',false)
  fireEvent.click(checkbox);changeReportPeriod({from:'2026-09-02',to:'2026-09-04'})
@@ -36,7 +36,7 @@ it('opts in explicitly, retains dates, and blocks missing measure until repaired
 })
 it('loads an unsupported saved setting on an old server and lets the user explicitly remove it',async()=>{
  vi.mocked(getReportDatasets).mockResolvedValue([netDataset,{...stockQuantityDataset,stockQuantityFilter:undefined}]);vi.mocked(getServerReportTemplates).mockResolvedValue([{Id:'saved-stock',Revision:1,Name:'Збережений поріг',Data:{...stockQuantityRequest(),stockQuantityFilter:positiveClosingQuantity}}])
- const view=render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage/></I18nProvider></MantineProvider>);await screen.findByRole('button',{name:'Відкрити gba:stock-period-constructor:v1'});fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Збережений поріг'}))
+ const view=render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage/></I18nProvider></MantineProvider>);await screen.findByRole('button',{name:'Відкрити Звіт по залишкам'});fireEvent.click(screen.getByRole('button',{name:'Шаблони'}));fireEvent.click(await screen.findByRole('button',{name:'Відкрити для редагування: Збережений поріг'}))
  const checkbox=await screen.findByRole('checkbox',{name:'Кінцевий залишок: кількість > 0'});expect(checkbox).toHaveProperty('checked',true);expect(screen.getAllByText(/Сервер ще не підтримує відбір/).length).toBeGreaterThan(0)
  await act(async()=>fireEvent.submit(view.container.querySelector('form')!));expect(previewStockReport).not.toHaveBeenCalled()
  fireEvent.click(checkbox);await act(async()=>fireEvent.submit(view.container.querySelector('form')!));await waitFor(()=>expect(previewStockReport).toHaveBeenCalledOnce());expect(vi.mocked(previewStockReport).mock.calls[0][0]).not.toHaveProperty('stockQuantityFilter')

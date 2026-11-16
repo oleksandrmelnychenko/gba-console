@@ -8,10 +8,10 @@ import { ReportInlinePreview } from './ReportInlinePreview'
 it('renders current attributes as independent ordered columns, with honest empty values and unchanged unknown money', () => {
   render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: productPreview() })} previewReportProfile="sales" /></I18nProvider></MantineProvider>)
   const headers = screen.getAllByRole('columnheader').map(node => node.textContent)
-  expect(headers.indexOf('Розмір (поточний товар)')).toBeLessThan(headers.indexOf('Артикул (поточний товар)'))
+  expect(headers.indexOf('Розмір')).toBeLessThan(headers.indexOf('Артикул'))
   expect(screen.getByRole('rowheader', { name: 'SEM14631' })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: '∅' })).toBeTruthy()
   expect(screen.getByRole('cell', { name: '—' })).toBeTruthy()
-  expect(screen.getByText(/Поточні поля товару з довідника/)).toBeTruthy()
+  expect(screen.queryByText(/Поточні поля товару з довідника/)).toBeNull()
   expect(screen.queryByText('b'.repeat(64))).toBeNull()
 })

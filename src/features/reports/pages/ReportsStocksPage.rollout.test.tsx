@@ -42,7 +42,7 @@ it('shows only BUG-1274 entry points, then previews and exports the actual cash 
   expect(view.container.querySelector('a[href="/reports/registers"]')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Продажі за днями' })).toBeNull()
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / }).map(tab => tab.getAttribute('aria-label')))
-    .toEqual(['Відкрити Ведомость по денежным средствам.xls'])
+    .toEqual(['Відкрити Відомість по коштах'])
   expect(screen.queryByRole('combobox', { name: 'Звіт' })).toBeNull()
   expect(createStockReport).not.toHaveBeenCalled()
   expect(previewStockReport).not.toHaveBeenCalled()

@@ -14,11 +14,11 @@ it('keeps an unsupported saved list visible and removable on an older server ins
   }
   render(<MantineProvider env="test"><Form /></MantineProvider>)
   expect(screen.getByText(/Поточний сервер не підтвердив список груп товару/)).toBeTruthy()
-  expect(screen.getByRole('checkbox', { name: 'Групи (поточний товар)' })).toHaveProperty('checked', true)
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи (поточний товар)' }))
+  expect(screen.getByRole('checkbox', { name: 'Групи' })).toHaveProperty('checked', true)
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи' }))
   expect(JSON.parse(screen.getByRole('status').textContent!)).toEqual({ version: 2, additionalFields: [2], ordering: null })
   expect(screen.queryByText(/Поточний сервер не підтвердив список груп товару/)).toBeNull()
-  expect(screen.getByRole('checkbox', { name: 'Артикул (поточний товар)' })).toHaveProperty('checked', true)
+  expect(screen.getByRole('checkbox', { name: 'Артикул' })).toHaveProperty('checked', true)
 })
 it('upgrades only when adding groups and retains v3 when removing the field on a new server', () => {
   function Form() {
@@ -27,8 +27,8 @@ it('upgrades only when adding groups and retains v3 when removing the field on a
   }
   render(<MantineProvider env="test"><Form /></MantineProvider>)
   expect(JSON.parse(screen.getByRole('status').textContent!).version).toBe(2)
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи (поточний товар)' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи' }))
   expect(JSON.parse(screen.getByRole('status').textContent!)).toEqual({ version: 3, additionalFields: [66, 2, 67], ordering: null })
-  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи (поточний товар)' }))
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Групи' }))
   expect(JSON.parse(screen.getByRole('status').textContent!)).toEqual({ version: 3, additionalFields: [66, 2], ordering: null })
 })

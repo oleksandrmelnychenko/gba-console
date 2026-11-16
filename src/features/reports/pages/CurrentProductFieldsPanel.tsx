@@ -15,12 +15,11 @@ export function CurrentProductFieldsPanel({ capability, request, value, disabled
     const next = [...selected]; [next[index], next[index + delta]] = [next[index + delta], next[index]]; change(next)
   }
   return <Card withBorder radius="md" padding="md"><Stack gap="xs">
-    <Text component="h4">Поточні поля товару</Text>
-    <Text size="sm">Значення з довідника товарів на час формування звіту. Це не історичні реквізити документа.</Text>
+    <Text component="h4">Додаткові поля</Text>
     {error ? <Alert color="yellow">{error} Збережені налаштування не змінено.</Alert> : null}
-    {!supported ? <Alert color="yellow">Поточний сервер або профіль не підтримує ці поля. Збережені налаштування не змінено.</Alert> : null}
+    {!supported ? <Alert color="yellow">Для цього звіту додаткові поля недоступні. Збережені налаштування не змінено.</Alert> : null}
     {supported && !productRow && !error ? <Text size="sm">Додайте «Товар» або «Назва товару» до групування рядків.</Text> : null}
-    <section aria-label="Поточні поля товару"><Stack gap="xs">
+    <section aria-label="Додаткові поля"><Stack gap="xs">
       {fields.map(field => { const index = selectedRank.get(field.type) ?? -1; return <Group key={field.type} gap="xs">
         <Checkbox label={field.caption} checked={index >= 0} disabled={disabled || index < 0 && !canAdd}
           onChange={event => change(event.currentTarget.checked ? [...selected, field.type] : selected.filter(type => type !== field.type))} />
@@ -32,7 +31,6 @@ export function CurrentProductFieldsPanel({ capability, request, value, disabled
         </Group> : null}
       </Group> })}
     </Stack></section>
-    <Text size="xs" c="dimmed">Незаповнене поле позначено ∅; недоступне значення — тире. Грошові показники не змінюються.</Text>
-    {value != null ? <Button type="button" variant="default" size="xs" disabled={disabled} onClick={() => onChange(undefined)}>Прибрати поточні поля товару</Button> : null}
+    {value != null ? <Button type="button" variant="default" size="xs" disabled={disabled} onClick={() => onChange(undefined)}>Прибрати додаткові поля</Button> : null}
   </Stack></Card>
 }

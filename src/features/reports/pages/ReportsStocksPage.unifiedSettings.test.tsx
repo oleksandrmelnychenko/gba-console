@@ -211,7 +211,7 @@ const screenshotChoices = [
     { id: 'id:626852', name: 'АФРАКО ТЗОВ · BRI00104 [626852]', data: { Id: 626852 } },
     { id: 'id:628676', name: 'АФЕКС АВТОЗАПЧАСТИНИ ТОВ · BXN02404 [628676]', data: { Id: 628676 } },
   ] },
-  { field: 60, name: 'Основний менеджер покупця (поточний)', condition: 0, values: [
+  { field: 60, name: 'Основний менеджер покупця', condition: 0, values: [
     { id: '5608315DD4C6B3419948F4C603F71C9B', name: 'Крицький Олег Русланович [10184]', data: { Id: '5608315DD4C6B3419948F4C603F71C9B' } },
     { id: 'AB04BE440FA9D34490714004C8951C7E', name: 'Баранов Віталій Васильович [10146]', data: { Id: 'AB04BE440FA9D34490714004C8951C7E' } },
   ] },
@@ -255,7 +255,7 @@ it('BUG-1453 adds month columns to date and organization rows and applies the co
   vi.mocked(getReportDatasets).mockResolvedValue([dataset])
   vi.mocked(getServerReportTemplates).mockResolvedValue([])
   render(page())
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити ВП.xls' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити ВП' }))
   changeReportPeriod({ from: '2026-10-17', to: '2026-10-23' })
   await apply()
   const before = displayedRequest()

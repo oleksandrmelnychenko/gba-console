@@ -577,7 +577,7 @@ const wireMetadata = {
               "Value": "SalesQuantity",
               "Provenance": "columnAxisKey"
             },
-            "Caption": "Кількість продажів мінус повернення (GBA)"
+            "Caption": "Кількість продажів мінус повернення"
           }
         ]
       },

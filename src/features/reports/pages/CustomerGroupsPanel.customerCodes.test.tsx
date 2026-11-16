@@ -37,7 +37,7 @@ it('shows the same code label in options, pills and the selected list while valu
   const onChange=vi.fn()
   const options=[{value:'633729',label:coded},{value:'635176',label:plain}]
   render(<MantineProvider env="test"><I18nProvider><ReportValuePicker mode="multi" data={options} selected={[options[0]]} search="" onSearchChange={vi.fn()} onChange={onChange}/></I18nProvider></MantineProvider>)
-  expect(screen.getByRole('button',{name:`Видалити ${coded}`})).toBeTruthy()
+  expect(screen.getByRole('button',{name:`Видалити ${coded.replace(/ \[\d+\]$/, '')}`})).toBeTruthy()
   fireEvent.click(screen.getByRole('button',{name:'Вибрано: 1'}))
   expect(screen.getByRole('option',{name:coded})).toBeTruthy()
   expect(screen.queryByRole('option',{name:plain})).toBeNull()

@@ -5,7 +5,6 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MonitorPlay, Plus, X } from 'lucide-react'
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
-import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -171,7 +170,7 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
                 {row.Level === 'warehouse' ? <TableChip tone="storage" value={row.Label} />
                   : row.Level === 'product' ? <TableChip tone="product" value={row.Label} />
                   : row.Level === 'registrar' ? <span className="stock-movement__registrar" title={[row.Counterparty, row.Organization].filter(Boolean).join(' · ') || undefined}>
-                    {row.Label}{row.Source === 'gba' ? <span className="stock-movement__source"> · GBA</span> : null}</span>
+                    {row.Label}</span>
                   : <span>{row.Label}</span>}
               </div>
             </Table.Td>
@@ -460,11 +459,10 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     <section className="workbook-result" aria-label="Результат">
       <h2 className="app-section-title">Результат</h2>
       {run ? <Stack gap={8}>
-        <PhysicalCoverageNotice coverage={run.result.PhysicalCoverage ?? []} />
         <PhysicalQuantityExceptionNotice exceptions={run.result.PhysicalQuantityExceptions} />
         <Group gap={8} justify="space-between" wrap="wrap">
           <Text size="sm" fw={600}>{displayDate(run.result.From)} — {displayDate(run.result.To)}</Text>
-          <Text size="xs" c="dimmed">Складів і товарів: {run.result.Keys}; документів руху: {run.result.Registrars}; сформовано {displayDateTime(run.result.ObservedAt)} (Київ)</Text>
+          <Text size="xs" c="dimmed">Сформовано {displayDateTime(run.result.ObservedAt)}</Text>
         </Group>
         <ResultTable run={run} draftMeasures={run.request.Measures} negativeRed={run.request.NegativeRed} grandTotals={run.request.GrandTotals}
           busy={busy} onPage={offset => { void load({ ...run.request, Offset: offset }) }} />

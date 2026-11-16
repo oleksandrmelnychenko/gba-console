@@ -14,8 +14,8 @@ export function currentProductFieldsControls(capability: WorkbookCapability | nu
   const availableFields = capability?.additionalFields ?? []
   const fieldsByType = new Map(availableFields.map(field => [field.type, field]))
   for (const [type, caption] of [[68, 'Основна назва'], [69, 'Назва (укр.)'], [70, 'Нотатки'], [73, 'Основний оригінальний номер'], [74, 'Код УКТ ЗЕД']] as const)
-    if (selected.includes(type) && !fieldsByType.has(type)) fieldsByType.set(type, { type, caption: type === 69 ? 'Назва (укр., поточний товар)' : `${caption} (поточний товар)`, placement: 'column' })
-  if (selected.includes(67) && !fieldsByType.has(67)) fieldsByType.set(67, { type: 67, caption: 'Групи (поточний товар)', placement: 'column' })
+    if (selected.includes(type) && !fieldsByType.has(type)) fieldsByType.set(type, { type, caption, placement: 'column' })
+  if (selected.includes(67) && !fieldsByType.has(67)) fieldsByType.set(67, { type: 67, caption: 'Групи', placement: 'column' })
   const fields = isCurrentProductVersion(capability?.version) ? [...selected.flatMap(type => { const field = fieldsByType.get(type); return field ? [field] : [] }),
     ...availableFields.filter(field => !selectedRank.has(field.type))] : []
   return { selection, supported, error, selected, productRow, selectedRank, fields, canAdd: supported && productRow && !error }

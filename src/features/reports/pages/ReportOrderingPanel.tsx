@@ -3,7 +3,6 @@ import { useId } from 'react'
 import type { ReportDataset, ReportOrderRule, ReportRequestBody } from '../types'
 import { readOrderingCapabilities, readReportOrdering, reportOrderingError, requestOrdering, setReportOrderRule } from '../data/reportOrdering'
 import { REPORT_RULE_LOCK_REASON } from './reportRankingReadiness'
-import { ReportRuleHelp } from './ReportRuleHelp'
 
 const byOptions = [{ value: '1', label: 'За значенням поля' }, { value: '2', label: 'За точним підписом' }, { value: '3', label: 'За підсумком показника' }]
 const directions = [{ value: '1', label: 'За зростанням' }, { value: '2', label: 'За спаданням' }]
@@ -22,7 +21,7 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
       {raw != null ? <Button type="button" variant="default" size="compact-sm" disabled={disabled}
         aria-describedby={reason ? reasonId : undefined} onClick={() => onChange(undefined)}>Очистити збережене сортування</Button> : null}
     </Group>
-    <Text size="xs" c="dimmed">Упорядковує цілі групи всередині їхнього рівня. Різні валюти або одиниці не порівнюються.</Text>
+    <Text size="xs" c="dimmed">Упорядковує групи всередині їхнього рівня.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Text role="status" size="sm">{notice}</Text> : null}
     {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}
@@ -64,11 +63,6 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
           </SimpleGrid>
         })}
       </Stack>) : null}
-    <ReportRuleHelp title="Як працює сортування">
-      <Text size="xs" c="dimmed">Сервер впорядковує цілі групи всередині їхнього рівня. Підсумок показника охоплює всю групу й усі значення протилежної осі. Різні валюти або одиниці не порівнюються.</Text>
-      <Text size="xs" c="dimmed">Точний підпис включає надрукований [ID]. Значення поля впорядковує дати, числа та числові ID за їхнім значенням.</Text>
-      <Text size="xs" c="dimmed">Звіти без правил використовують звичайний порядок.</Text>
-    </ReportRuleHelp>
   </Stack>
 }
 

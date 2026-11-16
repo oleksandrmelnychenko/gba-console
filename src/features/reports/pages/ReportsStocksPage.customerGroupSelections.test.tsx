@@ -36,8 +36,8 @@ beforeEach(() => {
 afterEach(cleanup)
 async function ready() {
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити Порівняння роботи клієнтів.xls' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Порівняння роботи клієнтів.xls' })).toHaveProperty('ariaCurrent', 'true'))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити Порівняння роботи клієнтів' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Порівняння роботи клієнтів' })).toHaveProperty('ariaCurrent', 'true'))
 }
 async function restore() {
   await ready(); fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))

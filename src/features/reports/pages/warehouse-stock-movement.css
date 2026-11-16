@@ -7,7 +7,6 @@
 .stock-movement__label-head > span + span { padding-left: 16px; }
 .stock-movement__unit { font-weight: 400; color: var(--mantine-color-gray-6); font-size: 12px; }
 .stock-movement__registrar { font-size: 13px; overflow-wrap: anywhere; }
-.stock-movement__source { color: var(--mantine-color-gray-6); font-size: 12px; }
 .stock-movement__table tbody tr[data-level='registrar'] { font-weight: 400; }
 .stock-movement__level { min-height: 28px; }
 

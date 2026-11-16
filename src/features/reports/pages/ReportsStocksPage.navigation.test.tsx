@@ -58,7 +58,7 @@ it('opens both sales choices through the real report page and retains the suppli
   fireEvent.click(screen.getByRole('button', { name: 'Продажі' }))
   fireEvent.click(await screen.findByRole('menuitem', { name: 'Валовий прибуток' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Валовий прибуток' }).getAttribute('aria-current')).toBe('true'))
-  expect(screen.getByRole('button', { name: 'Відкрити ВП по постачальниках.xls' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Відкрити ВП по постачальниках' })).toBeTruthy()
   expect(previewStockReport).not.toHaveBeenCalled()
 })
 

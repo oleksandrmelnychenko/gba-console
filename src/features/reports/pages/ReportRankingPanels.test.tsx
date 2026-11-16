@@ -1,6 +1,5 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { abcDataset, abcRequest } from '../data/reportAbcClassification.test-fixtures'
@@ -131,19 +130,8 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     expect(onConfigureGrouping).not.toHaveBeenCalled()
   })
 
-  it('keeps detailed calculation semantics in a native collapsed disclosure', async () => {
+  it('shows no technical calculation disclosure', () => {
     show()
-    const summary = screen.getByText(`Як працює ${name}`)
-    const details = summary.closest('details')!
-    expect(summary.tagName).toBe('SUMMARY')
-    expect(details.firstElementChild).toBe(summary)
-    expect(details.open).toBe(false)
-    const user = userEvent.setup()
-    await user.click(summary)
-    expect(details.open).toBe(true)
-    expect(details.textContent).toContain(name === 'TOP' ? '50% від 3 груп — це 2 групи' : 'накопиченою сумою до поточної групи')
-    expect(details.textContent).toContain(name === 'TOP' ? 'порожній ключ — перший' : 'нульовий хвіст належить C')
-    await user.click(summary)
-    expect(details.open).toBe(false)
+    expect(screen.queryByText(`Як працює ${name}`)).toBeNull()
   })
 })

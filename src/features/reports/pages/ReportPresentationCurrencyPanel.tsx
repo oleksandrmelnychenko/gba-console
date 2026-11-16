@@ -40,7 +40,6 @@ function CurrencyLookup({ value, disabled, onChange }: { value: unknown; disable
         if (next === 'default') onChange(undefined)
         else if (next && state.rows.some(row => row.value === next)) onChange({ version: 1, currencyNetUid: next })
       }} />
-    <Text size="xs" c="dimmed">Комерційний курс GBA на дату кожного документа, включно з поверненнями. Без підтвердженого курсу сума не визначена.</Text>
     {state.error ? <><Text size="xs" c="red" role="alert">{state.error} Збережену валюту не змінено.</Text><Button size="xs" variant="subtle" disabled={disabled || state.loading} onClick={() => { setState({ rows: [], loading: true }); setRetry(attempt => attempt + 1) }}>Повторити завантаження валют</Button></> : null}
     {!state.loading && !state.error && missing ? <Text size="xs" c="red" role="alert">Збереженої валюти немає в актуальному довіднику. Оберіть доступну валюту перед формуванням.</Text> : null}
   </Stack>

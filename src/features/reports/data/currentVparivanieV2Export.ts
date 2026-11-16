@@ -1,7 +1,6 @@
 
 import type { CurrentVparivanieV2Cell, CurrentVparivanieV2Result } from './currentVparivanieV2'
 
-export const CURRENT_VPARIVANIE_V2_DRAFT = 'Поточні дані · чернетка; звірку з 1С не підтверджено'
 const kinds = ['Stock', 'Sales', 'CounterpartyTotal', 'CounterpartyRegionCode', 'CounterpartyUnknown']
 const captions: Record<string, string> = {
   Stock: 'Остатки', Sales: 'Продажи', CounterpartyTotal: 'Контрагенты',

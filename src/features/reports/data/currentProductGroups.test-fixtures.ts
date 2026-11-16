@@ -1,7 +1,7 @@
 import { productCapability, productDataset, productPreview, productRequest } from './currentProductFields.test-fixtures'
 import type { WorkbookAttribute } from './workbookPreview'
 export const productGroupsCapability = { ...productCapability, version: 3, attributeKind: 'currentProductFields', additionalFields: [
-  ...productCapability.additionalFields, { type: 67, caption: 'Групи (поточний товар)', placement: 'column' }] }
+  ...productCapability.additionalFields, { type: 67, caption: 'Групи', placement: 'column' }] }
 export const productGroupsDataset = { ...productDataset, currentProductGroupLists: productGroupsCapability }
 export function productGroupsRequest() {
   return { ...productRequest(), workbookPresentation: { version: 3, additionalFields: [66, 67, 2], ordering: null } }
@@ -13,7 +13,7 @@ export function productGroupsPreview() {
   const raw = productPreview()
   raw.workbookPresentation.version = 3
   raw.workbookPresentation.selection = { version: 3, additionalFields: [66, 67, 2], ordering: null }
-  raw.workbookPresentation.fields.splice(1, 0, { type: 67, caption: 'Групи (поточний товар)', placement: 'column' })
+  raw.workbookPresentation.fields.splice(1, 0, { type: 67, caption: 'Групи', placement: 'column' })
   raw.workbookPresentation.rows[0].values.splice(1, 0, groupValue())
   return raw
 }

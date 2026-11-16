@@ -64,7 +64,7 @@ describe('native warehouse stock movement on the reports page', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Застосувати й показати' }))
     await within(form).findByRole('table', { name: 'Рух товару — залишки, прихід і розхід' })
     expect(vi.mocked(previewStockMovement).mock.calls[0][0]).toMatchObject({ From: '2026-09-01', To: '2026-09-30', Offset: 0 })
-    fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП.xls' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Відкрити ВП' }))
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Рух товару' })).toBeNull())
     expect(screen.getByRole('button', { name: /^Період:/ }).getAttribute('aria-label')).toBe(before)
     expect(screen.getByRole('button', { name: 'Шаблони' })).toBeTruthy()

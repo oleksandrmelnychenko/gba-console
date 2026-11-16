@@ -3,30 +3,6 @@
   margin: 0 8px;
 }
 
-.reports-constructor-rule-help {
-  color: var(--mantine-color-gray-7);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.reports-constructor-rule-help > summary {
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  width: fit-content;
-}
-
-.reports-constructor-rule-help > summary:focus-visible {
-  border-radius: 3px;
-  outline: 2px solid var(--brand-orange);
-  outline-offset: 3px;
-}
-
-.reports-constructor-rule-help[open] > summary {
-  margin-bottom: 8px;
-}
-
 .reports-constructor-rule-header {
   align-items: center;
 }

@@ -34,7 +34,7 @@ afterEach(cleanup)
 it.each([12, 14, 15, 16])('blocks invalid field%d Run/Save, then list repair preserves raw IDs, cohorts and dates without generating', async field => {
   const original = saved(field); vi.mocked(getServerReportTemplates).mockResolvedValue([original])
   render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити Порівняння роботи клієнтів.xls' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити Порівняння роботи клієнтів' }))
   fireEvent.click(screen.getByRole('button', { name: 'Шаблони' })); fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Точні відбори документів та авторів' }))
   const row = await screen.findByRole('group', { name: 'Умова відбору 1' })
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)

@@ -108,5 +108,20 @@ export function bug1274DatasetTitle(dataSource: number): string | undefined {
 export function workbookDisplayFileName(fileName: string): string {
   const profile = profileForWorkbook(fileName)
   if (profile) return salesConstructorTitle(profile)
-  return fileName === 'Впарювання.xls' ? 'Аналіз залишків і продажів.xls' : fileName
+  return WORKBOOK_NAMES[fileName] ?? fileName
+}
+
+const WORKBOOK_NAMES: Readonly<Record<string, string>> = {
+  'Продажі порівнянням по групах цін.xls': 'Продажі порівнянням за типами цін',
+  'Порівняння роботи клієнтів.xls': 'Порівняння роботи клієнтів',
+  'Звіт повернення.xls': 'Звіт повернення',
+  'ВП.xls': 'ВП',
+  'ВП по постачальниках.xls': 'ВП по постачальниках',
+  'Впарювання.xls': 'Аналіз залишків і продажів',
+  'Ведомость по денежным средствам.xls': 'Відомість по коштах',
+  'Взаємороз всі.xls': 'Взаєморозрахунки всі',
+  'ДБіторка.xls': 'Дебіторська заборгованість',
+  [SALES_BY_RESPONSIBLES_WORKBOOK_FILE]: SALES_BY_RESPONSIBLES_TITLE,
+  'gba:purchases-constructor:v1': 'Звіт по закупам',
+  'gba:stock-period-constructor:v1': 'Звіт по залишкам',
 }

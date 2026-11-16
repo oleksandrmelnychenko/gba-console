@@ -57,7 +57,7 @@ const SALES_GROUPING_LABELS: Readonly<Record<number, { label: string; path?: str
   20: { label: 'Відповідальний менеджер що перевів в статус накладної', path: 'Документ продажу' },
   21: { label: 'Постачальник' },
   46: { label: 'ABC-клас', path: 'Аналітика' },
-  84: { label: 'Детальний запис GBA' },
+  84: { label: 'Детальний запис' },
 }
 
 function groupingCategory(type: number): string | undefined {

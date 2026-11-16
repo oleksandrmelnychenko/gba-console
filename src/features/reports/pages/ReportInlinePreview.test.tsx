@@ -29,14 +29,14 @@ function show(Request: unknown = request, Value: unknown = { Kind: 'null', Value
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
 }
 
-it('shows the result with the server notes and without technical report descriptions', () => {
+it('shows the result without server notes or technical report descriptions', () => {
   const view = show()
   expect(screen.queryByText('Про дані звіту')).toBeNull()
   expect(screen.queryByText('Як розраховано')).toBeNull()
   expect(screen.queryByText('Застосовані фільтри')).toBeNull()
   expect(screen.queryByText(/Період розрахунку:/)).toBeNull()
-  const notes = within(screen.getByRole('complementary', { name: 'Примітки до звіту' }))
-  for (const note of request.Notes!) expect(notes.getByText(note)).toBeTruthy()
+  expect(screen.queryByRole('complementary', { name: 'Примітки до звіту' })).toBeNull()
+  for (const note of request.Notes!) expect(screen.queryByText(note)).toBeNull()
   expect(view.container.querySelector('details')).toBeNull()
   expect(view.container.textContent).not.toContain('NativeDayOrganizationGrossProfit')
   expect(view.container.textContent).not.toContain('a'.repeat(64))
@@ -46,20 +46,17 @@ it('shows the result with the server notes and without technical report descript
 it('warns explicitly about ignored filters and their server reason', () => {
   show({ ...request, IgnoredFilters: [{ Field: 'Договір', Condition: 'Дорівнює', Values: ['Обраний договір'], IgnoredReason: 'Цей відбір не застосовано до результату.' }] })
   const warning = screen.getByRole('alert')
-  expect(within(warning).getByText('Увага: фільтри не застосовано')).toBeTruthy()
+  expect(within(warning).getByText('Відбори не застосовано')).toBeTruthy()
   expect(within(warning).getByText('Договір Дорівнює: Обраний договір (Цей відбір не застосовано до результату.)')).toBeTruthy()
 })
 
-it('shows the returns note once in its own warning and the other notes in the notes block', () => {
-  const gap = 'Повернень без підтвердженого первинного продажу в GBA: 1 (рядків: 1), сума 1.22 EUR з ПДВ. Їх не віднесено до жодного менеджера первинного продажу, тому до цього відбору вони не входять і звіт не блокують; у звіті без відбору вони показані в групі «Не вказано».'
-  show({ ...request, Notes: [...request.Notes!, gap] })
-  const warning = screen.getByRole('alert')
-  expect(within(warning).getByText('Частину повернень не віднесено до первинного продажу')).toBeTruthy()
-  expect(within(warning).getByText(gap)).toBeTruthy()
-  expect(screen.getAllByText(gap)).toHaveLength(1)
-  const notes = within(screen.getByRole('complementary', { name: 'Примітки до звіту' }))
-  for (const note of request.Notes!) expect(notes.getByText(note)).toBeTruthy()
-  expect(notes.queryByText(gap)).toBeNull()
+it('does not show provenance notes such as unattributed returns or unshipped sales', () => {
+  const gap = 'Повернень без підтвердженого первинного продажу в GBA: 1 (рядків: 1), сума 1.22 EUR з ПДВ.'
+  const unshipped = 'Продажі GBA без відвантаження не враховано в собівартості та прибутку: 10 на 1256.49 EUR з ПДВ (рядків: 13).'
+  show({ ...request, Notes: [...request.Notes!, gap, unshipped] })
+  expect(screen.queryByRole('alert')).toBeNull()
+  expect(screen.queryByText(gap)).toBeNull()
+  expect(screen.queryByText(unshipped)).toBeNull()
   expect(screen.getByText('12.09.2026')).toBeTruthy()
 })
 
@@ -72,53 +69,28 @@ it('renders server HTML as text in ignored-filter warnings', () => {
   expect(view.container.textContent).not.toContain(`Період розрахунку: ${html}`)
 })
 
-it('shows the server explanation of profit and quantity as plain text and folds notes beyond three', () => {
-  const unshipped = 'Продажі GBA без відвантаження не враховано в собівартості та прибутку: 10 на 1256.49 EUR з ПДВ (рядків: 13). Ці суми входять у продажі, тому прибуток менший за різницю продажів і собівартості.'
-  const view = show({ ...request, Notes: [...request.Notes!, unshipped] })
-  const notes = screen.getByRole('complementary', { name: 'Примітки до звіту' })
-  expect(within(notes).getByText(unshipped)).toBeTruthy()
-  expect(notes.textContent).toContain('1256.49 EUR')
-  const folded = view.container.querySelector('details')!
-  expect(within(folded).getByText('Ще примітки: 1')).toBeTruthy()
-  expect(folded.querySelectorAll('li')).toHaveLength(1)
-  expect(notes.querySelectorAll(':scope > ul > li')).toHaveLength(3)
-  expect(notes.querySelector(':scope > ul > li')?.textContent).toBe(unshipped)
-})
-
-it('shows no notes block when the server sends none', () => {
-  show({ ...request, Notes: [] })
-  expect(screen.queryByRole('complementary', { name: 'Примітки до звіту' })).toBeNull()
-})
-
-it('keeps missing legacy attribution explicit rather than inventing dates or completeness', () => {
-  show(null)
-  expect(screen.getByText('Опис розрахунку відсутній')).toBeTruthy()
-  expect(screen.queryByText(/Період розрахунку:/)).toBeNull()
-  expect(screen.queryByText('Відборів немає.')).toBeNull()
-})
-
-it('keeps a missing ignored-filter list explicit without showing technical metadata', () => {
-  show({ ...request, HasPeriod: false, Filters: null, IgnoredFilters: null, Notes: null })
-  expect(screen.getByText('Відомості про незастосовані фільтри відсутні')).toBeTruthy()
-  expect(screen.queryByText('Сервер не передав примітки до розрахунку.')).toBeNull()
-  expect(screen.queryByText('Сервер не передав відомості про застосовані фільтри.')).toBeNull()
-})
-
-it('describes current stock only when the server marks it current', () => {
-  const times = { ObservationStartedAtUtc: '2026-09-27T10:00:00.0000000Z', ObservationCompletedAtUtc: '2026-09-27T10:00:01.0000000Z' }
-  const view = show({ ...request, ...times })
-  expect(screen.queryByText('Поточний стан')).toBeNull()
+it('shows no technical banner when attribution or the ignored-filter list is missing', () => {
+  const view = show(null)
+  expect(screen.queryByText('Опис розрахунку відсутній')).toBeNull()
+  expect(screen.queryByRole('alert')).toBeNull()
   view.unmount()
+  show({ ...request, HasPeriod: false, Filters: null, IgnoredFilters: null, Notes: null })
+  expect(screen.queryByText('Відомості про незастосовані фільтри відсутні')).toBeNull()
+  expect(screen.queryByRole('alert')).toBeNull()
+})
+
+it('does not label a current snapshot with a technical banner', () => {
+  const times = { ObservationStartedAtUtc: '2026-09-27T10:00:00.0000000Z', ObservationCompletedAtUtc: '2026-09-27T10:00:01.0000000Z' }
   show({ ...request, ...times, IsCurrentSnapshot: true, HasPeriod: false })
-  expect(screen.getByText('Поточний стан')).toBeTruthy()
-  expect(screen.getByText('Дані прочитано: 27.09.2026 13:00')).toBeTruthy()
+  expect(screen.queryByText('Поточний стан')).toBeNull()
+  expect(screen.queryByText(/Дані прочитано/)).toBeNull()
 })
 
 it('retains repeated ignored filters and hides exact technical identities', () => {
   const guid = '11111111222233334444555555555555'
   const view = show({ ...request, Notes: ['Повторена примітка', 'Повторена примітка'],
     IgnoredFilters: [0, 1].map(() => ({ Field: 'Вид товару Fenix', Condition: 'У списку', Values: [guid, '[Id=42]', 'Назва товару [Id=64]'], IgnoredReason: null })) })
-  expect(screen.getAllByText('Повторена примітка')).toHaveLength(1)
+  expect(screen.queryByText('Повторена примітка')).toBeNull()
   expect(view.container.textContent).not.toContain(guid)
   expect(view.container.textContent).not.toContain('[Id=42]')
   expect(view.container.textContent).not.toContain('[Id=64]')

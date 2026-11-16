@@ -73,7 +73,7 @@ it('opens the product matrix form without the original matrix', async () => {
   await openWorkbook('Матриця товарів')
   expect(screen.queryByRole('heading', { name: 'Аналіз залишків і продажів' })).toBeNull()
   expect(screen.queryByText('Впарювання.xls')).toBeNull()
-  expect(screen.getByRole('button', { name: 'Відкрити Аналіз залишків і продажів.xls' }).getAttribute('aria-current')).toBe('true')
+  expect(screen.getByRole('button', { name: 'Відкрити Аналіз залишків і продажів' }).getAttribute('aria-current')).toBe('true')
   openWorkbookSettingsSection('Фільтри')
   expect(screen.queryByRole('group', { name: 'Групування' })).toBeNull()
   expect(screen.queryByText('Додатково', { selector: 'summary' })).toBeNull()
@@ -87,7 +87,7 @@ it('opens the supplier workbook with its organizations, saved supplier list and 
       { Id: '10551', Name: 'ФОП Самолюк Алла Дмитрівна [10551]' }, { Id: '10552', Name: 'ФОП Самолюк Юрій Миколайович [10552]' }]
     : params.value.startsWith('BENEFIT') ? [{ Id: '614427', Name: 'BENEFIT OTOMOTIV IC DIS TIC. LTD. STI,Туреччина [614427]' }] : [])
   const view = await openWorkbook('Валовий прибуток за постачальниками')
-  expect(screen.getByText(/Не знайдено однозначно в GBA, тому не застосовано: YPS GLOBAL/)).toBeTruthy()
+  expect(screen.getByText(/Не знайдено, тому не застосовано: YPS GLOBAL/)).toBeTruthy()
   fireEvent.submit(view.container.querySelector('form')!)
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
@@ -116,11 +116,11 @@ it('lists the six workbooks by name in one switcher row and opens the first one 
   expect(within(switcher).queryByText(/Часткова|набір даних|режим/)).toBeNull()
   expect(within(switcher).queryByText('Валовий прибуток по постачальниках')).toBeNull()
   expect(screen.queryByRole('heading', { name: 'Валовий прибуток' })).toBeNull()
-  expect(screen.getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBe('true')
-  fireEvent.click(within(switcher).getByRole('button', { name: 'Відкрити ВП по постачальниках.xls' }))
+  expect(screen.getByRole('button', { name: 'Відкрити ВП' }).getAttribute('aria-current')).toBe('true')
+  fireEvent.click(within(switcher).getByRole('button', { name: 'Відкрити ВП по постачальниках' }))
   await findOpenedWorkbook('ВП по постачальниках.xls')
   expect(screen.queryByRole('heading', { name: 'Валовий прибуток по постачальниках' })).toBeNull()
-  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП.xls' }).getAttribute('aria-current')).toBeNull()
+  expect(within(switcher).getByRole('button', { name: 'Відкрити ВП' }).getAttribute('aria-current')).toBeNull()
   expect(within(switcher).getAllByRole('button', { name: /^Відкрити / })).toHaveLength(6)
 })
 

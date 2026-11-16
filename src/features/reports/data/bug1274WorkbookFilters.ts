@@ -167,5 +167,5 @@ export async function resolveBug1274WorkbookFilters(fileName: string, dataset: R
 
 export function workbookFiltersNotice(resolved: ResolvedWorkbookFilters | undefined): string {
   if (!resolved || !resolved.unresolved.length) return ''
-  return ` Не знайдено однозначно в GBA, тому не застосовано: ${resolved.unresolved.join('; ')}.`
+  return ` Не знайдено, тому не застосовано: ${resolved.unresolved.join('; ')}.`
 }

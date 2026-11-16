@@ -31,8 +31,8 @@ beforeEach(() => {
 afterEach(cleanup)
 async function ready() {
   const view = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
-  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити gba:purchases-constructor:v1' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити gba:purchases-constructor:v1' })).toHaveProperty('ariaCurrent', 'true'))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити Звіт по закупам' }))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Звіт по закупам' })).toHaveProperty('ariaCurrent', 'true'))
   await screen.findByRole('button', { name: 'Додати відбір' })
   return view
 }

@@ -17,6 +17,7 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
+import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced } from '../testing/workbookDesk'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
@@ -46,7 +47,7 @@ const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage 
 async function openWorkbook(label: string) {
   const view = render(page())
   await findWorkbookLanding()
-  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${WORKBOOK_FILES[label] ?? label}` }))
+  fireEvent.click(screen.getByRole('button', { name: `Відкрити ${workbookDisplayFileName(WORKBOOK_FILES[label] ?? label)}` }))
   expandWorkbookSettings()
   openWorkbookAdvanced()
   return view

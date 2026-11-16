@@ -7,7 +7,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportDataset, ReportSelectedValue } from '../types'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
-import { NATIVE_PRICE_FILTER_FIELDS, PRICE_TOP_REFERENCE_NOTE, type NativePriceFilterField } from '../data/nativePriceFilterLookup'
+import { NATIVE_PRICE_FILTER_FIELDS, type NativePriceFilterField } from '../data/nativePriceFilterLookup'
 import { priceDatasetFixture, priceSelectionFixture } from '../data/nativePriceFilterLookup.test-fixtures'
 vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
 const api=vi.mocked(apiRequest),route='/report/datasets/price-comparison/filters/lookup'
@@ -29,11 +29,11 @@ it.each(cases)('selects source46 field$field condition$condition through exact o
  if(field===12||field===14)expect(api.mock.calls[0][1]?.query).toMatchObject({from:'2026-10-01',to:'2026-10-31'})
  else expect(api.mock.calls[0][1]?.query).not.toHaveProperty('from')
 })
-it('preserves padded TOP saved identity exactly and explains that restoration does not imply a binary financial partition',async()=>{
+it('preserves padded TOP saved identity exactly',async()=>{
  const raw='{"Name":" A ","Archived":true}',initial=[{Data:raw,Name:'Збережено',Value:0}]as unknown as ReportSelectedValue[]
  api.mockResolvedValue([{Id:'01',Name:'01'}]);render(<Form field={3} condition={2} initial={initial}/>)
- await screen.findByText(new RegExp('Пошук точного коду TOP'))
- expect(screen.getByText(text=>text.includes(PRICE_TOP_REFERENCE_NOTE))).toBeTruthy();expect(values()).toEqual(initial)
+ await screen.findByRole('combobox',{name:'Значення'})
+ expect(values()).toEqual(initial)
  await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'id:01')
  await waitFor(()=>expect(api.mock.calls.at(-1)?.[1]?.query).toMatchObject({exactValue:'01',field:3,offset:0}))
  await userEvent.click(await screen.findByRole('option',{name:'01'}));expect(values()).toEqual([...initial,{Data:{Name:'01'},Name:'01',Value:0}]);expect(values()[0].Data).toBe(raw)
