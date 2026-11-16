@@ -1,3 +1,5 @@
+import { reportFilterExpressionError } from './reportFilterExpression'
+import type { ReportDataset, ReportRequestBody, ReportSelection } from '../types'
 import { readPhysicalQuantityExceptions, type PhysicalQuantityException } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions'
 import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 
@@ -60,7 +62,11 @@ export type StockMovementCapability = {
   DocumentKinds: StockMovementDocumentKind[]
   MaximumLimit: number
   Notes: string[]
+  FilterExpression?: StockMovementFilterExpressionCapability
 }
+export type StockMovementFilterExpressionCapability = { Version: 1; MaximumDepth: number; MaximumLeaves: number; Operators: Array<1 | 2> }
+export type StockMovementFilterNode = { Kind: 1 | 2; Children: StockMovementFilterNode[] } | { Kind: 3; Filter: StockMovementFilterField }
+export type StockMovementFilterExpression = { Version: 1; Root: StockMovementFilterNode }
 export type StockMovementLookupItem = { Id: number; Name: string; Detail: string | null }
 type StockMovementCondition = { Measure: StockMovementMeasure; Comparison: StockMovementComparison; Value: number }
 export type StockMovementSelection = { id: number; label: string }
@@ -92,6 +98,7 @@ export type StockMovementDraft = {
   productTops: string[]
   measureUnitIds: number[]
   filterRows: StockMovementFilterRow[]
+  filterExpression?: { Version: 1; Root: unknown } | null
   documentKinds: string[]
   documentText: string
   conditions: StockMovementCondition[]
@@ -113,6 +120,7 @@ export type StockMovementRequest = {
   ProductGroupIds: number[]
   ProductTops: string[]
   MeasureUnitIds: number[]
+  FilterExpression?: StockMovementFilterExpression
   DocumentKinds: string[]
   DocumentText: string | null
   Conditions: StockMovementCondition[]
@@ -194,7 +202,13 @@ export function normalizeStockMovementCapability(raw: unknown): StockMovementCap
     || !value.DocumentKinds.every(kind => record(kind) && typeof kind.Code === 'string' && typeof kind.Name === 'string')
     || !count(value.MaximumLimit) || !strings(value.Notes))
     throw new Error('Сервер не підтвердив можливості звіту руху товару.')
-  return value as StockMovementCapability
+  const expression = value.FilterExpression
+  const supported = record(expression) && expression.Version === 1 && count(expression.MaximumDepth) && count(expression.MaximumLeaves)
+    && Array.isArray(expression.Operators) && expression.Operators.length > 0 && expression.Operators.every(item => item === 1 || item === 2)
+  const { FilterExpression: _ignored, ...rest } = value
+  void _ignored
+  return (supported ? { ...rest, FilterExpression: { Version: 1, MaximumDepth: expression.MaximumDepth, MaximumLeaves: expression.MaximumLeaves,
+    Operators: expression.Operators } } : rest) as StockMovementCapability
 }
 
 export function normalizeStockMovementLookup(raw: unknown): StockMovementLookupItem[] {
@@ -306,6 +320,39 @@ function articleFilter(draft: StockMovementDraft): { match: StockMovementArticle
   return text ? { match: draft.articleMatch, articles: [text] } : { match: '', articles: [] }
 }
 
+type SelectionTreeNode = { Kind: number; Children?: SelectionTreeNode[]; SelectionIndex?: number }
+
+export function stockMovementFilterActive(draft: StockMovementDraft, field: StockMovementFilterField): boolean {
+  const request = buildStockMovementRequest({ ...draft, filterExpression: null })
+  switch (field) {
+    case 'organization': return request.OrganizationIds.length > 0
+    case 'product': return request.ProductIds.length > 0
+    case 'article': return request.ArticleMatch !== ''
+    case 'top': return request.ProductTops.length > 0
+    case 'group': return request.ProductGroupIds.length > 0
+    case 'unit': return request.MeasureUnitIds.length > 0
+    case 'warehouse': return request.WarehouseIds.length > 0
+    case 'documentKind': return request.DocumentKinds.length > 0
+    case 'documentText': return request.DocumentText !== null
+  }
+}
+
+export function stockMovementFilterExpression(draft: StockMovementDraft): StockMovementFilterExpression | undefined {
+  const root = draft.filterExpression?.Root as SelectionTreeNode | undefined
+  if (!root) return undefined
+  const rows = draft.filterRows ?? []
+  function convert(node: SelectionTreeNode): StockMovementFilterNode | null {
+    if (node.Kind === 3) {
+      const field = node.SelectionIndex === undefined ? null : rows[node.SelectionIndex]?.field ?? null
+      return field && stockMovementFilterActive(draft, field) ? { Kind: 3, Filter: field } : null
+    }
+    const children = (node.Children ?? []).flatMap(child => { const converted = convert(child); return converted ? [converted] : [] })
+    return children.length ? { Kind: node.Kind === 2 ? 2 : 1, Children: children } : null
+  }
+  const converted = convert(root)
+  return converted ? { Version: 1, Root: converted } : undefined
+}
+
 export function buildStockMovementRequest(draft: StockMovementDraft, offset = 0, limit = WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE): StockMovementRequest {
   const article = articleFilter(draft)
   const applies = (field: StockMovementFilterField) => stockMovementFilterApplies(draft, field)
@@ -323,6 +370,7 @@ export function buildStockMovementRequest(draft: StockMovementDraft, offset = 0,
     ProductGroupIds: ids('group', draft.groups.map(item => item.id)),
     ProductTops: applies('top') ? [...new Set(draft.productTops ?? [])].sort() : [],
     MeasureUnitIds: ids('unit', draft.measureUnitIds ?? []),
+    ...(draft.filterExpression ? (expression => expression ? { FilterExpression: expression } : {})(stockMovementFilterExpression(draft)) : {}),
     DocumentKinds: applies('documentKind') ? [...draft.documentKinds].sort() : [],
     DocumentText: text ? text : null,
     Conditions: draft.conditions.filter(condition => Number.isFinite(condition.Value)),
@@ -347,7 +395,28 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
   if (!draft.measures.length) return 'Оберіть хоча б один показник.'
   if (draft.articleMatch === 'inList' && draft.articleList.length > 500) return 'Можна вказати до 500 артикулів.'
   if (draft.conditions.some(condition => !Number.isFinite(condition.Value))) return 'Вкажіть число в умові за показником.'
+  if (draft.filterExpression) {
+    const view = stockMovementExpressionView(draft, capability)
+    return reportFilterExpressionError(view.data, view.dataset)
+  }
   return null
+}
+
+export function stockMovementExpressionView(draft: StockMovementDraft, capability: StockMovementCapability) {
+  const selections: ReportSelection[] = (draft.filterRows ?? []).map(row => {
+    const definition = row.field ? STOCK_MOVEMENT_FILTER_DEFINITIONS[row.field] : null
+    return {
+      IsChecked: !!row.field && row.enabled && stockMovementFilterActive(draft, row.field),
+      SelectedField: { Type: definition?.type ?? -1, Name: definition?.label ?? 'Поле не вибрано' },
+      FilterCondition: { Type: 2, Name: definition?.condition ?? '' },
+      Values: [],
+    }
+  })
+  const cap = capability.FilterExpression
+  const dataset = { Filters: [], FilterExpression: cap ? { Version: 1, MaximumDepth: cap.MaximumDepth, MaximumLeaves: cap.MaximumLeaves,
+    MaximumNodes: 128, Operators: cap.Operators } : undefined } as unknown as ReportDataset
+  const data = { selections, filterExpression: draft.filterExpression ?? undefined } as unknown as ReportRequestBody
+  return { data, dataset }
 }
 
 export function moveLevel(levels: readonly StockMovementLevel[], level: StockMovementLevel, direction: -1 | 1): StockMovementLevel[] {

@@ -196,6 +196,43 @@ describe('native warehouse stock movement', () => {
     expect(JSON.stringify(previews()[0])).toMatchInlineSnapshot(`"{"Version":1,"From":"2026-10-01","To":"2026-10-26","WarehouseIds":[2968,2975],"OrganizationIds":[1],"ProductIds":[],"ArticleMatch":"","Articles":[],"ProductGroupIds":[7],"ProductTops":["B"],"MeasureUnitIds":[2],"DocumentKinds":["sale","transfer"],"DocumentText":null,"Conditions":[],"Levels":["warehouse","product","registrar"],"Measures":["opening","incoming","outgoing","closing"],"GrandTotals":true,"NegativeRed":true,"Offset":0,"Limit":200}"`)
   })
 
+  it('combines movement filters with І/АБО groups and sends the named tree', async () => {
+    vi.mocked(getStockMovementCapability).mockResolvedValue({ ...structuredClone(stockMovementCapability),
+      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } })
+    render(panel())
+    const warehouse = await addFilter('Склад')
+    fireEvent.click(within(warehouse).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: /^СКЛАД -1 \[\d+\] · Фенікс$/ }))
+    const top = await addFilter('Топ')
+    fireEvent.click(within(top).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'A' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
+    fireEvent.click(screen.getByRole('combobox', { name: 'Оператор — Коренева група' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'АБО — будь-яка умова' }))
+    await applyReport()
+    expect(previews()[0]).toMatchObject({ ProductTops: ['A'], FilterExpression: { Version: 1, Root: { Kind: 2,
+      Children: [{ Kind: 3, Filter: 'warehouse' }, { Kind: 3, Filter: 'top' }] } } })
+    fireEvent.click(screen.getByRole('button', { name: 'Видалити умову 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+    await waitFor(() => expect(previews()).toHaveLength(2))
+    expect(previews()[1]).toMatchObject({ WarehouseIds: [], FilterExpression: { Root: { Kind: 2, Children: [{ Kind: 3, Filter: 'top' }] } } })
+  })
+
+  it('blocks a filter left outside the І/АБО tree', async () => {
+    vi.mocked(getStockMovementCapability).mockResolvedValue({ ...structuredClone(stockMovementCapability),
+      FilterExpression: { Version: 1, MaximumDepth: 8, MaximumLeaves: 9, Operators: [1, 2] } })
+    render(panel())
+    const top = await addFilter('Топ')
+    fireEvent.click(within(top).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'A' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Налаштувати групи І/АБО' }))
+    const unit = await addFilter('Одиниця виміру')
+    fireEvent.click(within(unit).getByRole('combobox', { name: 'Значення' }))
+    fireEvent.click(await screen.findByRole('option', { name: 'шт [1]' }))
+    expect((await screen.findAllByText(/не включено до логіки/)).length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+  })
+
   it('shows a failed top list with a retry instead of an empty list', async () => {
     vi.mocked(getReportProductTop).mockRejectedValueOnce(new Error('offline'))
     render(panel())

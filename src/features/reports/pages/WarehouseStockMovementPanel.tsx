@@ -15,7 +15,7 @@ import {
   searchStockMovementGroups, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
 import {
-  buildStockMovementRequest, clearStockMovementFilter, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
+  buildStockMovementRequest, clearStockMovementFilter, stockMovementExpressionView, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel, parseArticleList,
   STOCK_MOVEMENT_ARTICLE_MATCHES, STOCK_MOVEMENT_COMPARISON_LABELS, STOCK_MOVEMENT_COMPARISONS,
   STOCK_MOVEMENT_LEVEL_LABELS, STOCK_MOVEMENT_LEVELS, STOCK_MOVEMENT_MEASURE_LABELS, STOCK_MOVEMENT_MEASURES, STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE, STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE, STOCK_MOVEMENT_UNKNOWN_CELL_NOTE, STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE, stockMovementDraftError,
   stockMovementPeriodPresets, summarizeStockMovementFilters, toggleLevel, WAREHOUSE_STOCK_MOVEMENT_PAGE_SIZE, WAREHOUSE_STOCK_MOVEMENT_TITLE,
@@ -26,6 +26,8 @@ import {
 import { getReportProductTop } from '../api/reportsApi'
 import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
+import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
+import { removeFilterSelection } from '../data/reportFilterExpression'
 import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportValuePicker } from './ReportValuePicker'
@@ -334,7 +336,8 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     const row = draft.filterRows[index]
     if (!row) return
     if (row.field === 'article') setArticleListText('')
-    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}), filterRows: draft.filterRows.filter((_, position) => position !== index) })
+    update({ ...(row.field ? clearStockMovementFilter(draft, row.field) : {}), filterRows: draft.filterRows.filter((_, position) => position !== index),
+      ...(draft.filterExpression ? { filterExpression: removeFilterSelection(draft.filterExpression, index) as StockMovementDraft['filterExpression'] } : {}) })
   }
   const changeRowField = (index: number, field: StockMovementFilterField | null) => {
     const row = draft.filterRows[index]
@@ -399,6 +402,8 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
           content: <Stack gap={6}>
             <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
               copyUnavailable={MOVEMENT_COPY_UNAVAILABLE}
+              footer={capability.FilterExpression || draft.filterExpression ? (view => <ReportFilterExpressionPanel data={view.data} dataset={view.dataset}
+                disabled={locked} notice={null} onChange={value => update({ filterExpression: value == null ? null : value as StockMovementDraft['filterExpression'] })} />)(stockMovementExpressionView(draft, capability)) : null}
               onAdd={() => update({ filterRows: [...draft.filterRows, { id: nextRowId(draft.filterRows), field: null, enabled: true }] })}
               onDelete={index => removeRow(index)}
               onCopy={() => undefined}
