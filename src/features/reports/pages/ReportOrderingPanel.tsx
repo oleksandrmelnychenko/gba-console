@@ -39,7 +39,7 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
           const selectedMeasure = rule?.Measure == null ? null : dataset?.Measurements.find(field => field.Type === rule.Measure)
           const choices = activeMeasures.map(field => ({ value: String(field.Type), label: dataset?.Measurements.find(item => item.Type === field.Type)?.Name ?? field.Label ?? field.Name }))
           if (rule?.Measure != null && !choices.some(item => item.value === String(rule.Measure))) choices.push({ value: String(rule.Measure), label: `Вимкнений показник: ${selectedMeasure?.Name ?? `[${rule.Measure}]`}` })
-          return <SimpleGrid key={group.type} className="reports-constructor-rule-fields" cols={{ base: 1, sm: 2, lg: 4 }} spacing="xs" style={{ alignItems: 'end' }}>
+          return <SimpleGrid key={group.type} className="reports-constructor-rule-fields" type="container" cols={{ base: 1, '36em': 2, '72em': 4 }} spacing="xs" style={{ alignItems: 'end' }}>
             <Select label={`Сортування — ${scope}`} value={rule ? String(rule.By) : 'default'} allowDeselect={false} disabled={unavailable}
               description={unavailableReason}
               data={[{ value: 'default', label: 'Звичайний порядок' }, ...byOptions.filter(option => allowedSet.has(Number(option.value) as 1 | 2 | 3))]}
