@@ -418,7 +418,7 @@ export function stockMovementTypedText(draft: StockMovementDraft): string {
 
 export function stockMovementDraftError(draft: StockMovementDraft, capability: StockMovementCapability): string | null {
   if (!date(draft.from) || !date(draft.to)) return 'Вкажіть дати початку і кінця періоду.'
-  if (draft.from < capability.MinimumFrom) return `Історія руху в GBA починається з ${displayDate(capability.MinimumFrom)}.`
+  if (draft.from < capability.MinimumFrom) return `Рух товару доступний з ${displayDate(capability.MinimumFrom)}.`
   if (draft.to > capability.Today) return 'Дата кінця періоду не може бути пізнішою за сьогодні.'
   if (draft.from > draft.to) return 'Дата початку пізніша за дату кінця.'
   if (!draft.levels.length) return 'Оберіть хоча б одне групування рядків.'
@@ -551,7 +551,7 @@ export function stockMovementPeriodPresets(today: string, minimum: string): { la
   const previousEnd = new Date(Date.parse(`${month}T00:00:00Z`) - 86400000).toISOString().slice(0, 10)
   const previousStart = `${previousEnd.slice(0, 7)}-01`
   return [
-    { label: 'Уся історія GBA', from: minimum, to: today },
+    { label: 'Увесь період', from: minimum, to: today },
     { label: 'Поточний місяць', from: clamp(month), to: today },
     { label: 'Минулий місяць', from: clamp(previousStart), to: previousEnd < minimum ? minimum : previousEnd },
     { label: 'Поточний рік', from: clamp(`${today.slice(0, 4)}-01-01`), to: today },

@@ -2,7 +2,7 @@ import type { ReportMeasurementGroup, ReportMeasurementItem, ReportMeasurementSe
 
 /** Presentation categories only: the dataset still decides which fields are executable. */
 export function reportGroupingPath(type: number): string[] {
-  if (type === 82) return ['Джерело даних']
+  if (type === 82) return ['Набір клієнтів']
   if ([0, 1, 2, 3].includes(type)) return ['Період']
   if ([5, 6, 7, 8, 9, 10, 28, 83].includes(type)) return ['Товар']
   if ([11, 12, 13, 14, 15, 16, 79, 80].includes(type)) return ['Покупець']

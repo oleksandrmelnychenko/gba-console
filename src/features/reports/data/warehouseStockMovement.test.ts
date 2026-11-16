@@ -110,7 +110,7 @@ describe('warehouse stock movement request', () => {
 
   it('offers 1C-like period presets clamped to the GBA history start', () => {
     expect(stockMovementPeriodPresets('2026-10-26', '2025-01-01')).toEqual([
-      { label: 'Уся історія GBA', from: '2025-01-01', to: '2026-10-26' },
+      { label: 'Увесь період', from: '2025-01-01', to: '2026-10-26' },
       { label: 'Поточний місяць', from: '2026-10-01', to: '2026-10-26' },
       { label: 'Минулий місяць', from: '2026-09-01', to: '2026-09-30' },
       { label: 'Поточний рік', from: '2026-01-01', to: '2026-10-26' },

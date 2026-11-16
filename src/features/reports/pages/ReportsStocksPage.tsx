@@ -1411,7 +1411,7 @@ function ConstructorPresentationParameters({ dataset, request, disabled, onPrese
   const detailsError = details || detailsSupported ? documentDetailsError(details ? request : { ...request, sorted: { ...request.sorted, ...enabledLayout } }, dataset) : null
   const detailsReason = !details && !detailsSupported ? 'Детальні записи доступні лише у звітах продажів і валового прибутку.'
     : detailsError && !details ? `${detailsError} Налаштування не змінено.`
-    : 'Окремі рядки документів GBA. Імпортовані дані без доказу рядка залишаються окремо за документом і товаром: «Без підтвердженої деталізації».'
+    : 'Окремі рядки документів.'
   return <>
     <Checkbox size="xs" label="Від’ємне червоним" checked={value.negativeRed} disabled={disabled}
       onChange={event => onPresentationChange({ ...value, negativeRed: event.currentTarget.checked })} />

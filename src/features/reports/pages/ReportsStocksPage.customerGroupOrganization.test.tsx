@@ -19,7 +19,7 @@ function template(condition = 2, checked = true): ReportTemplate {
   const data = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-27')
   data.customerGroups = { Version: 1, Groups: [{ Name: 'Еталон', ClientIds: [71, 72] }, { Name: 'Набір B', ClientIds: [72, 73] }] }
   data.sorted.Row = [{ type: 7, key: 'ProductName', label: 'Назва товару' }, { type: 3, key: 'Day', label: 'День' }]
-  data.sorted.Col = [{ type: 82, key: 'CustomerComparisonSource', label: 'Джерело даних' }]
+  data.sorted.Col = [{ type: 82, key: 'CustomerComparisonSource', label: 'Набір клієнтів' }]
   data.sorted.Measurements = [112, 109, 114].map(Type => ({ Type, Name: String(Type), parentName: String(Type), IsChecked: true }))
   data.selections = [{ IsChecked: checked, SelectedField: { Type: 0, Name: 'Organization' }, FilterCondition: { Type: condition, Name: condition === 0 ? 'Дорівнює' : condition === 1 ? 'Не дорівнює' : 'У списку' },
     Values: JSON.parse(String.raw`[{"Data":"{\"Id\":10}","Name":"Стара організація","Value":10},{"Data":{"Id":30},"Name":"Архівна організація","Value":30}]`) }]

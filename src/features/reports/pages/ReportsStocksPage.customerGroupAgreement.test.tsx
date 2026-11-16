@@ -18,7 +18,7 @@ const dataset=parseReportDatasets([fixture.dataset])[0]
 function template(condition=2,checked=true):ReportTemplate{
  const data=defaultDatasetRequest(dataset,'2026-10-01','2026-10-27')
  data.customerGroups={Version:1,Groups:[{Name:'Еталон',ClientIds:[71,72]},{Name:'Набір B',ClientIds:[72,73]}]}
- data.sorted.Row=[{type:5,key:'Product',label:'Товар'}];data.sorted.Col=[{type:82,key:'CustomerComparisonSource',label:'Джерело даних'}]
+ data.sorted.Row=[{type:5,key:'Product',label:'Товар'}];data.sorted.Col=[{type:82,key:'CustomerComparisonSource',label:'Набір клієнтів'}]
  data.sorted.Measurements=[112,109,114].map(Type=>({Type,Name:String(Type),parentName:String(Type),IsChecked:true}))
  data.selections=[{IsChecked:checked,SelectedField:{Type:9,Name:'ClientAgreement'},FilterCondition:{Type:condition,Name:condition===0?'Дорівнює':condition===1?'Не дорівнює':'У списку'},Values:JSON.parse(String.raw`[{"Data":"{\"Id\":\"9007199254740993\"}","Name":"Стара назва","Value":0},{"Data":{"Id":"9223372036854775807"},"Name":"Архівний договір","Value":0}]`)}]
  return{Id:'agreement-exact',Revision:1,UpdatedAtUtc:'2026-10-30T00:00:00Z',Name:'Набори з договором',Data:data}

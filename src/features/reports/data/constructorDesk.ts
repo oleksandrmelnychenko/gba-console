@@ -14,7 +14,7 @@ export const CONSTRUCTOR_CONDITION_LABELS: Readonly<Record<number, string>> = {
   7: 'Не в групі',
 }
 
-export const PROPERTIES_AND_CATEGORIES_UNAVAILABLE = 'У GBA немає додаткових властивостей і категорій об’єктів, тому цей параметр недоступний. Поточні реквізити товару налаштовуються в «Додаткових налаштуваннях».'
+export const PROPERTIES_AND_CATEGORIES_UNAVAILABLE = 'Додаткові властивості й категорії недоступні. Поля товару — в «Додаткових налаштуваннях».'
 
 export function constructorConditionLabel(type: number, fallback: string): string {
   return CONSTRUCTOR_CONDITION_LABELS[type] ?? fallback
@@ -67,7 +67,7 @@ function groupingCategory(type: number): string | undefined {
   if ([17, 18, 19, 20, 22, 23, 66, 67, 81].includes(type)) return 'Документ продажу'
   if ([21, 24, 25].includes(type)) return 'Постачальник'
   if ([29, 30, 31, 32, 33].includes(type)) return 'Склад'
-  if (type === 82) return 'Джерело даних'
+  if (type === 82) return 'Набір клієнтів'
   if (type === 46) return 'Аналітика'
   return 'Інше'
 }

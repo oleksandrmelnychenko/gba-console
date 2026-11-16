@@ -259,7 +259,7 @@ const wireMetadata = {
       {
         "Position": 0,
         "Identity": "CustomerComparisonSource",
-        "Caption": "Джерело даних",
+        "Caption": "Набір клієнтів",
         "DisplayKind": "Text",
         "KeyKind": "Text",
         "Captioned": false,
@@ -681,7 +681,7 @@ function fixture(source: keyof typeof wireMetadata, identity: string, caption: s
     Page: { Offset: 0, Limit: 50, TotalVisibleRows: 1, ReturnedRows: 1, HasMore: false },
     Request: { DataSource: source, IsCurrentSnapshot: false, HasPeriod: true,
       PeriodFrom: '20.10.2026', PeriodTo: '20.10.2026', RowGroupings: [raw.Caption, product.Caption],
-      ColumnGroupings: source === 'NativeCustomerGroupComparison' ? ['Джерело даних'] : [],
+      ColumnGroupings: source === 'NativeCustomerGroupComparison' ? ['Набір клієнтів'] : [],
       Measures: columns.map(column => column.Values.at(-1)!.Caption), Filters: [], IgnoredFilters: [], Notes: [] },
     RowSchema: [raw, product], ColumnSchema: metadata.ColumnSchema,
     Rows: [{ Ordinal: 0, SourceIndex: 0, Values: [axisValue(caption), axisValue('Товар [38242326]', '38242326', 'signedInteger')] }],

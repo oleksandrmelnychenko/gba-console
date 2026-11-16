@@ -18,7 +18,7 @@ const flags={version:1,negativeRed:false,grandTotals:false}
 function template(value:unknown=flags):ReportTemplate {
  const data=defaultDatasetRequest(dataset,'2026-10-01','2026-10-27')
  data.customerGroups={Version:1,Groups:[{Name:'Еталон',ClientIds:[71,72]},{Name:'Набір B',ClientIds:[72,73]}]}
- data.sorted.Row=[{type:5,key:'Product',label:'Товар'}];data.sorted.Col=[{type:82,key:'CustomerComparisonSource',label:'Джерело даних'}]
+ data.sorted.Row=[{type:5,key:'Product',label:'Товар'}];data.sorted.Col=[{type:82,key:'CustomerComparisonSource',label:'Набір клієнтів'}]
  data.sorted.Measurements=[112,109,114].map(Type=>({Type,Name:String(Type),parentName:String(Type),IsChecked:true}))
  data.selections=[]
  if(value!==undefined)data.constructorPresentation=value
