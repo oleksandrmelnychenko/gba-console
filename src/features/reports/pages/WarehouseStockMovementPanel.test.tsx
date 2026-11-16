@@ -47,6 +47,7 @@ async function applyReport() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
   vi.mocked(getStockMovementCapability).mockResolvedValue(structuredClone(stockMovementCapability))
   vi.mocked(getStockMovementWarehouses).mockResolvedValue(structuredClone(stockMovementWarehouses))
   vi.mocked(getStockMovementOrganizations).mockResolvedValue(structuredClone(stockMovementOrganizations))

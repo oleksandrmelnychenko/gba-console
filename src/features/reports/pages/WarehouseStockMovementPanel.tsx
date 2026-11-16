@@ -439,7 +439,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
               onClick={() => update({ conditions: [...draft.conditions, { Measure: 'closing', Comparison: 'greater', Value: 0 }] })}>Умова за показником</Button> : null}
           </Stack> },
       ]}
-      advanced={<Stack gap={4}>{capability.Notes.map(note => <Text key={note} size="xs" c="dimmed">{note}</Text>)}</Stack>} />
+      advanced={null} />
     {validation ? <Alert color="yellow">{validation}</Alert> : null}
     {error ? <Alert color="red">{error}</Alert> : null}
     {pending ? <Text size="xs" c="orange.8">Налаштування змінено. Таблиця й файл залишаються за попереднім сформованим звітом до застосування.</Text> : null}

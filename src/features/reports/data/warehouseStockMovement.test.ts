@@ -69,7 +69,7 @@ describe('warehouse stock movement request', () => {
     expect(summarizeStockMovementFilters({ ...draft(), articleText: '94000', warehouseIds: [2968, 5], documentKinds: ['sale'],
       conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }] }, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [],
     stockMovementCapability.DocumentKinds)).toEqual([
-      'Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
+      'Номенклатура.Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
     ])
   })
 
