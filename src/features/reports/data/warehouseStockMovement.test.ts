@@ -85,6 +85,7 @@ describe('warehouse stock movement request', () => {
         'Товарна група В групі Фільтри', 'Одиниця виміру В списку компл', 'Топ В списку '])
     expect(view.data.selections.map(selection => selection.IsChecked)).toEqual([true, true, true, true, true, true, true])
     expect((view.dataset.FilterExpression as { MaximumLeaves: number }).MaximumLeaves).toBe(30)
+    expect(stockMovementExpressionView({ ...draft(), filterRows: [row('documentText', { text: '   ' })] }, stockMovementCapability).data.selections[0].Values).toEqual([])
   })
 
   it('validates the period, grouping order, measures and conditions', () => {

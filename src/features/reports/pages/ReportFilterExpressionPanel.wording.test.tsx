@@ -34,3 +34,10 @@ it('keeps the movement wording when the tree has no report dataset behind it', (
   render(<MantineProvider env="test"><ReportFilterExpressionPanel data={data} dataset={{ ...expressionDataset, DataSource: undefined } as never} disabled={false} notice={null} onChange={vi.fn()} /></MantineProvider>)
   expect(document.body.textContent).toContain('Містить')
 })
+
+it('shows a ticked row whose only value is blank text as unfinished', () => {
+  const data = expressionRequest()
+  data.selections = data.selections.map((selection, index) => index === 1 ? { ...selection, IsChecked: true, Values: [{ Name: ' ', Value: 0, Data: { Id: 0 } }] } : selection)
+  render(<MantineProvider env="test"><ReportFilterExpressionPanel data={data} dataset={expressionDataset} disabled={false} notice={null} onChange={vi.fn()} /></MantineProvider>)
+  expect(document.body.textContent).toMatch(/№2: .+ — значення не задано/)
+})

@@ -487,7 +487,7 @@ export function stockMovementRowValueNames(row: StockMovementFilterRow, capabili
     case 'unit': return namesOf(names.units, wire.Ids ?? [])
     case 'product': case 'group': return (row.items ?? []).map(item => item.label)
     case 'documentKind': return (wire.Values ?? []).map(code => capability.DocumentKinds.find(kind => kind.Code === code)?.Name ?? code)
-    case 'documentText': return [wire.Text ?? '']
+    case 'documentText': return wire.Text ? [wire.Text] : []
     default: return wire.Values ?? []
   }
 }
