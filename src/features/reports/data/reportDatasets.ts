@@ -201,7 +201,7 @@ export function datasetConfigurationError(data: ReportRequestBody, dataset: Repo
       || data.ordering != null || data.topGroups != null
       || data.threshold != null || data.hideZero != null || data.abcClassification != null
       || data.productClassification != null || data.sourceOrganizations != null || data.sourceBuyerSubtree != null)
-      return 'Звіт повернення формується за покупцем, товаром і днем з одним показником кількості.'
+      return 'Звіт повернення показує один показник кількості за покупцем, товаром і днем.'
     const filters = returnsOnlyFilterTypes(dataset)
     if (data.selections.some(selection => selection.IsChecked !== false && (dataset?.customerReturnFilters !== true || !filters.includes(selection.SelectedField.Type)))
       || data.filterExpression != null && !returnsOnlyFilterExpressionSupported(dataset))
