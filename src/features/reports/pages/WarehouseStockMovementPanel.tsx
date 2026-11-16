@@ -462,8 +462,6 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
           <Text size="sm" fw={600}>{displayDate(run.result.From)} — {displayDate(run.result.To)}</Text>
           <Text size="xs" c="dimmed">Складів і товарів: {run.result.Keys}; документів руху: {run.result.Registrars}; сформовано {displayDateTime(run.result.ObservedAt)} (Київ)</Text>
         </Group>
-        {run.result.Notes.length ? <details className="stock-movement__notes"><summary>Як розраховано</summary>
-          {run.result.Notes.map(note => <Text key={note} size="xs" c="dimmed">{note}</Text>)}</details> : null}
         <ResultTable run={run} draftMeasures={run.request.Measures} negativeRed={run.request.NegativeRed} grandTotals={run.request.GrandTotals}
           busy={busy} onPage={offset => { void load({ ...run.request, Offset: offset }) }} />
       </Stack> : <div className="published-movement__empty" role="status">Таблиці ще немає</div>}

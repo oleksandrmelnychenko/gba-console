@@ -330,7 +330,7 @@ it.each([false, true])('keeps unknown warehouse totals and explicit exception th
   if (!empty) {
     const dashes = [...table.querySelectorAll('tbody td')].filter(cell => cell.textContent === '—')
     expect(dashes.length).toBeGreaterThan(0)
-    expect(dashes.every(cell => cell.getAttribute('title') === 'Значення не визначено, причину наведено в «Як розраховано».')).toBe(true)
+    expect(dashes.every(cell => cell.getAttribute('title') === 'Значення не визначено.')).toBe(true)
   }
   fireEvent.click(screen.getByRole('button', { name: 'Excel' }))
   await waitFor(() => expect(exportStockMovement).toHaveBeenCalledOnce())
@@ -345,7 +345,7 @@ it('points an undetermined total without unconfirmed batches to the calculation 
   render(panel())
   const table = await applyReport()
   expect(table.querySelector('tfoot')!.textContent).toBe('Підсумок————')
-  expect(screen.getByText('«—» у підсумку: значення не визначено, причину наведено в «Як розраховано».')).toBeTruthy()
+  expect(screen.getByText('«—» у підсумку: значення не визначено.')).toBeTruthy()
 })
 
 it('gives a document row with an unconfirmed batch its reason on every «—»', async () => {
