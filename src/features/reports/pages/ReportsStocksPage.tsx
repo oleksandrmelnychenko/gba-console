@@ -113,7 +113,7 @@ import {
   getReportProductGroups,
   getReportProductTop,
   getReportRegions,
-  getReportRegionCodes,
+  searchReportRegionCodes,
   searchReportClients,
   searchDatasetReportValues,
   searchReportProducts,
@@ -2380,7 +2380,6 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.organization:
     case REPORT_FILTER_FIELD_TYPES.customer:
     case REPORT_FILTER_FIELD_TYPES.customerRegion:
-    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
     case REPORT_FILTER_FIELD_TYPES.customerPriceType:
     case REPORT_FILTER_FIELD_TYPES.productTop:
     case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
@@ -2395,6 +2394,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.productArticle:
     case REPORT_FILTER_FIELD_TYPES.productGroup:
     case REPORT_FILTER_FIELD_TYPES.customerName:
+    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
     case REPORT_FILTER_FIELD_TYPES.saleDocument:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
     case REPORT_FILTER_FIELD_TYPES.supplier:
@@ -2477,7 +2477,7 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.customerRegion:
       return getReportRegions()
     case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
-      return getReportRegionCodes()
+      return searchReportRegionCodes({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     case REPORT_FILTER_FIELD_TYPES.customerPriceType:
       return getReportPricings()
     case REPORT_FILTER_FIELD_TYPES.productTop:

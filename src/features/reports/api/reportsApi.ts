@@ -326,22 +326,18 @@ export async function getReportRegions(): Promise<ReportEntity[]> {
   return getResourceList('/regions/all/codes')
 }
 
-// The CustomerRegionCode filter keys on Client.RegionCodeId server-side (SalesReportProjectionRepository:
-// Deserialize<Client>(selection).Select(x => x.RegionCodeId)). /regions/all/codes returns REGIONS with a
-// nested RegionCodes[] — flatten to the individual codes and stamp RegionCodeId so the selection carries the
-// value the report backend actually filters on.
-export async function getReportRegionCodes(): Promise<ReportEntity[]> {
-  const regions = await getReportRegions()
+export async function searchReportRegionCodes(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+  const clients = await searchReportClients(params, signal)
 
-  return regions.flatMap((region) => {
-    const codes = Array.isArray(region.RegionCodes) ? (region.RegionCodes as ReportEntity[]) : []
+  return clients.flatMap((client) => {
+    const code = client.RegionCode
+    if (!isReportEntity(code) || code.Id == null || !code.Value) return []
 
-    return codes.map((code) => ({
+    return [{
       ...code,
       RegionCodeId: code.Id,
-      Value: code.Value,
-      Name: (code.Value ?? code.Name ?? '') as string,
-    }))
+      Name: `${code.Value} — ${getName(client)}`,
+    }]
   })
 }
 
