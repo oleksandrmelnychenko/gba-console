@@ -32,6 +32,11 @@ import {
   updateAdvanceReportOrder,
 } from '../api/advanceReportApi'
 import {
+  calculateAdvanceReportDifference,
+  calculateAdvanceReportTotals,
+  keepIssuedAdvanceAmounts,
+} from '../advanceReportAmounts'
+import {
   canRemoveAdvanceReportConsumableRow,
   canRemoveAdvanceReportFuelRow,
   isLocalAdvanceReportEntity,
@@ -69,6 +74,9 @@ type AdvanceReportViewState = {
   error: string | null
   hasLocalChanges: boolean
   isLoading: boolean
+  // Line total of the report as it was loaded; the stored balance of the
+  // advance already counts these lines.
+  loadedReportTotal: number
   order: AdvanceReportOrder | null
 }
 
@@ -77,6 +85,7 @@ const INITIAL_ADVANCE_REPORT_VIEW_STATE: AdvanceReportViewState = {
   error: null,
   hasLocalChanges: false,
   isLoading: true,
+  loadedReportTotal: 0,
   order: null,
 }
 
@@ -97,7 +106,7 @@ function useAdvanceReportViewModel() {
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useValueState(false)
   const requestRef = useRef(0)
   const recalculateRef = useRef(0)
-  const { consumableDocumentFilesByOrderKey, error, hasLocalChanges, isLoading, order } = viewState
+  const { consumableDocumentFilesByOrderKey, error, hasLocalChanges, isLoading, loadedReportTotal, order } = viewState
 
   useEffect(() => {
     if (!id) {
@@ -128,6 +137,7 @@ function useAdvanceReportViewModel() {
             error: result ? null : t('Авансовий звіт не знайдено'),
             hasLocalChanges: false,
             isLoading: false,
+            loadedReportTotal: calculateAdvanceReportTotals(result).total,
             order: result,
           })
         }
@@ -152,9 +162,15 @@ function useAdvanceReportViewModel() {
   const isDone = Boolean(order?.IsUnderReportDone)
   const consumableRows = useMemo(() => buildConsumableRows(order, isDone), [isDone, order])
   const fuelRows = useMemo(() => buildFuelRows(order, isDone), [isDone, order])
-  const totals = useMemo(() => calculateTotals(order), [order])
+  const totals = useMemo(() => calculateAdvanceReportTotals(order), [order])
   const orderAmount = order?.Amount || 0
   const reportTotal = totals.total
+  const difference = calculateAdvanceReportDifference({
+    loadedDifference: order?.DifferenceAmount,
+    loadedReportTotal,
+    orderAmount,
+    reportTotal,
+  })
   const isBusy = isSaving || isRecalculating
   const canAppendRows = Boolean(order && !isBusy && (!isDone || (order.DifferenceAmount || 0) < 0))
   const hasUnsavedRows = useMemo(() => Boolean(order && hasNewRows(order)), [order])
@@ -228,7 +244,9 @@ function useAdvanceReportViewModel() {
 
         if (recalculateRef.current === requestId) {
           if (calculated) {
-            setViewState((current) => ({ ...current, order: calculated }))
+            // The calculation answers with Amount = sum of the lines; the
+            // order keeps the amount that was issued under report.
+            setViewState((current) => ({ ...current, order: keepIssuedAdvanceAmounts(calculated, nextOrder) }))
           } else {
             setViewState((current) => ({ ...current, error: t('Не вдалося перерахувати суму') }))
           }
@@ -462,6 +480,7 @@ function useAdvanceReportViewModel() {
     consumableRows,
     createIncomeAutomatically,
     currencyCode,
+    difference,
     error,
     fuelRows,
     headerTitle,
@@ -645,7 +664,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
   const hasConsumables = model.consumableRows.length > 0
   const hasFuel = model.fuelRows.length > 0
   const positionsCount = model.consumableRows.length + model.fuelRows.length
-  const difference = order.DifferenceAmount ?? model.reportTotal - model.orderAmount
+  const difference = model.difference
   const reportNumber = order.AdvanceNumber || order.Number
   const reportDate = order.Updated || order.Created || order.FromDate
   const responsible = order.Colleague?.FullName || order.Colleague?.Name || order.Colleague?.LastName
@@ -781,7 +800,9 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
   }
 
   const difference = overSpent ? model.reportTotal - amount : amount - model.reportTotal
-  const orderTypeLabel = overSpent ? incomeOrderTypeLabel(order, t) : model.headerTitle
+  // Spent more than issued: the colleague is paid the rest by a new outgoing
+  // order. Spent less: the rest comes back by a new income order.
+  const orderTypeLabel = overSpent ? model.headerTitle : incomeOrderTypeLabel(order, t)
 
   return (
     <Group align="center" gap="sm" wrap="wrap">
@@ -804,7 +825,7 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
 function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceReportViewModel> }) {
   const { t } = useI18n()
   const { order } = model
-  const difference = order?.DifferenceAmount || 0
+  const difference = model.difference
 
   if (!order || !model.isDone || difference === 0) {
     return null
@@ -952,33 +973,6 @@ function buildFuelRows(order: AdvanceReportOrder | null, isDone: boolean): Advan
 
     return rows
   }, [])
-}
-
-function calculateTotals(order: AdvanceReportOrder | null): { total: number; totalVat: number } {
-  if (!order) {
-    return { total: 0, totalVat: 0 }
-  }
-
-  let total = 0
-  let totalVat = 0
-
-  for (const fueling of order.CompanyCarFuelings || []) {
-    if (!fueling.Deleted) {
-      total += fueling.TotalPriceWithVat || 0
-      totalVat += fueling.VatAmount || 0
-    }
-  }
-
-  for (const entry of order.OutcomePaymentOrderConsumablesOrders || []) {
-    for (const item of entry.ConsumablesOrder?.ConsumablesOrderItems || []) {
-      if (!item.Deleted) {
-        total += item.TotalPriceWithVAT || 0
-        totalVat += item.VAT || 0
-      }
-    }
-  }
-
-  return { total, totalVat }
 }
 
 function removeConsumableItem(order: AdvanceReportOrder, rowId: string): AdvanceReportOrder {

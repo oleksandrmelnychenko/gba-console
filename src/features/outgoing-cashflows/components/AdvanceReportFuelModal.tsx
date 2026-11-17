@@ -25,6 +25,7 @@ import {
   calculateAdvanceReportCompanyCarFueling,
   searchAdvanceReportSupplyOrganizations,
 } from '../api/advanceReportApi'
+import { getFuelAmountFieldValues } from '../advanceReportAmounts'
 import type {
   AdvanceReportOrder,
   CompanyCar,
@@ -132,6 +133,8 @@ export function AdvanceReportFuelModal({
       }),
     [form.fuelAmount, form.pricePerLiter, form.totalPriceWithVat, form.vatAmount, form.vatPercent],
   )
+
+  const amountFieldValues = getFuelAmountFieldValues(form, previewFueling)
 
   const invalidatePendingRequests = useCallback(() => {
     submitSeq.current += 1
@@ -416,7 +419,7 @@ export function AdvanceReportFuelModal({
               disabled={isLoading}
               label={t('Ціна за літр')}
               min={0}
-              value={form.pricePerLiter}
+              value={amountFieldValues.pricePerLiter}
               onChange={(value) => updateForm({ pricePerLiter: toNumber(value), totalPriceWithVat: 0 })}
             />
             <NumberInput
@@ -436,7 +439,7 @@ export function AdvanceReportFuelModal({
               disabled={isLoading}
               label={t('Загальна сума з ПДВ')}
               min={0}
-              value={form.totalPriceWithVat}
+              value={amountFieldValues.totalPriceWithVat}
               onChange={(value) => updateForm({ pricePerLiter: 0, totalPriceWithVat: toNumber(value) })}
             />
             <NumberInput

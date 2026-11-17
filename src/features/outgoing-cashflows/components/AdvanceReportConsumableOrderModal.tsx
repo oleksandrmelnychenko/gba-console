@@ -34,6 +34,13 @@ import {
   calculateAdvanceReportConsumableOrder,
   searchAdvanceReportSupplyOrganizations,
 } from '../api/advanceReportApi'
+import {
+  getProductArticleLabel,
+  getProductNameLabel,
+  isPickedProductText,
+  toProductArticleOptions,
+  toProductNameOptions,
+} from '../advanceReportProductPicker'
 import type {
   AdvanceReportConsumablesOrder,
   AdvanceReportConsumablesOrderItem,
@@ -170,7 +177,14 @@ export function AdvanceReportConsumableOrderModal({
   const totals = useMemo(() => calculateLocalTotals(visibleItems), [visibleItems])
   const supplierOptions = useMemo(() => toEntityOptions(suppliers), [suppliers])
   const storageOptions = useMemo(() => toEntityOptions(storages), [storages])
-  const productAutocompleteOptions = useMemo(() => toProductOptions(productOptions), [productOptions])
+  const productNameOptions = useMemo(
+    () => toProductNameOptions(productOptions, itemEditor.item.ConsumableProduct),
+    [itemEditor.item.ConsumableProduct, productOptions],
+  )
+  const productArticleOptions = useMemo(
+    () => toProductArticleOptions(productOptions, itemEditor.item.ConsumableProduct),
+    [itemEditor.item.ConsumableProduct, productOptions],
+  )
   const costMovementOptions = useMemo(
     () => toEntityOptions(costMovements, (item) => item?.OperationName || ''),
     [costMovements],
@@ -429,14 +443,14 @@ export function AdvanceReportConsumableOrderModal({
     setProductOptions(item.ConsumableProduct ? [item.ConsumableProduct] : [])
     setCostMovements(item.PaymentCostMovementOperation?.PaymentCostMovement ? [item.PaymentCostMovementOperation.PaymentCostMovement] : [])
     setItemEditor({
-      articleSearch: item.ConsumableProduct?.VendorCode || '',
+      articleSearch: getProductArticleLabel(item.ConsumableProduct),
       costMovementSearch: item.PaymentCostMovementOperation?.PaymentCostMovement?.OperationName || '',
       error: null,
       index,
       item: cloneOrderItem(item),
       mode: 'edit',
       opened: true,
-      productSearch: item.ConsumableProduct?.Name || '',
+      productSearch: getProductNameLabel(item.ConsumableProduct),
     })
   }
 
@@ -506,14 +520,16 @@ export function AdvanceReportConsumableOrderModal({
 
     setItemEditor((current) => ({
       ...current,
-      articleSearch: product.VendorCode || '',
+      // Each field keeps the text of its own picker option, so both pickers
+      // show the product instead of dropping it.
+      articleSearch: getProductArticleLabel(product),
       error: null,
       item: normalizeCalculatedItem({
         ...current.item,
         ConsumableProduct: product,
         ConsumableProductCategory: product.ConsumableProductCategory || current.item.ConsumableProductCategory,
       }),
-      productSearch: product.Name || '',
+      productSearch: getProductNameLabel(product),
     }))
   }
 
@@ -835,30 +851,22 @@ export function AdvanceReportConsumableOrderModal({
 
               <div className="advance-report-entry-parties advance-report-entry-parties--item">
                 <SearchableSelect
-                  data={productAutocompleteOptions}
+                  data={productNameOptions}
                   disabled={isBusy}
                   label={t('Назва товару / послуги')}
                   value={itemEditor.productSearch}
                   onChange={(value) => {
-                    setItemEditor((current) => ({
-                      ...current,
-                      item: clearEditorProduct(current.item),
-                      productSearch: value,
-                    }))
+                    setItemEditor((current) => changeEditorProductText(current, value, 'name'))
                   }}
                   onOptionSubmit={handleProductSubmit}
                 />
                 <SearchableSelect
-                  data={productAutocompleteOptions}
+                  data={productArticleOptions}
                   disabled={isBusy}
                   label={t('Артикул')}
                   value={itemEditor.articleSearch}
                   onChange={(value) => {
-                    setItemEditor((current) => ({
-                      ...current,
-                      articleSearch: value,
-                      item: clearEditorProduct(current.item),
-                    }))
+                    setItemEditor((current) => changeEditorProductText(current, value, 'article'))
                   }}
                   onOptionSubmit={handleProductSubmit}
                 />
@@ -1234,25 +1242,6 @@ function toEntityOptions<T extends EntityOptionSource>(
   }, [])
 }
 
-function toProductOptions(products: ConsumableProduct[]) {
-  return products.reduce<Array<{ label: string; value: string }>>((options, product) => {
-    const value = getEntityValue(product)
-
-    if (!value) {
-      return options
-    }
-
-    const label = [product.VendorCode, product.Name].filter(Boolean).join(' - ')
-
-    options.push({
-      label: label || value,
-      value,
-    })
-
-    return options
-  }, [])
-}
-
 function toAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
   return agreements.reduce<Array<{ label: string; value: string }>>((options, agreement) => {
     const value = getEntityValue(agreement)
@@ -1299,6 +1288,31 @@ function cloneOrderItem(item: AdvanceReportConsumablesOrderItem): AdvanceReportC
             : null,
         }
       : null,
+  }
+}
+
+/**
+ * Text typed into one of the two product pickers. The picked product stays
+ * while the text is still its own; any other text drops it together with the
+ * other picker's text, so the new search is not held back by the old product.
+ */
+function changeEditorProductText(
+  editor: ItemEditorState,
+  value: string,
+  field: 'name' | 'article',
+): ItemEditorState {
+  const pickedProduct = editor.item.ConsumableProduct
+  const text = field === 'name' ? { productSearch: value } : { articleSearch: value }
+
+  if (isPickedProductText(pickedProduct, value, field)) {
+    return { ...editor, ...text }
+  }
+
+  return {
+    ...editor,
+    ...(pickedProduct ? { articleSearch: '', productSearch: '' } : {}),
+    ...text,
+    item: clearEditorProduct(editor.item),
   }
 }
 
