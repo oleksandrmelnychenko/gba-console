@@ -9,6 +9,8 @@ import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZAT
 import { requestSourceCounterpartyGroups, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups } from './sourceCounterpartyGroups'
 import { currentProductCapability, readWorkbookCapability, readWorkbookSelection, requestWorkbookPresentation } from './workbookPresentation'
 import { hasFixedReportAxes } from './nativeReportProfiles'
+import { readReportFilterExpression, requestFilterExpression } from './reportFilterExpression'
+import type { ReportFilterNode } from '../types'
 import { SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
 
 type WorkbookDeskEntry = {
@@ -140,11 +142,29 @@ function fieldShortCaption(caption: string): string {
   return head.includes('.') ? head.slice(head.lastIndexOf('.') + 1) : head
 }
 
+export function workbookFilterLogic(request: ReportRequestBody, fieldLabel: (selection: ReportSelection) => string): string | null {
+  const expression = readReportFilterExpression(requestFilterExpression(request))
+  if (!expression) return null
+  const fixedAxes = hasFixedReportAxes(request.dataSource ?? 0)
+  const selections = Array.isArray(request.selections) ? request.selections : []
+  function render(node: ReportFilterNode, top: boolean): string | null {
+    if (node.Kind === 3) {
+      const selection = selections[node.SelectionIndex]
+      return selection && applied(selection, fixedAxes) ? selectionChip(selection, fieldLabel(selection)).label : null
+    }
+    const parts = node.Children.map(child => render(child, false)).filter((part): part is string => part !== null)
+    if (parts.length < 2) return parts[0] ?? null
+    const joined = parts.join(node.Kind === 2 ? ' або ' : ' і ')
+    return top ? joined : `(${joined})`
+  }
+  return render(expression.Root, true)
+}
+
 export function workbookRequestSummary(request: ReportRequestBody, dataset: ReportDataset | undefined,
-  fieldLabel: (selection: ReportSelection) => string): DeskSummary {
+  fieldLabel: (selection: ReportSelection) => string, options: { withoutSelections?: boolean } = {}): DeskSummary {
   const dataSource = request.dataSource ?? 0
   const fixedAxes = hasFixedReportAxes(dataSource)
-  const selections = Array.isArray(request.selections) ? request.selections : []
+  const selections = options.withoutSelections ? [] : Array.isArray(request.selections) ? request.selections : []
   const organizationField = organizationFilterField(dataSource)
   const chips: DeskChip[] = []
   const service = productServiceFilter(requestProductServiceFilter(request))

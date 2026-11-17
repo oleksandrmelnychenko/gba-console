@@ -38,7 +38,7 @@ import { WorkbookPeriodField, WorkbookSettings } from './workbook-desk/WorkbookS
 import './warehouse-stock-movement.css'
 
 export type MovementHistoryRun = { token: number; action: ReportHistoryAction; request: StockMovementRequest
-  products: StockMovementLookupItem[]; groups: StockMovementLookupItem[] }
+  products: StockMovementLookupItem[]; groups: StockMovementLookupItem[]; storedNames?: Partial<Record<string, Record<string, string>>> }
 type Props = { callerKey: string | null; canGenerate: boolean; onBusyChange?: (busy: boolean) => void; history?: MovementHistoryRun | null }
 type Setup = { capability: StockMovementCapability; warehouses: StockMovementLookupItem[]; organizations: StockMovementLookupItem[] }
 type Run = { request: StockMovementRequest; result: StockMovementResult }
@@ -329,7 +329,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     handledHistory.current = run.token
     const restored = movementDraftFromHistory(run.request, value.capability, defaultStockMovementDraft(value.capability), {
       warehouses: value.warehouses, organizations: value.organizations, units: attributes.unitsFailed ? null : attributes.units,
-      tops: attributes.topsFailed ? null : attributes.tops, products: run.products, groups: run.groups })
+      tops: attributes.topsFailed ? null : attributes.tops, products: run.products, groups: run.groups, storedNames: run.storedNames })
     setDraft(restored.draft)
     setRun(null)
     setHistoryNotice(droppedSettingsLine(restored.dropped))

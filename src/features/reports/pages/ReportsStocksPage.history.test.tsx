@@ -110,6 +110,7 @@ it('opens a stock movement entry in its own tab with current names and builds it
   vi.mocked(movementApi.getStockMovementMeasureUnits).mockResolvedValue([])
   vi.mocked(movementApi.exportStockMovement).mockResolvedValue({ DocumentURL: '/Data/Reports/m.xlsx', FileName: 'm.xlsx', TotalRows: 3 })
   vi.mocked(getReportHistorySettings).mockResolvedValue({ kind: 'movement', products: [{ Id: 7, Name: 'A-100', Detail: null }], groups: [],
+    storedNames: { warehouse: { '1': 'Склад 1', '9': 'Старий склад' }, product: { '7': 'A-100', '8': 'B-200' } },
     movement: { Version: 1, From: '2026-11-01', To: '2026-11-17', WarehouseIds: [], OrganizationIds: [], ProductIds: [], ArticleMatch: '',
       Articles: [], ProductGroupIds: [], ProductTops: [], MeasureUnitIds: [], DocumentKinds: [], DocumentText: null,
       Filters: [{ Field: 'warehouse', Ids: [1, 9] }, { Field: 'product', Ids: [7, 8] }], Conditions: [], Levels: ['warehouse', 'product'],
@@ -122,5 +123,5 @@ it('opens a stock movement entry in its own tab with current names and builds it
   const request = vi.mocked(movementApi.exportStockMovement).mock.calls[0][0]
   expect(request.Filters?.map(filter => [filter.Field, filter.Ids])).toEqual([['warehouse', [1]], ['product', [7]]])
   expect(request).toMatchObject({ From: '2026-11-01', To: '2026-11-17', Measures: ['opening', 'closing'] })
-  expect(await screen.findByText('Не застосовано, бо цього вже немає у звіті: Склад: 1 значення, Товар: 1 значення.')).toBeTruthy()
+  expect(await screen.findByText('Не застосовано, бо цього вже немає у звіті: Склад: Старий склад, Товар: B-200.')).toBeTruthy()
 })

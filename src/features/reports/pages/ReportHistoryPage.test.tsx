@@ -17,7 +17,7 @@ vi.mock('../api/reportHistoryApi', async original => ({ ...await original<typeof
 
 const data = { dataSource: 2, from: '2026-11-01', to: '2026-11-17', sorted: { Row: [], Col: [], Measurements: [] }, selections: [] }
 const entry = (id: string, user: string, name: string) => ({ id, formedAtUtc: '2026-11-17T08:30:00Z', dataSource: 2, output: 'excel' as const,
-  rowCount: 12, userNetId: user, userName: name, own: false, kind: 'report' as const, report: '2', data, movement: null })
+  rowCount: 12, userNetId: user, userName: name, own: false, kind: 'report' as const, report: '2', data, movement: null, names: {} })
 
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear()

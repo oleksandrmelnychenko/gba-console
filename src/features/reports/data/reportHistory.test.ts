@@ -175,6 +175,44 @@ describe('report keys and movement entries', () => {
     expect(draft.filterExpression).toEqual({ Version: 1, Root: { Kind: 2, Children: [
       { Kind: 3, SelectionIndex: 0 }, { Kind: 3, SelectionIndex: 1 }, { Kind: 3, SelectionIndex: 2 }] } })
     expect(movementHistorySummary(movement)).toEqual({ period: '01.11.2026 – 17.11.2026',
-      filters: 'Склад: 2 значення; Товар: 2 значення; Вид документа руху: sale, old' })
+      filters: 'Склад: 2 значення або Товар: 2 значення або Вид документа руху: sale, old' })
+    expect(movementHistorySummary({ ...movement, FilterExpression: undefined }, { warehouse: { '1': 'Склад 1' }, product: { '7': 'A-100', '8': 'B-200' } }))
+      .toEqual({ period: '01.11.2026 – 17.11.2026', filters: 'Склад: Склад 1, ще 1 значення; Товар: A-100, B-200; Вид документа руху: sale, old' })
+  })
+})
+
+describe('І/АБО in the entry summary', () => {
+  it('shows the logic of the conditions the way the Excel header does, with nested groups', () => {
+    const source = request()
+    source.selections = source.selections.slice(1)
+    source.selections.push(selection(netDataset.Filters[2].Type, 'Warehouse', [[9, 'СКЛАД -3']]))
+    source.filterExpression = { Version: 1, Root: { Kind: 2, Children: [
+      { Kind: 3, SelectionIndex: 0 },
+      { Kind: 1, Children: [{ Kind: 3, SelectionIndex: 1 }, { Kind: 3, SelectionIndex: 2 }] },
+    ] } }
+    const summary = historySummary(source, netDataset)
+    expect(summary.filters).toMatch(/^.*: ТОВ «Конкорд» або \(.*: A-100, B-200 і .*: СКЛАД -3\)$/)
+    expect(summary.filters.split(' або ')).toHaveLength(2)
+  })
+
+  it('names reports with the menu wording so no ids are needed', () => {
+    const launches = [{ fileName: 'ВП.xls', label: 'Валовий прибуток за днем', notice: '', dataset: { ...netDataset, DataSource: 35 } }]
+    expect(historyReportName(null, 35, [], launches)).toBe('Валовий прибуток за днем')
+    expect(historyReportKeyName('2:grossProfit', [], launches)).toBe('Валовий прибуток')
+    expect(historyReportOptions([{ ...netDataset, DataSource: 35 }], launches, new Set([35])).map(option => option.label))
+      .toEqual(['Валовий прибуток за днем', 'Рух товару'])
+  })
+})
+
+describe('inactive values stay, deleted values go', () => {
+  it('keeps an inactive product group the catalogue still lists and drops a deleted one', async () => {
+    const source = request()
+    source.selections = [selection(4, 'ProductGroup', [[11, 'QA тест історії звітів'], [12, 'Видалена група']])]
+    delete (source as Record<string, unknown>).filterExpression
+    const catalogue = [{ Id: 11, Name: 'QA тест історії звітів', IsActive: false }]
+    const search = vi.fn(async (_: number, text: string) => text === '' ? catalogue : catalogue.filter(item => item.Name.includes(text)))
+    const { data, dropped } = await verifyHistoryValues(source, search, 30, () => 'Група товару')
+    expect(data.selections[0].Values.map(value => value.Value)).toEqual([11])
+    expect(dropped).toEqual(['Група товару: Видалена група'])
   })
 })

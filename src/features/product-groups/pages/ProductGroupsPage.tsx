@@ -137,7 +137,7 @@ function ProductGroupsPageContent() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, searchValue, setError, setLoading, setProductGroups, t])
+  }, [reloadKey, location.key, searchValue, setError, setLoading, setProductGroups, t])
 
   useEffect(() => {
     if (!createModalOpened) {

@@ -23,3 +23,11 @@ it.each([[false, false], [true, false], [false, true], [true, true]])(
     expect(call[0]).toBe(jobs ? '/report/stocks/preview/jobs' : '/report/stocks/preview')
     expect((call[1]?.query as Record<string, unknown>).historyOutput).toBe(intent ? 2 : undefined)
   })
+
+it('asks the server to build a history entry afresh instead of reusing an earlier result', async () => {
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/report/stocks/preview/capabilities'
+    ? { Version: 2, ExplicitExport: true, MaximumPageRows: 200, TimeToLiveSeconds: 900, BackgroundJobs: true } : {})
+  await expect(previewStockReport(defaultDatasetRequest(purchases, '2026-11-01', '2026-11-17'), purchases, { fresh: true })).rejects.toThrow()
+  const call = vi.mocked(apiRequest).mock.calls.find(([path]) => path === '/report/stocks/preview/jobs')!
+  expect((call[1]?.query as Record<string, unknown>).fresh).toBe(1)
+})

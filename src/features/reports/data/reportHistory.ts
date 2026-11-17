@@ -13,7 +13,7 @@ import { readReportFilterExpression, requestFilterExpression } from './reportFil
 import { getReportFieldLabel } from './reportOptions'
 import { ALL_NAVIGATION_ENTRIES } from './reportNavigationEntries'
 import { readReportProfile, requestReportProfile, salesConstructorTitle } from './salesConstructorProfiles'
-import { workbookRequestSummary } from './workbookDesk'
+import { workbookFilterLogic, workbookRequestSummary } from './workbookDesk'
 import { previousKyivDay } from './cashPeriod'
 
 export const REPORT_HISTORY_RUN_KEY = 'gba.reports.history-run'
@@ -76,7 +76,8 @@ export function historyReportName(data: ReportRequestBody | null, dataSource: nu
   if (profile) return salesConstructorTitle(profile)
   const entry = ALL_NAVIGATION_ENTRIES.find(item => item.file !== null && !profileForWorkbook(item.file)
     && launches.some(launch => launch.fileName === item.file && launch.dataset.DataSource === dataSource))
-  return entry?.label ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
+  const launch = launches.find(item => item.dataset.DataSource === dataSource && !profileForWorkbook(item.fileName))
+  return entry?.label ?? launch?.label ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
 }
 
 export function historyReportKeyName(key: string, datasets: readonly ReportDataset[], launches: readonly WorkbookLaunch[]): string {
@@ -111,9 +112,11 @@ function selectionLabel(selection: ReportSelection, dataset: ReportDataset | und
 }
 
 export function historySummary(data: ReportRequestBody, dataset: ReportDataset | undefined): { period: string; filters: string } {
-  const summary = workbookRequestSummary(data, dataset, selection => selectionLabel(selection, dataset, data))
+  const logic = workbookFilterLogic(data, selection => selectionLabel(selection, dataset, data))
+  const summary = workbookRequestSummary(data, dataset, selection => selectionLabel(selection, dataset, data),
+    { withoutSelections: logic !== null })
   const organizations = summary.organizations && summary.organizations !== 'Усі' ? `Організації: ${summary.organizations}` : null
-  const filters = [organizations, ...summary.chips.filter(chip => chip.kind === 'filter').map(chip => chip.label)]
+  const filters = [organizations, ...summary.chips.filter(chip => chip.kind === 'filter').map(chip => chip.label), logic]
     .filter((item): item is string => Boolean(item))
   return { period: summary.period, filters: filters.join('; ') }
 }
@@ -280,6 +283,7 @@ export type MovementHistoryLists = {
   tops: readonly string[] | null
   products: readonly StockMovementLookupItem[]
   groups: readonly StockMovementLookupItem[]
+  storedNames?: Partial<Record<string, Record<string, string>>>
 }
 
 function valueCount(count: number): string {
@@ -299,7 +303,8 @@ export function movementDraftFromHistory(request: StockMovementRequest, capabili
   const known = (items: readonly StockMovementLookupItem[] | null, ids: readonly number[], field: StockMovementFilterField) => {
     if (!items) return [...ids]
     const present = ids.filter(id => items.some(item => item.Id === id))
-    if (present.length < ids.length) dropped.push(`${STOCK_MOVEMENT_FILTER_DEFINITIONS[field].label}: ${valueCount(ids.length - present.length)}`)
+    const missing = ids.filter(id => !present.includes(id))
+    if (missing.length) dropped.push(`${STOCK_MOVEMENT_FILTER_DEFINITIONS[field].label}: ${namedValues(missing, lists.storedNames?.[field])}`)
     return present
   }
   const kinds = capability.DocumentKinds.map(kind => kind.Code)
@@ -345,12 +350,33 @@ export function movementDraftFromHistory(request: StockMovementRequest, capabili
     grandTotals: request.GrandTotals, negativeRed: request.NegativeRed } }
 }
 
-export function movementHistorySummary(request: StockMovementRequest): { period: string; filters: string } {
-  const filters = movementWires(request).map(wire => {
+function namedValues(ids: readonly number[], names: Record<string, string> | undefined): string {
+  const known = ids.flatMap(id => names?.[String(id)] ? [names[String(id)]] : [])
+  const unknown = ids.length - known.length
+  return [...known, ...(unknown ? [known.length ? `ще ${valueCount(unknown)}` : valueCount(unknown)] : [])].join(', ')
+}
+
+export function movementHistorySummary(request: StockMovementRequest,
+  names: Partial<Record<string, Record<string, string>>> = {}): { period: string; filters: string } {
+  const leaf = (wire: StockMovementFilterWire) => {
     const label = STOCK_MOVEMENT_FILTER_DEFINITIONS[wire.Field].label
     if (wire.Text) return `${label}: ${wire.Text}`
     if (wire.Values?.length) return `${label}: ${wire.Values.join(', ')}`
-    return `${label}: ${valueCount(wire.Ids?.length ?? 0)}`
-  })
-  return { period: deskPeriodText(request.From, request.To), filters: filters.join('; ') }
+    return `${label}: ${namedValues(wire.Ids ?? [], names[wire.Field])}`
+  }
+  const wires = movementWires(request)
+  const listed = !!request.Filters?.length
+  function render(node: MovementTreeNode, top: boolean): string | null {
+    if (node.Kind === 3) {
+      const wire = node.SelectionIndex !== undefined && listed ? wires[node.SelectionIndex]
+        : node.Filter ? wires.find(item => item.Field === node.Filter) : undefined
+      return wire ? leaf(wire) : null
+    }
+    const parts = (node.Children ?? []).map(child => render(child, false)).filter((part): part is string => part !== null)
+    if (parts.length < 2) return parts[0] ?? null
+    const joined = parts.join(node.Kind === 2 ? ' або ' : ' і ')
+    return top ? joined : `(${joined})`
+  }
+  const logic = request.FilterExpression ? render(request.FilterExpression.Root as MovementTreeNode, true) : null
+  return { period: deskPeriodText(request.From, request.To), filters: logic ?? wires.map(leaf).join('; ') }
 }

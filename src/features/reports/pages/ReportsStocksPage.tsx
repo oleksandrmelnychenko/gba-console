@@ -528,7 +528,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         })
       : null
 
-  const runHistoryAction = useEffectEvent((action: ReportHistoryAction) => { void runReport(action === 'open') })
+  const runHistoryAction = useEffectEvent((action: ReportHistoryAction) => { void runReport(action === 'open', true) })
   useEffect(() => {
     const action = historyAction.current
     if (!action || workbookResolving || isLoading) return
@@ -545,7 +545,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     await runReport(true)
   }
 
-  async function runReport(showPreview: boolean) {
+  async function runReport(showPreview: boolean, fresh = false) {
     const exportingApplied = !showPreview && !!appliedSettings.appliedRequest && !!lastRun
     if (!canGenerateReport || (!exportingApplied && !reportIsReady) || isLoading) {
       return
@@ -562,7 +562,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       const controller = new AbortController()
       jobAbort.current = controller
       const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession
-        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal, ...(showPreview ? {} : { excelIntent: true }) }) : null
+        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal, ...(showPreview ? {} : { excelIntent: true }), ...(fresh ? { fresh: true } : {}) }) : null
       setJobProgress(null)
       if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
         ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
@@ -753,7 +753,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
 
   function openHistoryMovement(settings: Extract<ReportHistorySettings, { kind: 'movement' }>, action: ReportHistoryAction) {
     setMovementHistory(current => ({ token: (current?.token ?? 0) + 1, action, request: settings.movement,
-      products: settings.products, groups: settings.groups }))
+      products: settings.products, groups: settings.groups, storedNames: settings.storedNames }))
     openPublishedReport('movement')
   }
 
@@ -1045,14 +1045,15 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('form') : null}
     <LegacyReportBuilder part="grouping" {...builder} />
   </>
+  const regionalPanel = dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
+    enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
+    fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} historyRun={regionalHistory} /> : null
   const advancedContent = <div className="workbook-advanced">
     {workbook.panel(dataset, reportBody, comparisonSettingsDisabled)}
     {dataSource === 35 ? <div className="workbook-desk__group">{dayProfitControls('source')}</div> : null}
     {supplierControls ? <div className="workbook-desk__group">{supplierProfitControls('source')}</div> : null}
     {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
-    {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
-      enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-      fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} historyRun={regionalHistory} /> : null}
+    {regionalPanel}
     {!hasFixedReportAxes(dataSource) ? <>
       {analysisPanels.topGroups}
       {analysisPanels.threshold}
@@ -1178,6 +1179,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
               presets={reportPeriodPresets(dataSource, today)} error={periodError} disabled={isLoading || workbookResolving}
               onFromChange={setFrom} onToChange={setTo} />
               : <Text size="sm">{t('Поточний стан на час читання даних. Історичний період не застосовується.')}</Text>} />
+          {selectionOnly && regionalPanel ? <div className="workbook-desk__group">{regionalPanel}</div> : null}
           {pendingSettingsNotice('Застосувати й показати')}
           <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
             blockedReason={workbookResolving ? null : submitBlockedReason || null}

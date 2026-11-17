@@ -126,7 +126,7 @@ export function ReportHistoryPage() {
   function entry(item: ReportHistoryItem) {
     const dataset = datasetOf(item.dataSource)
     const name = t(historyReportKeyName(item.report, datasets, launches))
-    const summary = item.movement ? movementHistorySummary(item.movement) : item.data ? historySummary(item.data, item.kind === 'regional' ? datasetOf(39) : dataset) : null
+    const summary = item.movement ? movementHistorySummary(item.movement, item.names) : item.data ? historySummary(item.data, item.kind === 'regional' ? datasetOf(39) : dataset) : null
     const usable = item.kind === 'movement' ? Boolean(item.movement)
       : Boolean(item.data && datasetOf(item.data.dataSource ?? -1) && BUG_1274_ACTIVE_DATA_SOURCES.has(item.data.dataSource ?? -1))
     return <Group key={item.id} justify="space-between" align="flex-start" wrap="nowrap" className="report-history__entry"

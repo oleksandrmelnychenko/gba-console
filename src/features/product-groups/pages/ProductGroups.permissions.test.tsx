@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -204,5 +204,33 @@ describe('product-group canonical permission guards', () => {
     await waitFor(() => expect(updateProductGroup).toHaveBeenCalledTimes(1))
     fireEvent.click(screen.getByRole('tab', { name: 'Товари' }))
     expect(screen.getByTestId('can-open-product').textContent).toBe('true')
+  })
+})
+
+describe('product-group list after an edit', () => {
+  it('reloads the list when the edit sheet returns to it, so a saved «Активна» change is visible', async () => {
+    allowedPermissions.clear()
+    vi.clearAllMocks()
+    allowedPermissions.add(PermissionKeys.ProductGroups.Page.View)
+    vi.mocked(getProductGroups).mockResolvedValueOnce({ ProductGroups: [PRODUCT_GROUP], TotalQty: 1, TotalFilteredQty: 1 })
+      .mockResolvedValueOnce({ ProductGroups: [{ ...PRODUCT_GROUP, IsActive: false }], TotalQty: 1, TotalFilteredQty: 1 })
+    function ReturnFromSheet() {
+      const navigate = useNavigate()
+      return <button type="button" onClick={() => navigate('/product-groups', { replace: true })}>return-from-sheet</button>
+    }
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/product-groups']}>
+            <Routes>
+              <Route path="/product-groups" element={<><ProductGroupsPage /><ReturnFromSheet /></>} />
+            </Routes>
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+    await waitFor(() => expect(getProductGroups).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole('button', { name: 'return-from-sheet' }))
+    await waitFor(() => expect(getProductGroups).toHaveBeenCalledTimes(2))
   })
 })

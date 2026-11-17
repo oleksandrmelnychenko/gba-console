@@ -48,7 +48,9 @@ it('reads a movement entry with the products and groups that still exist', async
   const movement = { Version: 1, From: '2026-11-01', To: '2026-11-17', Levels: ['warehouse'], Measures: ['opening'],
     Filters: [{ Field: 'product', Ids: [7, 8] }] }
   vi.mocked(apiRequest).mockResolvedValue({ Id: ID, Name: '', Revision: 1, UpdatedAtUtc: '2026-11-17T08:30:00Z', DataSource: 1001,
-    Output: 'excel', RowCount: 4, Kind: 'movement', Data: movement, Names: { Products: [{ Id: 7, Name: 'A-100', Detail: 'Фільтр' }], Groups: [] } })
+    Output: 'excel', RowCount: 4, Kind: 'movement', Data: movement, Names: { Products: [{ Id: 7, Name: 'A-100', Detail: 'Фільтр' }], Groups: [] },
+    StoredNames: { product: { '7': 'A-100', '8': 'B-200' } } })
   const settings = await getReportHistorySettings(ID)
-  expect(settings).toEqual({ kind: 'movement', movement, products: [{ Id: 7, Name: 'A-100', Detail: 'Фільтр' }], groups: [] })
+  expect(settings).toEqual({ kind: 'movement', movement, products: [{ Id: 7, Name: 'A-100', Detail: 'Фільтр' }], groups: [],
+    storedNames: { product: { '7': 'A-100', '8': 'B-200' } } })
 })

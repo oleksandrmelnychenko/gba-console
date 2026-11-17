@@ -18,13 +18,15 @@ export type ReportHistoryItem = {
   report: string
   data: ReportRequestBody | null
   movement: StockMovementRequest | null
+  names: MovementStoredNames
 }
+export type MovementStoredNames = Partial<Record<string, Record<string, string>>>
 export type ReportHistoryDay = { day: string; count: number }
 export type ReportHistoryReportCount = { report: string; dataSource: number; profile: string | null; kind: ReportHistoryKind; count: number }
 export type ReportHistoryPage = { isHead: boolean; total: number; days: ReportHistoryDay[]; reports: ReportHistoryReportCount[]; items: ReportHistoryItem[] }
 export type ReportHistorySettings =
   | { kind: 'report' | 'regional'; data: ReportRequestBody }
-  | { kind: 'movement'; movement: StockMovementRequest; products: StockMovementLookupItem[]; groups: StockMovementLookupItem[] }
+  | { kind: 'movement'; movement: StockMovementRequest; products: StockMovementLookupItem[]; groups: StockMovementLookupItem[]; storedNames: MovementStoredNames }
 export type ReportHistoryUser = { userNetId: string; userName: string; own: boolean }
 export type ReportHistoryQuery = { from: string; to: string; reports?: string[]; user?: string | null; offset?: number; limit?: number }
 const KINDS: readonly ReportHistoryKind[] = ['report', 'movement', 'regional']
@@ -33,6 +35,12 @@ const kindOf = (value: unknown): ReportHistoryKind | null => KINDS.includes(valu
 function readMovement(value: unknown): StockMovementRequest | null {
   return record(value) && value.Version === 1 && typeof value.From === 'string' && typeof value.To === 'string'
     && Array.isArray(value.Levels) && Array.isArray(value.Measures) ? structuredClone(value) as StockMovementRequest : null
+}
+
+function readStoredNames(value: unknown): MovementStoredNames {
+  if (!record(value)) return {}
+  return Object.fromEntries(Object.entries(value).flatMap(([field, names]) => record(names)
+    ? [[field, Object.fromEntries(Object.entries(names).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))]] : []))
 }
 
 function readLookup(value: unknown): StockMovementLookupItem[] {
@@ -65,7 +73,8 @@ function readItem(value: unknown): ReportHistoryItem {
   return { id: value.Id, formedAtUtc: value.FormedAtUtc, dataSource: value.DataSource as number, output: value.Output,
     rowCount: value.RowCount as number, userNetId: value.UserNetId, userName: value.UserName, own: value.Own, kind, report: value.Report,
     data: kind === 'movement' ? null : readData(value.Id, value.FormedAtUtc, value.Data),
-    movement: kind === 'movement' ? readMovement(value.Data) : null }
+    movement: kind === 'movement' ? readMovement(value.Data) : null,
+    names: kind === 'movement' ? readStoredNames(value.Names) : {} }
 }
 
 export function parseReportHistoryPage(value: unknown): ReportHistoryPage {
@@ -112,7 +121,7 @@ export async function getReportHistorySettings(id: string, signal?: AbortSignal)
     const movement = readMovement(value.Data)
     if (!movement) throw new Error('Сервер повернув некоректний запис історії.')
     const names = record(value.Names) ? value.Names : {}
-    return { kind, movement, products: readLookup(names.Products), groups: readLookup(names.Groups) }
+    return { kind, movement, products: readLookup(names.Products), groups: readLookup(names.Groups), storedNames: readStoredNames(value.StoredNames) }
   }
   return { kind, data: normalizeSavedTemplate(value as never).Data }
 }
