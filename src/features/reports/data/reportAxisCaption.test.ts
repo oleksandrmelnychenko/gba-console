@@ -35,10 +35,10 @@ it.each(['ProductDescription', 'ProductTop'])('retains P9 source46 legacy previe
 })
 const invalidCases: Array<[string | undefined, ReportCaptionAxisSchema | undefined]> = [
   ['NativeSalesNet', { Caption: 'Опис', Identity: 'ProductDescription' }],
+  ['NativeSalesNet', { ...text('Organization'), Captioned: true, KeyKind: 'Numeric' }],
   ['NativePurchases', { Caption: 'Опис', Identity: 'ProductDescription', Captioned: false }],
   ['NativeCustomerGroupComparison', { ...text('ProductDescription'), KeyKind: undefined }],
   ['NativeStockPeriod', { ...text('ProductDescription'), DisplayKind: undefined }],
-  ['NativeSalesNet', { ...text('Organization'), Captioned: true, KeyKind: 'Numeric' }],
   ['NativeCustomerGroupComparison', { ...text('Organization'), Captioned: true, KeyKind: 'Numeric' }],
   ['NativeSalesNet', { ...text('ProductDescription'), Captioned: 'false' }],
   ['NativeStockPeriod', { ...text('ProductDescription'), KeyKind: 'text' }],
@@ -56,7 +56,7 @@ it.each(invalidCases)('keeps established caption handling for absent, foreign or
 })
 it.each([['NativeSalesNet', 'Product'], ['NativeCustomerGroupComparison', 'CustomerName'], ['NativeSalesNet', 'CustomerContract'], ['NativeSalesNet', 'SaleDocument'], ['NativeStockPeriod', 'StockWarehouse'], ['NativeStockPeriod', 'StockConsignmentItem']])('retains the scoped entity caption policy and duplicate-name disambiguation for %s/%s', (source, Identity) => {
   const entity = { Caption: 'Сутність', Identity, Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }
-  expect(reportAxisCaption(source, entity, 'Сутність [9007199254740993]')).toBe(source === 'NativeStockPeriod' ? 'Сутність [9007199254740993]' : 'Сутність')
+  expect(reportAxisCaption(source, entity, 'Сутність [9007199254740993]')).toBe(source === 'NativeCustomerGroupComparison' || Identity === 'SaleDocument' ? 'Сутність' : 'Сутність [9007199254740993]')
   const shared = previewSharedNames(['Сутність [9007199254740993]', 'Сутність [9223372036854775807]'])
   expect(reportAxisCaption(source, entity, 'Сутність [9007199254740993]', shared)).toBe('Сутність [9007199254740993]')
 })
@@ -83,7 +83,7 @@ const untrustedEntities: Array<[string, ReportCaptionAxisSchema]> = [
   ['NativePurchases', { Caption: 'Товар', Identity: 'Product', Captioned: false, KeyKind: 'Numeric', DisplayKind: 'Text' }],
   ['NativePurchases', { Caption: 'Товар', Identity: 'FutureEntity', Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }],
   ['NativeStockPeriod', { Caption: 'Організація', Identity: 'Organization', Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }],
-  ['NativeSalesNet', { Caption: 'Товар', Identity: 'Product', Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }],
+  ['NativeSalesNet', { Caption: 'Організація', Identity: 'Organization', Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }],
   ['NativePriceComparison', { Caption: 'Організація', Identity: 'Organization', Captioned: true, KeyKind: 'Numeric', DisplayKind: 'Text' }],
 ]
 it.each(untrustedEntities)('keeps legacy cleanup for untrusted entity source/identity/flags %s', (source, schema) => {

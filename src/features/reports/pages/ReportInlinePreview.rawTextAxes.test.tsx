@@ -706,7 +706,7 @@ it.each(sourceRows)('preserves raw %s/%s leaf, the one nonleaf subtotal and unre
   const view = show(wire)
   expect(screen.getByRole('rowheader', { name: caption })).toBeTruthy()
   expect(screen.getByRole('rowheader', { name: 'Підсумок: ' + caption })).toBeTruthy()
-  expect(screen.getByRole('rowheader', { name: source === 'NativePurchases' || source === 'NativeStockPeriod' ? 'Товар [38242326]' : 'Товар' })).toBeTruthy()
+  expect(screen.getByRole('rowheader', { name: source === 'NativePurchases' || source === 'NativeStockPeriod' || source === 'NativeSalesNet' ? 'Товар [38242326]' : 'Товар' })).toBeTruthy()
   for (const row of view.container.querySelectorAll('tbody tr, tfoot tr'))
     expect(within(row as HTMLElement).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['—', '66,00', '—', '—'])
 })
