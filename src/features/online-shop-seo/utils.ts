@@ -316,3 +316,28 @@ export async function validateSeoContactImage(file: File): Promise<string | null
 export function hasPaymentRecord(payment?: SeoRetailPaymentInfo | null) {
   return Boolean(payment?.NetUid)
 }
+
+/**
+ * Contact photos live under /Data/Seo on the API, served through the console's own origin. Rows saved before
+ * the server stored relative paths carry the address of whichever console uploaded them
+ * (http://127.0.0.7:5176/Data/Seo/…); show those through this origin too.
+ */
+export function resolveSeoContactImageUrl(url?: string | null): string | undefined {
+  const value = url?.trim()
+
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    const parsed = new URL(value, window.location.origin)
+
+    if (parsed.pathname.startsWith('/Data/Seo/')) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+  } catch {
+    // Not a URL: use it as it is.
+  }
+
+  return value
+}

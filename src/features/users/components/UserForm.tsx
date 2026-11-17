@@ -6,14 +6,14 @@ import {
 } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { UserProfile, UserRole } from '../types'
-import { getUserRoleKey, getUserRoleName } from '../utils'
+import { getUserRoleKey, getUserRoleName, type UserFieldError, type UserFormField } from '../utils'
 
 type UserFormProps = {
   confirmPassword?: string
   disabled?: boolean
+  /** Validation message shown under the field it is about (the forms use noValidate, no browser tooltips). */
+  fieldError?: UserFieldError | null
   includePassword?: boolean
-  /** По батькові is required for new users only; existing users (e.g. drivers) may have none. */
-  middleNameRequired?: boolean
   password?: string
   roles: UserRole[]
   user: UserProfile
@@ -24,8 +24,8 @@ type UserFormProps = {
 export function UserForm({
   confirmPassword = '',
   disabled = false,
+  fieldError = null,
   includePassword = false,
-  middleNameRequired = true,
   password = '',
   roles,
   user,
@@ -33,6 +33,7 @@ export function UserForm({
   onPasswordChange,
 }: UserFormProps) {
   const { t } = useI18n()
+  const errorOf = (field: UserFormField) => (fieldError?.field === field ? fieldError.message : undefined)
   const roleOptions = roles.reduce<Array<{ label: string; value: string }>>((options, role) => {
     const value = getUserRoleKey(role)
 
@@ -67,6 +68,7 @@ export function UserForm({
     <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={10}>
       <TextInput
         disabled={disabled}
+        error={errorOf('LastName')}
         label={t('Прізвище')}
         maxLength={20}
         required
@@ -75,6 +77,7 @@ export function UserForm({
       />
       <TextInput
         disabled={disabled}
+        error={errorOf('FirstName')}
         label={t("Ім'я")}
         maxLength={20}
         required
@@ -83,15 +86,16 @@ export function UserForm({
       />
       <TextInput
         disabled={disabled}
+        error={errorOf('MiddleName')}
         label={t('По батькові')}
         maxLength={20}
-        required={middleNameRequired}
         value={user.MiddleName || ''}
         onChange={(event) => onFieldChange('MiddleName', event.currentTarget.value)}
       />
       <TextInput
         autoComplete={includePassword ? 'off' : 'email'}
         disabled={disabled}
+        error={errorOf('Email')}
         label="Email"
         maxLength={50}
         required
@@ -102,6 +106,7 @@ export function UserForm({
       <TextInput
         disabled={disabled}
         inputMode="numeric"
+        error={errorOf('PhoneNumber')}
         label={t('Телефон')}
         maxLength={12}
         required
@@ -112,6 +117,7 @@ export function UserForm({
         clearable={false}
         data={roleData}
         disabled={disabled}
+        error={errorOf('UserRole')}
         label={t('Роль')}
         nothingFoundMessage={t('Ролей не знайдено')}
         required
@@ -124,6 +130,7 @@ export function UserForm({
           <PasswordInput
             autoComplete="new-password"
             disabled={disabled}
+            error={errorOf('password')}
             label={t('Пароль')}
             required
             value={password}
@@ -132,6 +139,7 @@ export function UserForm({
           <PasswordInput
             autoComplete="new-password"
             disabled={disabled}
+            error={errorOf('confirmPassword')}
             label={t('Підтвердження пароля')}
             required
             value={confirmPassword}

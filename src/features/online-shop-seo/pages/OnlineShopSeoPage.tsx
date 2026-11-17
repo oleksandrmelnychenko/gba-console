@@ -80,6 +80,7 @@ import {
   getLocaleLabel,
   getPageTitle,
   getSeoContactDisplayName,
+  resolveSeoContactImageUrl,
   getUniqueContacts,
   hasPaymentRecord,
   pageToFormValues,
@@ -2256,7 +2257,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               />
             </SimpleGrid>
             <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-              <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactImagePreview || contactFormValues.ImgUrl || undefined}>
+              <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactImagePreview || resolveSeoContactImageUrl(contactFormValues.ImgUrl)}>
                 {getContactInitials(contactFormValues)}
               </Avatar>
               <FileInput
@@ -2713,7 +2714,7 @@ function SeoTableContactProfileCell({ contact }: { contact: SeoContact }) {
 
   return (
     <div className="seo-table-contact-profile-cell">
-      <Avatar className="seo-table-avatar" name={contactName || undefined} radius="xl" src={contact.ImgUrl || undefined}>
+      <Avatar className="seo-table-avatar" name={contactName || undefined} radius="xl" src={resolveSeoContactImageUrl(contact.ImgUrl)}>
         {getContactInitials(contact)}
       </Avatar>
       <span className="seo-table-contact-profile-copy">

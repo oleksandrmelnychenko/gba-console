@@ -21,7 +21,8 @@ import {
   type SupplyPaymentTaskNotification,
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
-import { toastTitleAndMessage } from './notificationText'
+import { formatIsoDatesInText, isSupplyToastQuietRoute, toastTitleAndMessage } from './notificationText'
+import { consumeOwnSupplyOrderEcho } from './ownSupplyOrderEcho'
 import { realtimeUrl } from './realtimeUrl'
 import { applyDataSyncNotification } from './dataSyncProgressStore'
 import { humanizeSyncStepKeys } from './syncStepLabel'
@@ -176,7 +177,9 @@ function createSupplyOrdersConnection(t: (key: string) => string): HubConnection
   connection.on('AddedOrUpdatedOrder', (payload: unknown) => {
     const notification = parseRealtimePayload<SupplyOrderNotification>(payload)
     realtimeBus.emit(realtimeEvents.supplyOrderNotification, notification)
-    showSupplyOrderNotification(notification, t)
+    if (!consumeOwnSupplyOrderEcho()) {
+      showSupplyOrderNotification(notification, t)
+    }
   })
 
   connection.on('NewOrderAdded', (payload: unknown) => {
@@ -279,6 +282,11 @@ function createConnection(path: string): HubConnection {
 }
 
 function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (key: string) => string): void {
+  // Read at event time (not a hook dependency, which would reconnect every hub on navigation).
+  if (isSupplyToastQuietRoute(window.location.pathname)) {
+    return
+  }
+
   const title = getStringValue(notification.Title) || t('Оновлено замовлення')
   const message = [
     getStringValue(notification.Message),
@@ -288,14 +296,18 @@ function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (
 
   notifications.show({
     color: 'teal',
-    ...toastTitleAndMessage(title, message),
+    ...toastTitleAndMessage(title, formatIsoDatesInText(message)),
   })
 }
 
 function showPaymentTaskNotification(notification: SupplyPaymentTaskNotification, t: (key: string) => string): void {
+  if (isSupplyToastQuietRoute(window.location.pathname)) {
+    return
+  }
+
   const message = [
     getStringValue(notification.PaymentForm),
-    getStringValue(notification.PayToDate),
+    formatIsoDatesInText(getStringValue(notification.PayToDate)),
     getStringValue(notification.OrganisationName),
     formatAmount(notification.Amount),
   ].filter(Boolean).join('\n')

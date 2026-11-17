@@ -1876,11 +1876,15 @@ html[data-gba-env='qa'] .console-header {
   }
 }
 
-/* Narrow widths: the module row is hidden, a burger opens the same menu in a drawer. */
+/* Below 1024px a burger opens the whole menu in a drawer. From 769px the module row stays visible too,
+   its «Ще» overflow listing the same modules; at ≤768px the module row is hidden and the burger is the menu. */
 .console-header-burger { display: none; flex: 0 0 auto; }
 
-@media (max-width: 48em) {
+@media (max-width: 63.99em) {
   .console-header-burger { display: inline-flex; }
+}
+
+@media (max-width: 48em) {
   .console-brand-logo { width: 34px; height: 34px; }
 }
 

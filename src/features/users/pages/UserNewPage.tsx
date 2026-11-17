@@ -25,9 +25,10 @@ import type { UserProfile, UserRole } from '../types'
 import {
   createEmptyUserProfile,
   getIdentityResponseError,
+  getUserProfileFieldError,
   getUserSaveErrorMessage,
   normalizeUserForSave,
-  validateUserProfile,
+  type UserFieldError,
 } from '../utils'
 
 type UserNewRouteState = {
@@ -74,6 +75,7 @@ function UserNewPageContent() {
   const [password, setPassword] = useValueState('')
   const [confirmPassword, setConfirmPassword] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
+  const [fieldError, setFieldError] = useValueState<UserFieldError | null>(null)
   const [isLoadingRoles, setLoadingRoles] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const saveControllerRef = useRef<AbortController | null>(null)
@@ -111,6 +113,7 @@ function UserNewPageContent() {
   }, [setError, setLoadingRoles, setRoles, t])
 
   function setField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
+    setFieldError((current) => (current?.field === key ? null : current))
     setUser((currentUser) => ({
       ...currentUser,
       [key]: value,
@@ -118,6 +121,7 @@ function UserNewPageContent() {
   }
 
   function setPasswordField(field: 'password' | 'confirmPassword', value: string) {
+    setFieldError((current) => (current?.field === 'password' || current?.field === 'confirmPassword' ? null : current))
     if (field === 'password') {
       setPassword(value)
       return
@@ -142,15 +146,15 @@ function UserNewPageContent() {
     }
 
     const payload = normalizeUserForSave(user)
-    const validationError = validateUserProfile(payload, {
+    // По батькові is optional (same rule as edit); a message goes under its field, not into a browser tooltip.
+    const validationError = getUserProfileFieldError(payload, {
       confirmPassword,
       password,
-      requireMiddleName: true,
       requirePassword: true,
     })
 
+    setFieldError(validationError)
     if (validationError) {
-      setError(validationError)
       return
     }
 
@@ -209,7 +213,7 @@ function UserNewPageContent() {
           </Alert>
         )}
 
-        <form autoComplete="off" id="user-new-form" onSubmit={handleSubmit}>
+        <form autoComplete="off" id="user-new-form" noValidate onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding={12}>
             <Stack gap={10}>
               <Text className="app-section-title" fw={600}>
@@ -218,6 +222,7 @@ function UserNewPageContent() {
               <UserForm
                 confirmPassword={confirmPassword}
                 disabled={isSaving || isLoadingRoles}
+                fieldError={fieldError}
                 includePassword
                 password={password}
                 roles={roles}

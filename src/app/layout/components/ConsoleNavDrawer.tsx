@@ -8,8 +8,10 @@ import { useGuardedNavigate } from '../../../shared/router/navigationGuard'
 const nodeKey = (node: NavigationModule | NavigationNode) => node.NetUid || String(node.Id)
 
 /**
- * Main menu for widths where the header's module row is hidden (≤ 48em). It lists the same
- * permission-filtered modules and sub-items as the desktop nav and closes once a page is picked.
+ * Main menu below 1024px (the module row is hidden at ≤ 48em; from 769px it stays, with its «Ще» overflow).
+ * It lists the same permission-filtered modules and sub-items as the desktop nav and closes once a page is
+ * picked. A modal dialog named «Меню»: focus moves in on open, Tab stays inside, Escape closes and focus
+ * returns to the burger.
  */
 export function ConsoleNavDrawer() {
   const { t } = useI18n()
@@ -39,7 +41,11 @@ export function ConsoleNavDrawer() {
       />
       <Drawer
         className="console-nav-drawer"
+        closeButtonProps={{ 'aria-label': t('Закрити меню') }}
+        closeOnEscape
         opened={opened}
+        returnFocus
+        trapFocus
         padding="sm"
         scrollAreaComponent={ScrollArea.Autosize}
         size="min(320px, 85vw)"

@@ -100,3 +100,11 @@ export function formatEngineVolume(value?: number | null): string {
     ? `${engineLitresFormatter.format(value / 1000)} л`
     : `${engineCcFormatter.format(value)} см³`
 }
+
+/**
+ * A file the server refused (not an Excel book, missing columns, damaged) is still logged as an import with
+ * status 'failed' and no rows. It changed nothing, so it is labelled «Файл відхилено», not a failed import.
+ */
+export function isRejectedVehicleRegistryImport(item: { Status?: string | null; TotalRows?: number | null }): boolean {
+  return item.Status === 'failed' && !item.TotalRows
+}

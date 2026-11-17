@@ -66,7 +66,8 @@ export function RoleFormModal({
       title={<span style={MODAL_MONO_STYLE}>{role ? t('Редагування ролі') : t('Нова роль')}</span>}
       onClose={onClose}
     >
-      <form onSubmit={handleSubmit}>
+      {/* noValidate: an empty name gets the Mantine field error below, not a browser tooltip. */}
+      <form noValidate onSubmit={handleSubmit}>
         <Stack gap={10}>
           <TextInput
             disabled={isSaving}

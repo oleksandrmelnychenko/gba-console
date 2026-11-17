@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { ApiError } from '../../shared/api/apiClient'
 import {
   getIdentityResponseError,
+  getUserProfileFieldError,
   getUserSaveErrorMessage,
   normalizeUserForSave,
   validatePasswordPair,
@@ -46,9 +47,23 @@ describe('validateUserProfile', () => {
     expect(normalizeUserForSave({ ...baseUser, PhoneNumber: ' 380000000121 ' }).PhoneNumber).toBe('380000000121')
   })
 
-  it('lets existing users without a patronymic be saved; create still requires it', () => {
+  it('treats По батькові as optional on create and edit alike', () => {
     expect(validateUserProfile(baseUser)).toBeNull()
-    expect(validateUserProfile(baseUser, { requireMiddleName: true })).toBe('Вкажіть по батькові')
+    expect(validateUserProfile(baseUser, {
+      confirmPassword: 'Secret1!',
+      password: 'Secret1!',
+      requirePassword: true,
+    })).toBeNull()
+  })
+
+  it('names the field each message belongs to', () => {
+    expect(getUserProfileFieldError({ ...baseUser, LastName: ' ' })).toEqual({ field: 'LastName', message: 'Вкажіть прізвище' })
+    expect(getUserProfileFieldError({ ...baseUser, MiddleName: 'Я'.repeat(21) })?.field).toBe('MiddleName')
+    expect(getUserProfileFieldError({ ...baseUser, Email: 'nope' })?.field).toBe('Email')
+    expect(getUserProfileFieldError({ ...baseUser, PhoneNumber: '12' })?.field).toBe('PhoneNumber')
+    expect(getUserProfileFieldError({ ...baseUser, UserRole: undefined })?.field).toBe('UserRole')
+    expect(getUserProfileFieldError(baseUser, { requirePassword: true })?.field).toBe('password')
+    expect(getUserProfileFieldError(baseUser, { password: 'Secret1!', confirmPassword: 'Other1!' })?.field).toBe('confirmPassword')
   })
 })
 

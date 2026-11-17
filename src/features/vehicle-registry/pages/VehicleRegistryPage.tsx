@@ -67,6 +67,7 @@ import {
   getVehicleRegistryFieldLabel,
   getVehicleRegistryImportErrorMessage,
   isInvalidEngineVolume,
+  isRejectedVehicleRegistryImport,
 } from '../vehicleRegistryText'
 import './vehicle-registry-page.css'
 import '../../../shared/ui/console-table-page.css'
@@ -986,7 +987,7 @@ function ImportIssuesDrawer({
             variant="inventory"
             eyebrow={item.Brand || t('Імпорт')}
             title={item.OriginalFileName}
-            meta={<><span className="app-mono">{formatDate(item.CompletedAtUtc || item.CreatedAtUtc)}</span><ImportStatusBadge status={item.Status} /></>}
+            meta={<><span className="app-mono">{formatDate(item.CompletedAtUtc || item.CreatedAtUtc)}</span><ImportStatusBadge item={item} /></>}
             metrics={<>
               <DocumentDetailMetric label={t('Рядків')} value={numberFormatter.format(item.TotalRows)} />
               <DocumentDetailMetric label={t('Проблем')} value={numberFormatter.format(total)} />
@@ -1212,7 +1213,7 @@ function createImportColumns(
       width: 330,
     },
     {
-      cell: (item) => <ImportStatusBadge status={item.Status} />,
+      cell: (item) => <ImportStatusBadge item={item} />,
       header: t('Статус'),
       id: 'status',
       width: 130,
@@ -1376,8 +1377,19 @@ function RegistryStatPill({
   )
 }
 
-function ImportStatusBadge({ status }: { status: VehicleRegistryImport['Status'] }) {
+function ImportStatusBadge({ item }: { item: VehicleRegistryImport }) {
   const { t } = useI18n()
+  const status = item.Status
+
+  // A refused file changed nothing: say so instead of a failed import.
+  if (isRejectedVehicleRegistryImport(item)) {
+    return (
+      <Badge className="app-role-pill is-red" title={t('Файл не прийнято: жодного рядка не імпортовано, реєстр не змінено')}>
+        {t('Файл відхилено')}
+      </Badge>
+    )
+  }
+
   const label = status === 'completed' ? t('Завершено') : status === 'failed' ? t('Помилка') : t('Обробка')
   const className = status === 'completed' ? 'is-green' : status === 'failed' ? 'is-red' : 'is-orange'
 

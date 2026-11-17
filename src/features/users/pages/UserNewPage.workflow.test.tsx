@@ -35,6 +35,7 @@ vi.mock('../api/usersApi', () => ({
 vi.mock('../components/UserForm', () => ({
   UserForm: ({
     confirmPassword,
+    fieldError,
     password,
     roles,
     user,
@@ -42,6 +43,7 @@ vi.mock('../components/UserForm', () => ({
     onPasswordChange,
   }: {
     confirmPassword: string
+    fieldError?: { field: string; message: string } | null
     password: string
     roles: UserRole[]
     user: UserProfile
@@ -50,6 +52,7 @@ vi.mock('../components/UserForm', () => ({
   }) => (
     <>
       <output aria-label="Поточний email">{user.Email || ''}</output>
+      {fieldError && <output aria-label={`Помилка поля ${fieldError.field}`}>{fieldError.message}</output>}
       <output aria-label="Поточний пароль">{password}</output>
       <output aria-label="Поточне підтвердження">{confirmPassword}</output>
       <button

@@ -49,12 +49,32 @@ export function getUserRoleKey(role: UserRole): string {
   return role.NetUid || String(role.Id || '')
 }
 
+// Users created in the console store 'uk'/'pl' (the culture code); seeded and imported users store the
+// country code 'UA'/'PL'. Both mean the same region: show and filter them as one. The stored value is left
+// as it is (it also feeds the identity «region» claim).
+const USER_REGION_ALIASES: Record<string, string> = {
+  pl: USER_REGION_POLAND,
+  ua: USER_REGION_UKRAINE,
+  uk: USER_REGION_UKRAINE,
+  'польща': USER_REGION_POLAND,
+  'україна': USER_REGION_UKRAINE,
+}
+
+/** 'uk' for UA/uk/Україна, 'pl' for PL/pl/Польща, otherwise the trimmed value ('' when empty). */
+export function normalizeUserRegion(region?: string | null): string {
+  const value = region?.trim() || ''
+
+  return USER_REGION_ALIASES[value.toLowerCase()] || value
+}
+
 export function getUserRegionName(region?: string | null): string {
-  if (region === USER_REGION_POLAND) {
+  const normalized = normalizeUserRegion(region)
+
+  if (normalized === USER_REGION_POLAND) {
     return translate('Польща')
   }
 
-  if (region === USER_REGION_UKRAINE) {
+  if (normalized === USER_REGION_UKRAINE) {
     return translate('Україна')
   }
 
@@ -86,15 +106,32 @@ export function normalizeUserForSave(user: UserProfile): UserProfile {
   }
 }
 
-export function validateUserProfile(
+export type UserFormField =
+  | 'LastName'
+  | 'FirstName'
+  | 'MiddleName'
+  | 'Email'
+  | 'PhoneNumber'
+  | 'UserRole'
+  | 'password'
+  | 'confirmPassword'
+
+export type UserFieldError = { field: UserFormField; message: string }
+
+type UserProfileValidationOptions = {
+  confirmPassword?: string
+  password?: string
+  requirePassword?: boolean
+}
+
+/**
+ * The first invalid field of a user form, so the message is shown under that field (Mantine error) instead of
+ * a browser «Заповніть це поле» tooltip. По батькові is optional on create and edit alike.
+ */
+export function getUserProfileFieldError(
   user: UserProfile,
-  options: {
-    confirmPassword?: string
-    password?: string
-    requireMiddleName?: boolean
-    requirePassword?: boolean
-  } = {},
-): string | null {
+  options: UserProfileValidationOptions = {},
+): UserFieldError | null {
   const firstName = user.FirstName?.trim() || ''
   const lastName = user.LastName?.trim() || ''
   const middleName = user.MiddleName?.trim() || ''
@@ -104,55 +141,60 @@ export function validateUserProfile(
   const confirmPassword = options.confirmPassword || ''
 
   if (!lastName) {
-    return translate('Вкажіть прізвище')
+    return { field: 'LastName', message: translate('Вкажіть прізвище') }
   }
 
   if (lastName.length > nameMaxLength) {
-    return translate('Прізвище має містити не більше {count} символів', { count: nameMaxLength })
+    return { field: 'LastName', message: translate('Прізвище має містити не більше {count} символів', { count: nameMaxLength }) }
   }
 
   if (!firstName) {
-    return translate("Вкажіть ім'я")
+    return { field: 'FirstName', message: translate("Вкажіть ім'я") }
   }
 
   if (firstName.length > nameMaxLength) {
-    return translate("Ім'я має містити не більше {count} символів", { count: nameMaxLength })
-  }
-
-  // Existing users (drivers, seeded accounts) may have no patronymic; it is required only on create.
-  if (!middleName && options.requireMiddleName) {
-    return translate('Вкажіть по батькові')
+    return { field: 'FirstName', message: translate("Ім'я має містити не більше {count} символів", { count: nameMaxLength }) }
   }
 
   if (middleName.length > nameMaxLength) {
-    return translate('По батькові має містити не більше {count} символів', { count: nameMaxLength })
+    return { field: 'MiddleName', message: translate('По батькові має містити не більше {count} символів', { count: nameMaxLength }) }
   }
 
   if (!email || !emailPattern.test(email)) {
-    return translate('Вкажіть коректний email')
+    return { field: 'Email', message: translate('Вкажіть коректний email') }
   }
 
   if (email.length > emailMaxLength) {
-    return translate('Email має містити не більше {count} символів', { count: emailMaxLength })
+    return { field: 'Email', message: translate('Email має містити не більше {count} символів', { count: emailMaxLength }) }
   }
 
   if (!phone || !phonePattern.test(phone)) {
-    return translate('Телефон має містити 9 або 10 цифр, або 12 цифр у форматі 380XXXXXXXXX')
+    return { field: 'PhoneNumber', message: translate('Телефон має містити 9 або 10 цифр, або 12 цифр у форматі 380XXXXXXXXX') }
   }
 
   if (!user.UserRole || !getUserRoleKey(user.UserRole)) {
-    return translate('Оберіть роль')
+    return { field: 'UserRole', message: translate('Оберіть роль') }
   }
 
   if (options.requirePassword || password || confirmPassword) {
     const passwordError = validatePasswordPair(password, confirmPassword)
 
     if (passwordError) {
-      return passwordError
+      return { field: getInvalidPasswordField(password, confirmPassword), message: passwordError }
     }
   }
 
   return null
+}
+
+export function validateUserProfile(user: UserProfile, options: UserProfileValidationOptions = {}): string | null {
+  return getUserProfileFieldError(user, options)?.message ?? null
+}
+
+export function getInvalidPasswordField(password: string, confirmPassword: string): 'password' | 'confirmPassword' {
+  if (!password) return 'password'
+  if (!confirmPassword || password !== confirmPassword) return 'confirmPassword'
+  return 'password'
 }
 
 export function validatePasswordPair(password: string, confirmPassword: string): string | null {

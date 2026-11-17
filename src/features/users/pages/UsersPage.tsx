@@ -35,6 +35,7 @@ import {
   getUserFullName,
   getUserRegionName,
   getUserRoleName,
+  normalizeUserRegion,
 } from '../utils'
 import { UserRoleIcon } from '../components/UserRoleIcon'
 import './users-page.css'
@@ -520,7 +521,8 @@ function getUserRoleFilterValue(role?: UserRole | null) {
 }
 
 function getUserRegionFilterValue(user: UserProfile) {
-  return user.Region?.trim() || 'other'
+  // 'UA' (seeded) and 'uk' (created here) are one option «Україна».
+  return normalizeUserRegion(user.Region) || 'other'
 }
 
 function getRegionOptionLabel(region: string) {

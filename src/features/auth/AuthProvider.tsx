@@ -19,8 +19,8 @@ import { startSessionRefreshScheduler } from '../../shared/api/sessionRefreshSch
 import { getCurrentUserProfile, getServerSession, signIn, signOut } from './api/authApi'
 import { getMyPermissions } from './api/permissionsApi'
 import {
-  clearAuthReturnPath,
   consumeAuthReturnPath,
+  markExplicitSignOut,
   rememberAuthReturnPath,
 } from './authReturnPath'
 import { AuthContext } from './AuthContext'
@@ -91,7 +91,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return
     }
 
-    clearAuthReturnPath()
+    // Also stops pages reloaded by browser Back from becoming the next login's landing page.
+    markExplicitSignOut()
     // signOut clears storage while holding the refresh/logout lock; repeat locally so the
     // provider also remains correct if the transport implementation is replaced or mocked.
     clearSession()
@@ -103,7 +104,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [navigate])
   const logoutAfterUnauthorized = useCallback(() => {
     if (!explicitLogoutRef.current) {
-      rememberAuthReturnPath(location)
+      const lostSession = readSession()
+      rememberAuthReturnPath(location, lostSession?.userNetUid || lostSession?.user?.NetUid)
     }
 
     clearSession()
@@ -258,7 +260,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           const nextSession = await enrichSession(await signIn(username, password))
           explicitLogoutRef.current = false
           setSession(nextSession)
-          navigate(consumeAuthReturnPath(), { replace: true })
+          navigate(consumeAuthReturnPath('/dashboard', nextSession.userNetUid || nextSession.user?.NetUid), { replace: true })
         } finally {
           setLoading(false)
         }

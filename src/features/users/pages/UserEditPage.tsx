@@ -34,11 +34,13 @@ import { UserForm } from '../components/UserForm'
 import type { UserProfile, UserRole } from '../types'
 import {
   getIdentityResponseError,
+  getInvalidPasswordField,
   getUserFullName,
+  getUserProfileFieldError,
   getUserSaveErrorMessage,
   normalizeUserForSave,
+  type UserFieldError,
   validatePasswordPair,
-  validateUserProfile,
 } from '../utils'
 import './user-edit-page.css'
 
@@ -109,6 +111,7 @@ function UserEditPageContent() {
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const [confirmCloseOpened, setConfirmCloseOpened] = useValueState(false)
   const [passwordFieldError, setPasswordFieldError] = useValueState<PasswordFieldError | null>(null)
+  const [profileFieldError, setProfileFieldError] = useValueState<UserFieldError | null>(null)
   const [activeTab, setActiveTab] = useState<UserEditTab>('profile')
   const saveControllerRef = useRef<AbortController | null>(null)
   const canEdit = hasPermission(PermissionKeys.Users.User.Edit)
@@ -165,6 +168,7 @@ function UserEditPageContent() {
   }
 
   function setField<K extends keyof UserProfile>(key: K, value: UserProfile[K]) {
+    setProfileFieldError((current) => (current?.field === key ? null : current))
     setUser((currentUser) =>
       currentUser
         ? {
@@ -226,10 +230,10 @@ function UserEditPageContent() {
     }
 
     const payload = normalizeUserForSave(user)
-    const validationError = validateUserProfile(payload)
+    const validationError = getUserProfileFieldError(payload)
 
+    setProfileFieldError(validationError)
     if (validationError) {
-      setError(validationError)
       return
     }
 
@@ -371,6 +375,7 @@ function UserEditPageContent() {
           confirmPassword={confirmPassword}
           password={password}
           passwordFieldError={passwordFieldError}
+          profileFieldError={profileFieldError}
           roles={roles}
           status={{
             isDeleting,
@@ -492,6 +497,7 @@ function UserEditContent({
   confirmPassword,
   password,
   passwordFieldError,
+  profileFieldError,
   roles,
   status,
   user,
@@ -508,6 +514,7 @@ function UserEditContent({
   confirmPassword: string
   password: string
   passwordFieldError: PasswordFieldError | null
+  profileFieldError: UserFieldError | null
   roles: UserRole[]
   status: UserEditStatus
   user: UserProfile | null
@@ -568,7 +575,7 @@ function UserEditContent({
 
       {activeTab === 'profile' && (
         <Box pt={10}>
-          <form id="user-edit-form" onSubmit={onSubmit}>
+          <form id="user-edit-form" noValidate onSubmit={onSubmit}>
             <div className="user-sheet-card">
               <div className="user-sheet-card-head">
                 <span className="user-sheet-card-dot" aria-hidden="true" />
@@ -577,7 +584,7 @@ function UserEditContent({
               <div className="user-sheet-card-body">
                 <UserForm
                   disabled={!canEdit || status.isSaving || status.isDeleting}
-                  middleNameRequired={false}
+                  fieldError={profileFieldError}
                   roles={roles}
                   user={user}
                   onFieldChange={onFieldChange}
@@ -626,7 +633,7 @@ function UserPasswordPanel({
   const [isPasswordChangeEnabled, setPasswordChangeEnabled] = useState(false)
 
   return (
-    <form onSubmit={onSubmit}>
+    <form noValidate onSubmit={onSubmit}>
       <div className="user-sheet-card">
         <div className="user-sheet-card-head">
           <span className="user-sheet-card-dot" aria-hidden="true" />
@@ -712,12 +719,6 @@ function DeleteUserModal({
       </Stack>
     </AppModal>
   )
-}
-
-function getInvalidPasswordField(password: string, confirmPassword: string): PasswordField {
-  if (!password) return 'password'
-  if (!confirmPassword || password !== confirmPassword) return 'confirmPassword'
-  return 'password'
 }
 
 function isUserNotFoundError(error: unknown): boolean {
