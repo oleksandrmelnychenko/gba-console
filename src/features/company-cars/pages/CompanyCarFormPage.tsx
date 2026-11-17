@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   Group,
+  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -21,6 +22,14 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { ApiError } from '../../../shared/api/apiClient'
+import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
+import {
+  COMPANY_CAR_LIMITS,
+  formatCarMetric,
+  parseCarNumber,
+  validateCompanyCarForm,
+} from '../companyCarFormValidation'
 import {
   createCompanyCar,
   deleteCompanyCar,
@@ -56,11 +65,15 @@ type CompanyCarFormPageState = {
   error: string | null
   form: CompanyCarFormState
   isLoading: boolean
+  isNotFound: boolean
   organizations: Organization[]
+  showRequired: boolean
 }
 
 type CompanyCarFormPageAction =
   | { type: 'failed'; error: string }
+  | { type: 'not-found' }
+  | { type: 'show-required' }
   | { type: 'loaded'; companyCar: CompanyCar; form: CompanyCarFormState; organizations: Organization[] }
   | { type: 'patch-form'; patch: Partial<CompanyCarFormState> }
   | { type: 'set-company-car'; companyCar: CompanyCar }
@@ -100,7 +113,7 @@ function CompanyCarFormPageContent() {
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
   const isEditMode = Boolean(id)
   const [pageState, dispatchPageState] = useReducer(companyCarFormPageReducer, undefined, createCompanyCarFormPageState)
-  const { companyCar, error, form, isLoading, organizations } = pageState
+  const { companyCar, error, form, isLoading, isNotFound, organizations, showRequired } = pageState
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
@@ -109,14 +122,25 @@ function CompanyCarFormPageContent() {
 
   useEffect(() => {
     const controller = new AbortController()
+
+    if (id !== undefined && !isRecordGuid(id)) {
+      dispatchPageState({ type: 'not-found' })
+      return () => controller.abort()
+    }
+
     dispatchPageState({ type: 'start-loading' })
 
     void Promise.all([
       getCompanyCarOrganizations(),
-      id ? getCompanyCarForEdit(id) : Promise.resolve(null),
+      id ? getCompanyCarForEdit(id).catch(nullWhenNotFound) : Promise.resolve(null),
     ])
       .then(([nextOrganizations, nextCompanyCar]) => {
         if (controller.signal.aborted) {
+          return
+        }
+
+        if (id && !nextCompanyCar?.NetUid && !nextCompanyCar?.Id) {
+          dispatchPageState({ type: 'not-found' })
           return
         }
 
@@ -150,6 +174,8 @@ function CompanyCarFormPageContent() {
     [form.organizationNetUid, organizations],
   )
 
+  const fieldErrors = useMemo(() => validateCompanyCarForm(form, t, showRequired), [form, showRequired, t])
+
   function updateForm(patch: Partial<CompanyCarFormState>) {
     dispatchPageState({ patch, type: 'patch-form' })
   }
@@ -171,36 +197,25 @@ function CompanyCarFormPageContent() {
       return
     }
 
-    const mileage = parseDecimal(form.mileage)
-    const fuelAmount = parseDecimal(form.fuelAmount)
-    const tankCapacity = parseDecimal(form.tankCapacity)
+    const submitErrors = validateCompanyCarForm(form, t, true)
 
-    if (!fuelAmount) {
-      dispatchPageState({ error: t('Введіть кількість пального'), type: 'set-error' })
-      return
-    }
-
-    if (!mileage) {
-      dispatchPageState({ error: t('Введіть пробіг'), type: 'set-error' })
-      return
-    }
-
-    if (tankCapacity > 0 && tankCapacity < fuelAmount) {
-      dispatchPageState({ error: t('Вміст баку менший ніж кількість топлива'), type: 'set-error' })
+    if (Object.keys(submitErrors).length > 0) {
+      dispatchPageState({ type: 'show-required' })
+      dispatchPageState({ error: t('Перевірте виділені поля'), type: 'set-error' })
       return
     }
 
     const payload: CompanyCarPayload = {
       ...companyCar,
-      CarBrand: form.carBrand,
-      FuelAmount: fuelAmount,
-      InCityConsumption: parseDecimal(form.inCityConsumption),
-      LicensePlate: form.licensePlate,
-      Mileage: mileage,
-      MixedModeConsumption: parseDecimal(form.mixedModeConsumption),
+      CarBrand: form.carBrand.trim(),
+      FuelAmount: readNumber(form.fuelAmount),
+      InCityConsumption: readNumber(form.inCityConsumption),
+      LicensePlate: form.licensePlate.trim(),
+      Mileage: readNumber(form.mileage),
+      MixedModeConsumption: readNumber(form.mixedModeConsumption),
       Organization: selectedOrganization,
-      OutsideCityConsumption: parseDecimal(form.outsideCityConsumption),
-      TankCapacity: tankCapacity,
+      OutsideCityConsumption: readNumber(form.outsideCityConsumption),
+      TankCapacity: readNumber(form.tankCapacity),
     }
 
     if (!tryStartSaving()) {
@@ -216,14 +231,15 @@ function CompanyCarFormPageContent() {
         color: 'green',
         message: isEditMode ? t('Автомобіль компанії оновлено') : t('Автомобіль компанії створено'),
       })
+      /* The lock stays on after success: the dialog is still mounted while
+         the route changes and must not save the car a second time. */
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
+      setSaving(false)
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти автомобіль компанії'),
         type: 'set-error',
       })
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -254,6 +270,21 @@ function CompanyCarFormPageContent() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  if (isNotFound) {
+    return (
+      <AppModal opened size={480} className="company-car-form-sheet app-compact-form" title={t('Автомобіль компанії')} onClose={handleCancel}>
+        <Stack gap={10}>
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Автомобіль не знайдено.')}
+          </Alert>
+          <AppModalFooter>
+            <Button color="gray" variant="default" onClick={handleCancel}>{t('Закрити')}</Button>
+          </AppModalFooter>
+        </Stack>
+      </AppModal>
+    )
   }
 
   return (
@@ -287,8 +318,8 @@ function CompanyCarFormPageContent() {
                 title={form.licensePlate || t('Нове авто')}
                 meta={form.carBrand ? <DocumentDetailChip>{form.carBrand}</DocumentDetailChip> : null}
                 metrics={<>
-                  <DocumentDetailMetric label={t('Показники одометра')} value={form.mileage || '—'} suffix="км" />
-                  <DocumentDetailMetric label={t('Кількість пального')} value={form.fuelAmount || '—'} suffix="л" />
+                  <DocumentDetailMetric label={t('Показники одометра')} value={formatCarMetric(form.mileage)} suffix="км" />
+                  <DocumentDetailMetric label={t('Кількість пального')} value={formatCarMetric(form.fuelAmount)} suffix="л" />
                 </>}
               />
             }
@@ -307,13 +338,18 @@ function CompanyCarFormPageContent() {
           /></div>
                 <TextInput
               disabled={isLoading || isSaving}
+              error={fieldErrors.carBrand}
               label={t('Марка автомобіля')}
+              maxLength={COMPANY_CAR_LIMITS.carBrandMaxLength}
               value={form.carBrand}
               onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
             />
                 <TextInput
               disabled={isLoading || isSaving}
+              error={fieldErrors.licensePlate}
               label={t('№ Авто')}
+              maxLength={COMPANY_CAR_LIMITS.licensePlateMaxLength}
+              required
               value={form.licensePlate}
               onChange={(event) => updateForm({ licensePlate: event.currentTarget.value })}
             />
@@ -321,45 +357,72 @@ function CompanyCarFormPageContent() {
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Пальне та пробіг')} stacked>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.tankCapacity}
+              hideControls
               label={t('Вмістимість баку')}
+              max={COMPANY_CAR_LIMITS.tankCapacityMax}
+              required
               value={form.tankCapacity}
-              onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
+              onChange={(value) => updateForm({ tankCapacity: String(value) })}
             />
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.fuelAmount}
+              hideControls
               label={t('Кількість пального')}
+              required
               value={form.fuelAmount}
-              onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
+              onChange={(value) => updateForm({ fuelAmount: String(value) })}
             />
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.mileage}
+              hideControls
               label={t('Показники одометра')}
+              allowDecimal={false}
+              max={COMPANY_CAR_LIMITS.mileageMax}
+              required
               value={form.mileage}
-              onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
+              onChange={(value) => updateForm({ mileage: String(value) })}
             />
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Витрати пального')} stacked>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.inCityConsumption}
+              hideControls
               label={t('Розхід по місту на 100 км')}
+              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.inCityConsumption}
-              onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
+              onChange={(value) => updateForm({ inCityConsumption: String(value) })}
             />
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.outsideCityConsumption}
+              hideControls
               label={t('Розхід по трасі на 100 км')}
+              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.outsideCityConsumption}
-              onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
+              onChange={(value) => updateForm({ outsideCityConsumption: String(value) })}
             />
-                <TextInput
+                <NumberInput
+              allowNegative={false}
               disabled={isLoading || isSaving}
+              error={fieldErrors.mixedModeConsumption}
+              hideControls
               label={t('Змішаний розхід')}
+              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.mixedModeConsumption}
-              onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
+              onChange={(value) => updateForm({ mixedModeConsumption: String(value) })}
             />
               </SimpleGrid>
             </DocumentDetailSection>
@@ -425,7 +488,9 @@ function createCompanyCarFormPageState(): CompanyCarFormPageState {
     error: null,
     form: createEmptyForm(),
     isLoading: true,
+    isNotFound: false,
     organizations: [],
+    showRequired: false,
   }
 }
 
@@ -442,11 +507,25 @@ function companyCarFormPageReducer(
       }
     case 'loaded':
       return {
+        ...state,
         companyCar: action.companyCar,
         error: null,
         form: action.form,
         isLoading: false,
+        isNotFound: false,
         organizations: action.organizations,
+      }
+    case 'not-found':
+      return {
+        ...state,
+        error: null,
+        isLoading: false,
+        isNotFound: true,
+      }
+    case 'show-required':
+      return {
+        ...state,
+        showRequired: true,
       }
     case 'patch-form':
       return {
@@ -506,6 +585,10 @@ function createEmptyForm(): CompanyCarFormState {
 }
 
 function toFormState(companyCar: CompanyCar, organization: Organization | null): CompanyCarFormState {
+  /* A saved car may really have 0 l of fuel; a new car starts with empty fields. */
+  const isSaved = Boolean(companyCar.NetUid || companyCar.Id)
+  const formatField = (value?: number) => formatNumberField(value, isSaved)
+
   return {
     carBrand: companyCar.CarBrand || '',
     fuelAmount: formatField(companyCar.FuelAmount),
@@ -519,14 +602,21 @@ function toFormState(companyCar: CompanyCar, organization: Organization | null):
   }
 }
 
-function formatField(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) && value !== 0 ? String(value) : ''
+function formatNumberField(value: number | undefined, keepZero: boolean): string {
+  return typeof value === 'number' && Number.isFinite(value) && (keepZero || value !== 0) ? String(value) : ''
 }
 
-function parseDecimal(value: string): number {
-  const parsed = parseFloat(value.replace(/,/g, '.'))
+/** Only called after validation passed: empty optional values are sent as 0. */
+function readNumber(value: string): number {
+  return parseCarNumber(value) ?? 0
+}
 
-  return Number.isFinite(parsed) ? parsed : 0
+function nullWhenNotFound(loadError: unknown): null {
+  if (loadError instanceof ApiError && loadError.status === 404) {
+    return null
+  }
+
+  throw loadError
 }
 
 function toSelectOptions<T extends { NetUid?: string; Id?: number }>(items: T[], getLabel: (item: T) => string | undefined) {

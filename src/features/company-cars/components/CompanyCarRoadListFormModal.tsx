@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { CircleAlert, Save, X } from 'lucide-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-road-list-form.css'
@@ -30,6 +30,12 @@ import {
   updateCompanyCarRoadList,
 } from '../api/companyCarsApi'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import {
+  hasRoadListFormatErrors,
+  ROAD_LIST_LIMITS,
+  validateRoadListForm,
+  type RoadListFormErrors,
+} from '../roadListFormValidation'
 import type {
   CompanyCar,
   CompanyCarRoadList,
@@ -59,6 +65,7 @@ type RoadListModalState = {
   outcomeOrders: OutcomePaymentOrder[]
   outcomeOrdersLoaded: boolean
   selectedOutcomeNetUid: string
+  showRequired: boolean
   userSearchValue: string
   users: UserProfile[]
 }
@@ -75,6 +82,7 @@ type RoadListModalAction =
   | { type: 'reset'; roadList: CompanyCarRoadList | null }
   | { type: 'restore-driver'; driver: CompanyCarRoadListDriver }
   | { type: 'selected-outcome-changed'; selectedOutcomeNetUid: string }
+  | { type: 'show-required' }
   | { type: 'started-saving' }
   | { type: 'user-search-changed'; userSearchValue: string }
 
@@ -100,6 +108,7 @@ export function CompanyCarRoadListFormModal({
     error,
     effectiveCompanyCar,
     effectiveResponsible,
+    fieldErrors,
     form,
     handleSave,
     isEditMode,
@@ -179,6 +188,7 @@ export function CompanyCarRoadListFormModal({
         </DocumentDetailSection>
         <DocumentDetailSection title={t('Маршрут і пробіг')} stacked>
         <RoadListKilometerFields
+          errors={fieldErrors}
           form={form}
           isMileageOnly={isMileageOnly}
           isMixedDisabled={isMixedDisabled}
@@ -188,13 +198,16 @@ export function CompanyCarRoadListFormModal({
         </DocumentDetailSection>
         <DocumentDetailSection title={t('Учасники та коментар')} stacked>
         <TextInput
+          error={fieldErrors.comment}
           label={t('Коментар')}
+          maxLength={ROAD_LIST_LIMITS.commentMaxLength}
           value={form.comment}
           onChange={(event) => patchForm({ comment: event.currentTarget.value })}
         />
 
         <RoadListDriversEditor
           activeDrivers={activeDrivers}
+          error={fieldErrors.drivers}
           userOptions={userOptions}
           userSearchValue={userSearchValue}
           onAddDriver={addDriver}
@@ -243,9 +256,12 @@ function useRoadListFormModel({
     outcomeOrders,
     outcomeOrdersLoaded,
     selectedOutcomeNetUid,
+    showRequired,
     userSearchValue,
     users,
   } = state
+  /* Set once a save succeeded: the closing dialog must not save the same road list again. */
+  const savedRef = useRef(false)
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const [debouncedForm] = useDebouncedValue(form, CALCULATE_DEBOUNCE_MS)
 
@@ -266,12 +282,17 @@ function useRoadListFormModel({
     [editedRoadList, outcomeOrders, selectedOutcomeNetUid],
   )
   const outcomeError = isEditMode && !selectedOutcomeOrder ? t('Виберіть вихідну статтю бюджету') : null
+  const fieldErrors = useMemo(
+    () => validateRoadListForm(form, activeDrivers.length, t, showRequired),
+    [activeDrivers.length, form, showRequired, t],
+  )
 
   useEffect(() => {
     if (!opened) {
       return
     }
 
+    savedRef.current = false
     dispatchState({ roadList: editedRoadList, type: 'reset' })
   }, [editedRoadList, opened])
 
@@ -331,6 +352,11 @@ function useRoadListFormModel({
 
   useEffect(() => {
     if (!opened || !canSave || !companyCarNetUid) {
+      return
+    }
+
+    /* «abc» or «-5» is shown as a field error; it is never calculated as 0. */
+    if (hasRoadListFormatErrors(validateRoadListForm(debouncedForm, 0, t, false))) {
       return
     }
 
@@ -431,12 +457,18 @@ function useRoadListFormModel({
         return
       }
 
-      if (!companyCarNetUid) {
+      if (!companyCarNetUid || savedRef.current) {
         return
       }
 
       if (outcomeError) {
         dispatchState({ error: outcomeError, type: 'failed' })
+        return
+      }
+
+      if (Object.keys(validateRoadListForm(form, activeDrivers.length, t, true)).length > 0) {
+        dispatchState({ type: 'show-required' })
+        dispatchState({ error: t('Перевірте виділені поля'), type: 'failed' })
         return
       }
 
@@ -455,6 +487,7 @@ function useRoadListFormModel({
         const saved = isEditMode ? await updateCompanyCarRoadList(payload) : await createCompanyCarRoadList(payload)
 
         if (saved) {
+          savedRef.current = true
           onSaved(saved)
         }
       } catch (saveError) {
@@ -474,6 +507,7 @@ function useRoadListFormModel({
     effectiveCompanyCar,
     effectiveResponsible,
     error,
+    fieldErrors,
     form,
     handleSave,
     isEditMode,
@@ -507,11 +541,13 @@ function RoadListSummary({ companyCar, responsible }: { companyCar: CompanyCar; 
 }
 
 function RoadListKilometerFields({
+  errors,
   form,
   isMileageOnly,
   isMixedDisabled,
   onPatch,
 }: {
+  errors: RoadListFormErrors
   form: RoadListFormState
   isMileageOnly: boolean
   isMixedDisabled: boolean
@@ -522,28 +558,33 @@ function RoadListKilometerFields({
   return (
     <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={10}>
       <TextInput
-        inputMode="decimal"
+        inputMode="numeric"
+        error={errors.mileage}
         label={t('Показники одометра')}
+        required
         value={form.mileage}
         onChange={(event) => onPatch({ mileage: event.currentTarget.value })}
       />
       <TextInput
-        inputMode="decimal"
+        inputMode="numeric"
         disabled={isMileageOnly}
+        error={errors.inCityKilometers}
         label={t('По місту')}
         value={form.inCityKilometers}
         onChange={(event) => onPatch({ inCityKilometers: event.currentTarget.value })}
       />
       <TextInput
-        inputMode="decimal"
+        inputMode="numeric"
         disabled={isMileageOnly}
+        error={errors.outsideCityKilometers}
         label={t('За містом')}
         value={form.outsideCityKilometers}
         onChange={(event) => onPatch({ outsideCityKilometers: event.currentTarget.value })}
       />
       <TextInput
-        inputMode="decimal"
+        inputMode="numeric"
         disabled={isMixedDisabled}
+        error={errors.mixedModeKilometers}
         label={t('Змішаний режим')}
         value={form.mixedModeKilometers}
         onChange={(event) => onPatch({ mixedModeKilometers: event.currentTarget.value })}
@@ -554,6 +595,7 @@ function RoadListKilometerFields({
 
 function RoadListDriversEditor({
   activeDrivers,
+  error,
   userOptions,
   userSearchValue,
   onAddDriver,
@@ -561,6 +603,7 @@ function RoadListDriversEditor({
   onSearchChange,
 }: {
   activeDrivers: CompanyCarRoadListDriver[]
+  error?: string
   userOptions: Array<{ label: string; value: string }>
   userSearchValue: string
   onAddDriver: (netUid: string | null) => void
@@ -575,7 +618,9 @@ function RoadListDriversEditor({
         clearable
         searchable
         data={userOptions}
+        error={error}
         label={t('Кому видано')}
+        required
         placeholder={t('Місце вводу для пошуку')}
         searchValue={userSearchValue}
         value={null}
@@ -653,6 +698,7 @@ function createRoadListModalStateFrom(roadList: CompanyCarRoadList | null): Road
     outcomeOrders: roadList?.OutcomePaymentOrder ? [roadList.OutcomePaymentOrder] : [],
     outcomeOrdersLoaded: false,
     selectedOutcomeNetUid: getRoadListOutcomeValue(roadList),
+    showRequired: false,
     userSearchValue: '',
     users: [],
   }
@@ -726,6 +772,11 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
       return {
         ...state,
         selectedOutcomeNetUid: action.selectedOutcomeNetUid,
+      }
+    case 'show-required':
+      return {
+        ...state,
+        showRequired: true,
       }
     case 'started-saving':
       return {

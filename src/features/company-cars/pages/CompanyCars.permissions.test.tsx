@@ -185,15 +185,16 @@ describe('Company cars canonical permission guards', () => {
   })
 
   it('blocks direct car forms and rechecks edit before final submit', async () => {
-    const denied = renderAt('/accounting/company-cars/edit/car-1', '/accounting/company-cars/edit/:id', <CompanyCarFormPage />)
+    const carId = '3a8f0c1e-5b6d-4e7f-8a9b-0c1d2e3f4a5b'
+    const denied = renderAt(`/accounting/company-cars/edit/${carId}`, '/accounting/company-cars/edit/:id', <CompanyCarFormPage />)
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getCompanyCarForEdit).not.toHaveBeenCalled()
     expect(getCompanyCarOrganizations).not.toHaveBeenCalled()
     denied.unmount()
 
     allowedPermissions.add(PermissionKeys.Warehouses.CompanyCars.Car.Edit)
-    renderAt('/accounting/company-cars/edit/car-1', '/accounting/company-cars/edit/:id', <CompanyCarFormPage />)
-    await waitFor(() => expect(getCompanyCarForEdit).toHaveBeenCalledWith('car-1'))
+    renderAt(`/accounting/company-cars/edit/${carId}`, '/accounting/company-cars/edit/:id', <CompanyCarFormPage />)
+    await waitFor(() => expect(getCompanyCarForEdit).toHaveBeenCalledWith(carId))
 
     const save = await screen.findByRole('button', { name: 'Зберегти' })
     allowedPermissions.delete(PermissionKeys.Warehouses.CompanyCars.Car.Edit)
