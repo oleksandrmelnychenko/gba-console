@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../api/apiClient'
 import {
   isAiServiceKnownUnavailable,
@@ -27,5 +27,17 @@ describe('session availability memo', () => {
     expect(isAiServiceKnownUnavailable('solvency')).toBe(false)
     markAiServiceUnavailable('solvency')
     expect(isAiServiceKnownUnavailable('solvency')).toBe(true)
+  })
+
+  it('survives a page reload through sessionStorage', () => {
+    markAiServiceUnavailable('solvency')
+    expect(JSON.parse(window.sessionStorage.getItem('gba.console.aiServicesNotConfigured') || '[]')).toEqual(['solvency'])
+  })
+
+  it('still works when storage throws', () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked') })
+    markAiServiceUnavailable('products')
+    expect(isAiServiceKnownUnavailable('products')).toBe(true)
+    spy.mockRestore()
   })
 })

@@ -482,6 +482,7 @@ function AssortmentDashboardPageContent() {
   }, [filters, setAiNotice, setError, setLoading, setMargin, setOverview, setRegions, setReturns, setRows, setStock, t])
 
   const body = overview?.overview
+  const isDataUnavailable = Boolean(aiNotice || error)
   const marginSummary = margin?.summary
   const returnsSummary = returns?.summary
   const weightedMargin = getSummaryNumber(marginSummary, 'weighted_avg_margin_pct')
@@ -591,6 +592,7 @@ function AssortmentDashboardPageContent() {
               />
 
               <AssortmentAttention
+                isUnavailable={isDataUnavailable}
                 margin={margin}
                 returns={returns}
                 rows={rows}
@@ -602,6 +604,7 @@ function AssortmentDashboardPageContent() {
 
           <AssortmentDetailTable
             columns={columns}
+            isUnavailable={isDataUnavailable}
             filters={filters}
             isLoading={isLoading}
             rows={rows}
@@ -881,12 +884,14 @@ type AttentionItem = {
 }
 
 function AssortmentAttention({
+  isUnavailable,
   margin,
   returns,
   rows,
   stock,
   onPick,
 }: {
+  isUnavailable: boolean
   margin: AssortmentMargin | null
   returns: AssortmentReturns | null
   rows: AssortmentRow[]
@@ -937,8 +942,9 @@ function AssortmentAttention({
         ))}
         {attentionItems.length === 0 && (
           <div className="assort-attention__empty">
-            <b>{t('Критичних відхилень не знайдено')}</b>
-            <span>{t('Перевірте повний перелік товарів нижче')}</span>
+            {/* Without the data an empty list says nothing about the assortment's health. */}
+            <b>{isUnavailable ? t('Дані аналітики недоступні') : t('Критичних відхилень не знайдено')}</b>
+            <span>{isUnavailable ? t('Перевірку відхилень не виконано') : t('Перевірте повний перелік товарів нижче')}</span>
           </div>
         )}
       </div>
@@ -950,6 +956,7 @@ function AssortmentDetailTable({
   columns,
   filters,
   isLoading,
+  isUnavailable,
   rows,
   sortOptions,
   onFiltersChange,
@@ -958,6 +965,7 @@ function AssortmentDetailTable({
   columns: DataTableColumn<AssortmentRow>[]
   filters: AssortmentHealthParams
   isLoading: boolean
+  isUnavailable: boolean
   rows: AssortmentRow[]
   sortOptions: SelectOption[]
   onFiltersChange: (filters: AssortmentHealthParams) => void
@@ -1044,7 +1052,14 @@ function AssortmentDetailTable({
           emptyText={
             isLoading
               ? t('Завантаження')
-              : (
+              : isUnavailable
+                ? (
+                    <span className="assort-table-empty">
+                      <b>{t('Дані аналітики недоступні')}</b>
+                      <span>{t('Список товарів не завантажено')}</span>
+                    </span>
+                  )
+                : (
                   <span className="assort-table-empty">
                     <b>{t('За вибраними фільтрами товарів не знайдено')}</b>
                     <span>{t('Змініть стан, класифікацію або наявність')}</span>

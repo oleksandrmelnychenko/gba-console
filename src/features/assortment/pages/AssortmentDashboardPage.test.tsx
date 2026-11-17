@@ -339,6 +339,10 @@ describe('AssortmentDashboardPage', () => {
 
     expect(await screen.findAllByText('Сервіс аналітики (ШІ) не налаштовано')).toHaveLength(1)
     expect(screen.queryByText(/ai_service_not_configured/)).toBeNull()
+    await waitFor(() => expect(screen.queryByText('Завантаження')).toBeNull())
+    expect(screen.queryByText('Критичних відхилень не знайдено')).toBeNull()
+    expect(screen.queryByText('За вибраними фільтрами товарів не знайдено')).toBeNull()
+    expect(screen.getAllByText('Дані аналітики недоступні').length).toBeGreaterThan(0)
   })
 
   it('shows a meaningful filtered empty state instead of a blank table', async () => {
