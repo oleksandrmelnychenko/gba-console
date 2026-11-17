@@ -42,7 +42,7 @@ describe('header read controls', () => {
     expect(screen.queryByRole('button', { name: 'Глобальні правила списання' })).toBeNull()
   })
 
-  it('shows AI fleet with dashboard.ai_fleet.view', () => {
+  it('shows AI fleet with dashboard.ai_fleet.status.view', () => {
     granted.add(PermissionKeys.Operational.AiFleet.View)
     renderBar()
 

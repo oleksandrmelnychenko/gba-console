@@ -111,7 +111,7 @@ export const PermissionKeys = {
   },
   Operational: {
     AiFleet: {
-      View: 'dashboard.ai_fleet.view',
+      View: 'dashboard.ai_fleet.status.view',
     },
     SchedulerTasks: {
       MergeAllSales: 'administration.scheduler_tasks.sales.merge_all',
