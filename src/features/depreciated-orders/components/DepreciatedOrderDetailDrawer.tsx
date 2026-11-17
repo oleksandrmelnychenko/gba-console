@@ -38,9 +38,13 @@ const DEPRECIATED_ORDER_ITEMS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+/* Four-digit year: «31.12.2099, 10:00», never the ambiguous «31.12.99». */
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short',
-  timeStyle: 'short',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
 })
 
 export type DepreciatedOrderDetailDrawerProps = {
@@ -74,6 +78,7 @@ export function DepreciatedOrderDetailDrawer({
   const items = useMemo(() => order?.DepreciatedOrderItems || [], [order?.DepreciatedOrderItems])
   const itemColumns = useDepreciatedOrderItemColumns(items)
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + (Number(item.Qty) || 0), 0), [items])
+  const totalAmount = useMemo(() => getWriteOffTotalAmount(items), [items])
 
   return (
     <AppModal
@@ -94,6 +99,7 @@ export function DepreciatedOrderDetailDrawer({
                 <>
                   <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
                   <DocumentDetailMetric label={t('К-сть')} value={String(totalQty)} />
+                  {totalAmount !== null ? <DocumentDetailMetric label={t('Сума')} value={moneyFormat.format(totalAmount)} /> : null}
                 </>
               }
             />
@@ -207,6 +213,26 @@ function useDepreciatedOrderItemColumns(items: DepreciatedOrderItem[]): DataTabl
         accessor: (item) => item.Qty,
         cell: (item) => displayValue(item.Qty),
       },
+      ...(getWriteOffTotalAmount(items) !== null ? [
+        {
+          id: 'price',
+          header: t('Ціна'),
+          width: 110,
+          minWidth: 90,
+          align: 'right' as const,
+          accessor: (item: DepreciatedOrderItem) => item.PerUnitPrice,
+          cell: (item: DepreciatedOrderItem) => formatMoney(item.PerUnitPrice),
+        },
+        {
+          id: 'amount',
+          header: t('Сума'),
+          width: 120,
+          minWidth: 100,
+          align: 'right' as const,
+          accessor: (item: DepreciatedOrderItem) => getLineAmount(item),
+          cell: (item: DepreciatedOrderItem) => formatMoney(getLineAmount(item)),
+        },
+      ] : []),
       {
         id: 'reason',
         header: t('Причина'),
@@ -250,12 +276,36 @@ function getResponsibleName(order: DepreciatedOrder): string {
 
 const placementQtyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
-/** One entry per address (N-N-N → «Без розміщення»), quantities added up with a decimal comma. */
+const moneyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+
+function formatMoney(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormat.format(value) : '-'
+}
+
+function getLineAmount(item: DepreciatedOrderItem): number | null {
+  return typeof item.PerUnitPrice === 'number' && typeof item.Qty === 'number'
+    ? Math.round(item.PerUnitPrice * item.Qty * 100) / 100
+    : null
+}
+
+/** Document total when the payload carries prices; null (no price columns) otherwise. */
+function getWriteOffTotalAmount(items: DepreciatedOrderItem[]): number | null {
+  if (!items.some((item) => typeof item.PerUnitPrice === 'number' && item.PerUnitPrice > 0)) {
+    return null
+  }
+
+  return Math.round(items.reduce((sum, item) => sum + (getLineAmount(item) ?? 0), 0) * 100) / 100
+}
+
+/**
+ * What THIS act took from each cell: ProductLocation.Qty. ProductPlacement.Qty is
+ * the cell's current remainder and keeps changing after posting.
+ */
 function formatPlacements(locations: DepreciatedOrderLocation[]): string {
   return mergePlacementQuantities(
     locations.filter((location) => location.ProductPlacement),
     (location) => location.ProductPlacement,
-    (location) => location.ProductPlacement?.Qty,
+    (location) => location.Qty,
   )
     .map(({ address, qty }) => {
       const position = !address || address === translate('Без розміщення') ? address : `${translate('Позиція')} ${address}`

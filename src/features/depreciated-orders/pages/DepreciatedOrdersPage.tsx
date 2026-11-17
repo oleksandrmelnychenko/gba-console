@@ -61,9 +61,13 @@ const DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+/* Four-digit year: «31.12.2099, 10:00», never the ambiguous «31.12.99». */
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short',
-  timeStyle: 'short',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
 })
 
 function useDepreciatedOrdersPageModel() {

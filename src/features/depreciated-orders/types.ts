@@ -72,6 +72,8 @@ export type DepreciatedOrderItem = EntityFields & {
   Product?: DepreciatedOrderProduct | null
   ProductId?: number
   ProductLocations?: DepreciatedOrderLocation[]
+  /** Cost per unit, when the server provides it (export path today; details pending). */
+  PerUnitPrice?: number
   Qty?: number
   Reason?: string
 }
