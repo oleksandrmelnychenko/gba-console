@@ -67,7 +67,7 @@ export function ClientCounterpartyGroupCard({ clientNetUid, canEdit }: { clientN
         <Stack gap={4}>
           <Text className="client-section-title" fw={600}>{t('Група контрагентів')}</Text>
           <Text size="sm">{placement.GroupPath || placement.GroupName}</Text>
-          <Group gap={6}>
+          <Group gap={8}>
             {!placement.IsPlaced ? <Badge color="gray" variant="light">{t('без групи')}</Badge>
               : placement.IsManuallyPlaced ? <Badge color="blue" variant="light">{t('змінено в GBA')}</Badge>
                 : <Badge color="gray" variant="light">{t('з 1С')}</Badge>}

@@ -12,7 +12,7 @@ export function RegionManualEditNote({ edit }: { edit?: ClientRegionManualEdit |
   }
 
   return (
-    <Group data-testid="client-region-manual-edit" gap={6} wrap="nowrap" align="flex-start">
+    <Group data-testid="client-region-manual-edit" gap={8} wrap="nowrap" align="flex-start">
       <Info aria-hidden size={14} style={{ flex: '0 0 auto', marginTop: 2 }} />
       <Text c="dimmed" size="xs">{getClientRegionManualEditNote(edit, t)}</Text>
     </Group>

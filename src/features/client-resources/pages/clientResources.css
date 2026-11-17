@@ -13,7 +13,7 @@
 .client-resources-shell {
   box-sizing: border-box;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
@@ -198,8 +198,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 150px;
-  gap: 10px;
+  min-height: 148px;
+  gap: 8px;
   padding: 20px;
   text-align: left;
 }
@@ -214,18 +214,18 @@
   display: grid;
   flex: 1 1 auto;
   grid-template-columns: 188px minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
 }
 
 .client-resources-region-master,
 .client-resources-region-detail {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -243,22 +243,22 @@
   font-size: 12px;
   font-weight: 600;
   justify-content: space-between;
-  min-height: 54px;
-  padding: 10px 12px;
+  min-height: 52px;
+  padding: 8px 12px;
 }
 
 .client-resources-region-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: 5px;
+  padding: 4px;
 }
 
 .client-resources-region-row {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-9);
   cursor: pointer;
   display: flex;
@@ -267,7 +267,7 @@
   gap: 8px;
   justify-content: space-between;
   min-height: 36px;
-  padding: 5px 7px;
+  padding: 4px 8px;
   text-align: left;
   width: 100%;
 }
@@ -296,7 +296,7 @@
 .client-resources-region-detail-heading {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  min-height: 54px;
+  min-height: 52px;
   padding: 8px 12px;
 }
 
@@ -327,13 +327,13 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .client-resources-perfect-client-column {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -349,7 +349,7 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .client-resources-perfect-client-column > .client-resources-table {
@@ -375,7 +375,7 @@
   color: var(--mantine-color-gray-8);
   font-size: 12px;
   line-height: 1.4;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .client-resources-carrier-content {
@@ -384,13 +384,13 @@
   min-height: 0;
   min-width: 0;
   overflow: auto;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .client-resources-carrier-section {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   flex: 0 0 auto;
   min-width: 0;
   overflow: hidden;
@@ -399,7 +399,7 @@
 .client-resources-carrier-heading {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .client-resources-carrier-section .data-table-toolbar {
@@ -428,7 +428,7 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .client-resources-modal .mantine-Input-input {
@@ -455,16 +455,16 @@
 .client-resources-form-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   padding: 12px;
 }
 
 .client-resources-form-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 

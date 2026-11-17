@@ -128,7 +128,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
                 <UnstyledButton
                   key={getFastClientNetUid(client) || String(getFastClientId(client) || index)}
                   px="sm"
-                  py={6}
+                  py={8}
                   onClick={() => selectClient(client)}
                 >
                   <Text size="sm" truncate>

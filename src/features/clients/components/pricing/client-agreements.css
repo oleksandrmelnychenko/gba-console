@@ -5,7 +5,7 @@
   background: var(--mantine-color-white);
   /* transparent (not 0) so the selected ring doesn't shift the layout */
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: none;
   cursor: pointer;
   position: relative;

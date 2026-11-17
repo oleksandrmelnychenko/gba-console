@@ -238,7 +238,7 @@ function NewEcommerceClientsPageContent() {
   }
 
   return (
-    <Stack className="new-ecommerce-clients-page console-table-page" gap={6}>
+    <Stack className="new-ecommerce-clients-page console-table-page" gap={8}>
       <div className="new-ecommerce-clients-card console-table-shell">
         <div className="app-filter-bar new-ecommerce-clients-filter-bar">
           <TextInput

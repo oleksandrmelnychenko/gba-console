@@ -1664,7 +1664,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
   return (
     <Stack
       className={`seo-page console-table-page${isPatternFilterTab ? ` is-filtered is-${activeTab}` : ''}`}
-      gap={6}
+      gap={8}
     >
       <Box className="seo-page-shell">
         {showCommandBar && (
@@ -2089,7 +2089,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal centered opened={isPageEditorOpen && canEditSeoPage} size="xl" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Редагування SEO сторінки')}</span>} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
-          <Stack gap={10}>
+          <Stack gap={8}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2152,7 +2152,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         onClose={closeContactEditor}
       >
         <form onSubmit={handleSaveContact}>
-          <Stack gap={10}>
+          <Stack gap={8}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2231,7 +2231,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         title={t('Видалити контакт')}
         onClose={() => setRemoveContactTarget(null)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити контакт')} <Text span fw={600}>{displayValue(getSeoContactDisplayName(removeContactTarget))}</Text>?
           </Text>
@@ -2248,7 +2248,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
       <AppModal centered opened={Boolean(priorityStorageTarget && canSetStoragePriority)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
         <form onSubmit={handleSaveStoragePriority}>
-          <Stack gap={10}>
+          <Stack gap={8}>
             {formError && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {formError}
@@ -2284,7 +2284,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         title={t('Видалити склад зі списку')}
         onClose={() => setRemoveStorageTarget(null)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити склад')} <Text span fw={600}>{displayValue(removeStorageTarget?.Name)}</Text> {t('зі списку інтернет-магазину?')}
           </Text>

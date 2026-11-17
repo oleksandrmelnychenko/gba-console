@@ -274,7 +274,7 @@ export function OnlineShopCitiesPage() {
   }
 
   return (
-    <Stack className="online-shop-cities-page console-table-page" gap={6}>
+    <Stack className="online-shop-cities-page console-table-page" gap={8}>
       <OnlineShopCitiesRegistry
         cityFilter={cityFilter}
         cityNavigationItems={cityNavigationItems}
@@ -579,7 +579,7 @@ function CityEditorModal({
   return (
     <AppModal className="online-shop-cities-editor" size={520} centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
       <form onSubmit={onSubmit}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -653,7 +653,7 @@ function CityArchiveModal({ city, isSaving, onArchive, onClose }: CityArchiveMod
 
   return (
     <AppModal centered opened={Boolean(city)} title={t('Архівувати місто')} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text>{city ? t('Місто "{name}" буде прибране з активного списку.', { name: getCityName(city) }) : ''}</Text>
         <AppModalFooter>
           <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>

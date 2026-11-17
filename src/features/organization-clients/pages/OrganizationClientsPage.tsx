@@ -262,7 +262,7 @@ function OrganizationClientsPageContent({ permissions }: { permissions: Organiza
   }
 
   return (
-    <Stack className="organization-clients-page console-table-page" gap={6}>
+    <Stack className="organization-clients-page console-table-page" gap={8}>
       <div className="organization-clients-card console-table-shell">
         <div className="app-filter-bar organization-clients-filter-bar">
           <TextInput

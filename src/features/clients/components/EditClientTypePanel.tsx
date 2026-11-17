@@ -73,7 +73,7 @@ export function EditClientTypePanel({
 
   return (
     <AppModal opened={opened} size={520} title={t('Тип клієнта')} onClose={onClose}>
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         {error && (
           <Text c="red" size="sm">
             {error}
@@ -88,7 +88,7 @@ export function EditClientTypePanel({
             </Text>
           </Group>
         ) : (
-          <Stack gap={10}>
+          <Stack gap={8}>
             {selectableClientTypes.map((clientType) => {
               const roles = (clientType.ClientTypeRoles || []).filter((clientRole) =>
                 canSelectRole(clientType, clientRole, hasPermission),

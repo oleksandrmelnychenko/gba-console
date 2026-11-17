@@ -29,7 +29,7 @@
   align-items: end;
   display: grid;
   flex: 1 1 auto;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(280px, 1fr) 148px;
   min-width: max-content;
   width: 100%;
@@ -42,14 +42,14 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-height: var(--transporters-command-control-height);
   min-width: 0;
 }
 
 .transporters-table-toolbar-slot .data-table-toolbar {
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-height: 0;
 }
@@ -111,7 +111,7 @@
   grid-template-columns: 248px minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .transporters-type-rail {
@@ -124,7 +124,7 @@
 .transporters-rail-header {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   padding-left: 8px;
 }
 
@@ -152,7 +152,7 @@
   gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 40px;
-  padding: 0 6px 0 8px;
+  padding: 0 8px 0 8px;
   position: relative;
   text-align: left;
   transition:
@@ -167,6 +167,10 @@
   color: var(--mantine-color-gray-9);
   outline: none;
   transform: translateX(3px);
+}
+
+.transporters-type-option:focus-visible {
+  box-shadow: var(--app-focus-ring);
 }
 
 .transporters-type-option.is-active {
@@ -203,7 +207,7 @@
 
 .transporters-roster {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   min-height: 0;
@@ -242,7 +246,7 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .transporters-config-cell {
@@ -278,7 +282,7 @@
 .transporters-image-preview img {
   display: block;
   max-height: 28px;
-  max-width: 82px;
+  max-width: 80px;
   object-fit: contain;
 }
 

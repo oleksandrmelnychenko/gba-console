@@ -1,5 +1,5 @@
 .supplier-organization-form-sheet .supplier-organization-form-card { padding: 12px; }
-.supplier-organization-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.supplier-organization-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; }
 .supplier-organization-form-grid--general { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .supplier-organization-form-grid--general > * { grid-column: span 3; }
 .supplier-organization-form-grid--general > :nth-child(n + 5) { grid-column: span 2; }

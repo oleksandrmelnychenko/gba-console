@@ -874,7 +874,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
   )
 
   return (
-    <Stack className="clients-page" gap={6}>
+    <Stack className="clients-page" gap={8}>
       <Card className="app-data-card clients-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar clients-filter-bar">
           <ClientsFilterToolbar
@@ -1078,7 +1078,7 @@ function ClientsFilterToolbar({
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields clients-filter-row">
+    <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields clients-filter-row">
       <TextInput
         ref={searchInputRef}
         size="sm"
@@ -1521,7 +1521,7 @@ function ClientIdentityAttentionDrawer({
           </Alert>
 
           {attention.AttentionReasons.length > 0 ? (
-            <Stack gap={6}>
+            <Stack gap={8}>
               <Text fw={700} size="sm">{t('Причини')}</Text>
               {attention.AttentionReasons.map((reason) => (
                 <Group align="flex-start" gap={8} key={reason} wrap="nowrap">
@@ -1533,7 +1533,7 @@ function ClientIdentityAttentionDrawer({
           ) : null}
 
           {attention.OverdueByCurrency.length > 0 ? (
-            <Stack gap={6}>
+            <Stack gap={8}>
               <Text fw={700} size="sm">{t('Прострочений борг')}</Text>
               {attention.OverdueByCurrency.map((currency) => (
                 <Group
@@ -1559,7 +1559,7 @@ function ClientIdentityAttentionDrawer({
             </Text>
             {attention.Candidates.map((candidate) => (
               <Card key={candidate.ClientNetUid} padding="sm" radius="md" withBorder>
-                <Stack gap={6}>
+                <Stack gap={8}>
                   <Group justify="space-between" wrap="nowrap">
                     <Box style={{ minWidth: 0 }}>
                       <Text fw={candidate.IsTarget ? 700 : 600} size="sm" truncate>
@@ -1574,7 +1574,7 @@ function ClientIdentityAttentionDrawer({
                     </Badge>
                   </Group>
 
-                  <Group gap={6}>
+                  <Group gap={8}>
                     {candidate.IsTarget ? <Badge size="xs" variant="outline">{t('Поточна картка')}</Badge> : null}
                     {candidate.HasOwnOverdueDebt ? <Badge color="red" size="xs">{t('Є прострочення')}</Badge> : null}
                     {candidate.IsBlocked ? <Badge color="red" size="xs" variant="outline">{t('Заблоковано')}</Badge> : null}

@@ -291,6 +291,7 @@ function WorkplaceItem({
 
         {!readonly && onRemove && (
           <ActionIcon
+            aria-label="Видалити робоче місце"
             color="red"
             variant="subtle"
             onClick={(event) => {

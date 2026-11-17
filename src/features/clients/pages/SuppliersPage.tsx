@@ -647,7 +647,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   } = model
 
   return (
-    <Stack className="suppliers-page console-table-page" gap={6}>
+    <Stack className="suppliers-page console-table-page" gap={8}>
       <div className="console-table-shell suppliers-card">
         <div className="app-filter-bar suppliers-filter-bar">
           <SuppliersFilterToolbar

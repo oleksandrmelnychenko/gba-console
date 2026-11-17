@@ -1,7 +1,7 @@
 .client-solvency { min-width: 0; }
 
 .client-solvency-risk {
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: var(--mantine-color-gray-0);
   border-radius: 8px;
 }
@@ -9,10 +9,10 @@
 .client-solvency-factors {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 24px;
+  gap: 8px 24px;
 }
 
-.client-solvency-factor { min-height: 30px; }
+.client-solvency-factor { min-height: 28px; }
 .client-solvency-factor .mantine-Badge-root { flex-shrink: 0; }
 .client-solvency-value { font-family: var(--font-mono); }
 

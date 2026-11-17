@@ -250,14 +250,14 @@ function CounterpartyGroupsPageContent() {
   const selectedPath = selected ? counterpartyGroupPath(groups, selected.NetUid) : ''
 
   return (
-    <Stack className="counterparty-groups-page" gap={6}>
+    <Stack className="counterparty-groups-page" gap={8}>
       {loadError ? <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{loadError}</Alert> : null}
       <ListTreeLayout
         className="counterparty-groups-layout"
         list={
-          <Stack gap={6}>
+          <Stack gap={8}>
             <div className="app-filter-bar counterparty-groups-filter-bar">
-              <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
+              <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
                 <TextInput
                   className="counterparty-groups-search"
                   label={t('Пошук групи')}
@@ -278,7 +278,7 @@ function CounterpartyGroupsPageContent() {
               </Group>
             </div>
             {isLoading && groups.length === 0 ? (
-              <Stack gap={5}>{Array.from({ length: 8 }, (_, index) => <Skeleton key={index} height={38} radius={7} />)}</Stack>
+              <Stack gap={4}>{Array.from({ length: 8 }, (_, index) => <Skeleton key={index} height={36} radius={8} />)}</Stack>
             ) : (
               <TreeView key={treeSearch.trim()} className="counterparty-groups-tree" emptyText={t('Груп не знайдено')} nodes={treeNodes} />
             )}
@@ -290,7 +290,7 @@ function CounterpartyGroupsPageContent() {
               <Stack gap={4}>
                 <Text fw={600} size="lg">{selected.Name}</Text>
                 <Text c="dimmed" size="sm">{selectedPath}</Text>
-                <Group gap={6}>
+                <Group gap={8}>
                   {selected.IsSystem ? <Badge color="violet" variant="light">{t('системна')}</Badge> : null}
                   {selected.IsFromOneC ? <Badge color="gray" variant="light">{t('з 1С')}</Badge> : <Badge color="teal" variant="light">{t('створена в GBA')}</Badge>}
                   {selected.IsManuallyEdited && selected.IsFromOneC ? <Badge color="blue" variant="light">{t('змінена в GBA')}</Badge> : null}
@@ -299,7 +299,7 @@ function CounterpartyGroupsPageContent() {
                 </Group>
               </Stack>
               {canEdit ? (
-                <Group gap={6} wrap="nowrap">
+                <Group gap={8} wrap="nowrap">
                   {canHaveSubgroups(selected) ? (
                     <Button leftSection={<Plus size={16} />} size="sm" variant="light"
                       onClick={() => setForm({ mode: 'create', parentNetUid: selected.NetUid })}>{t('Підгрупа')}</Button>
@@ -321,7 +321,7 @@ function CounterpartyGroupsPageContent() {
               </Text>
             ) : null}
             <div className="app-filter-bar counterparty-groups-filter-bar">
-              <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
+              <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
                 <TextInput
                   className="counterparty-groups-search"
                   label={t('Пошук контрагента')}

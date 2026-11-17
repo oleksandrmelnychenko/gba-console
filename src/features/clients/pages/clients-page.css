@@ -97,7 +97,7 @@
   cursor: pointer;
   display: flex;
   font-family: var(--font-mono);
-  margin-top: 3px;
+  margin-top: 4px;
   max-width: 100%;
   text-transform: none;
 }
@@ -116,7 +116,7 @@
 
 .client-actions-modal .app-modal-actions .mantine-Button-root {
   min-height: 40px;
-  padding: 6px 10px;
+  padding: 8px 8px;
 }
 
 .client-source-quality-badge .mantine-Badge-label {
@@ -140,12 +140,12 @@
 .app-filter-bar.clients-filter-bar > .clients-filter-row { display: contents; }
 .app-filter-bar.clients-filter-bar .clients-filter-search { flex: 0 0 220px; width: 220px; min-width: 0; max-width: 100%; }
 .app-filter-bar.clients-filter-bar .clients-filter-field { flex: 0 0 160px; width: 160px; min-width: 0; }
-.app-filter-bar.clients-filter-bar .clients-filter-status { flex: 0 0 110px; width: 110px; min-width: 0; }
+.app-filter-bar.clients-filter-bar .clients-filter-status { flex: 0 0 108px; width: 108px; min-width: 0; }
 .clients-role-filter-label, .clients-role-filter-dropdown :is(.mantine-Checkbox-label, .mantine-Text-root) { font-family: var(--font-mono); font-size: 12px; line-height: 16px; }
-.clients-role-filter-dropdown .mantine-Checkbox-body { min-height: 30px; align-items: center; }
+.clients-role-filter-dropdown .mantine-Checkbox-body { min-height: 28px; align-items: center; }
 @container registry (max-width: 1450px) {
  .app-filter-bar.clients-filter-bar { --app-multi-select-width: 110px; }
- .app-filter-bar.clients-filter-bar .clients-filter-search { flex-basis: 125px; width: 125px; }
+ .app-filter-bar.clients-filter-bar .clients-filter-search { flex-basis: 124px; width: 124px; }
  .app-filter-bar.clients-filter-bar .clients-filter-field { flex-basis: 120px; width: 120px; }
  .app-filter-bar.clients-filter-bar .clients-filter-status { flex-basis: 100px; width: 100px; }
 }

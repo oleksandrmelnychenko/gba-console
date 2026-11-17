@@ -92,12 +92,12 @@
   grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
   min-height: 0;
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .online-shop-clients-table {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   min-height: 0;
   min-width: 0;
@@ -141,7 +141,7 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .online-shop-clients-contact-cell,
@@ -187,13 +187,13 @@
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .online-shop-clients-side-panel {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -248,7 +248,7 @@
   align-items: center;
   display: flex;
   flex: 0 0 auto;
-  gap: 7px;
+  gap: 8px;
 }
 
 .online-shop-clients-cart-currency {
@@ -269,7 +269,7 @@
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-top: 6px;
+  margin-top: 8px;
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -287,18 +287,18 @@
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  height: 26px;
+  height: 24px;
   justify-content: center;
   line-height: 1;
-  min-width: 30px;
-  padding: 0 9px;
+  min-width: 28px;
+  padding: 0 8px;
 }
 
 .online-shop-clients-sales-button {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: 38px;
+  height: 36px;
   letter-spacing: 0;
 }
 
@@ -325,8 +325,8 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 8px;
 }
 
 .online-shop-clients-cart-body .online-shop-order-item-image {
@@ -337,7 +337,7 @@
   flex: 0 0 64px;
   height: 64px;
   object-fit: contain;
-  padding: 3px;
+  padding: 4px;
   width: 64px;
 }
 
@@ -360,9 +360,9 @@
   flex-wrap: wrap;
   font-size: 11px;
   font-weight: 500;
-  gap: 4px 9px;
+  gap: 4px 8px;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .online-shop-clients-cart-body .online-shop-order-item-identifiers {
@@ -375,12 +375,12 @@
 .online-shop-clients-cart-body .online-shop-order-item-details span + span::before {
   color: var(--mantine-color-gray-4);
   content: '·';
-  margin-right: 9px;
+  margin-right: 8px;
 }
 
 .online-shop-clients-cart-body .online-shop-order-item-meta {
-  gap: 7px;
-  margin-top: 7px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .online-shop-clients-cart-body .online-shop-order-item-quantity {
@@ -422,7 +422,7 @@
 .online-shop-clients-cart-body .online-shop-order-item-source-price::before {
   color: var(--mantine-color-gray-4);
   content: '·';
-  margin-right: 7px;
+  margin-right: 8px;
 }
 
 .online-shop-clients-cart-body .online-shop-order-item-total {
@@ -431,7 +431,7 @@
   display: grid;
   flex: 0 0 82px;
   font-family: var(--font-mono);
-  gap: 3px;
+  gap: 4px;
   justify-items: end;
   letter-spacing: 0;
   line-height: 1.1;
@@ -457,7 +457,7 @@
   display: grid;
   gap: 8px;
   justify-items: center;
-  min-height: 230px;
+  min-height: 228px;
   text-align: center;
 }
 
@@ -475,7 +475,7 @@
   border-top: 1px solid var(--mantine-color-gray-2);
   display: flex;
   justify-content: space-between;
-  padding: 10px 0 0;
+  padding: 8px 0 0;
 }
 
 .online-shop-clients-cart-total .mantine-Text-root {
@@ -492,7 +492,7 @@
   font-family: var(--font-mono);
   font-size: 18px;
   font-weight: 600;
-  gap: 7px;
+  gap: 8px;
   letter-spacing: 0;
 }
 
@@ -514,9 +514,9 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: 64px minmax(0, 1fr) 82px;
-  padding: 10px;
+  padding: 8px;
 }
 
 .online-shop-clients-cart-skeleton-image,

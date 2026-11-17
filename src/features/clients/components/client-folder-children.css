@@ -3,7 +3,7 @@
   border-block: 1px solid var(--mantine-color-gray-2);
   list-style: none;
   margin: 0;
-  padding: 5px 12px 6px 50px;
+  padding: 4px 12px 8px 48px;
 }
 
 .client-folder-children__item + .client-folder-children__item {
@@ -13,10 +13,10 @@
 .client-folder-children__button {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: 10px minmax(220px, 1fr) minmax(100px, auto) 16px;
-  min-height: 42px;
-  padding: 5px 8px;
+  min-height: 40px;
+  padding: 4px 8px;
   text-align: left;
   width: 100%;
 }
@@ -74,7 +74,7 @@
 .client-folder-children__empty {
   background: var(--mantine-color-gray-0);
   border-block: 1px solid var(--mantine-color-gray-2);
-  padding: 12px 18px 12px 50px;
+  padding: 12px 16px 12px 48px;
 }
 
 @media (max-width: 900px) {

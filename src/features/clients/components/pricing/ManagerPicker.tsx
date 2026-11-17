@@ -173,7 +173,7 @@ export function ManagerPicker({
 
   return (
     <Stack className="manager-pick" gap="sm">
-      <Stack gap={6}>
+      <Stack gap={8}>
         <Group justify="space-between" align="center">
           <Title className="manager-pick-title client-section-title" order={5}>
             {t('Аналітики')}

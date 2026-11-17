@@ -73,13 +73,13 @@ export function TaxFreeCarrierPassportDrawer({
       onClose={onClose}
     >
       <Card className="app-section-card" withBorder padding={12} radius="md">
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
           )}
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10} verticalSpacing={10}>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={8} verticalSpacing={8}>
             <TextInput
               label={t('Місто')}
               maxLength={50}
@@ -102,7 +102,7 @@ export function TaxFreeCarrierPassportDrawer({
               onChange={(event) => updateDraft({ houseNumber: event.currentTarget.value })}
             />
           </SimpleGrid>
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10} verticalSpacing={10}>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={8} verticalSpacing={8}>
             <TextInput
               label={t('Серія паспорту')}
               maxLength={50}
@@ -125,7 +125,7 @@ export function TaxFreeCarrierPassportDrawer({
               onChange={(event) => updateDraft({ passportIssuedBy: event.currentTarget.value })}
             />
           </SimpleGrid>
-          <Group align="end" gap={10}>
+          <Group align="end" gap={8}>
             <AppDateInput w={170} maw="100%"
               label={t('Дійсний від')}
               type="date"

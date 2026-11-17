@@ -178,7 +178,7 @@ function RecommendationsForAgreement({
                 </Tooltip>
               )}
               {canCreateSale && (
-                <Group gap={6} wrap="wrap" align="end">
+                <Group gap={8} wrap="wrap" align="end">
                   <Tooltip disabled={!createSaleDisabledReason} label={createSaleDisabledReason} withArrow>
                     <span>
                       <Button

@@ -16,7 +16,7 @@ export function OrganizationClientForm({ client, disabled = false, onFieldChange
   return (
     <div className="organization-client-form app-compact-form">
       <Card className="app-section-card" withBorder>
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text className="app-section-title">{t('Загальні дані')}</Text>
           <div className="organization-client-form__fields">
             <TextInput
@@ -49,7 +49,7 @@ export function OrganizationClientForm({ client, disabled = false, onFieldChange
         </Stack>
       </Card>
       <Card className="app-section-card" withBorder>
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text className="app-section-title">{t('Адреса')}</Text>
           <div className="organization-client-form__fields">
             <TextInput

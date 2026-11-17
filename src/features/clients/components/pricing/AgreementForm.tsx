@@ -87,10 +87,10 @@ export function AgreementForm({
   const providerPricing = agreement.ProviderPricing
 
   return (
-    <Stack className="agreement-form app-compact-form" gap={10}>
+    <Stack className="agreement-form app-compact-form" gap={8}>
       <div className="agreement-form-grid">
         <Card className="app-section-card agreement-form-section" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="agreement-form-section-title" fw={600}>
               {t('Загальні дані')}
             </Text>
@@ -128,7 +128,7 @@ export function AgreementForm({
         </Card>
 
         <Card className="app-section-card agreement-form-section" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="agreement-form-section-title" fw={600}>
               {t('Ціноутворення')}
             </Text>
@@ -239,7 +239,7 @@ export function AgreementForm({
         </Card>
 
         <Card className="app-section-card agreement-form-section agreement-form-section--terms" withBorder radius="md" padding="md">
-          <Stack className="agreement-form-terms" gap={10}>
+          <Stack className="agreement-form-terms" gap={8}>
             <Text className="agreement-form-section-title" fw={600}>
               {t('Умови договору')}
             </Text>
@@ -277,7 +277,7 @@ export function AgreementForm({
             </Group>
 
             {isProvider ? (
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <NumberInput
                   allowNegative={false}
                   label={`${t('Відстрочка платежу')} (${t('днів')})`}

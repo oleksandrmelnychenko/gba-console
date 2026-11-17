@@ -44,7 +44,7 @@
   box-shadow: none;
   display: flex;
   min-height: 56px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   position: relative;
   transition:
     border-color 110ms var(--tx-ease-smooth),
@@ -116,7 +116,7 @@
 .manager-pick-row {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 

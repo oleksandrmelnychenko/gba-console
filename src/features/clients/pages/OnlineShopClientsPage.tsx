@@ -210,7 +210,7 @@ function OnlineShopClientsPageContent() {
   }
 
   return (
-    <Stack className="online-shop-clients-page console-table-page" gap={6}>
+    <Stack className="online-shop-clients-page console-table-page" gap={8}>
       <Box className="online-shop-clients-shell console-table-shell">
         <div className="app-filter-bar online-shop-clients-filter-bar">
           <TextInput

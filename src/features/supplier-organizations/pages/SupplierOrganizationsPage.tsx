@@ -259,7 +259,7 @@ function SupplierOrganizationsPageContent() {
   const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
 
   return (
-    <Stack className="supplier-organizations-page console-table-page" gap={6}>
+    <Stack className="supplier-organizations-page console-table-page" gap={8}>
       <div className="console-table-shell">
         <div className="app-filter-bar supplier-organizations-command-bar">
           <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { updateDateFrom(from); updateDateTo(to) }} />

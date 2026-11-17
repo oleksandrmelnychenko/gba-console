@@ -1,5 +1,5 @@
 .client-discounts__toolbar {
-  padding: 8px 10px;
+  padding: 8px 8px;
   background: var(--mantine-color-gray-0);
   border-radius: 8px;
 }
@@ -10,15 +10,15 @@
 }
 
 .client-discounts__percent-input {
-  width: 110px;
+  width: 108px;
   margin-left: auto;
 }
 
 .discounts-tree-row {
   align-items: center;
-  border-radius: 6px;
+  border-radius: 8px;
   min-height: 32px;
-  padding: 3px 8px 3px calc(8px + var(--discounts-tree-indent, 0px));
+  padding: 4px 8px 4px calc(8px + var(--discounts-tree-indent, 0px));
   transition: background-color 110ms var(--tx-ease-smooth);
 }
 
@@ -57,7 +57,7 @@
 }
 
 .discounts-tree-row__percent .app-table-chip {
-  min-width: 50px;
+  min-width: 48px;
   justify-content: center;
 }
 

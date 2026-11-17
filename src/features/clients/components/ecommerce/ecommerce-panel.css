@@ -12,5 +12,5 @@
 
 @container registry (max-width: 600px) {
   .client-ecommerce-passwords { grid-template-columns: minmax(0, 1fr); }
-  .client-ecommerce-reserve { flex-wrap: wrap; gap: 6px; }
+  .client-ecommerce-reserve { flex-wrap: wrap; gap: 8px; }
 }

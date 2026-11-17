@@ -250,7 +250,7 @@ function WorkplaceFormFields({
   }
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       <Checkbox
         checked={isWorkplaceMode}
         disabled={disabled}
@@ -261,7 +261,7 @@ function WorkplaceFormFields({
       {isWorkplaceMode && (
         <>
           <Card className="app-section-card" withBorder>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Select
                 clearable={false}
                 data={groupOptions.map((group) => ({
@@ -274,7 +274,7 @@ function WorkplaceFormFields({
                 onChange={handleGroupChange}
               />
 
-              <Stack className="client-inline-form__agreements" gap={6}>
+              <Stack className="client-inline-form__agreements" gap={8}>
                 <Text fw={500} size="sm">
                   {t('Договори')}
                 </Text>
