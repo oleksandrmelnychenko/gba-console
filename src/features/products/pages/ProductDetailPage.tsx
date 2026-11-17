@@ -97,6 +97,7 @@ import type {
   ProductStorageLocationHistory,
   ProductWriteOffRule,
 } from '../types'
+import { createProductEditForm, type ProductEditForm } from './productEditForm'
 import {
   displayValue,
   formatAmount,
@@ -161,22 +162,6 @@ type ProductSpecificationDraft = {
 
 type SpecificationAmountKey = 'CustomsValue' | 'Duty' | 'VATValue'
 
-type ProductEditForm = {
-  NativeIsService: boolean | null
-  Description: string
-  DescriptionUA: string
-  IsForSale: boolean
-  IsForZeroSale: boolean
-  Notes: string
-  NotesUA: string
-  OrderStandard: string
-  PackingStandard: string
-  Size: string
-  SynonymsUA: string
-  Top: string
-  Volume: string
-  Weight: number | null
-}
 
 type ProductPlacementGroup = {
   count: number
@@ -1233,11 +1218,12 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
           ...product,
           ...(canEditClassification ? { NativeIsService: form.NativeIsService } : {}),
           Description: form.Description,
-          DescriptionUA: form.DescriptionUA,
+          // The server stores the uk text from Description/Notes; the UA copies mirror it.
+          DescriptionUA: form.Description,
           IsForSale: form.IsForSale,
           IsForZeroSale: form.IsForZeroSale,
           Notes: form.Notes,
-          NotesUA: form.NotesUA,
+          NotesUA: form.Notes,
           OrderStandard: form.OrderStandard,
         PackingStandard: form.PackingStandard,
         Size: form.Size,
@@ -1303,9 +1289,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
             <Text className="app-section-title" mb={8}>{t('Опис та нотатки')}</Text>
             <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10} verticalSpacing={10} style={{ alignItems: 'end' }}>
               <Textarea autosize minRows={2} maxRows={5} label={t('Опис')} value={form.Description} onChange={(event) => setField('Description', event.currentTarget.value)} />
-              <Textarea autosize minRows={2} maxRows={5} label={t('Опис UA')} value={form.DescriptionUA} onChange={(event) => setField('DescriptionUA', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки')} value={form.Notes} onChange={(event) => setField('Notes', event.currentTarget.value)} />
-              <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки UA')} value={form.NotesUA} onChange={(event) => setField('NotesUA', event.currentTarget.value)} />
             </SimpleGrid>
           </Card>
           <Group className="product-edit-flags" gap={12}>
@@ -2762,24 +2746,6 @@ function PriceRow({ price }: { price: CalculatedProductPrice }) {
   )
 }
 
-function createProductEditForm(product: Product): ProductEditForm {
-  return {
-    NativeIsService: typeof product.NativeIsService === 'boolean' ? product.NativeIsService : null,
-    Description: product.Description || '',
-    DescriptionUA: product.DescriptionUA || '',
-    IsForSale: Boolean(product.IsForSale),
-    IsForZeroSale: Boolean(product.IsForZeroSale),
-    Notes: product.Notes || '',
-    NotesUA: product.NotesUA || '',
-    OrderStandard: product.OrderStandard || '',
-    PackingStandard: product.PackingStandard || '',
-    Size: product.Size || '',
-    SynonymsUA: product.SynonymsUA || '',
-    Top: product.Top || '',
-    Volume: product.Volume || '',
-    Weight: typeof product.Weight === 'number' ? product.Weight : null,
-  }
-}
 
 function cloneProductPlacements(placements: ProductPlacement[]): ProductPlacementDraft[] {
   return groupProductPlacementsForEditing(placements).map((placement) => ({
