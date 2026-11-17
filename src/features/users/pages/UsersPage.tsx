@@ -207,7 +207,7 @@ function UsersPageContent() {
   }
 
   return (
-    <Stack className="users-page console-table-page" gap={6}>
+    <Stack className="users-page console-table-page" gap={8}>
       <div className="console-table-shell users-shell">
         <div className="app-filter-bar users-filter-bar">
           <TextInput

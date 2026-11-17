@@ -292,7 +292,7 @@ function UserEditPageContent() {
       }
       onClose={closeSheet}
     >
-      <Stack className="user-sheet" gap={10}>
+      <Stack className="user-sheet" gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -468,7 +468,7 @@ function UserEditContent({
       </div>
 
       {activeTab === 'profile' && (
-        <Box pt={10}>
+        <Box pt={8}>
           <form id="user-edit-form" onSubmit={onSubmit}>
             <div className="user-sheet-card">
               <div className="user-sheet-card-head">
@@ -489,7 +489,7 @@ function UserEditContent({
       )}
 
       {canResetPassword && activeTab === 'password' && (
-        <Box pt={10}>
+        <Box pt={8}>
           <UserPasswordPanel
             confirmPassword={confirmPassword}
             isResettingPassword={status.isResettingPassword}
@@ -530,7 +530,7 @@ function UserPasswordPanel({
           {t('Безпека')}
         </div>
         <div className="user-sheet-card-body">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Group grow align="end">
             <PasswordInput
               disabled={!isPasswordChangeEnabled || isResettingPassword}
@@ -591,7 +591,7 @@ function DeleteUserModal({
 
   return (
     <AppModal centered opened={opened} title={t('Видалити користувача')} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text size="sm">{t('Підтвердити видалення')}: {user ? getUserFullName(user) : ''}</Text>
         <AppModalFooter>
           <Button variant="default" color="gray" onClick={onClose}>

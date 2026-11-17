@@ -61,7 +61,7 @@ export function UserForm({
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing={8}>
       <TextInput
         disabled={disabled}
         label={t('Прізвище')}
