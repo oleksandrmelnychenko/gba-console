@@ -14,6 +14,7 @@ import type { SalesByProductTopReport, SalesChartsTopNXRow } from '../types'
 import { SalesChartsTopType } from '../types'
 
 const TYPE_OPTIONS = [
+  { value: String(SalesChartsTopType.All), label: 'Усі товари' },
   { value: String(SalesChartsTopType.TopN), label: 'Top N' },
   { value: String(SalesChartsTopType.TopX), label: 'Top X' },
 ]
@@ -22,12 +23,17 @@ const TOP_NX_TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
+function toTopType(value: number): SalesChartsTopType {
+  return value === SalesChartsTopType.TopX || value === SalesChartsTopType.TopN ? value : SalesChartsTopType.All
+}
+
 export function ManagerSalesByTopNXView() {
   const { t } = useI18n()
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const [from, setFrom] = useValueState(today)
   const [to, setTo] = useValueState(today)
-  const [typeTop, setTypeTop] = useValueState<SalesChartsTopType>(SalesChartsTopType.TopN)
+  // All products by default, so the first screen shows the sales of the period; Top N / Top X narrow it.
+  const [typeTop, setTypeTop] = useValueState<SalesChartsTopType>(SalesChartsTopType.All)
   const [report, setReport] = useValueState<SalesByProductTopReport>({ Managers: [], Products: [] })
   const [isLoading, setIsLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -65,8 +71,14 @@ export function ManagerSalesByTopNXView() {
     }
   }, [from, to, typeTop, setError, setIsLoading, setReport, t])
 
+  // Every salesperson-role user comes back as a column; only those who sold in the period are shown.
+  const soldManagers = useMemo(
+    () => report.Managers.filter((manager) => (manager.TotalManagerSold || 0) !== 0),
+    [report.Managers],
+  )
+
   const columns = useMemo<DataTableColumn<SalesChartsTopNXRow>[]>(() => {
-    const managerColumns = report.Managers.map<DataTableColumn<SalesChartsTopNXRow>>((manager) => ({
+    const managerColumns = soldManagers.map<DataTableColumn<SalesChartsTopNXRow>>((manager) => ({
       align: 'right',
       cell: (row) => <span className="app-money">{formatMoney(row.values[manager.NetId])}</span>,
       enableSorting: false,
@@ -97,22 +109,25 @@ export function ManagerSalesByTopNXView() {
         minWidth: 160,
       },
     ]
-  }, [report.Managers, t])
+  }, [soldManagers, t])
 
-  const rows = useMemo<SalesChartsTopNXRow[]>(() => flattenReport(report, t('Всього')), [report, t])
+  const rows = useMemo<SalesChartsTopNXRow[]>(
+    () => flattenReport({ ...report, Managers: soldManagers }, t('Всього')),
+    [report, soldManagers, t],
+  )
   const chartData = useMemo(
     () =>
-      report.Managers.map((manager) => ({
+      soldManagers.map((manager) => ({
         manager: manager.ManagerName || `#${manager.NetId}`,
         total: manager.TotalManagerSold || 0,
       })),
-    [report.Managers],
+    [soldManagers],
   )
 
   const resetFilters = () => {
     setFrom(today)
     setTo(today)
-    setTypeTop(SalesChartsTopType.TopN)
+    setTypeTop(SalesChartsTopType.All)
   }
 
   return (
@@ -126,7 +141,7 @@ export function ManagerSalesByTopNXView() {
             data={TYPE_OPTIONS}
             label={t('Тип')}
             value={String(typeTop)}
-            onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
+            onChange={(value) => setTypeTop(toTopType(Number(value)))}
           />
           <div className="app-filter-actions sales-chart-filter-actions">
             <Button aria-label={t('Скинути')} color="gray" variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>
@@ -151,7 +166,9 @@ export function ManagerSalesByTopNXView() {
             detailLabel={t('Товарів у звіті')}
             emptyTitle={typeTop === SalesChartsTopType.TopX
               ? t('За цей період немає продажів товарів Top X')
-              : t('За цей період немає продажів товарів Top N')}
+              : typeTop === SalesChartsTopType.TopN
+                ? t('За цей період немає продажів товарів Top N')
+                : t('За цей період продажів немає')}
             isLoading={isLoading}
           />
         )}

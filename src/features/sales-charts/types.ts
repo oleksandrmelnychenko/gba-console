@@ -1,6 +1,7 @@
 export const SalesChartsTopType = {
   TopX: 0,
   TopN: 1,
+  All: 2,
 } as const
 
 export type SalesChartsTopType = (typeof SalesChartsTopType)[keyof typeof SalesChartsTopType]
