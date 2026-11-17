@@ -49,7 +49,7 @@ describe('report numeric presentation', () => {
     expect(formatReportDecimal('0.100000001', quantity, { version: 1, moneyScale: 1 })).toBe('0,1')
   })
   it('identifies management EUR cash measures by stable ID after a custom caption rename', () => {
-    expect(nativeReportMeasurementUnit(40, 'Початок управлінський', 92)).toBe('Сума у (EUR)')
+    expect(nativeReportMeasurementUnit(40, 'Початок управлінський', 92)).toBe('Сума (EUR)')
     expect(nativeReportMeasurementUnit(40, 'Несправжня назва (EUR)', 84)).toBe('Сума у валюті рахунку (каси)')
   })
 })

@@ -31,9 +31,9 @@ export const hasFixedReportAxes = (dataSource: number): boolean => FIXED_AXES_SO
 
 // Units belong to the selected report and caption, independently of VAT controls.
 export function nativeReportMeasurementUnit(dataSource: number, caption: string, measureType?: number): string | undefined {
-  if (dataSource === 40 && measureType !== undefined) return [92, 93, 94, 95].includes(measureType) ? 'Сума у (EUR)' : 'Сума у валюті рахунку (каси)'
+  if (dataSource === 40 && measureType !== undefined) return [92, 93, 94, 95].includes(measureType) ? 'Сума (EUR)' : 'Сума у валюті рахунку (каси)'
   if (dataSource === 41) return 'Валюта взаєморозрахунків договору'
-  if (dataSource === 40) return caption.includes('(EUR)') || caption.includes('управлінська') ? 'Сума у (EUR)' : 'Сума у валюті рахунку (каси)'
+  if (dataSource === 40) return caption.includes('(EUR)') || caption.includes('управлінська') ? 'Сума (EUR)' : 'Сума у валюті рахунку (каси)'
   if (dataSource === 39) return 'Кількість товару'
   if (dataSource === 38) return caption.includes('%') ? 'Відсотки' : caption.toLowerCase().includes('кількість') ? 'Кількість товару' : 'Євро'
   if (dataSource === 35) return caption.includes('%') ? 'Відсотки' : 'Євро'
