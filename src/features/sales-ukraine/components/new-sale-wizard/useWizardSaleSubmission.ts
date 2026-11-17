@@ -42,6 +42,7 @@ import {
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../../saleReviewGuards'
 import { getSalesTtnFileValidationError } from '../../salesPayloadGuards'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
+import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
 import {
   getSaleFileMutationOperationIdentity,
   isPersistedSaleFileMutationRecord,
@@ -138,7 +139,18 @@ export type WizardSaleSubmissionOptions = {
   onSaved?: (sale: SalesUkraineSale | null) => void | Promise<void>
   onMergedSubmitted?: () => void
   onVatDocuments?: (result: SaleDocumentResult) => void
+  /** Persists a typed-in (draft) delivery recipient right before a save/submit and returns what to send. */
+  prepareDeliveryRecipient?: () => Promise<WizardDeliverySelection>
 }
+
+export type WizardDeliverySelection = {
+  address: WizardDeliveryRecipientAddress | null
+  recipient: WizardDeliveryRecipient | null
+}
+
+/** Column limits enforced again by the server (CustomersOwnTtn.Number, Sale.Comment). */
+export const SALE_OWN_TTN_MAX_LENGTH = 150
+export const SALE_COMMENT_MAX_LENGTH = 450
 
 export function useWizardSaleSubmission({
   canSubmit,
@@ -154,6 +166,7 @@ export function useWizardSaleSubmission({
   onSaved,
   onMergedSubmitted,
   onVatDocuments,
+  prepareDeliveryRecipient,
 }: WizardSaleSubmissionOptions) {
   const { t } = useI18n()
   const { session } = useAuth()
@@ -389,10 +402,14 @@ export function useWizardSaleSubmission({
     }
   }, [onBusyChange, saving, submitting])
 
-  function buildPayload(mode: 'create' | 'save', current: SalesUkraineSale): SalesUkraineSale & { IsEdited?: boolean } {
+  function buildPayload(
+    mode: 'create' | 'save',
+    current: SalesUkraineSale,
+    delivery: WizardDeliverySelection = { address: value.address ?? null, recipient: value.recipient ?? null },
+  ): SalesUkraineSale & { IsEdited?: boolean } {
     const selfCheckoutPayload = isSelfCheckout(value.transporter)
-    const recipientId = selfCheckoutPayload ? null : getPositiveId(value.recipient?.Id)
-    const addressId = selfCheckoutPayload ? null : getPositiveId(value.address?.Id)
+    const recipientId = selfCheckoutPayload ? null : getPositiveId(delivery.recipient?.Id)
+    const addressId = selfCheckoutPayload ? null : getPositiveId(delivery.address?.Id)
     const payload: SalesUkraineSale & { IsEdited?: boolean } = {
       ...current,
       RegistrarStorageId: value.registrarStorageId ?? current.RegistrarStorageId,
@@ -400,11 +417,11 @@ export function useWizardSaleSubmission({
       Comment: value.comment,
       DeliveryRecipient: selfCheckoutPayload
         ? null
-        : ({ ...(value.recipient ?? {}), ...(recipientId ? { Id: recipientId } : {}), MobilePhone: value.mobilePhone } as SalesUkraineSale['DeliveryRecipient']),
+        : ({ ...(delivery.recipient ?? {}), ...(recipientId ? { Id: recipientId } : {}), MobilePhone: value.mobilePhone } as SalesUkraineSale['DeliveryRecipient']),
       DeliveryRecipientAddress: selfCheckoutPayload
         ? null
         : ({
-            ...(value.address ?? {}),
+            ...(delivery.address ?? {}),
             City: value.city,
             Department: value.department,
             ...(addressId ? { Id: addressId } : {}),
@@ -454,6 +471,16 @@ export function useWizardSaleSubmission({
       return false
     }
     if (!validateSelectedTtnFile()) {
+      return false
+    }
+
+    if ((payload.CustomersOwnTtn?.Number ?? '').length > SALE_OWN_TTN_MAX_LENGTH) {
+      notifications.show({ color: 'red', message: t('Номер ТТН не може бути довшим за 150 символів') })
+      return false
+    }
+
+    if ((payload.Comment ?? '').length > SALE_COMMENT_MAX_LENGTH) {
+      notifications.show({ color: 'red', message: t('Коментар не може бути довшим за 450 символів') })
       return false
     }
 
@@ -1035,10 +1062,15 @@ export function useWizardSaleSubmission({
         }
 
         const isSplitedSale = splitItems.length > 0
+        const delivery = await prepareDelivery()
+
+        if (!delivery) {
+          return
+        }
 
         if (isMergedMode) {
           if (isSplitedSale) {
-            const mergedSplitPayload = buildPayload('create', buildWizardSplitSale(sale, splitItems))
+            const mergedSplitPayload = buildPayload('create', buildWizardSplitSale(sale, splitItems), delivery)
 
             if (!validateFinalPayload(mergedSplitPayload)) {
               return
@@ -1050,7 +1082,7 @@ export function useWizardSaleSubmission({
               completeFinalCreateSale('merged-split', result)
             }
           } else {
-            const payload = buildPayload('create', sale)
+            const payload = buildPayload('create', sale, delivery)
             payload.Order = {
               ...(sale.Order ?? {}),
               OrderItems: buildWizardMergedOrderItems(mergedSale?.orderItems ?? sale.Order?.OrderItems ?? []),
@@ -1069,7 +1101,7 @@ export function useWizardSaleSubmission({
           return
         }
 
-        const payload = buildPayload('create', isSplitedSale ? buildWizardSplitSale(sale, splitItems) : sale)
+        const payload = buildPayload('create', isSplitedSale ? buildWizardSplitSale(sale, splitItems) : sale, delivery)
 
         if (!validateFinalPayload(payload)) {
           return
@@ -1137,9 +1169,7 @@ export function useWizardSaleSubmission({
       return false
     }
 
-    const payload = buildPayload('save', sale)
-
-    if (!validateFinalPayload(payload, 'save')) {
+    if (!validateFinalPayload(buildPayload('save', sale), 'save')) {
       return false
     }
 
@@ -1147,6 +1177,13 @@ export function useWizardSaleSubmission({
     setSaving(true)
 
     try {
+      const delivery = await prepareDelivery()
+
+      if (!delivery) {
+        return false
+      }
+
+      const payload = buildPayload('save', sale, delivery)
       const result = await runFinalFileMutation(
         'sale-update-file',
         'save',
@@ -1173,6 +1210,69 @@ export function useWizardSaleSubmission({
     }
   }
 
+  async function prepareDelivery(): Promise<WizardDeliverySelection | null> {
+    if (!prepareDeliveryRecipient || isSelfCheckout(value.transporter)) {
+      return { address: value.address ?? null, recipient: value.recipient ?? null }
+    }
+
+    try {
+      return await prepareDeliveryRecipient()
+    } catch (recipientError) {
+      notifications.show({ color: 'red', message: getRequestErrorMessage(recipientError, t('Не вдалося створити отримувача')) })
+
+      return null
+    }
+  }
+
+  /**
+   * Gives up an unconfirmed sale-file operation after the user reloaded the sale and checked its
+   * current state. The journal entry is settled as manually reconciled, so the stale payload is never
+   * replayed and Зберегти becomes available again.
+   */
+  async function discardPendingFileMutation(): Promise<boolean> {
+    const pending = fileMutationSubmissionRef.current
+    const blocked = blockedFileMutationRef.current
+    const scope = pending?.scope ?? blocked?.scope ?? null
+    const operationId = pending?.submission.operationId ?? blocked?.payload.operationId ?? null
+
+    if (busyRef.current) {
+      return false
+    }
+
+    if (!scope || !operationId) {
+      notifications.show({ color: 'orange', message: t('Цю незавершену операцію не можна скасувати в цьому вікні') })
+
+      return false
+    }
+
+    busyRef.current = true
+
+    try {
+      const stored = loadSalesPendingMutation<PersistedSaleFileMutationRecord>(scope)
+
+      if (stored && stored.operationId === operationId) {
+        await withSalesPendingMutationLock(scope, operationId, stored.payload, async (lease) => {
+          resolveSalesPendingMutation(lease, 'manual-committed')
+        })
+      }
+
+      fileMutationSubmissionRef.current = null
+      blockedFileMutationRef.current = null
+      setBlockedFileMutation(null)
+      setFinalSubmitOutcomePending(false)
+      notifications.show({ color: 'green', message: t('Незавершену операцію скасовано. Дані продажу оновлено з сервера') })
+      await onSaved?.(null)
+
+      return true
+    } catch (discardError) {
+      notifications.show({ color: 'red', message: getRequestErrorMessage(discardError, t('Не вдалося скасувати незавершену операцію')) })
+
+      return false
+    } finally {
+      busyRef.current = false
+    }
+  }
+
   function submitFromKeyboard() {
     if (enterLatch.tryAcquire()) {
       void submitSale()
@@ -1181,6 +1281,7 @@ export function useWizardSaleSubmission({
 
   return {
     blockedFileMutation,
+    discardPendingFileMutation,
     effectiveSubmitDeniedReason,
     finalSubmitOutcomePending,
     isMergedMode,

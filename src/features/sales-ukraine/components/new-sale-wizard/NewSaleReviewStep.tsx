@@ -1,6 +1,7 @@
-import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, NumberInput, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Alert, Box, Button, Checkbox, FileInput, Group, Modal, NumberInput, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleX, Upload } from 'lucide-react'
+import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleConvertedCurrencyCode, isUahConvertedSale } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
@@ -12,7 +13,7 @@ import { WizardReviewConfirmModal } from './WizardReviewConfirmModal'
 import { WizardReviewOrderSummary, WizardReviewOrderTotals } from './WizardReviewOrderSummary'
 import type { NewSaleReviewValue } from './newSaleWizardState'
 import { useWizardDeliveryDetails } from './useWizardDeliveryDetails'
-import { useWizardSaleSubmission } from './useWizardSaleSubmission'
+import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH, useWizardSaleSubmission } from './useWizardSaleSubmission'
 import './wizard-review-checkout.css'
 import { useWizardReviewKeyboard } from './useWizardReviewKeyboard'
 
@@ -67,8 +68,16 @@ export function NewSaleReviewStep({
 }) {
   const { t } = useI18n()
   const needsDocumentWarehouse = sale?.Order?.OrderSource !== LOCAL_ORDER_SOURCE
+  const [discardConfirmOpened, setDiscardConfirmOpened] = useState(false)
+  const {
+    selfCheckout,
+    transporterOptions, transporterKey, selectTransporter,
+    recipientOptions, recipientKey, selectRecipient, createRecipient, commitDraftRecipient,
+    addressOptions, addressKey, selectAddress, clearAddress, createAddress,
+  } = useWizardDeliveryDetails({ clientNetId, sale, value, onChange, submitFlow })
   const {
     blockedFileMutation,
+    discardPendingFileMutation,
     effectiveSubmitDeniedReason,
     finalSubmitOutcomePending,
     isMergedMode,
@@ -94,13 +103,8 @@ export function NewSaleReviewStep({
     onSaved,
     onMergedSubmitted,
     onVatDocuments,
+    prepareDeliveryRecipient: commitDraftRecipient,
   })
-  const {
-    selfCheckout,
-    transporterOptions, transporterKey, selectTransporter,
-    recipientOptions, recipientKey, selectRecipient, createRecipient,
-    addressOptions, addressKey, selectAddress, clearAddress, createAddress,
-  } = useWizardDeliveryDetails({ clientNetId, sale, value, onChange, submitFlow })
 
   const deliveryContextKey = JSON.stringify([clientNetId, sale?.NetUid ?? sale?.Id ?? null, submitFlow])
   const { confirmOpened, submitRef, handleConfirmClose, handleCancelClose } = useWizardReviewKeyboard({
@@ -172,6 +176,40 @@ export function NewSaleReviewStep({
           ) : null}
         </Alert>
       )}
+      {finalSubmitOutcomePending && !blockedFileMutation && (
+        <Alert color="orange" mb="sm" title={t('Результат попереднього збереження невідомий')}>
+          <Text size="sm">
+            {t('Сервер не підтвердив попередній запит. «Перевірити результат» повторить той самий запит. Якщо дані треба змінити, скасуйте незавершену операцію: продаж буде перезавантажено з сервера.')}
+          </Text>
+          <Group gap="sm" mt="sm">
+            <Button color="orange" disabled={submitting || saving} size="xs" variant="light" onClick={() => setDiscardConfirmOpened(true)}>
+              {t('Скасувати незавершену операцію')}
+            </Button>
+          </Group>
+        </Alert>
+      )}
+      <Modal
+        centered
+        opened={discardConfirmOpened}
+        title={t('Скасувати незавершену операцію?')}
+        onClose={() => setDiscardConfirmOpened(false)}
+      >
+        <Text size="sm">
+          {t('Запит більше не буде повторено. Перевірте дані продажу після перезавантаження: сервер міг уже зберегти частину змін.')}
+        </Text>
+        <Group justify="flex-end" mt="md">
+          <Button variant="default" onClick={() => setDiscardConfirmOpened(false)}>{t('Ні')}</Button>
+          <Button
+            color="orange"
+            onClick={() => {
+              setDiscardConfirmOpened(false)
+              void discardPendingFileMutation()
+            }}
+          >
+            {t('Скасувати операцію')}
+          </Button>
+        </Group>
+      </Modal>
       <Box className="new-sale-review-step__body">
         <Box className="new-sale-review-form app-form-sheet">
           <Box className="new-sale-review-layout">
@@ -214,7 +252,7 @@ export function NewSaleReviewStep({
                     label={t('Одержувач')}
                     options={recipientOptions}
                     selectedKey={recipientKey}
-                    onFreeText={(input) => void createRecipient(input)}
+                    onFreeText={createRecipient}
                     onSelect={selectRecipient}
                   />
 
@@ -273,6 +311,7 @@ export function NewSaleReviewStep({
                   <TextInput
                     classNames={reviewFieldClassNames}
                     label={t('Коментар')}
+                    maxLength={SALE_COMMENT_MAX_LENGTH}
                     value={value.comment}
                     onChange={(event) => onChange({ comment: event.currentTarget.value === '' ? ' ' : event.currentTarget.value })}
                   />
@@ -318,6 +357,7 @@ export function NewSaleReviewStep({
                         aria-label={t('Номер ТТН')}
                         classNames={reviewFieldClassNames}
                         label={t('Номер ТТН')}
+                        maxLength={SALE_OWN_TTN_MAX_LENGTH}
                         value={value.ttnNumber}
                         onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
                       />

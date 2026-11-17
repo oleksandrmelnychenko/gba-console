@@ -70,7 +70,7 @@ export function ManagerSalesByTopNXView() {
       align: 'right',
       cell: (row) => <span className="app-money">{formatMoney(row.values[manager.NetId])}</span>,
       enableSorting: false,
-      header: manager.ManagerName,
+      header: manager.ManagerName || `#${manager.NetId}`,
       id: manager.NetId,
       minWidth: 140,
     }))
@@ -149,6 +149,9 @@ export function ManagerSalesByTopNXView() {
             data={chartData}
             detailCount={report.Products.length}
             detailLabel={t('Товарів у звіті')}
+            emptyTitle={typeTop === SalesChartsTopType.TopX
+              ? t('За цей період немає продажів товарів Top X')
+              : t('За цей період немає продажів товарів Top N')}
             isLoading={isLoading}
           />
         )}

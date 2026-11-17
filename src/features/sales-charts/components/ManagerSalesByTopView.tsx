@@ -10,6 +10,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { getSalesByManagersAndTop, getSalesManagers, getSalesOrganizations } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
 import { ManagerSalesChart } from './ManagerSalesChart'
+import { productTopColumnLabel } from './salesChartLabels'
 import type {
   SalesByManagersAndTopReport,
   SalesChartsManagerOption,
@@ -127,7 +128,7 @@ export function ManagerSalesByTopView() {
       align: 'right',
       cell: (row) => <span className="app-money">{formatMoney(row.values[key])}</span>,
       enableSorting: false,
-      header: key,
+      header: productTopColumnLabel(key, t('Без категорії')),
       id: `col-${key}`,
       minWidth: 140,
     }))
@@ -258,7 +259,7 @@ function buildRows(report: SalesByManagersAndTopReport, totalLabel: string): Sal
 
   const rows = report.SalesByManagerAndProductTop.map<SalesChartsManagerTopRow>((item, index) => ({
     isTotal: false,
-    label: item.ManagerName,
+    label: item.ManagerName || `#${item.ManagerNetId}`,
     rowId: `${item.ManagerNetId || 'manager'}-${index}`,
     total: item.TotalValueSales,
     values: { ...item.SalesValueByProductTop },

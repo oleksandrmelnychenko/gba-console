@@ -1,4 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   Anchor,
   Alert,
@@ -1036,7 +1037,7 @@ function formatNumber(value?: number): string {
 }
 
 function toSecure(url: string): string {
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+  return upgradeHttpToHttps(url)
 }
 
 function displayValue(value: unknown): string {

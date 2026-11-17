@@ -701,6 +701,48 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(mocks.clearWizardSplitOrderItems).not.toHaveBeenCalled()
   })
 
+  it('lets the user discard an unconfirmed delivery save and edit again', async () => {
+    mocks.updateSaleFromData.mockRejectedValue(new ApiError('Sales data is temporarily unavailable.', 503, null))
+    const { onSaved } = renderStep({ value: { ...reviewValue(), hasOwnTtn: true, ttnNumber: '1'.repeat(40) } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await screen.findByRole('button', { name: 'Перевірити результат' })
+    expect(loadSalesPendingMutation(wizardFileScope)).not.toBeNull()
+    expect((screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement).disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати незавершену операцію' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Скасувати операцію' }))
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(null))
+    expect(loadSalesPendingMutation(wizardFileScope)).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Перевірити результат' })).toBeNull())
+    expect((screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('limits the own TTN number and comment to the server column widths', () => {
+    renderStep({ value: { ...reviewValue(), hasOwnTtn: true } })
+
+    expect(screen.getByRole('textbox', { name: 'Номер ТТН' }).getAttribute('maxlength')).toBe('150')
+    expect(screen.getByRole('textbox', { name: 'Коментар' }).getAttribute('maxlength')).toBe('450')
+  })
+
+  it('creates a typed-in recipient only when the sale is saved, with the typed phone', async () => {
+    mocks.newDeliveryRecipient.mockResolvedValue({ Id: 55, FullName: 'Новий одержувач', MobilePhone: '0501234567' })
+    mocks.updateSaleFromData.mockResolvedValue({ message: 'saved', sale })
+    renderStep({
+      saleValue: { ...sale, ClientAgreement: { ...sale.ClientAgreement, Client: { Id: 3, NetUid: 'client-1' } } },
+      value: { ...reviewValue(), isNewRecipient: true, mobilePhone: '0501234567', recipient: { ClientId: 3, FullName: 'Новий одержувач' } },
+    })
+    await act(async () => {})
+    expect(mocks.newDeliveryRecipient).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.updateSaleFromData).toHaveBeenCalledTimes(1))
+    expect(mocks.newDeliveryRecipient).toHaveBeenCalledWith({ ClientId: 3, FullName: 'Новий одержувач', MobilePhone: '0501234567' })
+    expect(mocks.updateSaleFromData.mock.calls[0]?.[0]).toMatchObject({ DeliveryRecipient: { Id: 55 }, DeliveryRecipientId: 55 })
+  })
+
   it('keeps the wizard closable while an ambiguous final result is pending reconciliation', async () => {
     mocks.updateSaleFromData.mockRejectedValue(new ApiError('response lost', 500, null))
     const { onBusyChange, onClose, onRequestClose } = renderStep()

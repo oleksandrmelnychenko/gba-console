@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type {
   ClientProductMovementClientOption,
   ClientProductMovementDocument,
@@ -91,12 +92,9 @@ function extractDocumentResult(result: unknown): ClientProductMovementDocumentRe
   return { excelUrl: null, pdfUrl: null }
 }
 
+// Keep the server URL; only upgrade it when the console itself runs on https (mixed content).
 function toSecureUrl(url: string | null): string | null {
-  if (!url) {
-    return null
-  }
-
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+  return url ? upgradeHttpToHttps(url) || null : null
 }
 
 function normalizeArray(result: unknown): unknown[] {

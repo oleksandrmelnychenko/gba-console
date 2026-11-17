@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiRequest } from '../../../shared/api/apiClient'
 import {
   acceptSaleForPacking,
@@ -58,6 +58,11 @@ vi.mock('../../../shared/api/apiClient', async (importOriginal) => {
 })
 
 const apiRequestMock = vi.mocked(apiRequest)
+// Document links are upgraded to https only when the console itself is served over https.
+const originalLocation = window.location
+const stubConsoleProtocol = (protocol: string) =>
+  Object.defineProperty(window, 'location', { configurable: true, value: { ...originalLocation, protocol } })
+const stubHttpsConsole = () => stubConsoleProtocol('https:')
 const paymentDocumentOperation = {
   operationId: '9b316272-8d8c-4d6d-95a4-6eea9a79d7d6',
 }
@@ -65,6 +70,23 @@ const paymentDocumentOperation = {
 describe('sales Ukraine document request contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'location', { configurable: true, value: originalLocation })
+  })
+
+  it('keeps http document URLs on an http console (no forced https upgrade)', async () => {
+    stubConsoleProtocol('http:')
+    apiRequestMock.mockResolvedValueOnce({
+      DocumentURL: 'http://127.0.0.2:5176/Data/SaleInvoices/payment.xlsx',
+      PdfDocumentURL: 'http://127.0.0.2:5176/Data/SaleInvoices/payment.pdf',
+    })
+
+    await expect(getSalePaymentDocument('sale-net-id', paymentDocumentOperation)).resolves.toMatchObject({
+      excelUrl: 'http://127.0.0.2:5176/Data/SaleInvoices/payment.xlsx',
+      pdfUrl: 'http://127.0.0.2:5176/Data/SaleInvoices/payment.pdf',
+    })
   })
 
   it.each([getSaleActProtocolEditDocument, getSalesUkraineSaleAuditEditActDocument])('forwards preview cancellation without mutation headers', async (load) => {
@@ -211,6 +233,7 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it('normalizes bundled payment and invoice document URLs', async () => {
+    stubHttpsConsole()
     apiRequestMock.mockResolvedValueOnce({
       DocumentURL: 'http://example.test/payment.xlsx',
       PdfDocumentURL: 'http://example.test/payment.pdf',
@@ -259,6 +282,7 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it('normalizes bundled invoice document aliases returned without URL suffix', async () => {
+    stubHttpsConsole()
     apiRequestMock.mockResolvedValueOnce({
       DocumentURL: 'http://example.test/payment.xlsx',
       PdfDocumentURL: 'http://example.test/payment.pdf',
@@ -277,6 +301,7 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it('normalizes PZ document aliases returned by the PDF print endpoint', async () => {
+    stubHttpsConsole()
     apiRequestMock.mockResolvedValueOnce({
       PdfDocument: 'http://example.test/pz.pdf',
       XlsxDocument: 'http://example.test/pz.xlsx',
@@ -292,6 +317,7 @@ describe('sales Ukraine document request contracts', () => {
   })
 
   it('treats the generic PZ document URL as PDF because the endpoint is PDF-only in the UI', async () => {
+    stubHttpsConsole()
     apiRequestMock.mockResolvedValueOnce({
       DocumentURL: 'http://example.test/pz.pdf',
     })

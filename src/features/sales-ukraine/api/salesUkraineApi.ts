@@ -1,4 +1,5 @@
 import { ApiError, apiRequest, apiUrl, getApiLanguage } from '../../../shared/api/apiClient'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { clearSession, notifyUnauthorized, readSession } from '../../../shared/auth/session'
 import { getTimeZoneHeader, type QueryParams } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -1222,16 +1223,9 @@ function extractDocumentResult(result: unknown): SaleDocumentResult {
   return { excelUrl: null, pdfUrl: null, invoiceExcelUrl: null, invoicePdfUrl: null, isAcceptedToPacking: false }
 }
 
+// Keep the server URL; only upgrade it when the console itself runs on https (mixed content).
 function toSecureUrl(url: string | null): string | null {
-  if (!url) {
-    return null
-  }
-
-  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url)) {
-    return url
-  }
-
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+  return url ? upgradeHttpToHttps(url) || null : null
 }
 
 function normalizeArray(result: unknown): unknown[] {

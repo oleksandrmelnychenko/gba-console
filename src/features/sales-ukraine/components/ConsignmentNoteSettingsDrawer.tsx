@@ -1,5 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { Alert, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { Alert, Box, Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Truck } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -21,6 +22,13 @@ import {
 import type { SaleConsignmentDocument, SaleConsignmentNoteSetting, SalesUkraineSale } from '../types'
 import { usePermissions } from '../../auth/usePermissions'
 import './sales-drawers.css'
+import {
+  applyConsignmentDocumentDefaults,
+  CONSIGNMENT_NUMBER_MAX_LENGTH,
+  DIMENSION_INPUT_PROPS,
+  getConsignmentValidationError,
+  WEIGHT_INPUT_PROPS,
+} from './consignmentNoteSettingRules'
 
 type ConsignmentNoteDrawerState = {
   error: string | null
@@ -72,6 +80,7 @@ export function ConsignmentNoteSettingsDrawer({
   const [isPrinting, setPrinting, tryStartPrinting] = useBusyState()
   const [downloadDocument, setDownloadDocument] = useValueState<SaleConsignmentDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
+  const [deleteConfirmOpened, setDeleteConfirmOpened] = useValueState(false)
   const settingOptions = useMemo(() => buildConsignmentSettingOptions(settings), [settings])
   const hasExistingSetting = Boolean(noteState.setting.NetUid || noteState.setting.Id)
 
@@ -127,7 +136,7 @@ export function ConsignmentNoteSettingsDrawer({
       return
     }
 
-    const nextSetting = applyConsignmentDocumentDefaults(selectedSetting, defaultSetting)
+    const nextSetting = applyConsignmentDocumentDefaults(selectedSetting, defaultSetting, noteState.setting.Number)
 
     setNoteState({ error: null, isEdited: false, savedSetting: nextSetting, selectedSettingKey: value, setting: nextSetting })
   }
@@ -177,6 +186,7 @@ export function ConsignmentNoteSettingsDrawer({
       const nextSetting = applyConsignmentDocumentDefaults(
         findMatchingConsignmentSetting(nextSettings, noteState.setting) || noteState.setting,
         defaultSetting,
+        noteState.setting.Number,
       )
 
       setSettings(nextSettings)
@@ -281,7 +291,7 @@ export function ConsignmentNoteSettingsDrawer({
             {t('Скасувати')}
           </Button>
           {hasExistingSetting && canDeleteSetting && (
-            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
+            <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={() => setDeleteConfirmOpened(true)}>
               {t('Видалити')}
             </Button>
           )}
@@ -327,6 +337,7 @@ export function ConsignmentNoteSettingsDrawer({
           <Select
             className="consignment-note-settings-select"
             clearable
+            clearButtonProps={{ 'aria-label': t('Очистити вибір налаштування') }}
             searchable
             data={settingOptions}
             disabled={isLoading}
@@ -348,6 +359,7 @@ export function ConsignmentNoteSettingsDrawer({
             />
             <TextInput
               label={t('Номер')}
+              maxLength={CONSIGNMENT_NUMBER_MAX_LENGTH}
               value={noteState.setting.Number || ''}
               onChange={(event) => updateTextField('Number', event.currentTarget.value)}
             />
@@ -412,11 +424,11 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
-            <NumberInput label={t('Ширина, мм')} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
-            <NumberInput label={t('Висота, мм')} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
+            <NumberInput label={t('Довжина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
+            <NumberInput label={t('Ширина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
+            <NumberInput label={t('Висота, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
+            <NumberInput label={t('Вага нетто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
+            <NumberInput label={t('Вага брутто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
           </SimpleGrid>
         </Box>
 
@@ -429,15 +441,38 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
-            <NumberInput label={t('Ширина, мм')} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
-            <NumberInput label={t('Висота, мм')} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
+            <NumberInput label={t('Довжина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
+            <NumberInput label={t('Ширина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
+            <NumberInput label={t('Висота, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
+            <NumberInput label={t('Вага нетто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
+            <NumberInput label={t('Вага брутто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
         </Box>
         </div>
       </Stack>
+
+      <Modal
+        centered
+        opened={deleteConfirmOpened}
+        title={t('Видалити налаштування ТТН?')}
+        onClose={() => setDeleteConfirmOpened(false)}
+      >
+        <Text size="sm">
+          {t('Налаштування')} «{noteState.savedSetting.Name || t('Без назви')}» {t('буде видалено. Цю дію не можна скасувати.')}
+        </Text>
+        <Group justify="flex-end" mt="md">
+          <Button variant="default" onClick={() => setDeleteConfirmOpened(false)}>{t('Скасувати')}</Button>
+          <Button
+            color="red"
+            onClick={() => {
+              setDeleteConfirmOpened(false)
+              void deleteSetting()
+            }}
+          >
+            {t('Видалити')}
+          </Button>
+        </Group>
+      </Modal>
 
       <DownloadDocumentModal
         document={downloadDocument}
@@ -520,19 +555,13 @@ function getConsignmentNoteDate(sale: SalesUkraineSale | null): Date | string | 
   return sale?.ChangedToInvoice || sale?.FromDate || sale?.Created
 }
 
-function applyConsignmentDocumentDefaults(
-  setting: SaleConsignmentNoteSetting,
-  defaults: SaleConsignmentNoteSetting,
-): SaleConsignmentNoteSetting {
-  return { ...defaults, ...setting, LoadingPoint: defaults.LoadingPoint, Number: defaults.Number }
-}
-
 function buildConsignmentSettingOptions(settings: SaleConsignmentNoteSetting[]): Array<{ label: string; value: string }> {
   return settings.reduce<Array<{ label: string; value: string }>>((options, setting) => {
     const value = getConsignmentSettingKey(setting)
 
     if (value) {
-      options.push({ label: setting.Name || translate('Без назви'), value })
+      const details = [setting.BrandAndNumberCar, setting.Driver].filter(Boolean).join(', ')
+      options.push({ label: setting.Name || (details ? `${translate('Без назви')} (${details})` : translate('Без назви')), value })
     }
 
     return options
@@ -556,30 +585,6 @@ function findMatchingConsignmentSetting(
   return settings.find((setting) => setting.Name === source.Name && setting.Number === source.Number)
 }
 
-function getConsignmentValidationError(setting: SaleConsignmentNoteSetting, t: (value: string) => string): string | null {
-  if (!setting.Name) {
-    return t('Вкажіть назву')
-  }
-
-  if (!setting.BrandAndNumberCar) {
-    return t('Вкажіть марку та номер автомобіля')
-  }
-
-  if (!setting.Driver) {
-    return t('Вкажіть водія')
-  }
-
-  if (!setting.LoadingPoint) {
-    return t('Вкажіть пункт завантаження')
-  }
-
-  if (!setting.UnloadingPoint) {
-    return t('Вкажіть пункт розвантаження')
-  }
-
-  return null
-}
-
 function toNumber(value: number | string): number {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0
@@ -591,11 +596,7 @@ function toNumber(value: number | string): number {
 }
 
 function toSecure(url?: string): string | null {
-  if (!url) {
-    return null
-  }
-
-  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+  return url ? upgradeHttpToHttps(url) || null : null
 }
 
 function formatDateTime(value?: Date | string): string {

@@ -141,33 +141,66 @@ describe('wizard delivery details', () => {
     expect(mocks.transporters).not.toHaveBeenCalled()
   })
 
-  it('serializes recipient creation and applies the result through the latest callback', async () => {
-    const pending = deferred<WizardDeliveryRecipient>()
-    mocks.createRecipient.mockReturnValueOnce(pending.promise)
+  it('drafts a typed recipient without any request and creates it (with phone and address) only on commit', async () => {
     const props = options()
-    const { result, rerender } = renderHook(useWizardDeliveryDetails, { initialProps: props })
-    let request!: Promise<void>
-    act(() => { request = result.current.createRecipient('New'); void result.current.createRecipient('New') })
-    expect(mocks.createRecipient).toHaveBeenCalledOnce()
-    const onChange = vi.fn()
-    rerender({ ...props, onChange })
-    await act(async () => { pending.resolve({ Id: 2, FullName: 'New' }); await request })
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ recipient: { Id: 2, FullName: 'New' } }))
-    expect(props.onChange).not.toHaveBeenCalled()
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState<NewSaleReviewValue>({ ...props.value, recipient: null })
+      const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
+      return { ...details, setValue, value }
+    })
+    await waitFor(() => expect(result.current.recipientOptions).toHaveLength(1))
+
+    act(() => result.current.createRecipient('  <b>New buyer</b> '))
+    expect(mocks.createRecipient).not.toHaveBeenCalled()
+    expect(result.current.value).toMatchObject({ isNewRecipient: true, recipient: { ClientId: 10, FullName: '<b>New buyer</b>' } })
+    expect(result.current.recipientKey).toBe('recipient-draft')
+    expect(result.current.recipientOptions.at(-1)?.label).toBe('<b>New buyer</b>')
+
+    act(() => result.current.setValue((current) => ({ ...current, addressValue: 'Lviv, 1', mobilePhone: '0501112233' })))
+    mocks.createRecipient.mockResolvedValueOnce({ Id: 7, FullName: '<b>New buyer</b>', MobilePhone: '0501112233' })
+    mocks.createAddress.mockResolvedValueOnce({ Id: 70, Value: 'Lviv, 1' })
+    let committed!: Awaited<ReturnType<typeof result.current.commitDraftRecipient>>
+    await act(async () => { committed = await result.current.commitDraftRecipient() })
+
+    expect(mocks.createRecipient).toHaveBeenCalledWith({ ClientId: 10, FullName: '<b>New buyer</b>', MobilePhone: '0501112233' })
+    expect(mocks.createAddress).toHaveBeenCalledWith(expect.objectContaining({ DeliveryRecipientId: 7, Value: 'Lviv, 1' }))
+    expect(committed.recipient?.Id).toBe(7)
+    expect(committed.address?.Id).toBe(70)
+    expect(result.current.value).toMatchObject({ isNewRecipient: false, mobilePhone: '0501112233', recipient: { Id: 7 } })
   })
 
-  it.each(['client', 'unmount'] as const)('ignores recipient creation after %s changes', async (change) => {
-    const pending = deferred<WizardDeliveryRecipient>()
-    mocks.createRecipient.mockReturnValueOnce(pending.promise)
+  it('reuses an existing recipient with the same name instead of drafting a duplicate', async () => {
     const props = options()
-    const { result, rerender, unmount } = renderHook(useWizardDeliveryDetails, { initialProps: props })
-    let request!: Promise<void>
-    act(() => { request = result.current.createRecipient('New') })
-    if (change === 'unmount') unmount()
-    else rerender({ ...props, clientNetId: 'client-2' })
-    await act(async () => { pending.resolve({ Id: 2, FullName: 'New' }); await request })
-    expect(props.onChange).not.toHaveBeenCalled()
-    expect(mocks.notify).not.toHaveBeenCalled()
+    const { result } = renderHook(useWizardDeliveryDetails, { initialProps: props })
+    await waitFor(() => expect(result.current.recipientOptions).toHaveLength(1))
+    act(() => result.current.createRecipient('first'))
+    expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ recipient, isNewRecipient: false }))
+    expect(mocks.createRecipient).not.toHaveBeenCalled()
+  })
+
+  it('commit is a no-op for an already stored recipient', async () => {
+    const props = options()
+    const { result } = renderHook(useWizardDeliveryDetails, { initialProps: props })
+    await expect(result.current.commitDraftRecipient()).resolves.toEqual({ address: null, recipient })
+    expect(mocks.createRecipient).not.toHaveBeenCalled()
+  })
+
+  it('keeps the typed phone when the same recipient is picked again', async () => {
+    const props = options()
+    const { result } = renderHook(() => {
+      const [value, setValue] = useState<NewSaleReviewValue>({ ...props.value, mobilePhone: '0509998877' })
+      const details = useWizardDeliveryDetails({ ...props, value, onChange: (patch) => setValue((current) => ({ ...current, ...patch })) })
+      return { ...details, value }
+    })
+    await waitFor(() => expect(result.current.recipientOptions).toHaveLength(1))
+    act(() => result.current.selectRecipient(recipient))
+    expect(result.current.value.mobilePhone).toBe('0509998877')
+  })
+
+  it('loads the stored sale comment so a delivery save does not erase it', async () => {
+    const props = { ...options(), sale: { ...sale, Comment: 'QA seed sale 3 (GBA)' }, value: { ...NEW_SALE_REVIEW_INITIAL } }
+    renderHook(useWizardDeliveryDetails, { initialProps: props })
+    await waitFor(() => expect(props.onChange).toHaveBeenCalledWith(expect.objectContaining({ comment: 'QA seed sale 3 (GBA)' })))
   })
 
   it('does not replace a new recipient when an old address request finishes, even after switching back', async () => {

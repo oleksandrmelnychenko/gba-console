@@ -83,6 +83,12 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
       patch.codAmount = sale.CashOnDeliveryAmount
     }
 
+    // The editor saves Comment with the delivery data, so it must start from the stored comment
+    // (independently of the recipient list), or every delivery edit would erase it.
+    if (!current.comment && sale.Comment) {
+      patch.comment = sale.Comment
+    }
+
     if (Object.keys(patch).length > 0) {
       change(patch)
     }
@@ -187,8 +193,6 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
     const saleRecipient = currentSale?.DeliveryRecipient
 
     if (saleRecipient) {
-      patch.comment = currentSale?.Comment || current.comment
-
       const match = recipients.find((item) => item.NetUid === saleRecipient.NetUid)
 
       if (match) {
@@ -217,19 +221,27 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
   // present among the options — otherwise the self-checkout synthetic placeholder hides it and the
   // field looks cleared after creating a recipient.
   const hasSelectedRecipient = (value.recipient?.Id ?? 0) > 0
+  // A typed-in recipient stays a local draft until the sale is saved (see commitDraftRecipient).
+  const draftRecipient = value.isNewRecipient && value.recipient && !hasSelectedRecipient ? value.recipient : null
   const recipientOptions = useMemo<WizardReviewComboboxOption<WizardDeliveryRecipient>[]>(() => {
     const recipientSource =
-      selfCheckout && !hasSelectedRecipient && !recipients.some((item) => item.FullName === t('Не вибраний перевізник'))
+      selfCheckout && !hasSelectedRecipient && !draftRecipient && !recipients.some((item) => item.FullName === t('Не вибраний перевізник'))
         ? [{ FullName: '', ...(syntheticClientId ? { ClientId: syntheticClientId } : {}) } as WizardDeliveryRecipient]
         : recipients
 
-    return recipientSource.map((item, index) => ({
+    const options = recipientSource.map((item, index) => ({
       entity: item,
       key: item.Id != null ? String(item.Id) : `recipient-${index}`,
       label: item.FullName ? item.FullName : '---',
     }))
-  }, [selfCheckout, hasSelectedRecipient, recipients, syntheticClientId, t])
-  const recipientKey = value.recipient ? (value.recipient.Id != null ? String(value.recipient.Id) : 'recipient-0') : null
+
+    return draftRecipient
+      ? [...options, { entity: draftRecipient, key: DRAFT_RECIPIENT_KEY, label: draftRecipient.FullName || '---' }]
+      : options
+  }, [selfCheckout, hasSelectedRecipient, draftRecipient, recipients, syntheticClientId, t])
+  const recipientKey = draftRecipient
+    ? DRAFT_RECIPIENT_KEY
+    : value.recipient ? (value.recipient.Id != null ? String(value.recipient.Id) : 'recipient-0') : null
 
   const recipientAddresses = value.recipient?.DeliveryRecipientAddresses ?? NO_ADDRESSES
   const addressOptions = useMemo<WizardReviewComboboxOption<WizardDeliveryRecipientAddress>[]>(() => recipientAddresses.map(
@@ -246,8 +258,21 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
   }
 
   function selectRecipient(recipient: WizardDeliveryRecipient) {
+    if (draftRecipient && recipient === draftRecipient) {
+      return
+    }
+
     const patch: Partial<NewSaleReviewValue> = {}
     applyRecipientSelection(patch, recipient, undefined)
+
+    // Re-picking the same person (or the typed-in draft) must not drop the phone the user just typed;
+    // a different recipient still never inherits another person's phone.
+    const samePerson = recipient === value.recipient ||
+      (recipient.Id != null && recipient.Id === value.recipient?.Id) ||
+      (value.isNewRecipient && Boolean(recipient.FullName) && recipient.FullName === value.recipient?.FullName)
+    if (samePerson && !recipient.MobilePhone && value.mobilePhone) {
+      patch.mobilePhone = value.mobilePhone
+    }
     onChange(patch)
   }
 
@@ -264,37 +289,95 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
     onChange(patch)
   }
 
-  async function createRecipient(fullName: string) {
-    const clientId = syntheticClientId
+  /** Typing a new recipient only drafts it; nothing is written until the sale is saved. */
+  function createRecipient(fullName: string) {
+    const name = fullName.trim()
 
-    if (!clientId) {
-      notifications.show({ color: 'red', message: t('Не вдалося визначити клієнта для отримувача') })
+    if (!name) {
+      return
+    }
+
+    const existing = recipients.find((item) => (item.FullName ?? '').trim().toLowerCase() === name.toLowerCase())
+
+    if (existing) {
+      selectRecipient(existing)
 
       return
     }
 
-    if (recipientCreationRef.current) return
+    onChange({
+      address: null,
+      isNewRecipient: true,
+      recipient: { FullName: name, ...(syntheticClientId ? { ClientId: syntheticClientId } : {}) },
+      recipientName: name,
+    })
+  }
+
+  /**
+   * Persists a drafted recipient (with the typed phone and address) right before the sale is saved.
+   * Returns the recipient/address to send, or the current selection when there is no draft.
+   */
+  async function commitDraftRecipient(): Promise<{
+    address: WizardDeliveryRecipientAddress | null
+    recipient: WizardDeliveryRecipient | null
+  }> {
+    const current = latestRef.current.value
+
+    if (!current.isNewRecipient || !current.recipient || (current.recipient.Id ?? 0) > 0) {
+      return { address: current.address ?? null, recipient: current.recipient ?? null }
+    }
+
+    const clientId = syntheticClientId
+
+    if (!clientId) {
+      throw new Error(t('Не вдалося визначити клієнта для отримувача'))
+    }
+
+    if (recipientCreationRef.current) {
+      throw new Error(t('Отримувач ще створюється'))
+    }
+
     const request = Symbol()
-    const generation = generationRef.current
     recipientCreationRef.current = request
 
     try {
-      const created = await newDeliveryRecipient({ ClientId: clientId, FullName: fullName })
+      const created = await newDeliveryRecipient({
+        ClientId: clientId,
+        FullName: current.recipient.FullName,
+        ...(current.mobilePhone.trim() ? { MobilePhone: current.mobilePhone.trim() } : {}),
+      })
 
-      if (generationRef.current !== generation) return
-      if (created && (created.Id ?? 0) > 0) {
-        setRecipientData((current) => ({
-          clientNetId,
-          items: [...(current?.clientNetId === clientNetId ? current.items : []), created],
-        }))
-        latestRef.current.onChange({ isNewRecipient: false, recipient: created, recipientName: created.FullName || '' })
-      } else {
-        notifications.show({ color: 'red', message: t('Не вдалося створити отримувача') })
+      if (!created || (created.Id ?? 0) <= 0) {
+        throw new Error(t('Не вдалося створити отримувача'))
       }
-    } catch {
-      if (generationRef.current === generation) {
-        notifications.show({ color: 'red', message: t('Не вдалося створити отримувача') })
+
+      let address: WizardDeliveryRecipientAddress | null = null
+      const addressValue = current.addressValue.trim()
+
+      if (addressValue) {
+        address = await newDeliveryRecipientAddress({
+          DeliveryRecipient: created,
+          DeliveryRecipientId: created.Id,
+          Value: addressValue,
+        })
       }
+
+      const recipient = address && (address.Id ?? 0) > 0
+        ? { ...created, DeliveryRecipientAddresses: [...(created.DeliveryRecipientAddresses ?? []), address] }
+        : created
+
+      setRecipientData((data) => ({
+        clientNetId,
+        items: [...(data?.clientNetId === clientNetId ? data.items : []), recipient],
+      }))
+      latestRef.current.onChange({
+        isNewRecipient: false,
+        recipient,
+        recipientName: recipient.FullName || '',
+        ...(address && (address.Id ?? 0) > 0 ? { address, addressValue: '' } : {}),
+      })
+
+      return { address: address && (address.Id ?? 0) > 0 ? address : current.address ?? null, recipient }
     } finally {
       if (recipientCreationRef.current === request) recipientCreationRef.current = null
     }
@@ -356,10 +439,12 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
   return {
     selfCheckout,
     transporterOptions, transporterKey, selectTransporter,
-    recipientOptions, recipientKey, selectRecipient, createRecipient,
+    recipientOptions, recipientKey, selectRecipient, createRecipient, commitDraftRecipient,
     addressOptions, addressKey, selectAddress, clearAddress, createAddress,
   }
 }
+
+const DRAFT_RECIPIENT_KEY = 'recipient-draft'
 
 function applyRecipientSelection(
   patch: Partial<NewSaleReviewValue>,

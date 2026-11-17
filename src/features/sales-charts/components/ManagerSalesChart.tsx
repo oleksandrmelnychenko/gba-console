@@ -9,11 +9,13 @@ export function ManagerSalesChart({
   data,
   detailCount,
   detailLabel,
+  emptyTitle,
   isLoading,
 }: {
   data: { manager: string; total: number }[]
   detailCount: number
   detailLabel: string
+  emptyTitle?: string
   isLoading: boolean
 }) {
   const { t } = useI18n()
@@ -48,7 +50,7 @@ export function ManagerSalesChart({
         </div>
       ) : (
         <SalesChartEmpty
-          title={t('За цей період продажів немає')}
+          title={emptyTitle ?? t('За цей період продажів немає')}
           description={t('Оберіть інший діапазон дат або змініть фільтри.')}
         />
       )}
