@@ -4,11 +4,7 @@ import { TableChip } from '../../../../shared/ui/TableChip'
 import { CircleHelp } from 'lucide-react'
 import type { ClientAgreement } from '../../../clients/types'
 import { getWizardAgreementDebtPresentation } from './wizardClientStepModel'
-
-const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 0,
-})
+import { AGREEMENT_BALANCE_CURRENCY, describeCreditLimit, formatAgreementMoney } from './wizardAgreementCardText'
 
 export function WizardAgreementItem({
   clientAgreement,
@@ -74,11 +70,11 @@ export function WizardAgreementItem({
         </Box>
 
         <Box className="new-sale-hero-agreement__metrics">
-          <AgreementOptionMetric label="Доступний аванс" value={formatAgreementAmount(debt.availableAdvance)} />
+          <AgreementOptionMetric label="Доступний аванс" value={formatAgreementMoney(debt.availableAdvance, AGREEMENT_BALANCE_CURRENCY)} />
           <AgreementOptionMetric
             danger={(debt.outstandingDebt ?? 0) > 0}
             label="Непогашений борг"
-            value={formatAgreementAmount(debt.outstandingDebt)}
+            value={formatAgreementMoney(debt.outstandingDebt, currencyCode)}
           />
           <AgreementOptionMetric
             danger={(debt.overdueDays ?? 0) > 0}
@@ -91,12 +87,12 @@ export function WizardAgreementItem({
             value={formatAgreementDays(debt.overdueDays)}
           />
           {debt.documentary && (
-            <AgreementOptionMetric label="Кредитовий залишок" value={formatAgreementAmount(debt.documentary.creditBalance)} />
+            <AgreementOptionMetric label="Кредитовий залишок" value={formatAgreementMoney(debt.documentary.creditBalance, currencyCode)} />
           )}
           <AgreementOptionMetric
             danger={amountLimitExceeded}
             label="Кредитний ліміт"
-            value={debt.creditLimit === null ? 'Ліміт не налаштовано' : formatAgreementAmount(debt.creditLimit)}
+            value={describeCreditLimit(agreement, debt.creditLimit, currencyCode)}
           />
         </Box>
 
@@ -121,11 +117,6 @@ function AgreementOptionMetric({ danger, label, value }: { danger?: boolean; lab
       <strong>{value}</strong>
     </span>
   )
-}
-
-function formatAgreementAmount(value: number | null): string {
-  if (value === null) return 'Не визначено'
-  return agreementAmountFormatter.format(Math.round(value * 100) / 100)
 }
 
 function formatAgreementDays(value: number | null): string {

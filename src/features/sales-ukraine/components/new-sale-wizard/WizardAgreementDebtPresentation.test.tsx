@@ -40,9 +40,11 @@ describe('wizard agreement debt metrics', () => {
     )
 
     expectedLabels.forEach((label) => expect(screen.getByText(label)).toBeTruthy())
-    expect(screen.getByText('Ліміт не налаштовано')).toBeTruthy()
-    expect(screen.getByText('120')).toBeTruthy()
-    expect(screen.getByText('75')).toBeTruthy()
+    // Days are set but the control switch is off: say so instead of «Ліміт не налаштовано».
+    expect(screen.getByText('30 дн. (контроль вимкнено)')).toBeTruthy()
+    // The advance is the EUR agreement balance, the debt is in the agreement currency.
+    expect(screen.getByText('120,00 EUR')).toBeTruthy()
+    expect(screen.getByText('75,00 EUR')).toBeTruthy()
     expect(screen.getByText('42 дн.')).toBeTruthy()
     expect(screen.getByText('12 дн.')).toBeTruthy()
     expect(screen.queryByText('Баланс')).toBeNull()
@@ -102,7 +104,7 @@ describe('documentary agreement read overlay', () => {
     render(<MantineProvider><WizardAgreementItem clientAgreement={documented(false)} /></MantineProvider>)
     expect(screen.getAllByText('0 дн.')).toHaveLength(2)
     expect(screen.getByText('Кредитовий залишок')).toBeTruthy()
-    expect(screen.getAllByText('100')).toHaveLength(2)
+    expect(screen.getAllByText(/^100,00/)).toHaveLength(2)
     expect(screen.queryByText('Прострочено')).toBeNull()
   })
 })

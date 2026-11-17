@@ -31,5 +31,5 @@ it('updates only the two selected agreement cards and still reflects changed deb
   calculate.mockClear()
   rerender(view('agreement-1', agreements.map((agreement, index) => index === 2 ? { ...agreement, CurrentAmount: 123 } : agreement)))
   expect(calculate).toHaveBeenCalledExactlyOnceWith('agreement-2')
-  expect(screen.getByText('123')).toBeTruthy()
+  expect(screen.getByText('123,00 EUR')).toBeTruthy()
 })

@@ -422,11 +422,12 @@ function WizardSaleHeaderContent({
               <Copy size={18} />
             </ActionIcon>
           </Tooltip>
-          {/* Lifecycle as the main-grid chip + mono uppercase invoice number */}
+          {/* Lifecycle as the main-grid chip + the invoice number exactly as stored
+              (uppercasing turned «QAUНо…» into «QAUНО…», unlike the registry) */}
           <Badge className="app-role-pill" size="sm" variant="light">
             {`${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)}`.trim()}
           </Badge>
-          <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          <Text data-testid="wizard-sale-number" fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0, whiteSpace: 'nowrap' }}>
             {sale.SaleNumber?.Value ?? ''}
           </Text>
         </Group>

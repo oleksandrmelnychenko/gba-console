@@ -59,3 +59,17 @@ describe('converted price column currency', () => {
     expect(getWizardConvertedCurrencyCode('USD')).toBe('USD')
   })
 })
+
+describe('price matrix «Ціна» local column', () => {
+  const product = { CurrentPrice: 15.625, CurrentLocalPrice: 17.32, CurrentPriceEurToUah: 800 } as WizardSaleProduct
+
+  it('shows the USD price under «USD» on a USD agreement', () => {
+    const current = buildWizardProductPriceMatrix({ localCurrency: 'USD', pricing: null, product })[0]
+    expect(current.local).toBe(17.32)
+  })
+
+  it('keeps the EUR→UAH price under «UAH» on a EUR agreement', () => {
+    const current = buildWizardProductPriceMatrix({ localCurrency: 'EUR', pricing: null, product })[0]
+    expect(current.local).toBe(800)
+  })
+})

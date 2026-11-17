@@ -26,7 +26,11 @@ export function buildWizardProductPriceMatrix({
     {
       key: 'current', label: 'Ціна',
       eur: currentPriceEur ?? getWizardProductNumber(product.CurrentPrice),
-      local: getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice),
+      /* The EUR→UAH price belongs only under a UAH column: on a USD agreement it put
+         the hryvnia price (800,00) under «USD» instead of the USD price. */
+      local: getWizardConvertedCurrencyCode(localCurrency) === 'UAH'
+        ? getWizardProductNumber(product.CurrentPriceEurToUah) ?? getWizardProductNumber(product.CurrentLocalPrice)
+        : getWizardProductNumber(product.CurrentLocalPrice),
     },
     ...(['base-eur', 'discount-eur'] as const).map((key) => ({
       key,

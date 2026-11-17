@@ -9,11 +9,7 @@ import {
   getWizardAgreementDebtPresentation,
   getWizardAgreementKey,
 } from './wizardClientStepModel'
-
-const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 0,
-})
+import { AGREEMENT_BALANCE_CURRENCY, describeCreditLimit, formatAgreementMoney } from './wizardAgreementCardText'
 
 export const WizardClientAgreementsStrip = memo(function WizardClientAgreementsStrip({
   agreements,
@@ -149,11 +145,11 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
         <Box className="new-sale-agreement-card__limits">
           <Box className="new-sale-agreement-card__metric">
             <span>{t('Доступний аванс')}</span>
-            <strong>{formatAgreementAmount(debt.availableAdvance)}</strong>
+            <strong>{formatAgreementMoney(debt.availableAdvance, AGREEMENT_BALANCE_CURRENCY)}</strong>
           </Box>
           <Box className={`new-sale-agreement-card__metric ${(debt.outstandingDebt ?? 0) > 0 ? 'is-danger' : ''}`}>
             <span>{t('Непогашений борг')}</span>
-            <strong>{formatAgreementAmount(debt.outstandingDebt)}</strong>
+            <strong>{formatAgreementMoney(debt.outstandingDebt, currencyCode)}</strong>
           </Box>
           <Box className={`new-sale-agreement-card__metric ${(debt.overdueDays ?? 0) > 0 ? 'is-danger' : ''}`}>
             <span>{t(debt.documentary ? 'Макс. відомий вік боргу' : 'Вік боргу')}</span>
@@ -166,27 +162,18 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
           {debt.documentary && (
             <Box className="new-sale-agreement-card__metric">
               <span>{t('Кредитовий залишок')}</span>
-              <strong>{formatAgreementAmount(debt.documentary.creditBalance)}</strong>
+              <strong>{formatAgreementMoney(debt.documentary.creditBalance, currencyCode)}</strong>
             </Box>
           )}
           <Box className={`new-sale-agreement-card__metric ${amountLimitExceeded ? 'is-danger' : ''}`}>
             <span>{t('Кредитний ліміт')}</span>
-            <strong title={debt.creditLimit === null ? t('Ліміт не налаштовано') : undefined}>
-              {debt.creditLimit === null
-                ? t('Ліміт не налаштовано')
-                : formatAgreementAmount(debt.creditLimit)}
-            </strong>
+            <strong>{t(describeCreditLimit(agreement, debt.creditLimit, currencyCode))}</strong>
           </Box>
         </Box>
       </Box>
     </UnstyledButton>
   )
 })
-
-function formatAgreementAmount(value: number | null): string {
-  if (value === null) return 'Не визначено'
-  return agreementAmountFormatter.format(Math.round(value * 100) / 100)
-}
 
 function formatAgreementDays(value: number | null): string {
   if (value === null) return 'Не визначено'
