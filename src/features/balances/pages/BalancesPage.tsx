@@ -320,7 +320,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           columns={columns}
           data={documents}
           defaultLayout={BALANCES_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Відсутній')}
+          emptyText={t('Документів не знайдено')}
           getRowId={(document, index) => String(document.NetUid || document.Id || index)}
           isLoading={isLoading}
           layoutVersion="balances-table-1"
