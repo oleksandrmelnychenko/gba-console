@@ -925,7 +925,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
             <SearchableSelect
               data={retailClientOptions}
               disabled={isLoading || isResolvingClient || isSaving}
-              label={t('Retail-клієнт')}
+              label={t('Роздрібний клієнт')}
               placeholder={t('Імʼя або телефон')}
               value={form.retailClientSearch}
               onChange={handleRetailClientSearchChanged}

@@ -10,13 +10,40 @@ export type SupplierOrganizationFormErrors<TValues> = Partial<Record<keyof TValu
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
+/**
+ * `stored` are the values the supplier already has: a stored code is not
+ * re-checked, so suppliers saved before these rules stay editable.
+ */
 export function validateSupplierOrganizationGeneralForm(
   values: SupplyOrganizationGeneralFormValues,
+  stored?: Partial<SupplyOrganizationGeneralFormValues>,
 ): SupplierOrganizationFormErrors<SupplyOrganizationGeneralFormValues> {
   const errors: SupplierOrganizationFormErrors<SupplyOrganizationGeneralFormValues> = {}
+  const isChanged = (key: 'PhoneNumber' | 'TIN' | 'USREOU') => values[key].trim() !== (stored?.[key] || '').trim()
 
   if (!values.Name.trim()) {
     errors.Name = 'Вкажіть назву'
+  } else if (values.Name.trim().length > 255) {
+    errors.Name = 'Назва — не більше 255 символів'
+  }
+
+  const usreou = values.USREOU.trim()
+
+  if (usreou && isChanged('USREOU') && !/^(\d{8}|\d{10})$/.test(usreou)) {
+    errors.USREOU = 'ЄДРПОУ має складатися з 8 цифр (або 10 цифр для ФОП)'
+  }
+
+  const tin = values.TIN.trim()
+
+  if (tin && isChanged('TIN') && !/^(\d{10}|\d{12})$/.test(tin)) {
+    errors.TIN = 'ІПН має складатися з 10 або 12 цифр'
+  }
+
+  const phone = values.PhoneNumber.trim()
+  const phoneDigits = phone.replace(/\D/g, '').length
+
+  if (phone && isChanged('PhoneNumber') && (!/^[\d\s()+-]+$/.test(phone) || phoneDigits < 10 || phoneDigits > 15)) {
+    errors.PhoneNumber = 'Телефон має містити 10-15 цифр (дозволені +, пробіли, дужки та дефіси)'
   }
 
   if (values.EmailAddress.trim() && !isEmail(values.EmailAddress)) {

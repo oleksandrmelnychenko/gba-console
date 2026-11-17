@@ -55,7 +55,7 @@ function renderPage() {
 }
 
 async function openClients() {
-  const input = await screen.findByRole<HTMLInputElement>('combobox', { name: 'Retail-клієнт' })
+  const input = await screen.findByRole<HTMLInputElement>('combobox', { name: 'Роздрібний клієнт' })
   await waitFor(() => expect(input.disabled).toBe(false))
   fireEvent.click(input)
   await screen.findByRole('option', { name: label, hidden: true })

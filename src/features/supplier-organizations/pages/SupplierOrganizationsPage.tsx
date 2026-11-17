@@ -36,6 +36,7 @@ import {
 import {
   deduplicateSupplyOrganizationsByIdentity,
   getAgreementCurrencies,
+  getSupplyOrganizationBalance,
   getAgreementNames,
   getAgreementOrganizations,
   getSupplyOrganizationAgreementCellText,
@@ -448,6 +449,7 @@ function useSupplierOrganizationColumns(): DataTableColumn<SupplyOrganization>[]
         width: 126,
         minWidth: 112,
         align: 'right',
+        // Sorted by the EUR equivalent so balances in different currencies compare.
         accessor: (organization) => organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY,
         cell: (organization) => <SupplierOrganizationBalanceCell organization={organization} />,
       },
@@ -559,13 +561,18 @@ function SupplierOrganizationBankCell({ organization }: { organization: SupplyOr
 }
 
 function SupplierOrganizationBalanceCell({ organization }: { organization: SupplyOrganization }) {
-  const rawAmount = organization.TotalAgreementsCurrentEuroAmount
+  const { t } = useI18n()
+  const balance = getSupplyOrganizationBalance(organization)
+  const rawAmount = balance.amount
   const amount = formatMoney(rawAmount)
-  const currency = amount ? getAgreementCurrencies(organization) || 'EUR' : ''
+  const currency = amount ? balance.currency : ''
   const isNegative = typeof rawAmount === 'number' && rawAmount < 0
+  const title = balance.isEuroEquivalent && amount
+    ? `${amount} EUR — ${t('еквівалент за договорами в різних валютах')}`
+    : compactStrings([amount, currency]).join(' ')
 
   return (
-    <span className={`supplier-organizations-balance-cell${isNegative ? ' is-negative' : ''}`} title={nativeTitle(compactStrings([amount, currency]).join(' '))}>
+    <span className={`supplier-organizations-balance-cell${isNegative ? ' is-negative' : ''}`} title={nativeTitle(title)}>
       <strong>{amount}</strong>
       <small>{currency}</small>
     </span>

@@ -272,7 +272,7 @@ function renderPage(initialEntry = '/accounting/income-cashflows/new/shop') {
 async function selectRetailClientAndOrganization(organizationName: string) {
   const user = userEvent.setup()
   const retailClientInput = await screen.findByRole('combobox', {
-    name: 'Retail-клієнт',
+    name: 'Роздрібний клієнт',
   })
   await waitFor(() => expect((retailClientInput as HTMLInputElement).disabled).toBe(false))
 
@@ -366,7 +366,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     expect(await screen.findByRole('option', { name: shopClientVatLabel })).toBeTruthy()
     expect(getIncomeCashflowRetailClients).toHaveBeenCalledOnce()
     expect(
-      (screen.getByRole('combobox', { name: 'Retail-клієнт' }) as HTMLInputElement).disabled,
+      (screen.getByRole('combobox', { name: 'Роздрібний клієнт' }) as HTMLInputElement).disabled,
     ).toBe(false)
   })
 
@@ -379,7 +379,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
 
     await waitFor(() =>
       expect(
-        (screen.getByRole('combobox', { name: 'Retail-клієнт' }) as HTMLInputElement).disabled,
+        (screen.getByRole('combobox', { name: 'Роздрібний клієнт' }) as HTMLInputElement).disabled,
       ).toBe(false),
     )
     expect(screen.queryByRole('alert')).toBeNull()
@@ -390,7 +390,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     renderPage()
 
     const retailClientInput = await screen.findByRole('combobox', {
-      name: 'Retail-клієнт',
+      name: 'Роздрібний клієнт',
     })
     await waitFor(() => expect((retailClientInput as HTMLInputElement).disabled).toBe(false))
 
@@ -607,7 +607,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     renderPage()
 
     const retailClientInput = await screen.findByRole('combobox', {
-      name: 'Retail-клієнт',
+      name: 'Роздрібний клієнт',
     })
     await waitFor(() => expect((retailClientInput as HTMLInputElement).disabled).toBe(false))
 
@@ -770,7 +770,7 @@ describe('IncomeCashflowShopFormPage retail client selection', () => {
     renderPage()
 
     const retailClientInput = await screen.findByRole('combobox', {
-      name: 'Retail-клієнт',
+      name: 'Роздрібний клієнт',
     })
     await waitFor(() => expect((retailClientInput as HTMLInputElement).disabled).toBe(false))
 

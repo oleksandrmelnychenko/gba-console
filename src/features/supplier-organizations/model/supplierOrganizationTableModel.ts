@@ -115,6 +115,42 @@ export function getAgreementNames(organization: SupplyOrganization): string {
   ).join(' · ')
 }
 
+export type SupplyOrganizationBalance = {
+  amount: number | undefined
+  currency: string
+  /** True when the amount is the EUR equivalent (agreements in several currencies). */
+  isEuroEquivalent: boolean
+}
+
+/**
+ * Balance in the agreements' own currency when they share one; otherwise the
+ * server's EUR equivalent, labelled EUR. Positive means we owe the supplier,
+ * like TotalAgreementsCurrentEuroAmount (an agreement's CurrentAmount has the
+ * opposite sign).
+ */
+export function getSupplyOrganizationBalance(organization: SupplyOrganization): SupplyOrganizationBalance {
+  const agreements = organization.SupplyOrganizationAgreements || []
+  const currencies = uniqueStrings(agreements.map((agreement) => agreement.Currency?.Code))
+  const hasAllAmounts = agreements.length > 0
+    && agreements.every((agreement) => typeof agreement.CurrentAmount === 'number' && Number.isFinite(agreement.CurrentAmount))
+
+  if (currencies.length === 1 && hasAllAmounts && agreements.every((agreement) => agreement.Currency?.Code)) {
+    const total = agreements.reduce((sum, agreement) => sum + (agreement.CurrentAmount || 0), 0)
+
+    return {
+      amount: Math.round(-total * 100) / 100 || 0,
+      currency: currencies[0],
+      isEuroEquivalent: false,
+    }
+  }
+
+  return {
+    amount: organization.TotalAgreementsCurrentEuroAmount,
+    currency: 'EUR',
+    isEuroEquivalent: true,
+  }
+}
+
 export function getAgreementCurrencies(organization: SupplyOrganization): string {
   return uniqueStrings(
     (organization.SupplyOrganizationAgreements || []).map(

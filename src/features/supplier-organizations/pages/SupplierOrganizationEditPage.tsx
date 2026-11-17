@@ -220,7 +220,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
   async function saveGeneral(values: SupplyOrganizationGeneralFormValues) {
     return runActionOnce('saveGeneral', async () => {
       const validationError = firstSupplierOrganizationValidationError(
-        validateSupplierOrganizationGeneralForm(values),
+        validateSupplierOrganizationGeneralForm(values, toGeneralFormValues(organization)),
       )
 
       if (validationError) {
@@ -467,7 +467,7 @@ function GeneralInfoForm({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nextErrors = validateSupplierOrganizationGeneralForm(values)
+    const nextErrors = validateSupplierOrganizationGeneralForm(values, toGeneralFormValues(organization))
     setErrors(nextErrors)
 
     if (firstSupplierOrganizationValidationError(nextErrors)) {
@@ -485,6 +485,7 @@ function GeneralInfoForm({
             <TextInput
               error={errors.Name ? t(errors.Name) : undefined}
               label={t('Назва')}
+              maxLength={255}
               required
               value={values.Name}
               onChange={(event) => setField('Name', event.currentTarget.value)}
@@ -497,10 +498,27 @@ function GeneralInfoForm({
               value={values.EmailAddress}
               onChange={(event) => setField('EmailAddress', event.currentTarget.value)}
             />
-            <TextInput label={t('Телефон')} value={values.PhoneNumber} onChange={(event) => setField('PhoneNumber', event.currentTarget.value)} />
+            <TextInput
+              error={errors.PhoneNumber ? t(errors.PhoneNumber) : undefined}
+              label={t('Телефон')}
+              value={values.PhoneNumber}
+              onChange={(event) => setField('PhoneNumber', event.currentTarget.value)}
+            />
             <TextInput label={t('ПДВ номер')} value={values.SROI} onChange={(event) => setField('SROI', event.currentTarget.value)} />
-            <TextInput label={t('ІПН')} value={values.TIN} onChange={(event) => setField('TIN', event.currentTarget.value)} />
-            <TextInput label={t('ЄДРПОУ')} value={values.USREOU} onChange={(event) => setField('USREOU', event.currentTarget.value)} />
+            <TextInput
+              error={errors.TIN ? t(errors.TIN) : undefined}
+              label={t('ІПН')}
+              maxLength={12}
+              value={values.TIN}
+              onChange={(event) => setField('TIN', event.currentTarget.value)}
+            />
+            <TextInput
+              error={errors.USREOU ? t(errors.USREOU) : undefined}
+              label={t('ЄДРПОУ')}
+              maxLength={10}
+              value={values.USREOU}
+              onChange={(event) => setField('USREOU', event.currentTarget.value)}
+            />
           </div>
           <Group gap={12}>
             <Checkbox
@@ -552,13 +570,13 @@ function BankDetailsForm({
             <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
             <TextInput label={t('Номер рахунку')} value={values.AccountNumber} onChange={(event) => setField('AccountNumber', event.currentTarget.value)} />
             <TextInput label={t('Банк')} value={values.Bank} onChange={(event) => setField('Bank', event.currentTarget.value)} />
-            <TextInput label="BankAccount" value={values.BankAccount} onChange={(event) => setField('BankAccount', event.currentTarget.value)} />
+            <TextInput label={t('Банківський рахунок (UAH)')} value={values.BankAccount} onChange={(event) => setField('BankAccount', event.currentTarget.value)} />
             <TextInput label="Swift" value={values.Swift} onChange={(event) => setField('Swift', event.currentTarget.value)} />
             <TextInput label={t('Swift/BIC')} value={values.SwiftBic} onChange={(event) => setField('SwiftBic', event.currentTarget.value)} />
             <TextInput label={t('Банк бенефіціара')} value={values.BeneficiaryBank} onChange={(event) => setField('BeneficiaryBank', event.currentTarget.value)} />
             <TextInput label={t('Банк-посередник')} value={values.IntermediaryBank} onChange={(event) => setField('IntermediaryBank', event.currentTarget.value)} />
             <TextInput label={t('Бенефіціар')} value={values.Beneficiary} onChange={(event) => setField('Beneficiary', event.currentTarget.value)} />
-            <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
+            <TextInput label={t('Банківський рахунок (EUR)')} value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
           </div>
         </Stack>
       </Card>

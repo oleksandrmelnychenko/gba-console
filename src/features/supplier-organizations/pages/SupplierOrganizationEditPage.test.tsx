@@ -186,3 +186,16 @@ describe('SupplierOrganizationEditPage QA', () => {
     expect(createSupplierOrganizationAgreement).not.toHaveBeenCalled()
   })
 })
+
+describe('SupplierOrganizationEditPage bank details', () => {
+  it('labels the bank accounts in Ukrainian', async () => {
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue({ ...EXISTING_SUPPLIER, BankAccount: '1', BankAccountEUR: '2' })
+    renderPage('/accounting/supplier-organizations/edit/supplier-1')
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Банківські реквізити' }))
+
+    expect(await screen.findByRole('textbox', { name: 'Банківський рахунок (UAH)' })).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Банківський рахунок (EUR)' })).toBeTruthy()
+    expect(screen.queryByText('BankAccount')).toBeNull()
+  })
+})

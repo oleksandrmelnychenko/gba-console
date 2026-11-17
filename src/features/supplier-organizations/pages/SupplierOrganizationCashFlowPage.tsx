@@ -516,9 +516,9 @@ function SupplierCashFlowOverview({
         label={t('Вхідний баланс')}
         meta={(
           <>
-            {t('Дебет')}: <span className="app-money">{formatMoney(summary.beforeInAmount)}</span>
+            {t('Дебет')}: <span className="app-money">{formatEur(summary.beforeInAmount)}</span>
             {' · '}
-            {t('Кредит')}: <span className="app-money">{formatMoney(summary.beforeOutAmount)}</span>
+            {t('Кредит')}: <span className="app-money">{formatEur(summary.beforeOutAmount)}</span>
           </>
         )}
         value={summary.beforeBalance}
@@ -527,9 +527,9 @@ function SupplierCashFlowOverview({
         label={t('Рух за період')}
         meta={(
           <>
-            {t('Дебет')}: <span className="app-money">{formatMoney(summary.afterInAmount)}</span>
+            {t('Дебет')}: <span className="app-money">{formatEur(summary.afterInAmount)}</span>
             {' · '}
-            {t('Кредит')}: <span className="app-money">{formatMoney(summary.afterOutAmount)}</span>
+            {t('Кредит')}: <span className="app-money">{formatEur(summary.afterOutAmount)}</span>
           </>
         )}
         value={periodDifference}
@@ -539,7 +539,7 @@ function SupplierCashFlowOverview({
         label={t('Кінцевий баланс')}
         meta={(
           <>
-            <span className="app-money">{periodDifference >= 0 ? '+' : ''}{formatMoney(periodDifference)}</span>
+            <span className="app-money">{periodDifference >= 0 ? '+' : ''}{formatEur(periodDifference)}</span>
             {' '}{t('за період')}
           </>
         )}
@@ -566,7 +566,7 @@ function SupplierCashFlowMetric({
   return (
     <div className={`supplier-cash-flow-overview__metric${emphasized ? ' is-emphasized' : ''}`}>
       <span>{label}</span>
-      <strong className={tone}>{formatMoney(value)}</strong>
+      <strong className={tone}>{formatEur(value)}</strong>
       <small>{meta}</small>
     </div>
   )
@@ -593,7 +593,7 @@ function SupplierCashFlowMoney({
 
   return (
     <span className={`supplier-cash-flow-money${valueTone}`}>
-      <strong>{formatMoney(value)}</strong>
+      <strong>{formatEur(value)}</strong>
       {showLocal ? <small>UAH {formatMoney(localValue)}</small> : null}
     </span>
   )
@@ -615,10 +615,10 @@ function SupplierCashFlowFooter({
   return (
     <div className="supplier-cash-flow-footer">
       <span>{t('Рядків')}: <strong>{rows}</strong></span>
-      <span>{t('Дебет')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(debit)}</strong></span>
-      <span>{t('Кредит')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(credit)}</strong></span>
+      <span>{t('Дебет')}: <strong className="supplier-cash-flow-footer__money">{formatEur(debit)}</strong></span>
+      <span>{t('Кредит')}: <strong className="supplier-cash-flow-footer__money">{formatEur(credit)}</strong></span>
       <span className={typeof balance === 'number' && balance < 0 ? 'is-negative' : 'is-positive'}>
-        {t('Баланс')}: <strong className="supplier-cash-flow-footer__money">{formatMoney(balance)}</strong>
+        {t('Баланс')}: <strong className="supplier-cash-flow-footer__money">{formatEur(balance)}</strong>
       </span>
     </div>
   )
@@ -644,8 +644,8 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
             <DetailItem label={t('Назва')} value={displayValue(row.Name)} />
             <DetailItem label={t('Номер')} value={displayValue(row.Number)} />
             <DetailItem label={t('Організація')} value={displayValue(row.OrganizationName)} />
-            <DetailItem label={t('Сума')} mono value={formatMoney(row.CurrentValue)} />
-            <DetailItem label={t('Сальдо')} mono value={formatMoney(row.CurrentBalance)} />
+            <DetailItem label={t('Сума')} mono value={formatEur(row.CurrentValue)} />
+            <DetailItem label={t('Сальдо')} mono value={formatEur(row.CurrentBalance)} />
           </SimpleGrid>
           <CashFlowDetailContent item={row} />
         </Stack>
@@ -702,6 +702,17 @@ function formatDateTime(value?: string): string {
   }
 
   return dateTimeFormatter.format(date)
+}
+
+/**
+ * Settlement amounts come as the EUR equivalent at the document rate; the
+ * document's own UAH amount is shown under it. Without the unit the EUR
+ * figures read as UAH.
+ */
+function formatEur(value?: number): string {
+  const amount = formatMoney(value)
+
+  return amount === '—' ? amount : `${amount} EUR`
 }
 
 function formatMoney(value?: number): string {

@@ -16,6 +16,30 @@ import {
 } from './validation'
 
 describe('supplier organization validation', () => {
+  it('checks ЄДРПОУ, ІПН and phone formats like the server', () => {
+    expect(validateSupplierOrganizationGeneralForm(generalValues({
+      PhoneNumber: 'телефон',
+      TIN: 'x'.repeat(50),
+      USREOU: 'ABC',
+    }))).toEqual({
+      PhoneNumber: 'Телефон має містити 10-15 цифр (дозволені +, пробіли, дужки та дефіси)',
+      TIN: 'ІПН має складатися з 10 або 12 цифр',
+      USREOU: 'ЄДРПОУ має складатися з 8 цифр (або 10 цифр для ФОП)',
+    })
+    expect(validateSupplierOrganizationGeneralForm(generalValues({
+      PhoneNumber: '+38 (050) 123-45-67',
+      TIN: '1234567890',
+      USREOU: '12345678',
+    }))).toEqual({})
+  })
+
+  it('does not re-check codes the supplier already has', () => {
+    const stored = generalValues({ USREOU: '123' })
+
+    expect(validateSupplierOrganizationGeneralForm(generalValues({ USREOU: '123' }), stored)).toEqual({})
+    expect(validateSupplierOrganizationGeneralForm(generalValues({ USREOU: '1234' }), stored).USREOU).toBeTruthy()
+  })
+
   it('requires a visible supplier name and validates trimmed email values', () => {
     const values = generalValues({
       EmailAddress: ' invalid@example ',
