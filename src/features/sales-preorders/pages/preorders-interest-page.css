@@ -117,7 +117,7 @@
 .preorders-interest-comment {
   color: var(--mantine-color-gray-7);
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.25;
   min-width: 0;

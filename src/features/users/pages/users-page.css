@@ -44,7 +44,7 @@
 .users-filter-bar .mantine-Input-wrapper,
 .users-filter-bar .mantine-Input-input {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;
@@ -58,7 +58,7 @@
 
 .users-filter-bar .mantine-Select-option {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0;
 }
 

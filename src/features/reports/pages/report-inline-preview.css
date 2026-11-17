@@ -8,7 +8,7 @@
 .report-inline-preview tr > :last-child { border-right: 0; }
 .report-inline-preview tbody tr:last-child > * { border-bottom: 0; }
 .report-inline-preview thead th { position: sticky; top: 0; z-index: 2; background: #f8f9fa; color: var(--mantine-color-gray-8); font-weight: 600; vertical-align: bottom; line-height: var(--app-table-line-height); }
-.report-inline-preview td { color: var(--mantine-color-gray-9); font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
+.report-inline-preview td { color: var(--mantine-color-gray-9); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; white-space: nowrap; }
 .report-inline-preview tbody th { color: var(--mantine-color-gray-9); font-weight: 500; }
 .report-inline-preview td.is-negative { color: var(--mantine-color-red-7); }
 .report-inline-preview tbody th[data-level="0"] { font-weight: 600; }

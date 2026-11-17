@@ -43,7 +43,7 @@
 .income-cashflows-create-menu .mantine-Menu-item {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -132,7 +132,7 @@
   color: var(--mantine-color-gray-7);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   height: 28px;
   justify-content: center;
@@ -251,7 +251,7 @@
 .income-cashflow-client-form__debt-metric > span {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;

@@ -37,7 +37,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;
@@ -127,7 +127,7 @@
 
 .online-shop-clients-profile-name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: var(--app-table-line-height);
 }
@@ -153,7 +153,7 @@
 .online-shop-clients-contact-cell .mantine-Text-root {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -161,7 +161,7 @@
 
 .online-shop-clients-city-cell .mantine-Text-root {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -174,7 +174,7 @@
 .online-shop-clients-created-cell span {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.15;
@@ -347,7 +347,7 @@
 
 .online-shop-clients-cart-body .online-shop-order-item-title {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.18;
 }
@@ -388,7 +388,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   height: 22px;
   letter-spacing: 0;
@@ -414,7 +414,7 @@
 .online-shop-clients-cart-body .online-shop-order-item-source-price {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
 }

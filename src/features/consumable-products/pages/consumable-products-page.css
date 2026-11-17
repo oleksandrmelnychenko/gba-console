@@ -32,7 +32,7 @@
 .consumable-products-filter-bar .mantine-Input-wrapper,
 .consumable-products-filter-bar .mantine-Input-input {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height, 36px);
   letter-spacing: 0;
@@ -199,7 +199,7 @@
 
 .consumable-category-panel__name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
 }
@@ -243,7 +243,7 @@
 
 .consumable-product-name-title {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
 }

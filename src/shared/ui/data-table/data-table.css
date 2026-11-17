@@ -582,7 +582,7 @@
   background: var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
 }

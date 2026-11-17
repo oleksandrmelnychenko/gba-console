@@ -204,7 +204,7 @@
 .cockpit-head-data-note summary::-webkit-details-marker { display: none; }
 .cockpit-head-data-note[open] summary { margin-bottom: 8px; }
 .cockpit-team-monitor > .cockpit-head-data-note { padding: 8px 12px 0; }
-.cockpit-head-page .cockpit-manager-row__name { font-size: 12.5px; font-weight: 600; color: var(--mantine-color-gray-8); }
+.cockpit-head-page .cockpit-manager-row__name { font-size: 12px; font-weight: 600; color: var(--mantine-color-gray-8); }
 .cockpit-head-page .cockpit-manager-row.is-selected { padding: 8px; background: var(--mantine-color-gray-0); }
 .cockpit-head-page .cockpit-manager-row.is-selected::before { display: none; }
 .cockpit-head-page .cockpit-ai-status > .mantine-Group-root { gap: 8px; }

@@ -139,7 +139,7 @@
 .product-delivery-protocols-main-title,
 .product-delivery-protocols-two-line-cell > span:not(.app-table-chip) {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: var(--app-table-line-height);
 }
@@ -197,7 +197,7 @@
   align-items: center;
   display: inline-flex;
   flex: 0 1 auto;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.2;
   max-width: 100%;
   min-width: 0;
@@ -212,7 +212,7 @@
 .product-delivery-protocols-comment-cell,
 .product-delivery-protocols-date-cell > span {
   color: var(--mantine-color-gray-7);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: var(--app-table-line-height);
 }

@@ -15,7 +15,7 @@
 .procure-cost-proof__caption { color: var(--mantine-color-gray-6); font-size: 11px; line-height: 1.5; }
 .procure-cost-proof__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 8px 0; padding: 8px 0; border-block: 1px solid var(--mantine-color-gray-2); }
 .procure-cost-proof__metrics > div + div { border-left: 1px solid var(--mantine-color-gray-2); padding-left: 12px; }
-.procure-cost-proof__metrics dt { color: var(--mantine-color-gray-6); font-size: 10.5px; }
+.procure-cost-proof__metrics dt { color: var(--mantine-color-gray-6); font-size: 11px; }
 .procure-cost-proof__metrics dd { margin: 4px 0 0; font-family: var(--font-mono); font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .procure-cost-proof__metrics dd small { color: var(--mantine-color-gray-6); font-size: 11px; font-weight: 400; }
 .procure-cost-proof__budget { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; color: var(--mantine-color-orange-9); font-size: 11px; }
@@ -35,7 +35,7 @@
 .procure-cost-proof__references { margin: 8px 0 0; }
 .procure-cost-proof__references > div { display: grid; grid-template-columns: minmax(108px, 35%) minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px solid var(--mantine-color-gray-2); }
 .procure-cost-proof__references dt { color: var(--mantine-color-gray-6); overflow-wrap: anywhere; }
-.procure-cost-proof__references dd { margin: 0; font-family: var(--font-mono); font-size: 10.5px; overflow-wrap: anywhere; }
+.procure-cost-proof__references dd { margin: 0; font-family: var(--font-mono); font-size: 11px; overflow-wrap: anywhere; }
 
 @media (max-width: 480px) {
   .procure-cost-proof__metrics { gap: 8px; }

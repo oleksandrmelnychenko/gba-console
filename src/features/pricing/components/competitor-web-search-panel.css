@@ -97,7 +97,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   height: var(--app-control-height);
   min-height: var(--app-control-height);
   padding-left: 36px;
@@ -298,7 +298,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
   padding: 4px 8px;
   white-space: nowrap;
@@ -464,7 +464,7 @@
 .competitor-radar__notice-title,
 .competitor-radar__results-title {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
 }
@@ -472,7 +472,7 @@
 .competitor-radar__empty-text,
 .competitor-radar__notice-copy {
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.5;
   margin-top: 4px;
 }
@@ -493,7 +493,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
   gap: 4px;
   padding: 4px 8px;
@@ -543,7 +543,7 @@
 
 .competitor-radar__notice-hint {
   color: var(--mantine-color-orange-9);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   margin-top: 8px;
 }
@@ -591,7 +591,7 @@
 .competitor-radar__stat-label {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
 }
 
@@ -638,13 +638,13 @@
 
 .competitor-radar__insight-label {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
 }
 
 .competitor-radar__insight-copy {
   color: var(--mantine-color-gray-7);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.5;
   margin-top: 4px;
 }
@@ -698,7 +698,7 @@
 
 .competitor-radar__offer-title {
   color: var(--mantine-color-gray-8);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -752,7 +752,7 @@
   align-items: center;
   color: var(--mantine-color-gray-6);
   display: flex;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 500;
   gap: 8px;
   white-space: nowrap;
@@ -776,7 +776,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
   gap: 4px;
   padding: 4px 8px;
@@ -793,7 +793,7 @@
 }
 
 .competitor-radar__safe-note {
-  font-size: 8.5px;
+  font-size: 9px;
 }
 
 @media (max-width: 760px) {
@@ -850,7 +850,7 @@
   }
 
   .competitor-radar__prompt-code {
-    font-size: 8.5px;
+    font-size: 9px;
     max-height: 260px;
     padding: 8px;
   }

@@ -447,7 +447,7 @@ text.app-money {
 
 .app-form-sheet .mantine-SegmentedControl-label {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0;
 }
 

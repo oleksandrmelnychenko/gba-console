@@ -57,7 +57,7 @@
 .wizard-cross-sell-seed__eyebrow > span:first-child {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -175,7 +175,7 @@
 }
 
 .wizard-cross-sell-related__head .app-section-title {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .wizard-cross-sell-related__scroll {
@@ -303,7 +303,7 @@
 
 .wizard-cross-sell-card__name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
@@ -355,7 +355,7 @@
 .wizard-cross-sell-empty strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 

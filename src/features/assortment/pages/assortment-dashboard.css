@@ -83,7 +83,7 @@
 
 .assort-dash__subtitle {
   color: var(--mantine-color-gray-6);
-  font-size: 12.5px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -118,7 +118,7 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height, 36px);
   letter-spacing: 0;
@@ -197,7 +197,7 @@
   align-items: center;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   min-width: 0;
 }
@@ -339,7 +339,7 @@
 .assort-card__hint {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -384,7 +384,7 @@
 .band-legend__label {
   color: var(--mantine-color-gray-8);
   flex: 1 1 auto;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   min-width: 0;
   overflow: hidden;
@@ -402,14 +402,14 @@
 .band-legend__count {
   color: var(--mantine-color-gray-8);
   flex: 0 0 auto;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .band-legend__value {
   color: var(--mantine-color-gray-6);
   flex: 0 0 72px;
-  font-size: 10.5px;
+  font-size: 11px;
   text-align: right;
 }
 
@@ -474,7 +474,7 @@
   color: var(--app-chip-neutral-text);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   gap: 4px;
   letter-spacing: 0;
   padding: 1px 8px;
@@ -549,7 +549,7 @@
 .assort-attention__product b {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-sans);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -566,7 +566,7 @@
 .assort-attention__row strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
@@ -664,7 +664,7 @@
 .assort-cell-product b {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -674,7 +674,7 @@
 .assort-cell-product span {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -691,7 +691,7 @@
 .assort-cell-action span {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-sans);
-  font-size: 10.5px;
+  font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -757,7 +757,7 @@
 .assort-table-limit {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .assort-filter { container: assortment-toolbar / inline-size; overflow: visible; }

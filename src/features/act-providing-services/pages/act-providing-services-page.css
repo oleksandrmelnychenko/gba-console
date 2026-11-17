@@ -78,7 +78,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--act-services-command-control-height);
   letter-spacing: 0;
@@ -135,7 +135,7 @@
 .act-service-identity-title {
   color: var(--mantine-color-gray-8);
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: var(--app-table-line-height);
   min-width: 0;
@@ -197,7 +197,7 @@
 
 .act-service-two-line-value > span {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: var(--app-table-line-height);
 }

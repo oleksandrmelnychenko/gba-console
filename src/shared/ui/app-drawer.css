@@ -62,10 +62,11 @@
   border-radius: 8px;
 }
 
+/* Cards inside a form drawer; the drawer shell (also a Paper) keeps its 16px tier. */
 .app-drawer.app-form-sheet .mantine-Card-root,
-.app-drawer.app-form-sheet .mantine-Paper-root {
+.app-drawer.app-form-sheet .mantine-Paper-root:not(.mantine-Drawer-content) {
   border-color: var(--mantine-color-gray-2);
-  border-radius: 12px;
+  border-radius: var(--app-radius-md);
   box-shadow: none;
 }
 

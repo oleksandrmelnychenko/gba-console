@@ -285,7 +285,7 @@
 
 .workbook-settings__control .reports-stocks-selection-card .app-section-title {
   color: var(--mantine-color-gray-7);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .workbook-settings__control .reports-stocks-legacy__selections {
@@ -490,7 +490,7 @@
 
 .workbook-message__body p {
   color: var(--desk-text);
-  font-size: 13.5px;
+  font-size: 13px;
   line-height: 1.5;
   margin: 0;
   max-width: 900px;
@@ -643,7 +643,7 @@
 .workbook-settings__control .reports-stocks-selection-card .reports-stocks-legacy-panel__title { display: none; }
 .workbook-settings__control .reports-stocks-structure:empty { display: none; }
 
-.workbook-settings__control .reports-stocks-legacy-panel__add { height: 32px; padding-inline: 12px; font-size: 12.5px; }
+.workbook-settings__control .reports-stocks-legacy-panel__add { height: 32px; padding-inline: 12px; font-size: 12px; }
 
 /* Report controls share the same selected surface as the document selectors. */
 .workbook-filter-option {

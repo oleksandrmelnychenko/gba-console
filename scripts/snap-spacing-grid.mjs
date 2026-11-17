@@ -32,9 +32,26 @@ const CSS_PROP = /^(padding|margin)(-(top|right|bottom|left|inline|block)(-(star
 const TSX_PROPS = 'gap|p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|rowGap|columnGap|spacing|verticalSpacing|horizontalSpacing|radius'
 const TSX_RE = new RegExp(`(\\s(?:${TSX_PROPS}))=\\{(-?\\d+)\\}`, 'g')
 
+// Type scale: fractional pixel font sizes render blurry and break the rhythm.
+// Snap to a whole pixel; a .5 tie goes to the neighbour the codebase uses more
+// (12.5 → 12, 10.5 → 11, 11.5 → 12, 9.5 → 10, 8.5 → 9, 13.5 → 13).
+const FONT_TIES = { 8.5: 9, 9.5: 10, 10.5: 11, 11.5: 12, 12.5: 12, 13.5: 13, 14.5: 14, 15.5: 16 }
+export function snapFont(n) {
+  if (Number.isInteger(n)) return n
+  return FONT_TIES[n] ?? Math.round(n)
+}
+
 function snapCss(text, sizes = false) {
   let count = 0
   const out = text.replace(/(^|[{;\s])([a-z-]+)(\s*:\s*)([^;{}]+)(;)/gm, (all, pre, prop, colon, value, semi, offset, src) => {
+    if (prop === 'font-size') {
+      const next = value.replace(/(\d+\.\d+)px/g, (m, num) => {
+        const s = snapFont(parseFloat(num))
+        count++
+        return `${s}px`
+      })
+      return `${pre}${prop}${colon}${next}${semi}`
+    }
     const isSize = sizes && SIZE_PROP.test(prop)
     if (!CSS_PROP.test(prop) && !isSize) return all
     const tail = src.slice(offset + all.length, offset + all.length + 40)

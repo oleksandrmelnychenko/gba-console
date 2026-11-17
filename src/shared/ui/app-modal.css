@@ -95,10 +95,12 @@
   border-color: var(--mantine-color-gray-2);
 }
 
+/* Cards inside a form modal. The modal shell is itself a Paper, so it is
+   excluded here and keeps its 16px tier. */
 .app-modal.app-form-sheet .mantine-Card-root,
-.app-modal.app-form-sheet .mantine-Paper-root {
+.app-modal.app-form-sheet .mantine-Paper-root:not(.mantine-Modal-content) {
   border-color: var(--mantine-color-gray-2);
-  border-radius: 12px;
+  border-radius: var(--app-radius-md);
   box-shadow: none;
 }
 

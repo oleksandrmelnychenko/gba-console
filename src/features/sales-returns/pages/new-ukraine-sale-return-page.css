@@ -89,7 +89,7 @@
 
 .new-sale-return-date-input .mantine-Input-wrapper,
 .new-sale-return-date-input .mantine-Input-input {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
 }
 
@@ -150,7 +150,7 @@
 .new-sale-return-main-line {
   color: var(--mantine-color-gray-8);
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
   min-width: 0;
@@ -199,7 +199,7 @@
 .new-sale-return-storage-pill,
 .new-sale-return-responsible-pill {
   display: inline-flex;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1;
   max-width: 100%;
   min-width: 0;
@@ -218,7 +218,7 @@
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   height: 22px;
   line-height: 1;
@@ -291,7 +291,7 @@
   color: var(--mantine-color-gray-6);
   display: block;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 550;
   letter-spacing: 0;
   margin-top: 2px;

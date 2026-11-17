@@ -75,7 +75,7 @@
 .new-ecommerce-clients-contact__phone {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 15px;
 }
@@ -97,7 +97,7 @@
 
 .new-ecommerce-clients-entity__title {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 15px;
 }

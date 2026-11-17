@@ -112,7 +112,7 @@
 
 .pricing-page__recommendation-empty-copy {
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
   margin-top: 8px;
   max-width: 360px;

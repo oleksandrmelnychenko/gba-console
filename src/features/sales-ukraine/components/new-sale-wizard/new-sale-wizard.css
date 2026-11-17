@@ -248,7 +248,7 @@
 
 .new-sale-client-drum-row__code {
   color: var(--mantine-color-gray-4);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
@@ -261,7 +261,7 @@
 
 .new-sale-client-drum-row__name {
   color: var(--mantine-color-gray-7);
-  font-size: 12.35px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.22;
   min-width: 0;
@@ -319,7 +319,7 @@
 }
 
 .new-sale-client-drum-card__code {
-  font-size: 10.75px;
+  font-size: 11px;
   line-height: 1.05;
   min-width: 0;
   overflow: hidden;
@@ -355,7 +355,7 @@
 .new-sale-client-drum-card__name {
   color: var(--mantine-color-gray-9);
   display: -webkit-box;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.2;
   -webkit-box-orient: vertical;
@@ -512,7 +512,7 @@
 
 .new-sale-client-hero__status-copy strong {
   color: var(--mantine-color-gray-9);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.15;
   white-space: nowrap;
@@ -520,7 +520,7 @@
 
 .new-sale-client-hero__status-copy span {
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.15;
   white-space: nowrap;
@@ -540,7 +540,7 @@
   align-items: center;
   color: var(--mantine-color-gray-6);
   display: inline-flex;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   gap: 4px;
   line-height: 1.1;
@@ -1004,7 +1004,7 @@
 
 .new-sale-hero-agreement__name {
   color: var(--mantine-color-gray-9);
-  font-size: 13.35px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.18;
   min-width: 0;
@@ -1026,7 +1026,7 @@
   align-items: center;
   color: #0ca678;
   display: inline-flex;
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 750;
   gap: 4px;
   line-height: 1;
@@ -1094,7 +1094,7 @@
 
 .new-sale-hero-agreement__metric strong {
   color: var(--mantine-color-gray-8);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.1;
   min-width: 0;
@@ -1224,7 +1224,7 @@
   color: var(--mantine-color-blue-8);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
   gap: 0;
   justify-content: flex-start;
@@ -1536,7 +1536,7 @@
 
 .new-sale-agreement-card__name {
   color: var(--mantine-color-gray-9);
-  font-size: 13.35px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.22;
   min-width: 0;
@@ -1616,7 +1616,7 @@
 
 .new-sale-agreement-card__metric strong {
   color: var(--mantine-color-gray-8);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.15;
   flex-shrink: 0;
@@ -1667,7 +1667,7 @@
   background: var(--mantine-color-white);
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 12px;
   min-height: var(--app-control-height);
 }
 
@@ -1750,7 +1750,7 @@
 
 .new-sale-register-head .mantine-Text-root {
   color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.1;
@@ -1881,13 +1881,13 @@
 
 .new-sale-register-row__lifecycle {
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .new-sale-register-row__payment .mantine-Badge-root {
   border-radius: 999px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   max-width: 100%;
 }
@@ -1921,7 +1921,7 @@
 
 .new-sale-register-row__date .mantine-Text-root:first-child {
   color: var(--mantine-color-gray-8);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.15;
 }
@@ -1981,14 +1981,14 @@
 
 .new-sale-register-expanded__header-copy .mantine-Text-root:first-child {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.15;
 }
 
 .new-sale-register-expanded__header-copy .mantine-Text-root:nth-child(2) {
   color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.1;
   text-transform: uppercase;
@@ -2007,7 +2007,7 @@
 
 .new-sale-register-expanded__totals .mantine-Text-root:first-child {
   color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 650;
   line-height: 1;
   text-transform: uppercase;
@@ -2081,7 +2081,7 @@
 
 .new-sale-register-expanded-item__name {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.18;
   overflow: hidden;
@@ -2100,7 +2100,7 @@
   border-radius: 999px;
   color: var(--mantine-color-gray-6);
   display: inline-flex;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   gap: 4px;
   line-height: 1;
@@ -2146,7 +2146,7 @@
 .new-sale-register-expanded-item__stat .mantine-Text-root:nth-child(3),
 .new-sale-register-expanded-item__date .mantine-Text-root:nth-child(2) {
   color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.1;
   text-transform: uppercase;
@@ -2982,7 +2982,7 @@
 
 .new-sale-product-price-strip__label {
   color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   grid-column: 1 / -1;
   line-height: 1;
@@ -3012,7 +3012,7 @@
 .new-sale-product-price-strip__currency {
   color: var(--mantine-color-gray-5);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 650;
   line-height: 1;
   white-space: nowrap;
@@ -3106,7 +3106,7 @@
   border-radius: 999px;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   gap: 4px;
   line-height: 1;
@@ -3167,7 +3167,7 @@
 
 .new-sale-product-card__metric span {
   color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1.1;
   text-transform: uppercase;
@@ -3266,7 +3266,7 @@
 .new-sale-product-card__next strong,
 .new-sale-product-card__retail strong {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.1;
   overflow: hidden;
@@ -3341,7 +3341,7 @@
 .new-sale-product-card__legacy-facts strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1;
@@ -3431,7 +3431,7 @@
 
 .new-sale-product-card__chip span {
   color: var(--mantine-color-gray-5);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1.05;
   min-height: 20px;
@@ -4470,7 +4470,7 @@
 .new-sale-wizard-header-badge__label {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -4553,13 +4553,13 @@
 .new-sale-client-drum-row__code {
   color: var(--mantine-color-gray-5);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
 }
 
 .new-sale-client-drum-row__name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -4606,7 +4606,7 @@
 
 .new-sale-client-drum-card__name {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   margin-top: 2px;
 }
@@ -4706,7 +4706,7 @@
 .new-sale-agreement-card__name {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.1;
 }
@@ -4725,7 +4725,7 @@
   border-radius: var(--mantine-radius-sm);
   color: var(--mantine-color-blue-8);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
   gap: 0;
   justify-content: flex-start;
@@ -4767,7 +4767,7 @@
   background: var(--mantine-color-teal-0);
   border: 1px solid var(--mantine-color-teal-2);
   color: var(--mantine-color-teal-8);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 650;
   padding: 4px 8px;
 }
@@ -4911,7 +4911,7 @@
   border-radius: 8px;
   box-shadow: none;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: 36px;
   min-height: 36px;
@@ -5462,7 +5462,7 @@
 
 .new-sale-agreement-card__status {
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 9px;
   font-weight: 600;
 }
 
@@ -5703,7 +5703,7 @@
 .new-sale-register-head .mantine-Text-root {
   color: var(--mantine-color-gray-5);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
@@ -5879,7 +5879,7 @@
 .new-sale-register-row__lifecycle {
   color: var(--mantine-color-gray-5);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 560;
   line-height: 1.15;
 }
@@ -6671,7 +6671,7 @@
   border-radius: 8px;
   box-shadow: none;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: 36px;
   min-height: 36px;
@@ -6813,7 +6813,7 @@
   color: var(--mantine-color-gray-6);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   gap: 8px;
   letter-spacing: 0;
@@ -6977,7 +6977,7 @@
   align-self: center;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
@@ -7072,7 +7072,7 @@
   /* §5.1 — code is mono gray-8 (was a washed-out gray-4 that read as invisible). */
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.15;
 }
@@ -7369,7 +7369,7 @@
 .new-sale-wizard-header-badge__unit {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.15;
@@ -7759,7 +7759,7 @@
 
 .new-sale-print-modal__content {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 12px;
+  border-radius: var(--app-radius-lg);
   box-shadow: 0 18px 55px rgba(15, 23, 42, 0.14);
   overflow: hidden;
 }

@@ -364,7 +364,7 @@
 .client-resources-perfect-client-name {
   overflow: hidden;
   color: var(--mantine-color-gray-8);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;

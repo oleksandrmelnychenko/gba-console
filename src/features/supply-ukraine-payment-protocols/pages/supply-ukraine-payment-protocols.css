@@ -55,7 +55,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   gap: 8px;
   letter-spacing: 0;
@@ -113,7 +113,7 @@
 .supply-payment-detail-row > strong,
 .supply-payment-detail-row > .mantine-Text-root:last-child {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   min-width: 0;
@@ -144,14 +144,14 @@
 
 .supply-payment-document-name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .supply-payment-task-person {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
 }

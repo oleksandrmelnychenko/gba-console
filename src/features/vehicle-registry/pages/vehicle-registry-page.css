@@ -35,7 +35,7 @@
   color: var(--mantine-color-gray-6);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -85,7 +85,7 @@
 .vehicle-registry-summary__latest small {
   color: var(--mantine-color-gray-5);
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.2;
   margin-top: 4px;
   overflow: hidden;
@@ -150,7 +150,7 @@
 
 .vehicle-registry-vehicle-main strong {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
   min-width: 0;
@@ -177,7 +177,7 @@
   display: inline-flex;
   flex: 0 1 auto;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   gap: 4px;
   height: 18px;
@@ -231,7 +231,7 @@
 
 .vehicle-registry-two-line strong {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
 }
@@ -273,7 +273,7 @@
 .vehicle-registry-client-cell small {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .vehicle-registry-drawer-loading {
@@ -433,13 +433,13 @@
   color: var(--mantine-color-gray-5);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .vehicle-registry-history__item > strong {
   color: var(--mantine-color-gray-9);
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   margin-top: 4px;
 }
 

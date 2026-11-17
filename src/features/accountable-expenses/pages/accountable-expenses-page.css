@@ -73,7 +73,7 @@
 
 .accountable-expenses-date-input .mantine-Input-wrapper,
 .accountable-expenses-date-input .mantine-Input-input {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -92,7 +92,7 @@
 .accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
   color: inherit;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.2;
@@ -137,7 +137,7 @@
 .accountable-expenses-document-title,
 .accountable-expenses-product-title {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -207,7 +207,7 @@
 
 .accountable-expenses-responsible-cell > span {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -303,7 +303,7 @@
   color: var(--mantine-color-gray-6);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -580,7 +580,7 @@
 
 .accountable-expense-detail-product__main span {
   color: var(--mantine-color-gray-6);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
   margin-top: 4px;
@@ -629,7 +629,7 @@
 
 .accountable-expense-detail-link-card__head strong {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 

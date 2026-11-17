@@ -26,7 +26,7 @@
 .consumable-order-form-section-header__label {
   color: var(--mantine-color-gray-5);
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
   line-height: 1.2;
@@ -382,7 +382,7 @@
 
 .consumable-order-form-product-copy strong {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 720;
   line-height: 1.15;
   overflow: hidden;
@@ -394,7 +394,7 @@
 .consumable-order-form-product-copy small,
 .consumable-order-form-qty-cell small {
   color: var(--mantine-color-gray-6);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
   margin-top: 4px;
@@ -437,7 +437,7 @@
 
 .consumable-order-form-meta-pill strong {
   color: var(--mantine-color-gray-8);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
   overflow: hidden;

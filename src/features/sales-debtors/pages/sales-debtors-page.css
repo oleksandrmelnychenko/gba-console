@@ -46,7 +46,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--sales-debtors-control-height);
   line-height: 1.2;
@@ -86,7 +86,7 @@
 
 .sales-debtors-manager-pill {
   display: inline-flex;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1;
   max-width: 100%;
   min-width: 0;
@@ -165,7 +165,7 @@
 .sales-debtors-days-pill {
   align-items: center;
   display: inline-flex;
-  font-size: 10.5px;
+  font-size: 11px;
   justify-content: center;
   min-width: 32px;
   padding: 4px 8px;

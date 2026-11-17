@@ -34,7 +34,7 @@
 .user-roles-filter-bar .mantine-Input-wrapper,
 .user-roles-filter-bar .mantine-Input-input {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;

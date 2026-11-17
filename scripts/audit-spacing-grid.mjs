@@ -63,9 +63,16 @@ for (const file of files) {
     if (SPACING.test(prop)) kind = 'spacing'
     else if (RADIUS.test(prop)) kind = 'radius'
     else if (SIZE.test(prop)) kind = 'size'
-    else if (/^--.*(gap|pad|space|radius|gutter|inset)/i.test(prop)) kind = 'token'
+    else if (prop === 'font-size') kind = 'font'
+    else if (/^--.*(gap|pad|space|radius|gutter|inset|inline|block|height|width|offset)/i.test(prop)) kind = 'token'
     if (!kind) return
     if (/grid-exempt/.test(rawLines[i] ?? '')) return
+    if (kind === 'font') {
+      // Whole pixels only (fractional sizes blur); the scale itself is free.
+      const frac = [...value.matchAll(/(\d+\.\d+)px/g)].map((m) => m[0])
+      if (frac.length) rows.push({ file: relative(root, file).split(sep).join('/'), line: i + 1, kind, prop, value: value.trim(), bad: frac })
+      return
+    }
     let bad = offGrid(value)
     if (kind === 'size') bad = bad.filter((b) => Math.abs(parseFloat(b)) >= 24)
     if (bad.length) rows.push({ file: relative(root, file).split(sep).join('/'), line: i + 1, kind, prop, value: value.trim(), bad })

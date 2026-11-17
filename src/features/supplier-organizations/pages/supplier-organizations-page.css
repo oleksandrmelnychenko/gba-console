@@ -63,7 +63,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--supplier-organizations-command-control-height);
   letter-spacing: 0;
@@ -84,7 +84,7 @@
 .supplier-organizations-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
   color: inherit;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.2;
@@ -158,7 +158,7 @@
 .supplier-organizations-name-title,
 .supplier-organizations-two-line-cell > span {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.1;
 }
