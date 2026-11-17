@@ -257,7 +257,7 @@ export function SpecificationProductsGrid({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.customsValue,
-        cell: (row) => renderNumberCell(row.customsValue),
+        cell: (row) => renderPriceCell(row.customsValue),
       },
       {
         id: 'dutyPercent',
@@ -266,7 +266,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.dutyPercent,
-        cell: (row) => renderNumberCell(row.dutyPercent),
+        cell: (row) => renderPriceCell(row.dutyPercent),
       },
       {
         id: 'duty',
@@ -275,7 +275,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.duty,
-        cell: (row) => renderNumberCell(row.duty),
+        cell: (row) => renderPriceCell(row.duty),
       },
       {
         id: 'vatPercent',
@@ -284,7 +284,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.vatPercent,
-        cell: (row) => renderNumberCell(row.vatPercent),
+        cell: (row) => renderPriceCell(row.vatPercent),
       },
       {
         id: 'vatValue',
@@ -293,7 +293,7 @@ export function SpecificationProductsGrid({
         minWidth: 70,
         align: 'right',
         accessor: (row) => row.vatValue,
-        cell: (row) => renderNumberCell(row.vatValue),
+        cell: (row) => renderPriceCell(row.vatValue),
       },
     ]
 
