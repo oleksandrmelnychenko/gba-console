@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { CircleAlert, FileDown, RefreshCw } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getAccountingCashFlowClosingBalance } from '../../accounting-cash-flow/cashFlowTotals'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
@@ -44,6 +44,11 @@ import {
   getSupplierOrganizationSettlementsDetails,
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization } from '../types'
+import {
+  getSupplierCashFlowCurrency,
+  getSupplierCashFlowTypeLabel,
+  SupplierCashFlowCurrencyContext,
+} from '../model/supplierCashFlowModel'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import './supplier-organization-cash-flow-page.css'
 
@@ -52,34 +57,6 @@ const ACCOUNTING_TYPES = [
   { label: 'Управлінський', value: '0' },
   { label: 'Бухгалтерський', value: '1' },
 ]
-
-const TYPE_LABELS: Record<number, string> = {
-  0: 'Протокол оплати постачання',
-  2: 'Контейнерний сервіс',
-  3: 'Митний сервіс',
-  4: 'Портові роботи',
-  5: 'Транспортний сервіс',
-  6: 'Портово-митний сервіс',
-  7: 'Митне агентство',
-  8: 'Авіадоставка',
-  9: 'Автодоставка',
-  10: 'Витратний ордер',
-  11: 'Видатковий платіж',
-  12: 'Вхідний платіж',
-  13: 'Продаж',
-  14: 'Платіжне завдання постачання',
-  15: 'Повернення продажу',
-  16: 'Постачання Україна',
-  17: 'Обʼєднаний сервіс',
-  18: 'Протокол оплати постачання Україна',
-  20: 'Оприбуткування Україна',
-  22: 'Контейнерне платіжне завдання',
-  33: 'Коносамент',
-  34: 'Бухгалтерський коносамент',
-  35: 'Акт надання послуг',
-  36: 'Бухгалтерський акт надання послуг',
-  37: 'Перепродаж',
-}
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -124,7 +101,8 @@ function SupplierOrganizationCashFlowPageContent() {
   const [selectedAgreementNetUid, setSelectedAgreementNetUid] = useValueState('')
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-30))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
-  const [typePaymentTask, setTypePaymentTask] = useValueState('2')
+  // Управлінський by default: the supplier list balance is the management view.
+  const [typePaymentTask, setTypePaymentTask] = useValueState('0')
   const [selectedRow, setSelectedRow] = useValueState<AccountingCashFlowHeadItem | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<AccountingCashFlowDocument | null>(null)
   const [isExportModalOpen, setExportModalOpen] = useValueState(false)
@@ -269,6 +247,7 @@ function SupplierOrganizationCashFlowPageContent() {
   }
 
   const agreements = organization?.SupplyOrganizationAgreements || []
+  const cashFlowCurrency = getSupplierCashFlowCurrency(agreements, selectedAgreementNetUid)
   const rows = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = rows.at(-1)
   const columns = useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(
@@ -279,10 +258,10 @@ function SupplierOrganizationCashFlowPageContent() {
         fill: true,
         minWidth: 300,
         width: 380,
-        accessor: (row) => `${row.Name || ''} ${row.OrganizationName || ''}`,
+        accessor: (row) => `${row.Name || getSupplierCashFlowTypeLabel(row.Type)} ${row.OrganizationName || ''}`,
         cell: (row) => (
           <span className="supplier-cash-flow-document">
-            <strong>{displayValue(row.Name)}</strong>
+            <strong>{row.Name ? displayValue(row.Name) : getSupplierCashFlowTypeLabel(row.Type)}</strong>
             {row.OrganizationName ? <TableChip tone="product" value={row.OrganizationName} /> : null}
           </span>
         ),
@@ -360,6 +339,7 @@ function SupplierOrganizationCashFlowPageContent() {
       title={t('Взаєморозрахунки')}
       onClose={() => navigate('/accounting/supplier-organizations')}
     >
+    <SupplierCashFlowCurrencyContext.Provider value={cashFlowCurrency}>
     <Stack className="supplier-cash-flow-page" gap="sm">
       <div className="app-filter-bar supplier-cash-flow-filter-bar">
         <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to) }} />
@@ -482,6 +462,7 @@ function SupplierOrganizationCashFlowPageContent() {
         onSelectFormat={(format) => void exportDocument(format)}
       />
     </Stack>
+    </SupplierCashFlowCurrencyContext.Provider>
     </AppDrawer>
   )
 }
@@ -503,6 +484,7 @@ function SupplierCashFlowOverview({
   }
 }) {
   const { t } = useI18n()
+  const currency = useContext(SupplierCashFlowCurrencyContext)
   const periodDifference = (summary.closingBalance || 0) - (summary.beforeBalance || 0)
 
   return (
@@ -516,9 +498,9 @@ function SupplierCashFlowOverview({
         label={t('Вхідний баланс')}
         meta={(
           <>
-            {t('Дебет')}: <span className="app-money">{formatEur(summary.beforeInAmount)}</span>
+            {t('Дебет')}: <span className="app-money">{formatAmountIn(summary.beforeInAmount, currency)}</span>
             {' · '}
-            {t('Кредит')}: <span className="app-money">{formatEur(summary.beforeOutAmount)}</span>
+            {t('Кредит')}: <span className="app-money">{formatAmountIn(summary.beforeOutAmount, currency)}</span>
           </>
         )}
         value={summary.beforeBalance}
@@ -527,9 +509,9 @@ function SupplierCashFlowOverview({
         label={t('Рух за період')}
         meta={(
           <>
-            {t('Дебет')}: <span className="app-money">{formatEur(summary.afterInAmount)}</span>
+            {t('Дебет')}: <span className="app-money">{formatAmountIn(summary.afterInAmount, currency)}</span>
             {' · '}
-            {t('Кредит')}: <span className="app-money">{formatEur(summary.afterOutAmount)}</span>
+            {t('Кредит')}: <span className="app-money">{formatAmountIn(summary.afterOutAmount, currency)}</span>
           </>
         )}
         value={periodDifference}
@@ -539,7 +521,7 @@ function SupplierCashFlowOverview({
         label={t('Кінцевий баланс')}
         meta={(
           <>
-            <span className="app-money">{periodDifference >= 0 ? '+' : ''}{formatEur(periodDifference)}</span>
+            <span className="app-money">{periodDifference >= 0 ? '+' : ''}{formatAmountIn(periodDifference, currency)}</span>
             {' '}{t('за період')}
           </>
         )}
@@ -560,13 +542,14 @@ function SupplierCashFlowMetric({
   meta: ReactNode
   value?: number
 }) {
+  const currency = useContext(SupplierCashFlowCurrencyContext)
   const tone =
     typeof value === 'number' && value < 0 ? ' is-negative' : emphasized ? ' is-positive' : ''
 
   return (
     <div className={`supplier-cash-flow-overview__metric${emphasized ? ' is-emphasized' : ''}`}>
       <span>{label}</span>
-      <strong className={tone}>{formatEur(value)}</strong>
+      <strong className={tone}>{formatAmountIn(value, currency)}</strong>
       <small>{meta}</small>
     </div>
   )
@@ -581,6 +564,7 @@ function SupplierCashFlowMoney({
   tone?: boolean
   value?: number
 }) {
+  const currency = useContext(SupplierCashFlowCurrencyContext)
   const valueTone = tone
     ? typeof value === 'number' && value < 0
       ? ' is-negative'
@@ -593,7 +577,7 @@ function SupplierCashFlowMoney({
 
   return (
     <span className={`supplier-cash-flow-money${valueTone}`}>
-      <strong>{formatEur(value)}</strong>
+      <strong>{formatAmountIn(value, currency)}</strong>
       {showLocal ? <small>UAH {formatMoney(localValue)}</small> : null}
     </span>
   )
@@ -611,14 +595,15 @@ function SupplierCashFlowFooter({
   rows: number
 }) {
   const { t } = useI18n()
+  const currency = useContext(SupplierCashFlowCurrencyContext)
 
   return (
     <div className="supplier-cash-flow-footer">
       <span>{t('Рядків')}: <strong>{rows}</strong></span>
-      <span>{t('Дебет')}: <strong className="supplier-cash-flow-footer__money">{formatEur(debit)}</strong></span>
-      <span>{t('Кредит')}: <strong className="supplier-cash-flow-footer__money">{formatEur(credit)}</strong></span>
+      <span>{t('Дебет')}: <strong className="supplier-cash-flow-footer__money">{formatAmountIn(debit, currency)}</strong></span>
+      <span>{t('Кредит')}: <strong className="supplier-cash-flow-footer__money">{formatAmountIn(credit, currency)}</strong></span>
       <span className={typeof balance === 'number' && balance < 0 ? 'is-negative' : 'is-positive'}>
-        {t('Баланс')}: <strong className="supplier-cash-flow-footer__money">{formatEur(balance)}</strong>
+        {t('Баланс')}: <strong className="supplier-cash-flow-footer__money">{formatAmountIn(balance, currency)}</strong>
       </span>
     </div>
   )
@@ -626,6 +611,7 @@ function SupplierCashFlowFooter({
 
 function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadItem | null; onClose: () => void }) {
   const { t } = useI18n()
+  const currency = useContext(SupplierCashFlowCurrencyContext)
 
   return (
     <AppDrawer
@@ -640,12 +626,12 @@ function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadIte
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(row.FromDate)} />
-            <DetailItem label={t('Тип')} value={getTypeLabel(row.Type)} />
+            <DetailItem label={t('Тип')} value={getSupplierCashFlowTypeLabel(row.Type)} />
             <DetailItem label={t('Назва')} value={displayValue(row.Name)} />
             <DetailItem label={t('Номер')} value={displayValue(row.Number)} />
             <DetailItem label={t('Організація')} value={displayValue(row.OrganizationName)} />
-            <DetailItem label={t('Сума')} mono value={formatEur(row.CurrentValue)} />
-            <DetailItem label={t('Сальдо')} mono value={formatEur(row.CurrentBalance)} />
+            <DetailItem label={t('Сума')} mono value={formatAmountIn(row.CurrentValue, currency)} />
+            <DetailItem label={t('Сальдо')} mono value={formatAmountIn(row.CurrentBalance, currency)} />
           </SimpleGrid>
           <CashFlowDetailContent item={row} />
         </Stack>
@@ -661,14 +647,6 @@ function DetailItem({ label, mono = false, value }: { label: string; mono?: bool
       <strong>{value}</strong>
     </div>
   )
-}
-
-function getTypeLabel(type?: number): string {
-  if (typeof type !== 'number') {
-    return '—'
-  }
-
-  return TYPE_LABELS[type] || String(type)
 }
 
 function shiftDate(days: number): string {
@@ -705,14 +683,14 @@ function formatDateTime(value?: string): string {
 }
 
 /**
- * Settlement amounts come as the EUR equivalent at the document rate; the
- * document's own UAH amount is shown under it. Without the unit the EUR
- * figures read as UAH.
+ * Settlement amounts are in the selected agreement's currency, or the EUR
+ * equivalent for all agreements (with the document's UAH amount below);
+ * without the unit they were read as UAH.
  */
-function formatEur(value?: number): string {
+function formatAmountIn(value: number | undefined, currency: string): string {
   const amount = formatMoney(value)
 
-  return amount === '—' ? amount : `${amount} EUR`
+  return amount === '—' || !currency ? amount : `${amount} ${currency}`
 }
 
 function formatMoney(value?: number): string {

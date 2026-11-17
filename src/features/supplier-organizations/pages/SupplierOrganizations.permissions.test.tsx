@@ -286,7 +286,7 @@ describe('Supplier Organizations canonical permission guards', () => {
     await waitFor(() => expect(getSupplierOrganizationSettlementsDetails).toHaveBeenCalledWith('supplier-1'))
     await waitFor(() => expect(getSupplierOrganizationSettlementsCashFlow).toHaveBeenCalledWith(expect.objectContaining({
       netId: 'supplier-1',
-      typePaymentTask: 2,
+      typePaymentTask: 0,
     })))
   })
 
@@ -307,7 +307,7 @@ describe('Supplier Organizations canonical permission guards', () => {
     fireEvent.click(selectFormat)
     await waitFor(() => expect(exportSupplierOrganizationSettlementsDocument).toHaveBeenCalledWith(expect.objectContaining({
       netId: 'supplier-1',
-      typePaymentTask: 2,
+      typePaymentTask: 0,
     })))
   })
 })
