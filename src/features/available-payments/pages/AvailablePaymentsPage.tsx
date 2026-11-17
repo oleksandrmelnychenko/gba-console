@@ -963,10 +963,11 @@ function renderTasksCell(
 
   return (
     <Group gap={4} justify="flex-end" wrap="nowrap">
-      <Badge color="green" variant="light">
+      {/* Without labels «1 / 0» next to «UAH 0,00» read as a contradiction. */}
+      <Badge aria-label={`${t('Завершено')}: ${done}`} color="green" title={t('Завершені задачі (не входять у суми)')} variant="light">
         {done}
       </Badge>
-      <Badge color="gray" variant="light">
+      <Badge aria-label={`${t('До оплати')}: ${notDone}`} color="gray" title={t('Задачі до оплати (входять у суми)')} variant="light">
         {notDone}
       </Badge>
       {marked > 0 && (

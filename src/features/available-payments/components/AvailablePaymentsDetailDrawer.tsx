@@ -70,6 +70,7 @@ import {
 } from '../api/availablePaymentsApi'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getTaskPaymentState } from '../models/taskPaymentState'
+import { getSupplierCashFlowTypeLabel } from '../../supplier-organizations/model/supplierCashFlowModel'
 import {
   TaskStatusValue,
   type AccountingTypeValue,
@@ -1686,9 +1687,11 @@ function AvailablePaymentOutcomeForm({
     label: organization.Name || organization.FullName || getEntityValue(organization),
     value: getEntityValue(organization),
   }))
+  // The recipient is the task's counterparty (the supplier), not our own organization.
   const recipientName =
     outcomeModels[0]?.payForClient?.Name
     || outcomeModels[0]?.payForClient?.FullName
+    || outcomeModels[0]?.organizationName
     || selectedOrganization?.Name
     || outcomeModels[0]?.organization?.Name
     || ''
@@ -2283,7 +2286,10 @@ function cashFlowSummaryBalanceClassName(value?: number): string {
 
 function toCashFlowTableItem(row: DataRecord, index: number): AvailablePaymentCashFlowTableItem {
   const number = stringOrUndefined(readUnknown(row, ['Number', 'CustomNumber']))
-  const name = stringOrUndefined(readUnknown(row, ['Name', 'Type', 'OperationTypeName']))
+  const type = readUnknownNumber(row, ['Type'])
+  // Type is a numeric document kind (10, 11, 17…): show its name, not the number.
+  const name = stringOrUndefined(readUnknown(row, ['Name', 'OperationTypeName']))
+    || (type === undefined ? undefined : getSupplierCashFlowTypeLabel(type))
 
   return {
     id: `${number || name || 'cash-flow'}-${index}`,
@@ -2294,7 +2300,7 @@ function toCashFlowTableItem(row: DataRecord, index: number): AvailablePaymentCa
     Name: name,
     Number: number,
     OrganizationName: stringOrUndefined(readUnknown(row, ['OrganizationName'])),
-    Type: readUnknownNumber(row, ['Type']),
+    Type: type,
     source: row as AccountingCashFlowHeadItem,
   }
 }
