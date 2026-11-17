@@ -22,19 +22,15 @@ describe('warehouse Ukraine shipment carry-out quantity contract', () => {
     expect(shipmentList.ShipmentListItems[0].QtyPlaces).toBe(0)
   })
 
-  it('keeps an explicitly entered zero as zero when carrying out', () => {
+  it('refuses zero, fractions, exponents and more than 9999 places instead of truncating them (WH2-01)', () => {
     const shipmentList = shipment(5)
-    const item = shipmentList.ShipmentListItems[0]
+    const key = getShipmentQtyPlacesEditKey(shipmentList.ShipmentListItems[0], 0)
 
-    const payload = buildShipmentCarryOutPayload(shipmentList, {
-      [getShipmentQtyPlacesEditKey(item, 0)]: '0',
-    })
-
-    expect(payload.IsSent).toBe(true)
-    expect(payload.ShipmentListItems[0]).toMatchObject({
-      IsDirty: true,
-      QtyPlaces: 0,
-    })
+    expect(() => buildShipmentCarryOutPayload(shipmentList, { [key]: '0' })).toThrow('Кількість місць має бути не менше 1')
+    expect(() => buildShipmentCarryOutPayload(shipmentList, { [key]: '2.5' })).toThrow('Кількість місць має бути цілим числом')
+    expect(() => buildShipmentCarryOutPayload(shipmentList, { [key]: '1e3' })).toThrow('Кількість місць має бути цілим числом')
+    expect(() => buildShipmentCarryOutPayload(shipmentList, { [key]: '99999999999' })).toThrow('Кількість місць має бути не більше 9999')
+    expect(() => buildShipmentCarryOutPayload(shipmentList, { [key]: '-3' })).toThrow('Кількість місць не може бути від’ємною')
   })
 })
 

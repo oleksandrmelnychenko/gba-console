@@ -45,7 +45,8 @@ describe('shipment manual selection', () => {
   })
 
   it('rejects invalid manual place quantities before append', () => {
-    expect(isValidManualQtyPlaces('0')).toBe(true)
+    expect(isValidManualQtyPlaces('0')).toBe(false)
+    expect(isValidManualQtyPlaces('2.5')).toBe(false)
     expect(isValidManualQtyPlaces('12')).toBe(true)
     expect(isValidManualQtyPlaces('-1')).toBe(false)
     expect(isValidManualQtyPlaces('abc')).toBe(false)

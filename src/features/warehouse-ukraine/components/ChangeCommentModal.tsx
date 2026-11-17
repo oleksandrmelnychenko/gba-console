@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 
+/** Sale.Comment limit on the server. */
+const SALE_COMMENT_MAX_LENGTH = 450
+
 type ChangeCommentModalProps = {
   opened: boolean
   comment: string
@@ -28,12 +31,16 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
   const hasDraft = opened && draft.trackedComment === comment
   const value = hasDraft ? draft.value : comment || ''
   const touched = hasDraft ? draft.touched : false
-  const error = !value.trim() ? t('Поле - обов’язкове') : null
+  const error = !value.trim()
+    ? t('Поле - обов’язкове')
+    : value.length > SALE_COMMENT_MAX_LENGTH
+      ? t('Коментар не може бути довшим за 450 символів')
+      : null
 
   function handleSave() {
     setDraft({ value, touched: true, trackedComment: comment })
 
-    if (error) {
+    if (error || isSaving) {
       return
     }
 
@@ -46,6 +53,7 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
         <Textarea
           autosize
           label={t('Коментар')}
+          maxLength={SALE_COMMENT_MAX_LENGTH}
           minRows={3}
           value={value}
           onChange={(event) => setDraft({ value: event.currentTarget.value, touched, trackedComment: comment })}
@@ -59,7 +67,7 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
           <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button loading={isSaving} onClick={handleSave}>
+          <Button disabled={isSaving} loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
         </AppModalFooter>

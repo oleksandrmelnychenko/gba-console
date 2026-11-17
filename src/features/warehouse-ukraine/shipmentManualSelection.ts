@@ -1,3 +1,4 @@
+import { getQtyPlacesError } from './shipmentQtyPlaces'
 import type { ShipmentList, ShipmentSale } from './shipmentTypes'
 
 export function getShipmentSaleKey(sale?: Pick<ShipmentSale, 'Id' | 'NetUid'> | null): string {
@@ -53,9 +54,7 @@ export function isValidManualQtyPlaces(value: string | number | undefined): bool
     return true
   }
 
-  const parsed = typeof value === 'number' ? value : Number.parseInt(value, 10)
-
-  return Number.isFinite(parsed) && parsed >= 0
+  return getQtyPlacesError(value) === null
 }
 
 export function toManualShipmentQueryDate(value: string, boundary: 'start' | 'end' = 'start'): string {

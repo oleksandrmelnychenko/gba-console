@@ -7,6 +7,37 @@ export class ShipmentQtyPlacesValidationError extends Error {
   }
 }
 
+export const SHIPMENT_QTY_PLACES_MAX = 9999
+
+/**
+ * «К-сть місць» is a whole number of parcels from 1 to 9999. Returns the
+ * Ukrainian reason when the typed text is not; «2.5» and «1e3» are refused,
+ * never truncated to 2 / 1.
+ */
+export function getQtyPlacesError(value: string | number | null | undefined): string | null {
+  const text = typeof value === 'number' ? String(value) : (value ?? '').trim()
+
+  if (!text) {
+    return null
+  }
+
+  if (/^-/.test(text)) {
+    return 'Кількість місць не може бути від’ємною'
+  }
+
+  if (!/^\d+$/.test(text)) {
+    return 'Кількість місць має бути цілим числом'
+  }
+
+  const qty = Number(text)
+
+  if (qty < 1) {
+    return 'Кількість місць має бути не менше 1'
+  }
+
+  return qty > SHIPMENT_QTY_PLACES_MAX ? 'Кількість місць має бути не більше 9999' : null
+}
+
 export function getShipmentQtyPlacesEditKey(item: ShipmentListItem, index: number): string {
   return String(item.NetUid || item.Id || index)
 }
@@ -23,13 +54,13 @@ export function applyShipmentQtyPlacesEdits(
       return item
     }
 
-    const qtyPlaces = Number.parseInt(draft, 10)
+    const qtyPlacesError = draft.trim() ? getQtyPlacesError(draft) : 'Кількість місць має бути не менше 1'
 
-    if (!Number.isFinite(qtyPlaces) || qtyPlaces < 0) {
-      throw new ShipmentQtyPlacesValidationError(
-        'Кількість місць має бути скінченним невід’ємним числом',
-      )
+    if (qtyPlacesError) {
+      throw new ShipmentQtyPlacesValidationError(qtyPlacesError)
     }
+
+    const qtyPlaces = Number(draft.trim())
 
     if (qtyPlaces === item.QtyPlaces) {
       return item

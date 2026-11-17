@@ -616,3 +616,20 @@
   .warehouse-ukraine-filter-bar:not(.is-auto-shipments) .warehouse-toolbar-icon-action .mantine-Button-section[data-position='left'],
   .warehouse-ukraine-filter-bar:is(.is-orders, .is-editing) .data-table-layout-control .mantine-Button-section[data-position='left'] { margin-inline-end: var(--mantine-spacing-xs); }
 }
+
+/* WH2-22: on a phone the pinned «#», «Клієнт» and actions columns are wider
+   than the drawer and covered every other column. Unpin them there and let
+   the whole grid scroll sideways at its normal column widths. */
+@media (max-width: 600px) {
+  .warehouse-shipment-edit-table .data-table-scroll {
+    overflow-x: auto;
+  }
+
+  .warehouse-shipment-edit-table .data-table-table th,
+  .warehouse-shipment-edit-table .data-table-table td {
+    box-shadow: none !important;
+    left: auto !important;
+    position: static !important;
+    right: auto !important;
+  }
+}

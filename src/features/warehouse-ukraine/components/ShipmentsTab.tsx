@@ -22,6 +22,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
+import { ApiError } from '../../../shared/api/apiClient'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { TransporterIcon, TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -71,6 +72,8 @@ import {
 } from '../shipmentManualSelection'
 import {
   applyShipmentQtyPlacesEdits,
+  getQtyPlacesError,
+  SHIPMENT_QTY_PLACES_MAX,
   buildShipmentCarryOutPayload,
   getShipmentQtyPlacesEditKey,
 } from '../shipmentQtyPlaces'
@@ -281,6 +284,27 @@ function toDateTimeLocalValue(value: Date | string | undefined): string {
   return localDate.toISOString().slice(0, 16)
 }
 
+/** Drawer rows: whole parcels 1..9999 and a non-negative declared amount (WH2-01/04). */
+function getShipmentDraftProblem(shipmentList: ShipmentList): string | null {
+  for (const item of shipmentList.ShipmentListItems) {
+    if (!item.IsDirty) {
+      continue
+    }
+
+    const qtyPlacesError = typeof item.QtyPlaces === 'number' ? getQtyPlacesError(item.QtyPlaces) : null
+
+    if (qtyPlacesError) {
+      return qtyPlacesError
+    }
+
+    if (typeof item.Sale.ShippingAmount === 'number' && item.Sale.ShippingAmount < 0) {
+      return 'Сума декларації не може бути від’ємною'
+    }
+  }
+
+  return null
+}
+
 function parseOptionalNumber(value: string): number | undefined {
   if (value.trim() === '') {
     return undefined
@@ -382,14 +406,42 @@ function getAddressInfo(sale: ShipmentSale, t: (key: string) => string): string 
   }
 
   return joinParts([
-    address.City ? `${t('Місто')}: ${address.City}` : '',
-    address.Department ? `${t('Відділення')}: ${address.Department}` : '',
-    address.Value ? `${t('Адреса')}: ${address.Value}` : '',
+    address.City?.trim() ? `${t('Місто')}: ${address.City.trim()}` : '',
+    address.Department?.trim() ? `${t('Відділення')}: ${address.Department.trim()}` : '',
+    address.Value?.trim() ? `${t('Адреса')}: ${address.Value.trim()}` : '',
   ])
 }
 
 function joinParts(parts: string[]): string {
   return parts.filter(Boolean).join(', ')
+}
+
+const shipmentMoneyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+
+/** Amounts like the rest of the console: «6 912,00», «15,63». */
+function formatShipmentMoney(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value) ? shipmentMoneyFormat.format(value) : ''
+}
+
+/**
+ * Short Ukrainian text for a failed shipment request. A stale-version conflict
+ * (409) carries versions, reason and operation codes meant for support: they go
+ * to the console, the user gets one sentence.
+ */
+function shipmentErrorText(error: unknown, fallback: string): string {
+  const message = error instanceof Error ? error.message : ''
+  const status = error instanceof ApiError ? error.status : 0
+
+  if (/comment cannot exceed 450/i.test(message)) {
+    return translate('Коментар не може бути довшим за 450 символів')
+  }
+
+  if (status === 409 || /STALE_VERSION|Код причини|очікувана версія/i.test(message)) {
+    console.warn('[warehouse-ukraine] shipment conflict:', message)
+    return translate('Відвантаження вже змінив інший користувач або вкладка. Оновіть його і повторіть зміни.')
+  }
+
+  return message || fallback
 }
 
 function getTtnNumber(sale: ShipmentSale): string {
@@ -647,16 +699,14 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       return
     }
 
-    const parsed = Number.parseInt(draft, 10)
+    const qtyPlacesError = getQtyPlacesError(draft) ?? (draft.trim() ? null : 'Кількість місць має бути не менше 1')
 
-    if (!Number.isFinite(parsed)) {
+    if (qtyPlacesError) {
+      setError(t(qtyPlacesError))
       return
     }
 
-    if (parsed < 0) {
-      setError(t('Кількість місць не може бути від’ємною'))
-      return
-    }
+    const parsed = Number(draft.trim())
 
     if (parsed === item.QtyPlaces) {
       return
@@ -710,7 +760,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       setQtyEdits({})
       refreshList()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -772,7 +822,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       refreshList()
       onCarriedOut?.()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -812,7 +862,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -852,7 +902,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -892,7 +942,7 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
       setActiveModal(null)
       refreshList()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -1545,7 +1595,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
     const invalidQtySale = selectedSales.find((sale) => !isValidManualQtyPlaces(manualQtyPlaces[getShipmentSaleKey(sale)]))
 
     if (invalidQtySale) {
-      setManualError(t('Кількість місць не може бути від’ємною'))
+      setManualError(t(getQtyPlacesError(manualQtyPlaces[getShipmentSaleKey(invalidQtySale)]) || 'Кількість місць має бути не менше 1'))
       return
     }
 
@@ -1681,12 +1731,10 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       return
     }
 
-    if (
-      shipmentDraft.ShipmentListItems.some(
-        (item) => typeof item.QtyPlaces === 'number' && Number.isFinite(item.QtyPlaces) && item.QtyPlaces < 0,
-      )
-    ) {
-      setEditError(t('Кількість місць не може бути від’ємною'))
+    const draftProblem = getShipmentDraftProblem(shipmentDraft)
+
+    if (draftProblem) {
+      setEditError(t(draftProblem))
 
       return
     }
@@ -1724,8 +1772,10 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         closeShipment()
         refreshList()
       }
+
+      notifications.show({ color: 'green', message: t('Відвантаження збережено') })
     } catch (saveError) {
-      setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setEditError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -1773,7 +1823,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       }))
       refreshList()
     } catch (saveError) {
-      setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setEditError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -1821,7 +1871,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       }))
       refreshList()
     } catch (saveError) {
-      setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setEditError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -1875,7 +1925,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
       }))
       refreshList()
     } catch (saveError) {
-      setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
+      setEditError(shipmentErrorText(saveError, t('Не вдалося виконати запит')))
     } finally {
       setSaving(false)
     }
@@ -2452,7 +2502,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
             className={`warehouse-shipment-cell-mono is-strong ${model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? 'is-muted' : ''}`}
             fw={700}
           >
-            {displayValue(sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
+            {displayValue(sale.SaleNumber?.Value)}
           </Text>
         ),
       },
@@ -2522,7 +2572,7 @@ function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): 
         accessor: (sale) => sale.TotalAmount,
         cell: (sale) => (
           <Text className="warehouse-shipment-cell-mono" ta="right">
-            {displayValue(sale.TotalAmount)}
+            {formatShipmentMoney(sale.TotalAmount)}
           </Text>
         ),
       },
@@ -2647,7 +2697,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => item.Sale.SaleNumber?.Value,
         cell: (item) => (
           <Text className="warehouse-shipment-cell-mono is-strong" fw={700} td={getChangedTransporterDecoration(item)}>
-            {displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')}
+            {displayValue(item.Sale.SaleNumber?.Value)}
           </Text>
         ),
       },
@@ -2663,7 +2713,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
             className="warehouse-shipment-inline-number"
             size="xs"
             disabled={!model.canEdit}
+            error={Boolean(item.IsDirty && typeof item.QtyPlaces === 'number' && getQtyPlacesError(item.QtyPlaces))}
+            title={item.IsDirty && typeof item.QtyPlaces === 'number' ? getQtyPlacesError(item.QtyPlaces) || undefined : undefined}
             type="number"
+            min={1}
+            max={SHIPMENT_QTY_PLACES_MAX}
             value={item.QtyPlaces == null ? '' : String(item.QtyPlaces)}
             onChange={(event) => {
               const value = event.currentTarget.value
@@ -2688,7 +2742,10 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
             className="warehouse-shipment-inline-money"
             size="xs"
             disabled={!model.canEdit}
+            error={typeof item.Sale.ShippingAmount === 'number' && item.Sale.ShippingAmount < 0}
+            title={typeof item.Sale.ShippingAmount === 'number' && item.Sale.ShippingAmount < 0 ? 'Сума декларації не може бути від’ємною' : undefined}
             type="number"
+            min={0}
             value={item.Sale.ShippingAmount == null ? '' : String(item.Sale.ShippingAmount)}
             onChange={(event) => {
               const value = event.currentTarget.value
@@ -2897,7 +2954,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         width: 120,
         minWidth: 90,
         accessor: (item) => item.Sale.SaleNumber?.Value,
-        cell: (item) => <TableChip tone="document" value={displayValue(item.Sale.SaleNumber?.Value).toLocaleUpperCase('uk-UA')} />,
+        cell: (item) => <TableChip tone="document" value={displayValue(item.Sale.SaleNumber?.Value)} />,
       },
       {
         id: 'totalAmount',
@@ -2908,7 +2965,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => item.Sale.TotalAmountLocal,
         cell: (item) => (
           <Text className="warehouse-shipment-cell-mono" ta="right">
-            {displayValue(item.Sale.TotalAmountLocal)}
+            {formatShipmentMoney(item.Sale.TotalAmountLocal)}
           </Text>
         ),
       },
