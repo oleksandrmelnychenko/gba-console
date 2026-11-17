@@ -387,9 +387,15 @@ function PaymentAccountFormPageContent() {
     return () => controller.abort()
   }, [id, t])
 
+  // Organizations without any name were listed by their GUID; they are left out
+  // (except the one an existing account already uses).
   const organizationOptions = useMemo(
-    () => toSelectOptions(organizations, (organization) => organization.Name || organization.FullName),
-    [organizations],
+    () => toSelectOptions(
+      organizations.filter((organization) =>
+        Boolean(getOrganizationDisplayName(organization)) || getEntityValue(organization) === form.organizationNetId),
+      (organization) => getOrganizationDisplayName(organization) || undefined,
+    ),
+    [form.organizationNetId, organizations],
   )
   const bankOptions = useMemo(
     () => toBankOptions(banks, form.bankName),
