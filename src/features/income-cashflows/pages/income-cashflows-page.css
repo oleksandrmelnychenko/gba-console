@@ -389,20 +389,20 @@
 .app-filter-bar.income-cashflows-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .income-cashflows-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container income-cashflows-toolbar (max-width: 1060px) {
-  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 @container income-cashflows-toolbar (max-width: 1500px) {
   .app-filter-bar.income-cashflows-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 120px; width: 120px; }
   .app-filter-bar.income-cashflows-filter-bar .income-cashflows-organization-filter { --app-multi-select-width: 120px; flex: 0 0 120px; width: 120px; }
-  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container income-cashflows-toolbar (max-width: 1250px) {
- .income-cashflows-filter-bar .finance-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .income-cashflows-filter-bar .finance-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-label { display: none; }
  .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-section { margin: 0; }
 }

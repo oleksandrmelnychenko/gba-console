@@ -236,7 +236,7 @@
 }
 @container registry (max-width: 600px) { .users-filter-bar .users-create-actions { flex: 0 1 auto; flex-wrap: wrap; } }
 @container registry (max-width: 1250px) {
- .users-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .users-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .users-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .users-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

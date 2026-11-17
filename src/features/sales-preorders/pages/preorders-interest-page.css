@@ -34,7 +34,7 @@
   display: flex;
   flex: 0 0 auto;
   margin-left: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .preorders-interest-table-toolbar-slot .data-table-toolbar {

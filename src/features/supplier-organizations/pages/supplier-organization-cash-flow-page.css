@@ -189,7 +189,7 @@
 .supplier-cash-flow-filter-bar > .supplier-cash-flow-agreement-filter { flex: 0 1 240px; width: 240px; min-width: 0; }
 
 @container registry (max-width: 850px) {
- .app-filter-bar .supplier-cash-flow-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .supplier-cash-flow-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .supplier-cash-flow-toolbar-caption-action .mantine-Button-label { display: none; }
  .supplier-cash-flow-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }

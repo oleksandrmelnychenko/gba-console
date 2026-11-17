@@ -18,7 +18,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   flex-wrap: wrap;
   gap: 8px;
 }

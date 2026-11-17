@@ -42,7 +42,7 @@
 .sad-list-page__toolbar .sad-list-page__actions { margin-left: 0; flex: 0 0 auto; }
 
 @container registry (max-width: 600px) {
- .app-filter-bar .sad-list-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .sad-list-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .sad-list-toolbar-caption-action .mantine-Button-label { display: none; }
  .sad-list-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }

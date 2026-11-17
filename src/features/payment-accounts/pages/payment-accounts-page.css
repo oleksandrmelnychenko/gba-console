@@ -49,7 +49,7 @@
   border-radius: 8px;
   background: var(--mantine-color-white);
   padding: 4px;
-  height: 36px;
+  height: var(--app-control-height);
   width: max-content;
 }
 
@@ -485,7 +485,7 @@
 .app-filter-bar.payment-accounts-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .payment-accounts-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container payment-accounts-toolbar (max-width: 1060px) {
-  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
@@ -493,13 +493,13 @@
 @container payment-accounts-toolbar (max-width: 1400px) {
   .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 148px; width: 148px; }
   .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > .payment-accounts-type-filter { flex: 0 0 auto; width: auto; }
-  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container payment-accounts-toolbar (max-width: 1250px) {
-  .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-root { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-root { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-section { margin: 0; }
 }

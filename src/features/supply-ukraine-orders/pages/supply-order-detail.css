@@ -207,7 +207,7 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-size: 12.5px;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   transition:
     border-color 140ms ease,
     box-shadow 140ms ease;

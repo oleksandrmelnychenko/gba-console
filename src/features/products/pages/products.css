@@ -867,13 +867,13 @@
 }
 
 .product-movement-toolbar__control .mantine-Input-input {
-  height: 36px;
-  min-height: 36px;
+  height: var(--app-control-height);
+  min-height: var(--app-control-height);
   border-radius: 8px;
 }
 
 .product-movement-toolbar__button.mantine-Button-root {
-  min-height: 36px;
+  min-height: var(--app-control-height);
   border-radius: 8px;
 }
 
@@ -1887,7 +1887,7 @@
 .product-data-table-shell > .app-filter-bar .app-filter-fields { gap: 8px; }
 @media (max-width: 1350px) {
   .product-data-table-shell > .product-movement-sheet-toolbar .data-table-layout-control,
-  .product-data-table-shell > .product-writeoff-toolbar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-data-table-shell > .product-writeoff-toolbar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .product-data-table-shell > .product-movement-sheet-toolbar .data-table-layout-control .mantine-Button-label,
   .product-data-table-shell > .product-writeoff-toolbar .data-table-layout-control .mantine-Button-label { display: none; }
   .product-data-table-shell > .product-movement-sheet-toolbar .data-table-layout-control .mantine-Button-section,

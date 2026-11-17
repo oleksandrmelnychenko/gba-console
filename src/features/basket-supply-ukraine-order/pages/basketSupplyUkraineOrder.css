@@ -2097,7 +2097,7 @@
 @media (max-width: 1400px) {
   .basket-supply-command-bar.is-split .app-filter-primary-action,
   .basket-supply-command-bar.is-split .data-table-layout-control,
-  .procure-cockpit-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .procure-cockpit-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .basket-supply-command-bar.is-split .app-filter-primary-action .mantine-Button-label,
   .basket-supply-command-bar.is-split .data-table-layout-control .mantine-Button-label,
   .procure-cockpit-bar .data-table-layout-control .mantine-Button-label { display: none; }

@@ -336,8 +336,8 @@ button.new-sale-return-draft-product:focus-visible {
 
 @container registry (max-width: 980px) {
   .new-sale-return-page .new-sale-return-table-toolbar-slot .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
 

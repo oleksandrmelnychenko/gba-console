@@ -1249,14 +1249,14 @@
  .app-filter-bar.suppliers-filter-bar .suppliers-filter-field { flex-basis: 130px; width: 128px; }
 }
 @container registry (max-width: 1250px) {
- .suppliers-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .suppliers-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .suppliers-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .suppliers-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 1050px) {
-  .app-filter-bar .suppliers-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .suppliers-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .suppliers-toolbar-action .mantine-Button-label { display: none; }
   .suppliers-toolbar-action .mantine-Button-section { margin: 0; }
 }

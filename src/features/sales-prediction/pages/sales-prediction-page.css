@@ -46,7 +46,7 @@
 .sales-prediction-filter-bar .sales-prediction-filter-actions { margin-left: 0; }
 
 @container registry (max-width: 600px) {
- .app-filter-bar .sales-prediction-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .sales-prediction-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .sales-prediction-toolbar-caption-action .mantine-Button-label { display: none; }
  .sales-prediction-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }

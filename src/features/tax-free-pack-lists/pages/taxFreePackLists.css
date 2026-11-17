@@ -91,7 +91,7 @@
 .app-filter-bar.tax-free-pack-lists-filter-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
 .app-filter-bar.tax-free-pack-lists-filter-bar .app-filter-actions { flex: 0 0 auto; }
 @container tax-free-pack-lists-toolbar (max-width: 850px) {
-  .app-filter-bar.tax-free-pack-lists-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.tax-free-pack-lists-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.tax-free-pack-lists-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.tax-free-pack-lists-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

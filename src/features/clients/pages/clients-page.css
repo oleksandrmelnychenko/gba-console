@@ -38,7 +38,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .clients-create-button {
@@ -150,14 +150,14 @@
  .app-filter-bar.clients-filter-bar .clients-filter-status { flex-basis: 100px; width: 100px; }
 }
 @container registry (max-width: 1450px) {
- .clients-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .clients-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .clients-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .clients-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 1250px) {
-  .app-filter-bar .clients-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .clients-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .clients-toolbar-action .mantine-Button-label { display: none; }
   .clients-toolbar-action .mantine-Button-section { margin: 0; }
 }

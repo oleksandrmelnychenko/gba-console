@@ -195,7 +195,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .seo-page.is-filtered .seo-page-command-bar {

@@ -312,9 +312,9 @@
   border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 13px;
-  height: 36px;
+  height: var(--app-control-height);
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .client-resources-perfect-client-grid {
@@ -538,7 +538,7 @@
 .client-resources-filter-bar .client-resources-filter-fields > .mantine-InputWrapper-root { flex: 0 1 200px; width: 200px; min-width: 0; }
 .client-resources-filter-bar > .client-resources-filter-actions { margin-left: 0; }
 @container client-resource-toolbar (max-width: 1100px) {
- .client-resources-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .client-resources-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .client-resources-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .client-resources-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

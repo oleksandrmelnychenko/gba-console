@@ -766,7 +766,7 @@
 .assort-filter-row .app-filter-table-toolbar-slot { margin-left: 0; }
 @container assortment-toolbar (max-width: 1200px) {
  .assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex-basis: 128px; width: 128px; }
- .assort-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .assort-filter-row .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .assort-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
  .assort-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

@@ -71,7 +71,7 @@
  .app-filter-bar.organisation-services-filter-bar .organisation-search-control { flex-basis: 180px; width: 180px; }
 }
 @container registry (max-width: 1250px) {
- .organisation-services-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .organisation-services-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .organisation-services-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .organisation-services-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
@@ -83,7 +83,7 @@
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 1000px) {
-  .app-filter-bar .organisation-services-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .organisation-services-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .organisation-services-toolbar-action .mantine-Button-label { display: none; }
   .organisation-services-toolbar-action .mantine-Button-section { margin: 0; }
 }

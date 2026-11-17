@@ -67,7 +67,7 @@
 .product-capitalizations-page .product-capitalizations-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
 .product-capitalizations-page .product-capitalizations-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
 @media (max-width: 1050px) {
-  .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .product-capitalizations-page .product-capitalizations-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

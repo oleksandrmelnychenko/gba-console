@@ -154,7 +154,7 @@
 
 .warehouse-ukraine-filter-bar .mantine-Checkbox-root {
   align-self: end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .warehouse-ukraine-filter-bar .mantine-Checkbox-label {
@@ -173,7 +173,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   min-width: 0;
 }
 
@@ -597,7 +597,7 @@
 .warehouse-ukraine-page .warehouse-ukraine-filter-bar > .warehouse-ukraine-verification-snapshot { flex: 0 0 auto; width: auto; }
 @media (max-width: 1380px) {
   .warehouse-ukraine-filter-bar .data-table-layout-control,
-  .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .warehouse-ukraine-filter-bar .data-table-layout-control .mantine-Button-label,
   .warehouse-ukraine-filter-bar .warehouse-toolbar-icon-action .mantine-Button-label { display: none; }
   .warehouse-ukraine-filter-bar .data-table-layout-control .mantine-Button-section,

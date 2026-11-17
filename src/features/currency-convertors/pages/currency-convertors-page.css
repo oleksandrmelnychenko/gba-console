@@ -74,13 +74,13 @@
 .currency-convertors-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
 @container currency-convertors (max-width: 1000px) {
   .currency-convertors-filter-bar .currency-convertors-filter-row > .mantine-InputWrapper-root { flex-basis: 240px; width: 240px; }
-  .currency-convertors-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .currency-convertors-filter-row .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .currency-convertors-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
   .currency-convertors-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container currency-convertors (max-width: 850px) {
- .app-filter-bar .currency-convertors-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .currency-convertors-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .currency-convertors-toolbar-caption-action .mantine-Button-label { display: none; }
  .currency-convertors-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }

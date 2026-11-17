@@ -386,8 +386,8 @@
 @container product-storages (max-width: 1380px) {
   .product-storages-filter-row .product-storages-toolbar-action,
   .product-storages-filter-row .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-storages-toolbar-action-label,

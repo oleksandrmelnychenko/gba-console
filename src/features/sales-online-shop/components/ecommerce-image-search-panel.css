@@ -30,7 +30,7 @@
 .image-search-audit-actions {
   align-items: center;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .image-search-audit-list {

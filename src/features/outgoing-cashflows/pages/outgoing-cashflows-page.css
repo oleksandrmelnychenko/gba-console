@@ -242,27 +242,27 @@
 .app-filter-bar.outgoing-cashflows-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .outgoing-cashflows-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container outgoing-cashflows-toolbar (max-width: 1060px) {
-  .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 @container outgoing-cashflows-toolbar (max-width: 1500px) {
   .app-filter-bar.outgoing-cashflows-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 108px; width: 108px; }
   .app-filter-bar.outgoing-cashflows-filter-bar .outgoing-cashflows-organization-filter { --app-multi-select-width: 108px; flex: 0 0 108px; width: 108px; }
-  .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.outgoing-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container outgoing-cashflows-toolbar (max-width: 1250px) {
-  .app-filter-bar.outgoing-cashflows-filter-bar .outgoing-cashflows-create-actions .mantine-Button-root { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.outgoing-cashflows-filter-bar .outgoing-cashflows-create-actions .mantine-Button-root { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.outgoing-cashflows-filter-bar .outgoing-cashflows-create-actions :is(.mantine-Button-label, .mantine-Button-section[data-position='right']) { display: none; }
   .app-filter-bar.outgoing-cashflows-filter-bar .outgoing-cashflows-create-actions .mantine-Button-section { margin: 0; }
 }
 
 .app-filter-bar.outgoing-cashflows-filter-bar .finance-toolbar-action { flex: 0 0 auto; white-space: nowrap; }
 @container outgoing-cashflows-toolbar (max-width: 1200px) {
-  .app-filter-bar.outgoing-cashflows-filter-bar .finance-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.outgoing-cashflows-filter-bar .finance-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.outgoing-cashflows-filter-bar .finance-toolbar-action .mantine-Button-label { display: none; }
   .app-filter-bar.outgoing-cashflows-filter-bar .finance-toolbar-action .mantine-Button-section { margin: 0; }
 }

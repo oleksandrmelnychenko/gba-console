@@ -309,8 +309,8 @@
 
 @container registry (max-width: 1320px) {
   .sales-debtors-command-bar .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .sales-debtors-command-bar .data-table-layout-control .mantine-Button-label { display: none; }

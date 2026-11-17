@@ -51,7 +51,7 @@
   flex-wrap: nowrap;
   justify-content: flex-start;
   margin-left: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   min-width: 0;
 }
 
@@ -67,9 +67,9 @@
   }
 
   .incomplete-sales-online-shop-filter-actions .incomplete-sales-online-shop-secondary-action {
-    min-width: 36px;
+    min-width: var(--app-control-height);
     padding-inline: 0;
-    width: 36px;
+    width: var(--app-control-height);
   }
 
   .incomplete-sales-online-shop-secondary-action .mantine-Button-label {
@@ -83,9 +83,9 @@
 
 @container registry (max-width: 800px) {
   .incomplete-sales-online-shop-table-toolbar-slot .data-table-layout-control {
-    min-width: 36px;
+    min-width: var(--app-control-height);
     padding-inline: 0;
-    width: 36px;
+    width: var(--app-control-height);
   }
 
   .incomplete-sales-online-shop-table-toolbar-slot .data-table-layout-control .mantine-Button-label {

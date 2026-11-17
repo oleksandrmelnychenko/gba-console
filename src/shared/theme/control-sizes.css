@@ -1,7 +1,8 @@
 /* Mantine's default control sizes include off-grid steps (18/22/26/30/34/42/50px).
-   Snap them onto the 4px grid (docs/ui-spacing-grid.md). Same specificity as
-   Mantine's own class, loaded later, so these win; explicit inline sizes still win. */
-.mantine-Button-root {
+   Snap them onto the 4px grid (docs/ui-spacing-grid.md). theme.ts loads before
+   Mantine's stylesheet, so the class is doubled to outrank Mantine's own single
+   class; explicit inline sizes still win. */
+.mantine-Button-root.mantine-Button-root {
   --button-height-xs: 28px;
   --button-height-md: 40px;
   --button-height-lg: 48px;
@@ -11,7 +12,7 @@
   --button-height-compact-lg: 32px;
 }
 
-.mantine-ActionIcon-root {
+.mantine-ActionIcon-root.mantine-ActionIcon-root {
   --ai-size-xs: 16px;
   --ai-size-sm: 20px;
   --ai-size-lg: 32px;
@@ -20,20 +21,20 @@
   --ai-size-input-lg: 48px;
 }
 
-.mantine-Input-wrapper,
-.mantine-InputWrapper-root,
-.mantine-Input-input {
+.mantine-Input-wrapper.mantine-Input-wrapper,
+.mantine-InputWrapper-root.mantine-InputWrapper-root,
+.mantine-Input-input.mantine-Input-input {
   --input-height-xs: 28px;
   --input-height-md: 40px;
   --input-height-lg: 48px;
 }
 
-.mantine-Pagination-root {
+.mantine-Pagination-root.mantine-Pagination-root {
   --pagination-control-size-xs: 20px;
   --pagination-control-size-sm: 24px;
   --pagination-control-size-lg: 36px;
 }
 
-.mantine-Chip-root {
+.mantine-Chip-root.mantine-Chip-root {
   --chip-size-xs: 24px;
 }

@@ -47,7 +47,7 @@
 .sales-filter-period-icon-wrap {
   flex: 0 0 36px;
   align-self: end;
-  width: 36px;
+  width: var(--app-control-height);
 }
 
 .sales-filter-label {
@@ -65,7 +65,7 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  height: 36px;
+  height: var(--app-control-height);
   padding-left: 8px;
   padding-right: 8px;
   width: 100%;
@@ -129,8 +129,8 @@
 }
 
 .sales-filter-period-menu .mantine-Input-input {
-  min-height: 36px;
-  height: 36px;
+  min-height: var(--app-control-height);
+  height: var(--app-control-height);
   padding-inline: 8px;
   font: 400 12px var(--font-mono);
 }
@@ -281,7 +281,7 @@
   font-family: var(--font-mono);
   font-size: 12.5px;
   font-weight: 500;
-  height: 36px;
+  height: var(--app-control-height);
   justify-content: space-between;
   line-height: 1.2;
   min-width: 0;
@@ -447,7 +447,7 @@
   border-radius: 0;
   display: flex;
   min-width: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   padding: 0;
 }
 
@@ -1557,8 +1557,8 @@
   .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 140px; }
   .sales-ukraine-page .sales-filter-ecommerce .mantine-Checkbox-label { display: none; }
   .sales-ukraine-page .sales-filter-create {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .sales-ukraine-page .sales-filter-create .mantine-Button-label { display: none; }

@@ -219,7 +219,7 @@
 }
 .app-filter-bar.user-roles-filter-bar > .user-roles-search-input { flex: 0 0 280px; width: 280px; min-width: 0; max-width: 100%; }
 @container registry (max-width: 950px) {
- .user-roles-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .user-roles-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .user-roles-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .user-roles-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

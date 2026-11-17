@@ -1,12 +1,12 @@
 .app-date-range-icon-wrap {
   flex: 0 0 36px;
   align-self: end;
-  width: 36px;
+  width: var(--app-control-height);
 }
 
 .app-date-range-icon-wrap .mantine-ActionIcon-root {
-  width: 36px;
-  height: 36px;
+  width: var(--app-control-height);
+  height: var(--app-control-height);
   border-radius: 8px;
 }
 
@@ -31,8 +31,8 @@
   font: 600 12px/17px var(--font-mono);
 }
 .app-date-range-menu .mantine-Input-input {
-  height: 36px;
-  min-height: 36px;
+  height: var(--app-control-height);
+  min-height: var(--app-control-height);
   padding-inline: 8px;
   font: 400 12px var(--font-mono);
 }

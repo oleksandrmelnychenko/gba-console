@@ -73,7 +73,7 @@
   align-self: end;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 .online-shop-cities-table-toolbar-slot .data-table-toolbar { gap: 8px; margin: 0; min-height: 0; }
 .online-shop-cities-name-cell { display: flex; align-items: center; min-width: 0; }
@@ -117,7 +117,7 @@
 }
 .online-shop-cities-command-bar :is(.data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; }
 @container registry (max-width: 950px) {
-  .online-shop-cities-command-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .online-shop-cities-command-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .online-shop-cities-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .online-shop-cities-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

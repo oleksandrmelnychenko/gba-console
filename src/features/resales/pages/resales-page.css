@@ -29,7 +29,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .resales-create-actions .mantine-Button-root {
@@ -690,7 +690,7 @@
   flex: 0 0 auto;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .resale-detail-table-toolbar-slot .data-table-toolbar {
@@ -867,8 +867,8 @@
   }
 
   .resales-table-toolbar-slot .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .resales-table-toolbar-slot .data-table-layout-control .mantine-Button-label { display: none; }

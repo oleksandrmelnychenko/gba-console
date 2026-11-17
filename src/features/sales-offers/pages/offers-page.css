@@ -26,7 +26,7 @@
   flex: 0 0 auto;
   gap: 8px;
   justify-content: flex-end;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   min-width: 0;
 }
 
@@ -43,8 +43,8 @@
 
 @container registry (max-width: 640px) {
   .offers-filter-actions .offers-secondary-action {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .offers-secondary-action .mantine-Button-label { display: none; }

@@ -44,9 +44,9 @@
   border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 13px;
-  height: 36px;
+  height: var(--app-control-height);
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .client-edit-title-code {

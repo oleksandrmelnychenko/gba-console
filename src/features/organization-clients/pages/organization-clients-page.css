@@ -169,14 +169,14 @@
 }
 .app-filter-bar.organization-clients-filter-bar > .organization-clients-search-input { flex: 0 0 280px; width: 280px; min-width: 0; max-width: 100%; }
 @container registry (max-width: 950px) {
- .organization-clients-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .organization-clients-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .organization-clients-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .organization-clients-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 900px) {
-  .app-filter-bar .organization-clients-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .organization-clients-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .organization-clients-toolbar-action .mantine-Button-label { display: none; }
   .organization-clients-toolbar-action .mantine-Button-section { margin: 0; }
 }

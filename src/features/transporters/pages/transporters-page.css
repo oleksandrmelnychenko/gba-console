@@ -341,14 +341,14 @@
  .transporters-command-search > .mantine-InputWrapper-root { width: 220px; max-width: 100%; }
 }
 @container registry (max-width: 1000px) {
- .transporters-command-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .transporters-command-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .transporters-command-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .transporters-command-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 900px) {
-  .app-filter-bar .transporters-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .transporters-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .transporters-toolbar-action .mantine-Button-label { display: none; }
   .transporters-toolbar-action .mantine-Button-section { margin: 0; }
 }

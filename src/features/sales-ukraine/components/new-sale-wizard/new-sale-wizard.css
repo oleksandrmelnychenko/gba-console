@@ -1668,7 +1668,7 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-size: 12.5px;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .new-sale-register-toolbar .mantine-Input-input:focus,

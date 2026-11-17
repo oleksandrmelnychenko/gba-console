@@ -182,8 +182,8 @@
     width: 240px;
   }
   .product-groups-filter-row .product-groups-secondary-action {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding: 0;
   }
   .product-groups-secondary-action .product-groups-action-label { display: none; }
@@ -191,8 +191,8 @@
 }
 @container product-groups (max-width: 700px) {
   .product-groups-filter-row .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding: 0;
   }
   .product-groups-filter-row .data-table-layout-control .mantine-Button-label { display: none; }

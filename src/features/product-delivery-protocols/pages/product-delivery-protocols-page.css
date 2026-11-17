@@ -76,9 +76,9 @@
   }
 
   .product-delivery-protocols-table-toolbar-slot .data-table-layout-control {
-    min-width: 36px;
+    min-width: var(--app-control-height);
     padding-inline: 0;
-    width: 36px;
+    width: var(--app-control-height);
   }
 
   .product-delivery-protocols-table-toolbar-slot .data-table-layout-control .mantine-Button-label {
