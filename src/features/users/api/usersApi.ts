@@ -34,19 +34,25 @@ export async function getUser(netId: string): Promise<UserProfile | null> {
   return normalizeUser(result)
 }
 
-export async function createUser(user: UserProfile, password: string): Promise<IdentityResponse | null> {
+export async function createUser(
+  user: UserProfile,
+  password: string,
+  signal?: AbortSignal,
+): Promise<IdentityResponse | null> {
   const result = await apiRequest<unknown>('/usermanagement/users/create', {
     method: 'POST',
     body: { ...user, Password: password },
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeIdentityResponse(result)
 }
 
-export async function updateUser(user: UserProfile): Promise<UserProfile | null> {
+export async function updateUser(user: UserProfile, signal?: AbortSignal): Promise<UserProfile | null> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/users/edit', {
     method: 'POST',
     body: user,
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeUser(result)
@@ -91,30 +97,33 @@ export async function getRoleManagementRoles(): Promise<UserRole[]> {
   return normalizeUserRoles(result)
 }
 
-export async function createUserRole(role: UserRole): Promise<UserRole | null> {
+export async function createUserRole(role: UserRole, signal?: AbortSignal): Promise<UserRole | null> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/roles/create', {
     method: 'POST',
     body: role,
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeRole(result)
 }
 
-export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
+export async function updateUserRole(role: UserRole, signal?: AbortSignal): Promise<UserRole | null> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/roles/edit', {
     method: 'POST',
     body: role,
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeRole(result)
 }
 
-export async function deleteUserRole(netId: string): Promise<void> {
+export async function deleteUserRole(netId: string, signal?: AbortSignal): Promise<void> {
   await apiRequest<unknown>('/usermanagement/profiles/roles/remove', {
     method: 'DELETE',
     query: {
       netId,
     },
+    ...(signal ? { signal } : {}),
   })
 }
 

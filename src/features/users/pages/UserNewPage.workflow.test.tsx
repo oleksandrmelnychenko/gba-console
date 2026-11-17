@@ -123,7 +123,7 @@ describe('new user workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Заповнити невалідний телефон' }))
     fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
 
-    expect(await screen.findByText('Телефон має містити 9 або 10 цифр')).not.toBeNull()
+    expect(await screen.findByText(/Телефон має містити 9 або 10 цифр/)).not.toBeNull()
     expect(createUser).not.toHaveBeenCalled()
     expect(screen.queryByText('Реєстр користувачів')).toBeNull()
   })

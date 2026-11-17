@@ -10,6 +10,8 @@ import type { UserRole } from '../types'
 const MODAL_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 
 const DEFAULT_DASHBOARD = '/dashboard'
+/** UserRole.Name is nvarchar(40) in the database. */
+const ROLE_NAME_MAX_LENGTH = 40
 
 type RoleFormModalProps = {
   canDelete?: boolean
@@ -48,6 +50,11 @@ export function RoleFormModal({
       return
     }
 
+    if (trimmedName.length > ROLE_NAME_MAX_LENGTH) {
+      setError(t('Назва ролі має містити не більше {count} символів', { count: ROLE_NAME_MAX_LENGTH }))
+      return
+    }
+
     setSubmitErrorDismissed(false)
     onSubmit({ Dashboard: dashboard, Name: trimmedName })
   }
@@ -65,6 +72,7 @@ export function RoleFormModal({
             disabled={isSaving}
             error={error ?? (submitErrorDismissed ? null : submitError)}
             label={t('Найменування')}
+            maxLength={ROLE_NAME_MAX_LENGTH}
             required
             value={name}
             onChange={(event) => {
@@ -87,9 +95,9 @@ export function RoleFormModal({
               </Button>
             ) : null}
             <Group gap="xs">
+              {/* Never disabled: cancelling while saving aborts the request and closes the dialog. */}
               <Button
                 color="gray"
-                disabled={isSaving}
                 variant="default"
                 onClick={onClose}
               >

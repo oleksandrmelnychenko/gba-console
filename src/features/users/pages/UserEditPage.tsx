@@ -19,6 +19,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { ApiError } from '../../../shared/api/apiClient'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
@@ -34,6 +35,7 @@ import type { UserProfile, UserRole } from '../types'
 import {
   getIdentityResponseError,
   getUserFullName,
+  getUserSaveErrorMessage,
   normalizeUserForSave,
   validatePasswordPair,
   validateUserProfile,
@@ -43,6 +45,8 @@ import './user-edit-page.css'
 type UserEditRouteState = {
   returnPath?: string
 }
+
+type UserEditTab = 'profile' | 'password'
 
 type UserFieldChangeHandler = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => void
 type UserEditStatus = {
@@ -98,6 +102,8 @@ function UserEditPageContent() {
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [isResettingPassword, setResettingPassword, tryStartResettingPassword] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [activeTab, setActiveTab] = useState<UserEditTab>('profile')
+  const saveControllerRef = useRef<AbortController | null>(null)
   const canEdit = hasPermission(PermissionKeys.Users.User.Edit)
   const canDelete = hasPermission(PermissionKeys.Users.User.Delete)
   const canResetPassword = hasPermission(PermissionKeys.Users.User.ResetPassword)
@@ -127,7 +133,10 @@ function UserEditPageContent() {
         if (!cancelled) {
           setUser(null)
           setRoles([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувача'))
+          // An unknown user (400/404 'User not found') is shown only by the Ukrainian not-found card below.
+          setError(isUserNotFoundError(loadError)
+            ? null
+            : loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувача'))
         }
       } finally {
         if (!cancelled) {
@@ -159,10 +168,13 @@ function UserEditPageContent() {
   }
 
   function closeSheet() {
-    if (isSaving || isDeleting || isResettingPassword) {
+    if (isDeleting || isResettingPassword) {
       return
     }
 
+    // Cancel always works while a profile save is pending: the request is aborted.
+    saveControllerRef.current?.abort()
+    saveControllerRef.current = null
     navigate(returnPath, { replace: true, state: { mutated: hasMutatedRef.current } })
   }
 
@@ -190,9 +202,14 @@ function UserEditPageContent() {
       return
     }
     setError(null)
+    const controller = new AbortController()
+    saveControllerRef.current = controller
 
     try {
-      const updatedUser = await updateUser(payload)
+      const updatedUser = await updateUser(payload, controller.signal)
+      if (controller.signal.aborted) {
+        return
+      }
       setUser(updatedUser || payload)
       hasMutatedRef.current = true
       notifications.show({
@@ -200,8 +217,13 @@ function UserEditPageContent() {
         message: t('Користувача збережено'),
       })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти користувача'))
+      if (!controller.signal.aborted) {
+        setError(getUserSaveErrorMessage(saveError, t('Не вдалося зберегти користувача')))
+      }
     } finally {
+      if (saveControllerRef.current === controller) {
+        saveControllerRef.current = null
+      }
       setSaving(false)
     }
   }
@@ -303,6 +325,7 @@ function UserEditPageContent() {
         )}
 
         <UserEditContent
+          activeTab={activeTab}
           canEdit={canEdit}
           canResetPassword={canResetPassword}
           confirmPassword={confirmPassword}
@@ -317,6 +340,7 @@ function UserEditPageContent() {
           user={user}
           onChangeConfirmPassword={setConfirmPassword}
           onChangePassword={setPassword}
+          onChangeTab={setActiveTab}
           onFieldChange={setField}
           onPasswordReset={handlePasswordReset}
           onSubmit={handleSubmit}
@@ -333,10 +357,11 @@ function UserEditPageContent() {
         )}
       </Stack>
       <AppModalFooter>
-        <Button color="gray" variant="default" disabled={isSaving || isDeleting || isResettingPassword} onClick={closeSheet}>{t('Скасувати')}</Button>
+        <Button color="gray" variant="default" disabled={isDeleting || isResettingPassword} onClick={closeSheet}>{t('Скасувати')}</Button>
         <UserEditActions
           canDelete={canDelete}
-          canEdit={canEdit}
+          // The password tab has its own primary action (Змінити пароль); the profile Зберегти is shown only on the profile tab.
+          canEdit={canEdit && activeTab === 'profile'}
           isDeleting={isDeleting}
           isSaving={isSaving}
           user={user}
@@ -395,6 +420,7 @@ function UserEditActions({
 }
 
 function UserEditContent({
+  activeTab,
   canEdit,
   canResetPassword,
   confirmPassword,
@@ -404,10 +430,12 @@ function UserEditContent({
   user,
   onChangeConfirmPassword,
   onChangePassword,
+  onChangeTab: setActiveTab,
   onFieldChange,
   onPasswordReset,
   onSubmit,
 }: {
+  activeTab: UserEditTab
   canEdit: boolean
   canResetPassword: boolean
   confirmPassword: string
@@ -417,12 +445,12 @@ function UserEditContent({
   user: UserProfile | null
   onChangeConfirmPassword: (value: string) => void
   onChangePassword: (value: string) => void
+  onChangeTab: (tab: UserEditTab) => void
   onFieldChange: UserFieldChangeHandler
   onPasswordReset: (event: FormEvent<HTMLFormElement>) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const { t } = useI18n()
-  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile')
 
   if (status.isLoading) {
     return (
@@ -481,6 +509,7 @@ function UserEditContent({
               <div className="user-sheet-card-body">
                 <UserForm
                   disabled={!canEdit || status.isSaving || status.isDeleting}
+                  middleNameRequired={false}
                   roles={roles}
                   user={user}
                   onFieldChange={onFieldChange}
@@ -608,4 +637,8 @@ function DeleteUserModal({
       </Stack>
     </AppModal>
   )
+}
+
+function isUserNotFoundError(error: unknown): boolean {
+  return error instanceof ApiError && (error.status === 404 || error.status === 400)
 }

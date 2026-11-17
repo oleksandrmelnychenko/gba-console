@@ -12,7 +12,7 @@ import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save } from 'lucide-react'
-import { type FormEvent, useEffect } from 'react'
+import { type FormEvent, useEffect, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -25,6 +25,7 @@ import type { UserProfile, UserRole } from '../types'
 import {
   createEmptyUserProfile,
   getIdentityResponseError,
+  getUserSaveErrorMessage,
   normalizeUserForSave,
   validateUserProfile,
 } from '../utils'
@@ -75,6 +76,7 @@ function UserNewPageContent() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingRoles, setLoadingRoles] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  const saveControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -125,10 +127,9 @@ function UserNewPageContent() {
   }
 
   function closeSheet() {
-    if (isSaving) {
-      return
-    }
-
+    // Cancel always works: a pending create is aborted.
+    saveControllerRef.current?.abort()
+    saveControllerRef.current = null
     navigate(returnPath, { replace: true })
   }
 
@@ -144,6 +145,7 @@ function UserNewPageContent() {
     const validationError = validateUserProfile(payload, {
       confirmPassword,
       password,
+      requireMiddleName: true,
       requirePassword: true,
     })
 
@@ -156,24 +158,37 @@ function UserNewPageContent() {
       return
     }
     setError(null)
+    const controller = new AbortController()
+    saveControllerRef.current = controller
 
     try {
-      const response = await createUser(payload, password)
+      const response = await createUser(payload, password, controller.signal)
       const responseError = getIdentityResponseError(response)
 
       if (response?.Succeeded === false || responseError) {
         throw new Error(responseError || t('Не вдалося створити користувача'))
       }
 
+      if (controller.signal.aborted) {
+        return
+      }
+
       notifications.show({
         color: 'green',
         message: t('Користувача створено'),
       })
+      // The busy lock stays taken after success: the sheet is closing, and releasing it would let
+      // a fast extra click submit the same user again before the navigation unmounts the form.
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити користувача'))
+      if (!controller.signal.aborted) {
+        setError(getUserSaveErrorMessage(saveError, t('Не вдалося створити користувача')))
+        setSaving(false)
+      }
     } finally {
-      setSaving(false)
+      if (saveControllerRef.current === controller) {
+        saveControllerRef.current = null
+      }
     }
   }
 
@@ -226,7 +241,6 @@ function UserNewPageContent() {
       <AppModalFooter>
           <Button
             color="gray"
-            disabled={isSaving}
             styles={{ label: USER_NEW_MONO_STYLE }}
             variant="default"
             onClick={closeSheet}

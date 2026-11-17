@@ -116,7 +116,7 @@ describe('UserRolesPage role form', () => {
     expect(within(confirm).getByText(/QA Тимчасова/)).not.toBeNull()
 
     fireEvent.click(within(confirm).getByRole('button', { name: 'Так' }))
-    await waitFor(() => expect(deleteUserRole).toHaveBeenCalledWith('role-temp'))
+    await waitFor(() => expect(deleteUserRole).toHaveBeenCalledWith('role-temp', expect.any(AbortSignal)))
   })
 
   it('selects a newly created role after it is saved', async () => {

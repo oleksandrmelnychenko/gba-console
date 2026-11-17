@@ -9,7 +9,9 @@ const nameMaxLength = 20
 const emailMaxLength = 50
 const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i
 const passwordPattern = /^(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$&+,:;=?@#|'<>._^*()%!-]).*$/
-const phonePattern = /^(\d{9,10})$/i
+// New users are created with the 9-10 digits typed in; seeded and imported logins are stored as 380XXXXXXXXX.
+// The phone is the login, so it is sent exactly as stored (never rewritten) to keep the login unchanged.
+const phonePattern = /^(\d{9,10}|380\d{9})$/
 
 export function createEmptyUserProfile(): UserProfile {
   return {
@@ -89,6 +91,7 @@ export function validateUserProfile(
   options: {
     confirmPassword?: string
     password?: string
+    requireMiddleName?: boolean
     requirePassword?: boolean
   } = {},
 ): string | null {
@@ -116,7 +119,8 @@ export function validateUserProfile(
     return translate("Ім'я має містити не більше {count} символів", { count: nameMaxLength })
   }
 
-  if (!middleName) {
+  // Existing users (drivers, seeded accounts) may have no patronymic; it is required only on create.
+  if (!middleName && options.requireMiddleName) {
     return translate('Вкажіть по батькові')
   }
 
@@ -133,7 +137,7 @@ export function validateUserProfile(
   }
 
   if (!phone || !phonePattern.test(phone)) {
-    return translate('Телефон має містити 9 або 10 цифр')
+    return translate('Телефон має містити 9 або 10 цифр, або 12 цифр у форматі 380XXXXXXXXX')
   }
 
   if (!user.UserRole || !getUserRoleKey(user.UserRole)) {
@@ -167,10 +171,43 @@ export function validatePasswordPair(password: string, confirmPassword: string):
   return null
 }
 
+// ASP.NET Identity reports duplicates with English descriptions; name the field in Ukrainian instead.
+const identityErrorMessages: Record<string, string> = {
+  DuplicateEmail: 'Користувач з таким email уже існує',
+  DuplicateUserName: 'Користувач з таким телефоном уже існує',
+  InvalidEmail: 'Вкажіть коректний email',
+  InvalidUserName: 'Телефон містить недопустимі символи',
+}
+
 export function getIdentityResponseError(response: IdentityResponse | null): string | null {
+  const knownError = response?.Errors?.find((item) => item.Code && identityErrorMessages[item.Code])
+
+  if (knownError?.Code) {
+    return translate(identityErrorMessages[knownError.Code])
+  }
+
   const error = response?.Errors?.find((item) => item.Description?.trim())
 
   return error?.Description?.trim() || null
+}
+
+/** The message for a failed user create/edit: identity errors carried in the error body, else the server's message. */
+export function getUserSaveErrorMessage(error: unknown, fallback: string): string {
+  const payload = error && typeof error === 'object' && 'payload' in error
+    ? (error as { payload?: unknown }).payload
+    : null
+  const body = payload && typeof payload === 'object' && 'Body' in payload
+    ? (payload as { Body?: unknown }).Body
+    : payload
+  const identityError = body && typeof body === 'object' && 'Errors' in body
+    ? getIdentityResponseError(body as IdentityResponse)
+    : null
+
+  if (identityError) {
+    return identityError
+  }
+
+  return error instanceof Error && error.message ? error.message : fallback
 }
 
 const MIN_DELETABLE_USER_ROLE_TYPE = 12

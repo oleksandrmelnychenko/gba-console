@@ -90,6 +90,9 @@ function UserRolesPageContent() {
   const [deleteRoleTarget, setDeleteRoleTarget] =
     useValueState<UserRole | null>(null)
   const [roleFormError, setRoleFormError] = useValueState<string | null>(null)
+  const [deleteRoleError, setDeleteRoleError] = useValueState<string | null>(null)
+  // The pending role create/edit/delete request; cancelling a dialog aborts it.
+  const roleRequestRef = useRef<AbortController | null>(null)
   const pendingSelectRoleNameRef = useRef<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
@@ -199,6 +202,43 @@ function UserRolesPageContent() {
   function resetSearch() {
     setSearchDraft('')
     setSearchValue('')
+    // Скинути clears every filter on the page, including the permission tree's risk and selection filters.
+    eventPermissionsRef.current?.resetFilters()
+  }
+
+  function startRoleRequest(): AbortController {
+    roleRequestRef.current?.abort()
+    const controller = new AbortController()
+    roleRequestRef.current = controller
+    return controller
+  }
+
+  function finishRoleRequest(controller: AbortController) {
+    if (roleRequestRef.current === controller) {
+      roleRequestRef.current = null
+      setSaving(false)
+    }
+  }
+
+  /** Cancel always works, even while a request is pending: the request is aborted and the dialog closes. */
+  function abortRoleRequest() {
+    const controller = roleRequestRef.current
+    if (controller) {
+      roleRequestRef.current = null
+      controller.abort()
+      setSaving(false)
+    }
+  }
+
+  function closeRoleModal() {
+    abortRoleRequest()
+    setRoleModalState({ open: false, role: null })
+  }
+
+  function closeDeleteRoleModal() {
+    abortRoleRequest()
+    setDeleteRoleError(null)
+    setDeleteRoleTarget(null)
   }
 
   function applySelectedRole(role: UserRole) {
@@ -292,6 +332,7 @@ function UserRolesPageContent() {
     }
     setError(null)
     setRoleFormError(null)
+    const controller = startRoleRequest()
 
     try {
       if (roleModalState.role) {
@@ -299,13 +340,17 @@ function UserRolesPageContent() {
           ...roleModalState.role,
           Dashboard: values.Dashboard,
           Name: values.Name,
-        })
+        }, controller.signal)
       } else {
         await createUserRole({
           Dashboard: values.Dashboard,
           Name: values.Name,
           UserRoleType: UserRoleType.Driver,
-        })
+        }, controller.signal)
+      }
+
+      if (controller.signal.aborted) {
+        return
       }
 
       notifications.show({ color: 'green', message: t('Збережено') })
@@ -315,13 +360,17 @@ function UserRolesPageContent() {
       setRoleModalState({ open: false, role: null })
       reload()
     } catch (saveError) {
-      setRoleFormError(
-        saveError instanceof Error
-          ? saveError.message
-          : t('Не вдалося зберегти'),
-      )
+      if (controller.signal.aborted) {
+        return
+      }
+
+      const message = saveError instanceof Error && saveError.message
+        ? saveError.message
+        : t('Не вдалося зберегти')
+      setRoleFormError(message)
+      notifications.show({ color: 'red', message })
     } finally {
-      setSaving(false)
+      finishRoleRequest(controller)
     }
   }
 
@@ -342,9 +391,14 @@ function UserRolesPageContent() {
       return
     }
     setError(null)
+    setDeleteRoleError(null)
+    const controller = startRoleRequest()
 
     try {
-      await deleteUserRole(roleToDelete.NetUid)
+      await deleteUserRole(roleToDelete.NetUid, controller.signal)
+      if (controller.signal.aborted) {
+        return
+      }
       notifications.show({ color: 'green', message: t('Видалено') })
       setDeleteRoleTarget(null)
       setRoleModalState({ open: false, role: null })
@@ -355,13 +409,18 @@ function UserRolesPageContent() {
 
       reload()
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : t('Не вдалося видалити'),
-      )
+      if (controller.signal.aborted) {
+        return
+      }
+
+      // The server explains why a role cannot be deleted (e.g. it still has users, 409): show its message as is.
+      const message = deleteError instanceof Error && deleteError.message
+        ? deleteError.message
+        : t('Не вдалося видалити')
+      setDeleteRoleError(message)
+      notifications.show({ color: 'red', message })
     } finally {
-      setSaving(false)
+      finishRoleRequest(controller)
     }
   }
 
@@ -491,11 +550,12 @@ function UserRolesPageContent() {
             canDeleteUserRole(roleModalState.role),
           )}
           submitError={roleFormError}
-          onClose={() => setRoleModalState({ open: false, role: null })}
+          onClose={closeRoleModal}
           onDelete={() => {
             if (roleModalState.role) {
               // Close the edit dialog first: both dialogs share one z-index layer,
               // so the confirmation would otherwise open underneath it.
+              setDeleteRoleError(null)
               setDeleteRoleTarget(roleModalState.role)
               setRoleModalState({ open: false, role: null })
             }
@@ -533,19 +593,23 @@ function UserRolesPageContent() {
         centered
         opened={Boolean(deleteRoleTarget)}
         title={t('Видалити роль')}
-        onClose={() => setDeleteRoleTarget(null)}
+        onClose={closeDeleteRoleModal}
       >
         <Stack gap={10}>
           <Text size="sm">
             {t('Ви впевнені, що хочете видалити?')}{' '}
             {deleteRoleTarget ? getUserRoleName(deleteRoleTarget) : ''}
           </Text>
+          {deleteRoleError ? (
+            <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+              {deleteRoleError}
+            </Alert>
+          ) : null}
           <AppModalFooter>
             <Button
               color="gray"
-              disabled={isSaving}
               variant="subtle"
-              onClick={() => setDeleteRoleTarget(null)}
+              onClick={closeDeleteRoleModal}
             >
               {t('Ні')}
             </Button>

@@ -12,6 +12,8 @@ type UserFormProps = {
   confirmPassword?: string
   disabled?: boolean
   includePassword?: boolean
+  /** По батькові is required for new users only; existing users (e.g. drivers) may have none. */
+  middleNameRequired?: boolean
   password?: string
   roles: UserRole[]
   user: UserProfile
@@ -23,6 +25,7 @@ export function UserForm({
   confirmPassword = '',
   disabled = false,
   includePassword = false,
+  middleNameRequired = true,
   password = '',
   roles,
   user,
@@ -82,7 +85,7 @@ export function UserForm({
         disabled={disabled}
         label={t('По батькові')}
         maxLength={20}
-        required
+        required={middleNameRequired}
         value={user.MiddleName || ''}
         onChange={(event) => onFieldChange('MiddleName', event.currentTarget.value)}
       />
@@ -98,7 +101,9 @@ export function UserForm({
       />
       <TextInput
         disabled={disabled}
+        inputMode="numeric"
         label={t('Телефон')}
+        maxLength={12}
         required
         value={user.PhoneNumber || ''}
         onChange={(event) => onFieldChange('PhoneNumber', event.currentTarget.value)}

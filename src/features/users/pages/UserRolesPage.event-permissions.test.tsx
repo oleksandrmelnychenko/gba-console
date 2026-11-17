@@ -98,7 +98,7 @@ describe('UserRolesPage canonical permission editor', () => {
         Name: 'GBA updated',
         NetUid: 'role-gba',
         UserRoleType: 2,
-      })
+      }, expect.any(AbortSignal))
     })
   })
 })

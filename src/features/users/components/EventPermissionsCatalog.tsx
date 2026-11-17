@@ -82,6 +82,8 @@ export type EventPermissionsCatalogHandle = {
   hasUnsavedChanges: () => boolean
   isSaving: () => boolean
   reload: () => void
+  /** Clears the search, risk and selection filters of the permission tree. */
+  resetFilters: () => void
   save: () => Promise<void>
 }
 
@@ -281,6 +283,7 @@ export const EventPermissionsCatalog = forwardRef<
       hasUnsavedChanges: () => dirty,
       isSaving: () => isSaving,
       reload,
+      resetFilters,
       save,
     }),
   )
@@ -292,6 +295,12 @@ export const EventPermissionsCatalog = forwardRef<
     setSelectedKeys(new Set(nextKeys))
     setConflict(null)
     setRoleError(null)
+  }
+
+  function resetFilters() {
+    setQuery('')
+    setRiskFilter('all')
+    setStateFilter('all')
   }
 
   function cancel() {
