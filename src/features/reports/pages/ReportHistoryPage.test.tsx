@@ -85,3 +85,59 @@ it('switches to grouping by report and loads a report group for the whole period
   await waitFor(() => expect(vi.mocked(getReportHistory).mock.calls.some(([query]) =>
     query.reports?.length === 1 && query.reports[0] === '2' && query.from !== query.to && query.limit === 50)).toBe(true))
 })
+
+it('owns vertical scrolling inside the bounded console frame and supports keyboard focus', async () => {
+  const view = render(page())
+  await screen.findAllByTestId('report-history-entry')
+  const history = view.container.querySelector('.reports-history-page') as HTMLElement
+  const style = getComputedStyle(history)
+  expect(style.overflowY).toBe('auto')
+  expect(parseFloat(style.minHeight)).toBe(0)
+  expect(style.flex).toBe('1 1 auto')
+  expect(screen.getByRole('region', { name: 'Історія звітів' })).toBe(history)
+  expect(history.tabIndex).toBe(0)
+  history.focus()
+  expect(document.activeElement).toBe(history)
+})
+
+it.each(['day', 'report'] as const)('loads all 238 reports without losing entries when grouped by %s', async grouping => {
+  const items = Array.from({ length: 238 }, (_, index) => ({
+    ...entry(`11111111-1111-1111-1111-${String(index + 1).padStart(12, '0')}`, 'u-1', 'Іван Петренко'),
+    rowCount: index + 1,
+  }))
+  vi.mocked(getReportHistory).mockImplementation(async query => ({
+    isHead: true, total: items.length,
+    days: [{ day: '2026-11-17', count: items.length }],
+    reports: [{ report: '2', dataSource: 2, profile: null, kind: 'report', count: items.length }],
+    items: items.slice(query.offset ?? 0, (query.offset ?? 0) + (query.limit ?? 25)),
+  }))
+  render(page())
+  await waitFor(() => expect(screen.getAllByTestId('report-history-entry')).toHaveLength(50))
+  if (grouping === 'report') {
+    fireEvent.click(screen.getByText('за звітами'))
+    await waitFor(() => expect(vi.mocked(getReportHistory).mock.calls.some(([query]) => query.reports?.[0] === '2' && query.limit === 50)).toBe(true))
+    await waitFor(() => expect(screen.getAllByTestId('report-history-entry')).toHaveLength(50))
+  }
+  for (const offset of [50, 100, 150, 200]) {
+    fireEvent.click(screen.getByRole('button', { name: 'Показати ще' }))
+    await waitFor(() => expect(screen.getAllByTestId('report-history-entry')).toHaveLength(Math.min(offset + 50, 238)))
+    expect(getReportHistory).toHaveBeenCalledWith(expect.objectContaining({
+      offset, limit: 50, ...(grouping === 'report' ? { reports: ['2'] } : { from: '2026-11-17', to: '2026-11-17' }),
+    }))
+  }
+  expect(screen.queryByRole('button', { name: 'Показати ще' })).toBeNull()
+  const entries = screen.getAllByTestId('report-history-entry')
+  for (const [index, item] of entries.entries()) {
+    expect(within(item).getByText(new RegExp(`Рядків: ${index + 1} ·`))).toBeTruthy()
+  }
+  expect(within(entries[237]).getByRole('button', { name: 'Відкрити' })).toHaveProperty('disabled', false)
+  expect(within(entries[237]).getByRole('button', { name: 'Excel' })).toHaveProperty('disabled', false)
+})
+
+it('shows an explicit empty state without pagination when no history is visible', async () => {
+  vi.mocked(getReportHistory).mockResolvedValue({ isHead: false, total: 0, days: [], reports: [], items: [] })
+  render(page())
+  expect(await screen.findByText('За вибраний період звітів не формували.')).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Показати ще' })).toBeNull()
+  expect(screen.queryAllByTestId('report-history-entry')).toHaveLength(0)
+})

@@ -150,7 +150,8 @@ export function ReportHistoryPage() {
     </Group>
   }
 
-  return <Stack className="reports-history-page" gap="sm">
+  return <Stack className="reports-history-page" gap="sm" role="region" aria-label={t('Історія звітів')} tabIndex={0}
+    style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
     <PageSubmenuActions>
       <ReportsNavigation launches={launches} active={null} movement={false} historyActive
         disabled={!datasetStorage.loaded} onOpen={openWorkbook} onStocks={() => navigate('/reports/stocks')} />
