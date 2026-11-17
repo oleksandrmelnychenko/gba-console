@@ -1496,7 +1496,7 @@ function useInformationalMovementColumns(): DataTableColumn<InformationalMovemen
     },
     {
       id: 'sourceId',
-      header: 'Source ID',
+      header: t('ID джерела'),
       width: 110,
       minWidth: 96,
       align: 'right',
