@@ -225,6 +225,22 @@ describe('ProductPriceSourcePanel', () => {
     expect(await view.findByText('Ціни ще не задано')).toBeTruthy()
   })
 
+  it('shows the current prices instead of «Ціни ще не задано» when no source publishes any', async () => {
+    getProductSourcePriceComparison.mockResolvedValue({
+      Amg: { IsAvailable: true, IsLinked: true, IsNative: true, Prices: [] },
+      Fenix: { IsAvailable: true, IsLinked: true, IsNative: true, Prices: [] },
+      LocalCurrencyCode: 'UAH',
+      ProductNetId: 'product-source-panel-unpublished',
+    })
+
+    const view = renderPanel('product-source-panel-unpublished')
+
+    expect(await view.findByText('Діючі ціни')).toBeTruthy()
+    expect(view.getByText('ЦО2')).toBeTruthy()
+    expect(view.getByText('71,61')).toBeTruthy()
+    expect(view.queryByText('Ціни ще не задано')).toBeNull()
+  })
+
   it('keeps the unlinked notice for an older server without native sets', async () => {
     getProductSourcePriceComparison.mockResolvedValue({
       Amg: { IsAvailable: false, IsLinked: false },

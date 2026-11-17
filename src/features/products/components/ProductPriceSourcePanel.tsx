@@ -42,6 +42,8 @@ export function ProductPriceSourcePanel({
 
   // Keep the established GBA price-type order while showing only source data.
   const effectiveOrder = useMemo(() => buildEffectivePricingOrder(effectivePrices), [effectivePrices])
+  const hasAnySourcePrice = [currentComparison?.Amg, currentComparison?.Fenix]
+    .some((set) => (set?.Prices || []).some(hasSourcePriceValue))
 
 
   return (
@@ -87,6 +89,7 @@ export function ProductPriceSourcePanel({
           <SourcePricesView
             currencyCode={currentComparison?.LocalCurrencyCode || 'UAH'}
             effectiveOrder={effectiveOrder}
+            fallbackPrices={hasAnySourcePrice ? [] : effectivePrices}
             label={viewMode === 'amg' ? 'AMG' : t('Контех')}
             otherLabel={viewMode === 'amg' ? t('Контех') : 'AMG'}
             source={viewMode === 'amg' ? currentComparison?.Amg : currentComparison?.Fenix}
@@ -100,12 +103,15 @@ export function ProductPriceSourcePanel({
 function SourcePricesView({
   currencyCode,
   effectiveOrder,
+  fallbackPrices,
   label,
   otherLabel,
   source,
 }: {
   currencyCode: string
   effectiveOrder: Map<string, number>
+  /** Current GBA prices, used only when neither source publishes any. */
+  fallbackPrices: CalculatedProductPrice[]
   label: string
   otherLabel: string
   source?: ProductSourcePriceSet | null
@@ -123,6 +129,9 @@ function SourcePricesView({
   const prices = (source.Prices || [])
     .filter((price) => !isPolishPricingName(price.PricingName) && hasSourcePriceValue(price))
     .sort((left, right) => compareSourcePricingNames(left.PricingName || '', right.PricingName || '', effectiveOrder))
+  // With no published source prices the product still has its current GBA prices:
+  // «Ціни ще не задано» next to a product that sells at 12,96 EUR was misleading.
+  const currentPrices = prices.length === 0 && source.IsNative ? toCurrentPrices(fallbackPrices) : []
 
   return (
     <>
@@ -130,6 +139,11 @@ function SourcePricesView({
       <Stack className="product-price-source-list" gap={2}>
         {prices.length > 0 ? (
           prices.map((price) => <SourcePriceRow key={price.PricingName} otherLabel={otherLabel} price={price} />)
+        ) : currentPrices.length > 0 ? (
+          <>
+            <Text c="gray.8" size="xs">{t('Діючі ціни')}</Text>
+            {currentPrices.map((price) => <SourcePriceRow key={price.PricingName} otherLabel={otherLabel} price={price} />)}
+          </>
         ) : (
           <Text c="gray.8" size="sm">{source.IsNative ? t('Ціни ще не задано') : t('Цін не знайдено')}</Text>
         )}
@@ -198,6 +212,16 @@ function SourceState({ color, text }: { color: string; text: string }) {
       {text}
     </Alert>
   )
+}
+
+function toCurrentPrices(effectivePrices: CalculatedProductPrice[]): ProductSourcePrice[] {
+  return effectivePrices
+    .filter((price) => !isPolishPricingName(price.Pricing?.Name) && ((price.RetailPriceEUR || 0) > 0 || (price.RetailPriceLocal || 0) > 0))
+    .map((price) => ({
+      PriceEur: price.RetailPriceEUR,
+      PriceLocal: price.RetailPriceLocal,
+      PricingName: price.Pricing?.Name,
+    }))
 }
 
 function hasSourcePriceValue(price?: ProductSourcePrice): boolean {
