@@ -159,6 +159,10 @@ function SaleDetailsContent({
   const [hasOwnTtn, setHasOwnTtn] = useState(Boolean(sale.CustomersOwnTtn))
   const [ownTtnNumber, setOwnTtnNumber] = useState(sale.CustomersOwnTtn?.Number || '')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  // Sale.Updated as the user saw it when the edit started; sent back so a save from a stale tab is refused.
+  const [editBaseline, setEditBaseline] = useState<SalesUkraineSale['Updated'] | null>(null)
+  const [isReloadingAfterConflict, setReloadingAfterConflict] = useState(false)
+  const isEditConflict = fileMutation.pendingError === SALE_EDIT_CONFLICT_MESSAGE && !fileMutation.reconciliationRequired
 
   const originalCity = sale.DeliveryRecipientAddress?.City || ''
   const originalDepartment = sale.DeliveryRecipientAddress?.Department || ''
@@ -194,6 +198,7 @@ function SaleDetailsContent({
       return
     }
 
+    setEditBaseline(sale.Updated ?? null)
     setEditMode(true)
 
     if (transporters.length > 0) {
@@ -214,19 +219,23 @@ function SaleDetailsContent({
 
   function cancelEdit() {
     setEditMode(false)
-    setTransporterId(getTransporterValue(sale.Transporter))
-    setShipmentDate(toDateInput(sale.ShipmentDate))
-    setTtn(sale.TTN || '')
-    setCity(originalCity)
-    setDepartment(originalDepartment)
-    setRecipientName(originalName)
-    setMobilePhone(originalPhone)
-    setComment(sale.Comment || '')
-    setCashOnDelivery(Boolean(sale.IsCashOnDelivery))
-    setCashOnDeliveryAmount(sale.CashOnDeliveryAmount ?? '')
-    setHasDocuments(Boolean(sale.HasDocuments))
-    setHasOwnTtn(Boolean(sale.CustomersOwnTtn))
-    setOwnTtnNumber(sale.CustomersOwnTtn?.Number || '')
+    resetFields(sale)
+  }
+
+  function resetFields(source: SalesUkraineSale) {
+    setTransporterId(getTransporterValue(source.Transporter))
+    setShipmentDate(toDateInput(source.ShipmentDate))
+    setTtn(source.TTN || '')
+    setCity(source.DeliveryRecipientAddress?.City || '')
+    setDepartment(source.DeliveryRecipientAddress?.Department || '')
+    setRecipientName(source.DeliveryRecipient?.FullName || '')
+    setMobilePhone(source.DeliveryRecipient?.MobilePhone || '')
+    setComment(source.Comment || '')
+    setCashOnDelivery(Boolean(source.IsCashOnDelivery))
+    setCashOnDeliveryAmount(source.CashOnDeliveryAmount ?? '')
+    setHasDocuments(Boolean(source.HasDocuments))
+    setHasOwnTtn(Boolean(source.CustomersOwnTtn))
+    setOwnTtnNumber(source.CustomersOwnTtn?.Number || '')
     setUploadedFile(null)
   }
 
@@ -277,7 +286,40 @@ function SaleDetailsContent({
 
     payload.IsEdited = true
 
+    if (editBaseline) {
+      payload.ExpectedUpdated = editBaseline
+    }
+
     return payload
+  }
+
+  async function reloadAfterConflict() {
+    const netUid = sale.NetUid?.trim()
+
+    if (!netUid || isReloadingAfterConflict) {
+      return
+    }
+
+    setReloadingAfterConflict(true)
+
+    try {
+      const freshSale = await loadSale(netUid)
+
+      if (!freshSale) {
+        notifications.show({ color: 'red', message: t('Не вдалося оновити дані продажу') })
+
+        return
+      }
+
+      fileMutation.dismissError()
+      resetFields(freshSale)
+      setEditMode(false)
+      onSaved(freshSale)
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося оновити дані продажу') })
+    } finally {
+      setReloadingAfterConflict(false)
+    }
   }
 
   async function save() {
@@ -380,7 +422,16 @@ function SaleDetailsContent({
 
   return (
     <Stack className="sale-carrier-sheet" gap={0}>
-      {fileMutation.pendingError && (
+      {isEditConflict ? (
+        <Alert color="red" mb="sm" title={t('Дані змінено в іншій вкладці')}>
+          <Stack gap="xs">
+            <Text size="sm">{t(SALE_EDIT_CONFLICT_MESSAGE)}</Text>
+            <Button loading={isReloadingAfterConflict} size="xs" variant="light" onClick={() => void reloadAfterConflict()}>
+              {t('Оновити дані')}
+            </Button>
+          </Stack>
+        </Alert>
+      ) : fileMutation.pendingError && (
         <Alert color="orange" mb="sm" title={t('Потрібна звірка операції')}>
           <Stack gap="xs">
             <Text size="sm">{fileMutation.pendingError}</Text>
@@ -623,6 +674,8 @@ async function requireHydratedDeliverySale(
 
   return { ...hydratedSale, HasDetails: true }
 }
+
+const SALE_EDIT_CONFLICT_MESSAGE = 'Запис змінено в іншій вкладці — оновіть сторінку.'
 
 function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()

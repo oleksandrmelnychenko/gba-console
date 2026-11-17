@@ -6,7 +6,9 @@ import type { SalesUkraineSale } from '../types'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 
 const mocks = vi.hoisted(() => ({
+  dismissError: vi.fn(),
   getSaleById: vi.fn(),
+  pendingError: 'Сервер не підтвердив операцію' as string | null,
   getSaleTransporterTypes: vi.fn(async () => []),
   reconciliationRequired: true,
   reconcile: vi.fn(),
@@ -33,7 +35,8 @@ vi.mock('../usePersistentSaleFileMutation', () => ({
   usePersistentSaleFileMutation: () => ({
     blocked: false,
     canReconcile: true,
-    pendingError: 'Сервер не підтвердив операцію',
+    dismissError: mocks.dismissError,
+    pendingError: mocks.pendingError,
     pendingKind: 'sale-update-file',
     reconcile: mocks.reconcile,
     reconciliationRequired: mocks.reconciliationRequired,
@@ -53,6 +56,8 @@ beforeEach(() => {
     },
   })
   mocks.reconciliationRequired = true
+  mocks.pendingError = 'Сервер не підтвердив операцію'
+  mocks.dismissError.mockReset()
   mocks.getSaleById.mockReset().mockResolvedValue({
     HasDetails: true,
     NetUid: 'sale-1',
@@ -381,5 +386,103 @@ describe('SaleDetailsDrawer file mutation reconciliation', () => {
     await waitFor(() => expect(mocks.getSaleById).toHaveBeenCalledWith('sale-1'))
     expect(mocks.run).not.toHaveBeenCalled()
     expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
+  })
+
+  describe('two tabs saving the delivery data', () => {
+    const listSale = {
+      BaseLifeCycleStatus: { SaleLifeCycleType: 1 },
+      DeliveryRecipient: { FullName: 'Recipient', MobilePhone: '0500000000' },
+      DeliveryRecipientAddress: { City: 'Kyiv', Department: '1' },
+      HasDetails: false,
+      NetUid: 'sale-1',
+      Updated: '2026-11-17T21:39:09.21',
+    } as SalesUkraineSale
+
+    it('sends back the version the user started editing, not the one re-read at save time', async () => {
+      mocks.reconciliationRequired = false
+      mocks.pendingError = null
+      mocks.getSaleById.mockResolvedValue({
+        ...listSale,
+        HasDetails: true,
+        Order: { OrderItems: [], OrderPackages: [] },
+        Updated: '2026-11-17T21:45:00.5',
+      })
+
+      render(
+        <MantineProvider theme={theme}>
+          <SaleDetailsDrawer sale={listSale} onClose={vi.fn()} onSaved={vi.fn()} />
+        </MantineProvider>,
+      )
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Зберегти' }))
+
+      await waitFor(() => expect(mocks.run).toHaveBeenCalledOnce())
+      expect(mocks.run.mock.calls[0][1]).toEqual(expect.objectContaining({
+        ExpectedUpdated: '2026-11-17T21:39:09.21',
+        Updated: '2026-11-17T21:45:00.5',
+      }))
+    })
+
+    it('a second save in the same tab sends the version of its own first save', async () => {
+      mocks.reconciliationRequired = false
+      mocks.pendingError = null
+      const savedSale = {
+        ...listSale,
+        HasDetails: true,
+        Order: { OrderItems: [], OrderPackages: [] },
+        Updated: '2026-11-17T21:50:00.1',
+      }
+      mocks.getSaleById.mockResolvedValue(savedSale)
+      let current: SalesUkraineSale = listSale
+      const view = render(
+        <MantineProvider theme={theme}>
+          <SaleDetailsDrawer sale={current} onClose={vi.fn()} onSaved={(next) => { if (next) current = next }} />
+        </MantineProvider>,
+      )
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Зберегти' }))
+      await waitFor(() => expect(mocks.run).toHaveBeenCalledOnce())
+      await waitFor(() => expect(current).toBe(savedSale))
+
+      view.rerender(
+        <MantineProvider theme={theme}>
+          <SaleDetailsDrawer sale={current} onClose={vi.fn()} onSaved={vi.fn()} />
+        </MantineProvider>,
+      )
+      fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Зберегти' }))
+
+      await waitFor(() => expect(mocks.run).toHaveBeenCalledTimes(2))
+      expect(mocks.run.mock.calls[1][1]).toEqual(expect.objectContaining({ ExpectedUpdated: '2026-11-17T21:50:00.1' }))
+    })
+
+    it('shows the 409 refusal and reloads the sale on request', async () => {
+      mocks.reconciliationRequired = false
+      mocks.pendingError = 'Запис змінено в іншій вкладці — оновіть сторінку.'
+      const freshSale = {
+        ...listSale,
+        DeliveryRecipientAddress: { City: 'Lviv', Department: '7' },
+        HasDetails: true,
+        Updated: '2026-11-17T21:55:00.3',
+      }
+      mocks.getSaleById.mockResolvedValue(freshSale)
+      const onSaved = vi.fn()
+
+      render(
+        <MantineProvider theme={theme}>
+          <SaleDetailsDrawer sale={listSale} onClose={vi.fn()} onSaved={onSaved} />
+        </MantineProvider>,
+      )
+
+      expect(await screen.findByText('Дані змінено в іншій вкладці')).toBeTruthy()
+      expect(screen.queryByText('Потрібна звірка операції')).toBeNull()
+      fireEvent.click(screen.getByRole('button', { name: 'Оновити дані' }))
+
+      await waitFor(() => expect(onSaved).toHaveBeenCalledWith(freshSale))
+      expect(mocks.getSaleById).toHaveBeenCalledWith('sale-1')
+      expect(mocks.dismissError).toHaveBeenCalledOnce()
+    })
   })
 })

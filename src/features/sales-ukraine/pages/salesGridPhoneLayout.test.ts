@@ -1,3 +1,4 @@
+// @ts-expect-error Node type scope is excluded from the application compilation unit.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 

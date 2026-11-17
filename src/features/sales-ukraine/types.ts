@@ -316,6 +316,8 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   TransporterId?: number | string
   UpdateDataCarrier?: SalesUkraineUpdateDataCarrier[]
   IsEdited?: boolean
+  /** Sale.Updated the editor loaded, echoed back unchanged; the server refuses the save with 409 when it moved on. */
+  ExpectedUpdated?: Date | string | null
   OneTimeDiscountUniform?: number | null
   OneTimeDiscountAverage?: number | null
   BaseDiscountUniform?: number | null

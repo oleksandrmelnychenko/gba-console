@@ -342,9 +342,17 @@ export function usePersistentSaleFileMutation(
     return execute(kind, frozenPayload, file, request, true)
   }, [execute])
 
+  // A refused save (nothing pending) leaves only its message; the caller clears it once the user acted on it.
+  const dismissError = useCallback(() => {
+    if (!pendingRef.current && !blockedRef.current) {
+      setPendingError(null)
+    }
+  }, [])
+
   return {
     blocked,
     canReconcile: reconciliation?.canResume ?? false,
+    dismissError,
     pendingError,
     pendingKind: reconciliation?.kind ?? null,
     reconcile,
