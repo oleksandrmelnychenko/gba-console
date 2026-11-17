@@ -9,6 +9,8 @@ export const DEFAULT_EXCEL_IMPORT_LAYOUT = {
 } as const
 
 export const EXCEL_FILE_REQUIRED_MESSAGE = 'Додайте файл.'
+/** Shown under the file field of the code/quantity imports (WH-26). */
+export const EXCEL_IMPORT_LAYOUT_HINT = 'Файл .xlsx: у колонці 1 — код товару, у колонці 2 — кількість, перший рядок — заголовки. Кінцевий рядок — номер останнього рядка з даними.'
 const INVALID_WORKBOOK_MESSAGE = 'Файл не є коректною книгою Excel (.xlsx).'
 
 /* Raw server keys and parser texts that may still reach the console. The

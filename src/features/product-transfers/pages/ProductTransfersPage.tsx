@@ -62,7 +62,7 @@ import type {
   ProductTransferStorage,
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
-import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, excelImportErrorText } from '../../../shared/excel/excelImportMessages'
+import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, EXCEL_IMPORT_LAYOUT_HINT, excelImportErrorText } from '../../../shared/excel/excelImportMessages'
 import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
 import { getTransferTimeSource } from '../productTransferTime'
 import './product-transfers-page.css'
@@ -860,6 +860,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               disabled={isCreating}
               label={t('Файл')}
               leftSection={<FileSpreadsheet size={16} />}
+              description={t(EXCEL_IMPORT_LAYOUT_HINT)}
               placeholder={t('Оберіть файл')}
               value={createForm.file}
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}

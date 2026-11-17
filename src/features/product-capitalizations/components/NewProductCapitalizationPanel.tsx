@@ -22,6 +22,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { excelImportErrorText } from '../../../shared/excel/excelImportMessages'
+import { hasNegativeValue, showSubmitNotice } from '../productCapitalizationSubmitChecks'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -829,7 +830,7 @@ function useNewProductCapitalizationModel(
 
   const submit = useCallback(async () => {
     if (!canCreate) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для створення оприходування') })
+      showSubmitNotice({ color: 'red', message: t('Недостатньо прав для створення оприходування') })
       return
     }
 
@@ -842,22 +843,27 @@ function useNewProductCapitalizationModel(
     const isCurrentSubmit = () => submitRequestRef.current === requestId
 
     if (items.length === 0) {
-      notifications.show({ color: 'yellow', message: t('Додайте хоча б один товар') })
+      showSubmitNotice({ color: 'yellow', message: t('Додайте хоча б один товар') })
+      return
+    }
+
+    if (items.some(hasNegativeValue)) {
+      showSubmitNotice({ color: 'yellow', message: t('Кількість, ціна і вага не можуть бути від’ємними') })
       return
     }
 
     if (items.some((item) => toPositiveInteger(item.Qty) <= 0)) {
-      notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Кількість')}` })
+      showSubmitNotice({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Кількість')}` })
       return
     }
 
     if (items.some((item) => item.__priceRequired && toFiniteNumber(item.UnitPrice) <= 0)) {
-      notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
+      showSubmitNotice({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
       return
     }
 
     if (items.some((item) => !isValidCapitalizationItemProduct(item))) {
-      notifications.show({ color: 'yellow', message: t('Є рядки без активного товару') })
+      showSubmitNotice({ color: 'yellow', message: t('Є рядки без активного товару') })
       return
     }
 
@@ -865,12 +871,12 @@ function useNewProductCapitalizationModel(
     const storage = storages.find((candidate) => candidate.NetUid === selectedStorageNetId)
 
     if (!storage) {
-      notifications.show({ color: 'yellow', message: t('Оберіть склад') })
+      showSubmitNotice({ color: 'yellow', message: t('Оберіть склад') })
       return
     }
 
     if (!organization) {
-      notifications.show({ color: 'yellow', message: t('Оберіть організацію') })
+      showSubmitNotice({ color: 'yellow', message: t('Оберіть організацію') })
       return
     }
 
@@ -902,7 +908,7 @@ function useNewProductCapitalizationModel(
       }
 
       if (isCurrentSubmit()) {
-        notifications.show({ color: 'green', message: t('Оприходування створено') })
+        showSubmitNotice({ color: 'green', message: t('Оприходування створено') })
         resetDraft()
         onCreated()
         onClose()
@@ -1067,8 +1073,8 @@ function useItemColumns(
         cell: (item) => (
           <NumberInput
             allowDecimal={false}
-            allowNegative={false}
             disabled={disabled}
+            error={typeof item.Qty === 'number' && item.Qty < 0}
             hideControls
             min={1}
             size="xs"
@@ -1086,9 +1092,9 @@ function useItemColumns(
         enableSorting: false,
         cell: (item) => (
           <NumberInput
-            allowNegative={false}
             decimalScale={2}
             disabled={disabled}
+            error={typeof item.UnitPrice === 'number' && item.UnitPrice < 0}
             hideControls
             min={0}
             size="xs"
@@ -1106,8 +1112,8 @@ function useItemColumns(
         enableSorting: false,
         cell: (item) => (
           <NumberInput
-            allowNegative={false}
             disabled={disabled}
+            error={typeof item.Weight === 'number' && item.Weight < 0}
             hideControls
             min={0}
             size="xs"

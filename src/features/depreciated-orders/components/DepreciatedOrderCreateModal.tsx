@@ -20,7 +20,7 @@ import { translate } from '../../../shared/i18n/translate'
 import type { DepreciatedOrderCreateFromFilePayload, DepreciatedOrderStorage } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
-import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE } from '../../../shared/excel/excelImportMessages'
+import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, EXCEL_IMPORT_LAYOUT_HINT } from '../../../shared/excel/excelImportMessages'
 
 export type DepreciatedOrderCreateModalProps = {
   canCreateManagement: boolean
@@ -173,6 +173,7 @@ export function DepreciatedOrderCreateModal({
                 accept=".xls,.xlsx"
                 clearable
                 disabled={isCreating}
+                description={t(EXCEL_IMPORT_LAYOUT_HINT)}
                 label={t('Завантажте документ')}
                 leftSection={<FileSpreadsheet size={16} />}
                 placeholder={t('Оберіть файл')}
