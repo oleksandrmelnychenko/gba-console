@@ -17,7 +17,17 @@ export function isUserReadableText(text: string): boolean {
   return cyrillic > 0 && cyrillic >= latin * 2
 }
 
+/**
+ * A backend AI service that is not configured on this server (e.g. "ai_service_not_configured") is a
+ * permanent condition: retrying cannot help, and the user should not see it as a transient outage.
+ */
+export function isServiceNotConfigured(error: unknown): boolean {
+  const status = error instanceof ApiError ? error.status : null
+  return (status === 503 || status === 501) && /not[_ ]configured/i.test(technicalErrorText(error))
+}
+
 function failureHint(error: unknown): string {
+  if (isServiceNotConfigured(error)) return translate('Сервіс не налаштовано на цьому сервері. Зверніться до адміністратора.')
   const status = error instanceof ApiError ? error.status : null
   if (status === 401) return translate('Сесію завершено. Увійдіть повторно.')
   if (status === 403) return translate('Недостатньо прав для цієї дії.')

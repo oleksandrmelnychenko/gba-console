@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { forecastTitle, monthsPhrase } from './forecastTitle'
 
 describe('forecast title', () => {
+  it('does not blame missing history when the forecast service itself is unavailable', () => {
+    expect(forecastTitle('Прогноз', null, 0, false, true)).toBe('Прогноз')
+  })
   it('states the server horizon, not the number of returned points', () => {
     expect(forecastTitle('Прогноз продажів по клієнту: А', 6, 4, false)).toBe('Прогноз продажів по клієнту: А на 6 місяців')
   })

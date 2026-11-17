@@ -1,4 +1,4 @@
-import { userErrorText } from '../../../shared/api/userErrorText'
+import { isServiceNotConfigured, userErrorText } from '../../../shared/api/userErrorText'
 import { OPENING_BALANCE_DATE_LABEL, OVERDUE_DEBT_RULE } from '../overdueDebtRule'
 import { describeOverdueWithOpeningBalance } from '../utils/debtBreakdown'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -59,6 +59,7 @@ export function HeadDashboardChartsPanel({
   useEffect(() => {
     let cancelled = false
     let requestInFlight = false
+    let notConfigured = false
 
     async function loadCharts() {
       if (requestInFlight) return
@@ -72,6 +73,8 @@ export function HeadDashboardChartsPanel({
           dispatch({ dashboard: result, type: 'loaded' })
         }
       } catch (loadError) {
+        notConfigured = isServiceNotConfigured(loadError)
+
         if (!cancelled) {
           dispatch({
             error: userErrorText(loadError, t('Не вдалося завантажити дашборд')),
@@ -85,7 +88,8 @@ export function HeadDashboardChartsPanel({
 
     void loadCharts()
     const interval = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void loadCharts()
+      // A service that is not configured stays so; polling it every minute only repeats the error.
+      if (document.visibilityState === 'visible' && !notConfigured) void loadCharts()
     }, 60_000)
 
     return () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from './apiClient'
-import { isUserReadableText, technicalErrorText, userErrorText } from './userErrorText'
+import { isServiceNotConfigured, isUserReadableText, technicalErrorText, userErrorText } from './userErrorText'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -24,6 +24,13 @@ describe('userErrorText', () => {
     expect(userErrorText(new ApiError('Forbidden', 403, null), 'Дані недоступні')).toBe('Дані недоступні. Недостатньо прав для цієї дії.')
     expect(userErrorText(new ApiError('Not Found', 404, null), 'Дані недоступні')).toBe('Дані недоступні. Дані не знайдено.')
     expect(userErrorText(null, 'Дані недоступні')).toBe('Дані недоступні. Спробуйте пізніше.')
+  })
+  it('tells a service that is not configured apart from a transient outage', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const error = new ApiError('ForecastApi: ai_service_not_configured (GbaNbaApi:Url is not configured)', 503, null)
+    expect(isServiceNotConfigured(error)).toBe(true)
+    expect(isServiceNotConfigured(new ApiError('Upstream timed out', 503, null))).toBe(false)
+    expect(userErrorText(error, 'Прогноз недоступний')).toBe('Прогноз недоступний. Сервіс не налаштовано на цьому сервері. Зверніться до адміністратора.')
   })
   it('treats a technical prefix as not user readable even with Ukrainian words', () => {
     expect(isUserReadableText('PricingApi: поле price обовʼязкове')).toBe(false)

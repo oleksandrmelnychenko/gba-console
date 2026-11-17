@@ -5,7 +5,14 @@ export function monthsPhrase(months: number): string {
   return `${months} ${word}`
 }
 
-export function forecastTitle(subject: string, horizonMonths: number | null | undefined, points: number, isLoading: boolean): string {
+export function forecastTitle(
+  subject: string,
+  horizonMonths: number | null | undefined,
+  points: number,
+  isLoading: boolean,
+  unavailable = false,
+): string {
+  if (unavailable) return subject
   if (!isLoading && points === 0) return `${subject} — недостатньо історії продажів для прогнозу`
   if (horizonMonths == null || !Number.isInteger(horizonMonths) || horizonMonths <= 0) return subject
   return `${subject} на ${monthsPhrase(horizonMonths)}`

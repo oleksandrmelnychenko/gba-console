@@ -1,4 +1,4 @@
-import { userErrorText } from '../../../shared/api/userErrorText'
+import { isServiceNotConfigured, userErrorText } from '../../../shared/api/userErrorText'
 import { Alert, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
@@ -70,6 +70,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
   useEffect(() => {
     let cancelled = false
     let requestInFlight = false
+    let notConfigured = false
 
     async function loadDashboard() {
       if (requestInFlight) return
@@ -83,6 +84,8 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
           dispatch({ dashboard: result, type: 'loaded' })
         }
       } catch (loadError) {
+        notConfigured = isServiceNotConfigured(loadError)
+
         if (!cancelled) {
           dispatch({
             error: userErrorText(loadError, t('Не вдалося завантажити дашборд')),
@@ -96,7 +99,8 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
 
     void loadDashboard()
     const interval = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void loadDashboard()
+      // A service that is not configured stays so; polling it every minute only repeats the error.
+      if (document.visibilityState === 'visible' && !notConfigured) void loadDashboard()
     }, 60_000)
 
     return () => {

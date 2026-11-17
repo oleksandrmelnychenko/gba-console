@@ -558,9 +558,9 @@ function PredictionCharts({
           data={byClient}
           coveragePct={clientMeta?.interval?.coverage_pct}
           isLoading={isLoadingClient}
-          emptyLabel={t(FORECAST_EMPTY_LABEL)}
+          emptyLabel={clientPredictionError ?? t(FORECAST_EMPTY_LABEL)}
           title={forecastTitle(t('Прогноз продажів по клієнту: {customer}', { customer: clientFullName }),
-            clientMeta?.horizon_months, byClient.length, isLoadingClient)}
+            clientMeta?.horizon_months, byClient.length, isLoadingClient, Boolean(clientPredictionError))}
         />
       )}
 
@@ -570,9 +570,9 @@ function PredictionCharts({
           data={byProduct}
           coveragePct={productMeta?.interval?.coverage_pct}
           isLoading={isLoadingProduct}
-          emptyLabel={t(FORECAST_EMPTY_LABEL)}
+          emptyLabel={productPredictionError ?? t(FORECAST_EMPTY_LABEL)}
           title={forecastTitle(t('Прогноз продажів по продукту: {product}', { product: productVendorCode }),
-            productMeta?.horizon_months, byProduct.length, isLoadingProduct)}
+            productMeta?.horizon_months, byProduct.length, isLoadingProduct, Boolean(productPredictionError))}
         />
       )}
 
@@ -581,7 +581,7 @@ function PredictionCharts({
         <SalesPredictionChart
           color="teal.6"
           data={combined}
-          emptyLabel={t(FORECAST_EMPTY_LABEL)}
+          emptyLabel={combinedPredictionError ?? t(FORECAST_EMPTY_LABEL)}
           coveragePct={combinedMeta?.interval?.coverage_pct}
           isLoading={isLoadingCombined}
           title={
@@ -590,7 +590,7 @@ function PredictionCharts({
               : forecastTitle(t('Прогноз продажів по клієнту: {customer} та по продукту: {product}', {
                   customer: clientFullName,
                   product: productVendorCode,
-                }), combinedMeta?.horizon_months, combined.length, isLoadingCombined)
+                }), combinedMeta?.horizon_months, combined.length, isLoadingCombined, Boolean(combinedPredictionError))
           }
         />
       )}
