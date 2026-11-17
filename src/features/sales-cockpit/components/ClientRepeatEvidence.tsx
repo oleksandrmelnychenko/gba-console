@@ -15,7 +15,7 @@ export function ClientRepeatEvidence({ client, compact = false }: { client: Cock
     ? `${t('Наступний контакт заплановано')}: ${contactTime(cooldown.next_contact_at)}`
     : t('Контакт у поточному циклі вже записано. Повторну пораду призупинено.')
 
-  if (compact) return <Stack gap={3}>
+  if (compact) return <Stack gap={4}>
     <Text size="xs">{evidence.reason}</Text>
     {!evidence.history_complete && <Text size="xs" c="dimmed">{t('Історія неповна')}</Text>}
     {cooldown.active && <Text size="xs" c="orange">{cooldownLabel}</Text>}

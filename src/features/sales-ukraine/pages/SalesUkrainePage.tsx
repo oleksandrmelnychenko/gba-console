@@ -2321,7 +2321,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
       style={{
         alignItems: 'center',
         display: 'inline-flex',
-        gap: 6,
+        gap: 8,
         gridColumn: 3,
         justifyContent: 'flex-end',
         minWidth: 0,

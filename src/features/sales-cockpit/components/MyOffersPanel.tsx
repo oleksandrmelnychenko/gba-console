@@ -278,7 +278,7 @@ export function MyOffersPanel() {
   return (
     <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
       <div className="cockpit-offers-header">
-        <Group gap={6}>
+        <Group gap={8}>
           <Text className="app-section-title" fw={600} size="sm">{t('Мої пропозиції')}</Text>
           {!isLoading && !error && <TableChip value={visibleOffers.length} title={t('Всього пропозицій')} />}
         </Group>

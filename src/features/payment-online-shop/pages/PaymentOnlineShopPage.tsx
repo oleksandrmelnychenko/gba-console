@@ -756,7 +756,7 @@ function PaymentOnlineShopPageContent() {
   const model = usePaymentOnlineShopModel()
 
   return (
-    <Stack className="payment-online-shop-page" gap={6}>
+    <Stack className="payment-online-shop-page" gap={8}>
       <PaymentShopTableCard model={model} />
       {model.incomeOrderParams && (
         <IncomeCashflowShopDrawer
@@ -801,7 +801,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
   return (
     <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar payment-online-shop-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-online-shop-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields payment-online-shop-filter-row">
           <ToolbarDateRangeFilter from={filterDraft.saleDateFrom} to={filterDraft.saleDateTo} onChange={(range) => changeSaleDate(range)} />
           <TextInput
             size="sm"

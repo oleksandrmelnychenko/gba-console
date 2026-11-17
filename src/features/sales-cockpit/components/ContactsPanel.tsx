@@ -52,7 +52,7 @@ export function ContactsPanel({ onOpen, revision }: { onOpen: (client: ContactCl
   return <Stack gap={8} className="cockpit-workday-queue cockpit-contacts-panel">
     <Group justify="space-between" gap={8}>
       <Text className="app-section-title" fw={600}>{t('Контакти та домовленості')}</Text>
-      {state.data && !pending && <Group gap={6}>
+      {state.data && !pending && <Group gap={8}>
         <Text className="cockpit-workday-asof">{t('Станом на')}: {formatBusinessDate(state.data.as_of) || state.data.as_of}</Text>
         <TableChip value={`${t('Знайдено')}: ${state.data.total}`} />
       </Group>}
@@ -76,7 +76,7 @@ export function ContactsPanel({ onOpen, revision }: { onOpen: (client: ContactCl
         <Text size="xs" c="dimmed">{t('Записати контакт можна у вкладці «Мої клієнти».')}</Text>
       </div>}
       {state.data.contacts.map((contact) => <Card key={contact.client_id} className="cockpit-workday-client" withBorder padding="sm">
-        <Stack gap={6}>
+        <Stack gap={8}>
           <Group justify="space-between" gap={8}><Text fw={600} size="sm">{contact.client_name}</Text><TableChip value={t(CONTACT_RESULTS[contact.result])} /></Group>
           <Text size="sm">{contact.next_contact_at ? `${formatContactDate(contact.next_contact_at)} (${t('Київ')}) — ${contact.next_action}` : t('Без наступної домовленості')}</Text>
           {contact.note && <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{contact.note}</Text>}

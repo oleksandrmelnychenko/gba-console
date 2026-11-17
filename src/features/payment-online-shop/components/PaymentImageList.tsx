@@ -38,10 +38,10 @@ export function PaymentImageList({ canEdit, isEditing, items, onSelect }: Paymen
             <Image
               alt={t('Підтвердження оплати')}
               fit="cover"
-              h={42}
+              h={40}
               radius="sm"
               src={imageUrl}
-              w={54}
+              w={52}
             />
           </Anchor>
         ) : (

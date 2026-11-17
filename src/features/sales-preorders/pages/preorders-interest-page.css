@@ -24,7 +24,7 @@
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .preorders-interest-command-actions,
@@ -38,7 +38,7 @@
 }
 
 .preorders-interest-table-toolbar-slot .data-table-toolbar {
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-height: 0;
 }

@@ -81,7 +81,7 @@
   gap: 8px 20px;
   justify-content: space-between;
   min-height: 64px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sales-chart-panel__heading h2,
@@ -100,7 +100,7 @@
 .sales-chart-metric {
   display: grid;
   align-content: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .sales-chart-metric dt {
@@ -155,7 +155,7 @@
 .sales-chart-table-heading {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sales-chart-table-wrap {

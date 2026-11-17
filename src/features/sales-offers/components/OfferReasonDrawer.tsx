@@ -135,7 +135,7 @@ function OfferReasonForm({
       <Stack
         component="form"
         className="app-compact-form"
-        gap={10}
+        gap={8}
         id={OFFER_REASON_FORM_ID}
         onSubmit={(event) => {
           event.preventDefault()

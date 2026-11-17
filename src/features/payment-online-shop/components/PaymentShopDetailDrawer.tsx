@@ -144,9 +144,9 @@ export function PaymentShopDetailDrawer({
           title={sale?.SaleNumber?.Value || '—'}
           meta={<>{date ? <DocumentDetailChip tone="info">{formatDateTime(date)}</DocumentDetailChip> : null}{item?.RetailClient?.Name ? <DocumentDetailChip>{item.RetailClient.Name}</DocumentDetailChip> : null}</>}
           metrics={<>
-            <Stack gap={4}><Text size="xs" c="gray.9">{t('Підтверджено менеджером')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.Amount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
-            <Stack gap={4}><Text size="xs" c="gray.9">{t('Проведено бухгалтерією')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.PaidAmount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
-            <Stack gap={4}><Text size="xs" c="gray.9">{t('Залишок до оплати')}</Text><Group gap={6}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.AmountToPay)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Підтверджено менеджером')}</Text><Group gap={8}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.Amount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Проведено бухгалтерією')}</Text><Group gap={8}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.PaidAmount)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
+            <Stack gap={4}><Text size="xs" c="gray.9">{t('Залишок до оплати')}</Text><Group gap={8}><Text className="app-money">{formatAmount(item?.RetailPaymentStatus?.AmountToPay)}</Text><TableChip tone="source" value="UAH" /></Group></Stack>
           </>}
         />
       }>
@@ -167,7 +167,7 @@ export function PaymentShopDetailDrawer({
         </DocumentDetailSection>
         {isEditing && canCreatePayment && (
           <DocumentDetailSection title={t('Підтвердження оплати менеджером')} stacked>
-            <Stack className="app-compact-form" gap={10}>
+            <Stack className="app-compact-form" gap={8}>
               {createNotice && (
                 <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                   {createNotice}
@@ -186,7 +186,7 @@ export function PaymentShopDetailDrawer({
                 </Text>
               )}
 
-              <Group align="end" gap={10}>
+              <Group align="end" gap={8}>
               <NumberInput
                 w={180}
                 maw="100%"

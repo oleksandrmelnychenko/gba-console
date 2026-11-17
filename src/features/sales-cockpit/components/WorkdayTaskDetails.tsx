@@ -57,7 +57,7 @@ function TaskHistory({ task }: { task: CockpitTask }) {
     {typeof task.resolution_reason === 'string' && task.resolution_reason && <Text size="sm">{task.resolution_reason}</Text>}
     <TaskOutcome value={task.outcome} />
     <TaskSourceEvidence value={task.source_evidence} />
-    {(task.notes?.length || history.length) ? <details><summary>{t('Нотатки та зміни статусу')}</summary><Stack gap={6} mt="xs">
+    {(task.notes?.length || history.length) ? <details><summary>{t('Нотатки та зміни статусу')}</summary><Stack gap={8} mt="xs">
       {keyedRecords(task.notes ?? []).map(({ record: note, key }) => <Text key={key} size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{note.author_name || t('Автор')} · {note.created_at ? formatContactDate(note.created_at) : '—'}: {note.text}</Text>)}
       {keyedRecords(history).map(({ record: entry, key }) => <TaskStatusEntry key={key} entry={entry} />)}
     </Stack></details> : null}

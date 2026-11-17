@@ -150,17 +150,17 @@ function HeadDashboardPageContent() {
   )
 
   return (
-    <Stack className="cockpit-page cockpit-head-page" gap={6}>
+    <Stack className="cockpit-page cockpit-head-page" gap={8}>
       <CockpitSourceStatus head />
       <Card className="app-filter-card cockpit-toolbar-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar cockpit-command-bar cockpit-head-command-bar">
-          <Stack className="cockpit-head-title" gap={3}>
-            <Group gap={6} wrap="nowrap">
+          <Stack className="cockpit-head-title" gap={4}>
+            <Group gap={8} wrap="nowrap">
               <Text className="app-section-title" component="h1" fw={600} size="sm">{t('Дашборд відділу продажів')}</Text>
             </Group>
           </Stack>
 
-          <Group className="app-filter-actions cockpit-command-actions" gap={10} justify="flex-end">
+          <Group className="app-filter-actions cockpit-command-actions" gap={8} justify="flex-end">
             <TableChip tone={error ? 'warning' : 'neutral'} value={t(error ? 'Не вдалося оновити' : isLoading ? 'Оновлення…' : team.as_of ? 'Оновлюється щохвилини' : 'Немає даних')} />
             <Button color="brand" variant="filled" size="sm"
               className="cockpit-toolbar-button app-filter-primary-action"

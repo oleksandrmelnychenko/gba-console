@@ -151,7 +151,7 @@ export function NewHeadTaskModal({
         }
       }}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <Select
           classNames={{ input: 'cockpit-mono-input', option: 'cockpit-mono-input' }}
           required

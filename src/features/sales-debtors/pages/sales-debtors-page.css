@@ -56,7 +56,7 @@
 .sales-debtors-command-actions {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -91,7 +91,7 @@
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  padding: 3px 7px;
+  padding: 4px 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -113,7 +113,7 @@
 
 .sales-debtors-amount-cell > .app-table-chip {
   justify-self: end;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .sales-debtors-amount-cell.is-danger strong {
@@ -131,7 +131,7 @@
 .sales-debtors-currency-line {
   align-items: center;
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
 }
 
@@ -167,8 +167,8 @@
   display: inline-flex;
   font-size: 10.5px;
   justify-content: center;
-  min-width: 34px;
-  padding: 3px 7px;
+  min-width: 32px;
+  padding: 4px 8px;
 }
 
 
@@ -178,7 +178,7 @@
   flex: 0 0 auto;
   flex-direction: column;
   gap: 2px;
-  padding: 0 12px 6px;
+  padding: 0 12px 8px;
   text-align: right;
 }
 
@@ -193,11 +193,11 @@
   border-top: 1px solid var(--mantine-color-gray-2);
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
-  min-height: 30px;
+  min-height: 28px;
   flex-wrap: wrap;
-  padding: 6px 12px;
+  padding: 8px 12px;
 }
 
 .sales-debtors-summary .mantine-Badge-root {
@@ -207,7 +207,7 @@
 .sales-debtors-summary__amount {
   align-items: center;
   display: inline-flex;
-  gap: 7px;
+  gap: 8px;
   color: var(--mantine-color-gray-7);
   font-size: 12px;
 }
@@ -223,7 +223,7 @@
 .sales-debtors-summary__currency {
   align-items: center;
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 @container registry (max-width: 600px) {
@@ -246,21 +246,21 @@
 .sales-debtors-filter-dropdown {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: var(--app-radius-md);
   max-width: calc(100vw - 24px);
   min-width: var(--popover-anchor-width);
   padding: 4px;
 }
 
 .sales-debtors-filter-dropdown .sales-debtors-filter-option {
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
-  min-height: 30px;
-  padding: 7px 8px;
+  min-height: 28px;
+  padding: 8px 8px;
   overflow-wrap: anywhere;
 }
 
@@ -292,11 +292,11 @@
 
 .sales-debtors-page .sales-debtors-command-bar .sales-debtors-command-actions {
   flex: 0 0 auto;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sales-debtors-page .sales-debtors-command-bar :is(.sales-debtors-toolbar-slot, .data-table-toolbar, .data-table-toolbar-left) {
-  gap: 6px;
+  gap: 8px;
 }
 
 @container registry (max-width: 1550px) {

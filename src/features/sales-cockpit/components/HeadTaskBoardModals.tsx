@@ -48,7 +48,7 @@ export function BoardNoteModal({
         }
       }}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         {(task?.Notes.length ?? 0) > 0 && (
@@ -133,7 +133,7 @@ export function BoardCancelModal({
         }
       }}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <Text size="sm">{taskCaption(task, t('Завдання'))}</Text>
 
         <Textarea

@@ -203,7 +203,7 @@ export function EcommerceImageSearchPanel({
   )
 
   return (
-    <Stack className="ecommerce-image-search-panel" gap={6}>
+    <Stack className="ecommerce-image-search-panel" gap={8}>
       <Card className="app-filter-card image-search-audit-toolbar" withBorder radius="md" padding={0}>
         <div className="app-filter-bar">
           <div className="app-filter-fields image-search-audit-filter-row">

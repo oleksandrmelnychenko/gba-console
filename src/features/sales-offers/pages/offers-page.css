@@ -24,7 +24,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-height: 36px;
   min-width: 0;
@@ -70,14 +70,14 @@
 
 .offers-skeleton {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .offers-skeleton-card {
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
 }
 
@@ -135,7 +135,7 @@
 .offer-card-actions {
   align-items: center;
   display: flex;
-  gap: 4px 6px;
+  gap: 4px 8px;
 }
 
 .offer-card-meta {
@@ -149,7 +149,7 @@
 .offer-card-state { flex-wrap: wrap; justify-content: flex-end; max-width: 360px; }
 .offer-card-actions { gap: 4px; }
 .offer-card-actions:empty { display: none; }
-.offer-card-lines { border-top: 1px solid var(--mantine-color-gray-2); margin-top: 10px; overflow-x: auto; }
+.offer-card-lines { border-top: 1px solid var(--mantine-color-gray-2); margin-top: 8px; overflow-x: auto; }
 .offer-line-meta { color: var(--mantine-color-gray-7); font: 500 11px / 18px var(--font-mono); }
 
 @media (prefers-reduced-motion: reduce) {

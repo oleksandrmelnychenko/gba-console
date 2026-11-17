@@ -602,7 +602,7 @@ export function SalesReturnClientPage() {
           </Group>
         }
       >
-        <Stack className="sales-return-client-drawer-content" gap={10}>
+        <Stack className="sales-return-client-drawer-content" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {error}
@@ -615,11 +615,11 @@ export function SalesReturnClientPage() {
           ) : null}
 
           <form className="app-compact-form" id="sales-return-client-form" onSubmit={handleSubmit}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Card className="app-section-card sales-return-client-section" withBorder radius="md" padding="md">
                 <Stack gap="sm">
                   <Text className="app-section-title">{t('Параметри повернення')}</Text>
-                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing={10}>
+                  <SimpleGrid className="sales-return-client-form-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing={8}>
                     <Select
                       clearable
                       data={organizations.map((organization) => ({

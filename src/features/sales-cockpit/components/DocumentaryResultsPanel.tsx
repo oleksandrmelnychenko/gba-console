@@ -106,7 +106,7 @@ function AttributionModal({ task, canLink, onClose }: { task: CockpitTask; canLi
     finally { setPending(null) }
   }
   return <AppModal opened onClose={onClose} title={t('Документи результату')} size="xl" closeOnEscape={!pending} closeOnClickOutside={!pending} withCloseButton={!pending}>
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       <DocumentaryResultsPanel taskKey={task.task_key} revision={revision} paused={!!pending} />
       {canLink && <>
         <Group justify="space-between"><Text className="app-section-title" size="sm" fw={600}>{t('Продажі та контакти')}</Text><Button leftSection={<RefreshCw size={14} />} size="xs" variant="default" onClick={refresh} disabled={!!pending}>{t('Оновити продажі та контакти')}</Button></Group>

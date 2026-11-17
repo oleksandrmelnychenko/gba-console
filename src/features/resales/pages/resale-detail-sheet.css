@@ -6,29 +6,29 @@
 }
 .resale-detail-sheet .document-detail-drawer,
 .resale-detail-sheet .document-detail-tree {
-  gap: 10px;
+  gap: 8px;
   padding: 0;
   background: transparent;
 }
 .resale-detail-sheet .document-detail-top {
-  padding: 10px;
+  padding: 8px;
   background: var(--mantine-color-body);
 }
 .resale-detail-sheet .document-detail-summary {
   grid-template-columns: minmax(220px, 1fr) auto;
   padding: 0;
-  gap: 10px;
+  gap: 8px;
 }
 .resale-detail-sheet .document-detail-summary__metrics {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  padding-left: 10px;
+  padding-left: 8px;
 }
 .resale-detail-sheet .document-detail-metric {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -38,17 +38,17 @@
 .resale-detail-sheet .document-detail-metric strong {
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   font-size: 16px;
 }
 .resale-detail-sheet .resale-detail-participants {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 .resale-detail-sheet .document-detail-section {
   min-width: 0;
-  padding: 10px;
+  padding: 8px;
   background: var(--mantine-color-body);
 }
 .resale-detail-sheet .document-detail-section__head {
@@ -90,14 +90,14 @@
 .resale-detail-sheet .resale-detail-fact__value.is-mono { font-family: var(--font-mono); }
 .resale-detail-sheet .resale-detail-fact .app-table-chip { max-width: 100%; height: auto; white-space: normal; }
 .resale-detail-sheet .resale-detail-fact .app-table-chip-label { white-space: normal; }
-.resale-detail-sheet .resale-detail-document-actions { padding-top: 0; gap: 6px; }
+.resale-detail-sheet .resale-detail-document-actions { padding-top: 0; gap: 8px; }
 .resale-detail-sheet .resale-detail-table-section {
   flex: none;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-body);
 }
-.resale-detail-sheet .resale-detail-table-heading { padding: 8px 10px; }
+.resale-detail-sheet .resale-detail-table-heading { padding: 8px 8px; }
 .resale-detail-sheet .resale-detail-command-bar {
   grid-template-columns: minmax(180px, 1fr) minmax(130px, .55fr) minmax(150px, .7fr) auto;
   gap: 8px;
@@ -107,7 +107,7 @@
 .resale-detail-sheet .resale-detail-table-body .data-table-scroll { max-height: 55vh; }
 .app-drawer.app-form-sheet.resale-detail-sheet .mantine-Input-input { min-height: 32px; height: 32px; font-family: var(--font-mono); font-size: 12px; }
 .resale-detail-sheet .mantine-InputWrapper-label { font-size: 12px; font-weight: 600; }
-.app-drawer.app-form-sheet.resale-detail-sheet .mantine-Button-root { min-height: 32px; height: 32px; font-size: 12px; padding-inline: 10px; }
+.app-drawer.app-form-sheet.resale-detail-sheet .mantine-Button-root { min-height: 32px; height: 32px; font-size: 12px; padding-inline: 8px; }
 .resale-detail-sheet .mantine-Anchor-root { color: var(--mantine-color-text); text-decoration: none; }
 .resale-detail-sheet .mantine-Anchor-root:hover { text-decoration: underline; }
 .resale-detail-sheet .resale-detail-unit { color: var(--mantine-color-gray-6); font-size: 11px; font-weight: 400; }
@@ -129,8 +129,8 @@
 
 /* The nested edit sheet is portalled, so it needs its own compact form scope. */
 .resale-edit-sheet .resale-edit-drawer__section {
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 12px;
   background: var(--mantine-color-body);
 }
 .resale-edit-sheet .resale-edit-drawer__section .app-section-title {
@@ -159,7 +159,7 @@
 .app-drawer.app-form-sheet.resale-edit-sheet textarea.mantine-Input-input {
   height: auto;
   min-height: 72px;
-  padding: 7px 10px;
+  padding: 8px 8px;
 }
 .app-drawer.app-form-sheet.resale-edit-sheet .mantine-Input-input:disabled {
   color: var(--mantine-color-gray-7);
@@ -167,7 +167,7 @@
 }
 .resale-edit-sheet .resale-edit-drawer__section--calculation {
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .resale-edit-sheet .resale-edit-drawer__hint {
   margin-top: 4px;
@@ -178,7 +178,7 @@
 .app-drawer.app-form-sheet.resale-edit-sheet .mantine-Button-root {
   min-height: 32px;
   height: 32px;
-  padding-inline: 10px;
+  padding-inline: 8px;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
@@ -187,7 +187,7 @@
   gap: 8px;
   align-items: center;
 }
-.resale-edit-sheet .resale-edit-drawer__footer > .mantine-Group-root { gap: 6px; }
+.resale-edit-sheet .resale-edit-drawer__footer > .mantine-Group-root { gap: 8px; }
 @media (max-width: 600px) {
   .resale-edit-sheet .resale-edit-drawer__section--calculation { grid-template-columns: minmax(0, 1fr); }
   .resale-edit-sheet .resale-edit-drawer__section--calculation > .mantine-Button-root { justify-self: start; }
@@ -202,8 +202,8 @@
 .resale-confirm-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 24px;
-  padding: 10px;
+  gap: 8px 24px;
+  padding: 8px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: var(--mantine-color-gray-0);

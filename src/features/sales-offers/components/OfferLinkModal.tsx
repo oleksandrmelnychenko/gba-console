@@ -35,7 +35,7 @@ export function OfferLinkModal({
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Пропозицію створено')}</span>}
       onClose={onClose}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <Stack gap={4}>
           {offer?.Number && (
             <Text size="sm">

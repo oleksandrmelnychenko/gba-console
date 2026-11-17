@@ -8,7 +8,7 @@
   width: 14px;
   height: 16px;
   flex-basis: 14px;
-  margin-inline-end: 6px;
+  margin-inline-end: 8px;
 }
 .resale-ttn-validation .mantine-Alert-icon svg { width: 14px; height: 14px; }
 .resale-ttn-validation .mantine-Alert-message { font: 400 12px/16px var(--font-sans); }
@@ -18,12 +18,12 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   box-shadow: none;
-  padding: 10px;
+  padding: 8px;
 }
 .resale-ttn-hero {
   display: grid;
   align-items: end;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) minmax(240px, .95fr);
 }
 .resale-ttn-document,
@@ -36,7 +36,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font: 500 13px/1.4 var(--font-mono);
   overflow-wrap: anywhere;
 }
@@ -45,12 +45,12 @@
 .resale-ttn-dimensions { align-items: end; }
 .resale-ttn-vehicles {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr);
 }
 .app-drawer.app-form-sheet.resale-ttn-sheet .mantine-InputWrapper-label {
   font: 500 12px/1.4 var(--font-sans);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
 .app-drawer.app-form-sheet.resale-ttn-sheet .mantine-Input-input {
   min-height: 32px;
