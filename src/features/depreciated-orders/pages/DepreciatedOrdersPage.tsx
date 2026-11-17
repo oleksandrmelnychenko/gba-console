@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { excelImportErrorText } from '../../../shared/excel/excelImportMessages'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -92,6 +93,9 @@ function useDepreciatedOrdersPageModel() {
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [exceptionMessages, setExceptionMessages] = useValueState<string[]>([])
   const [isCreating, setCreating, tryStartCreating] = useBusyState()
+  /* Set after a successful import until the dialog is opened again: the closing
+     dialog must not post the same file a second time (FormData is not deduped). */
+  const createdRef = useRef(false)
   const [error, setError] = useValueState<string | null>(null)
   const [storageError, setStorageError] = useValueState<string | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -265,6 +269,7 @@ function useDepreciatedOrdersPageModel() {
       return
     }
 
+    createdRef.current = false
     setCreateError(null)
     setCreateModalOpen(true)
   }
@@ -287,6 +292,10 @@ function useDepreciatedOrdersPageModel() {
       return
     }
 
+    if (createdRef.current) {
+      return
+    }
+
     setCreateError(null)
     if (!tryStartCreating()) {
       return
@@ -294,6 +303,7 @@ function useDepreciatedOrdersPageModel() {
 
     try {
       const result = await createDepreciatedOrderFromFile(payload)
+      createdRef.current = true
 
       setCreateModalOpen(false)
       reload()
@@ -307,9 +317,7 @@ function useDepreciatedOrdersPageModel() {
         message: result.exceptions.length > 0 ? t('Акт списання створено з попередженнями') : t('Акт списання створено'),
       })
     } catch (createErrorValue) {
-      setCreateError(
-        createErrorValue instanceof Error ? createErrorValue.message : t('Не вдалося створити акт списання з файлу'),
-      )
+      setCreateError(excelImportErrorText(createErrorValue, t('Не вдалося створити акт списання з файлу')))
     } finally {
       setCreating(false)
     }

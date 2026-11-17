@@ -20,6 +20,7 @@ import { translate } from '../../../shared/i18n/translate'
 import type { DepreciatedOrderCreateFromFilePayload, DepreciatedOrderStorage } from '../types'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE } from '../../../shared/excel/excelImportMessages'
 
 export type DepreciatedOrderCreateModalProps = {
   canCreateManagement: boolean
@@ -52,10 +53,10 @@ function createInitialForm(): CreateFormState {
     file: null,
     fromDate: toDateTimeLocal(new Date()),
     isManagement: false,
-    qtyColumnNumber: '',
-    startRow: '',
+    qtyColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.qtyColumn,
+    startRow: DEFAULT_EXCEL_IMPORT_LAYOUT.startRow,
     storageNetUid: '',
-    vendorCodeColumnNumber: '',
+    vendorCodeColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.codeColumn,
   }
 }
 
@@ -226,6 +227,7 @@ export function DepreciatedOrderCreateModal({
             autosize
             disabled={isCreating}
             label={t('Коментар')}
+            maxLength={DEPRECIATED_ORDER_COMMENT_MAX_LENGTH}
             minRows={2}
             value={form.comment}
             onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
@@ -252,9 +254,16 @@ export function DepreciatedOrderCreateModal({
   )
 }
 
+/** DepreciatedOrder.Comment column size. */
+const DEPRECIATED_ORDER_COMMENT_MAX_LENGTH = 500
+
 function validateCreateForm(form: CreateFormState, storage?: DepreciatedOrderStorage): string | null {
   if (!storage) {
     return translate('Оберіть склад')
+  }
+
+  if (!form.file) {
+    return translate(EXCEL_FILE_REQUIRED_MESSAGE)
   }
 
   if (
@@ -264,10 +273,6 @@ function validateCreateForm(form: CreateFormState, storage?: DepreciatedOrderSto
     || !isPositiveNumber(form.vendorCodeColumnNumber)
   ) {
     return translate('Невірно заповнено значення колонки')
-  }
-
-  if (!form.file) {
-    return translate('Завантажте документ')
   }
 
   if (Number(form.vendorCodeColumnNumber) === Number(form.qtyColumnNumber)) {

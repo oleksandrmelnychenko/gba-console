@@ -22,6 +22,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
+import { formatPlacementAddress } from '../../../shared/placements/placementAddress'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type {
   DepreciatedOrder,
@@ -256,9 +257,10 @@ function formatPlacements(locations: DepreciatedOrderLocation[]): string {
         return values
       }
 
-      const address = [placement.StorageNumber, placement.RowNumber, placement.CellNumber].filter(Boolean).join('-')
+      const address = formatPlacementAddress(placement)
       const qty = placement.Qty !== undefined ? `${translate('К-сть')} ${placement.Qty}` : ''
-      const formatted = [`${translate('Позиція')} ${address}`.trim(), qty].filter(Boolean).join('. ')
+      const position = address === translate('Без розміщення') ? address : `${translate('Позиція')} ${address}`.trim()
+      const formatted = [position, qty].filter(Boolean).join('. ')
 
       if (formatted) {
         values.push(formatted)
