@@ -31,6 +31,9 @@ type RefreshPermissionsOptions = {
   clearOnError?: boolean
 }
 
+const PERMISSIONS_REFRESH_INTERVAL_MS = 30_000
+const PERMISSIONS_REFRESH_MIN_GAP_MS = 5_000
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -171,24 +174,41 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [])
 
   useEffect(() => {
+    // A role edited by an administrator applies to an open tab without a reload: the keys are
+    // re-read on focus, when the tab becomes visible, after a 403 and every half a minute.
+    let lastRefreshAt = 0
     const refreshCurrentPermissions = () => {
-      if (readSession()?.csrfToken) {
-        void refreshPermissions()
+      const now = Date.now()
+
+      if (now - lastRefreshAt < PERMISSIONS_REFRESH_MIN_GAP_MS || !readSession()?.csrfToken) {
+        return
+      }
+
+      lastRefreshAt = now
+      void refreshPermissions()
+    }
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refreshCurrentPermissions()
       }
     }
+    const intervalId = window.setInterval(refreshWhenVisible, PERMISSIONS_REFRESH_INTERVAL_MS)
 
     window.addEventListener(
       AUTH_PERMISSIONS_CHANGED_EVENT,
       refreshCurrentPermissions,
     )
     window.addEventListener('focus', refreshCurrentPermissions)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
 
     return () => {
+      window.clearInterval(intervalId)
       window.removeEventListener(
         AUTH_PERMISSIONS_CHANGED_EVENT,
         refreshCurrentPermissions,
       )
       window.removeEventListener('focus', refreshCurrentPermissions)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
   }, [refreshPermissions])
 

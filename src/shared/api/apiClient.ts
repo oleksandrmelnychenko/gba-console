@@ -1,4 +1,5 @@
 import { getTimeZoneHeader, toQueryString, type QueryParams } from '../date/dateTime'
+import { notifyAuthPermissionsChanged } from '../auth/permissionEvents'
 import { clearSession, notifyUnauthorized, readSession, saveSession } from '../auth/session'
 import type { AuthSession } from '../auth/types'
 import { API_BASE_URL, API_LANGUAGE } from '../config/env'
@@ -280,6 +281,11 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
     if (response.status === 401 && auth) {
       clearSession()
       notifyUnauthorized()
+    }
+
+    // A 403 may mean the role changed in the meantime: let the session re-read its keys.
+    if (response.status === 403 && auth && !path.startsWith('/permissions/me')) {
+      notifyAuthPermissionsChanged()
     }
 
     throw new ApiError(
