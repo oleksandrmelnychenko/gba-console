@@ -1,3 +1,5 @@
+import { getOpeningAmountError } from '../openingAmount'
+import { formatExchangeRate, getExchangeSystemRate, isExchangeRateFarFromSystem, type SystemExchangeRate } from '../exchangeRateGuard'
 import { toBankOptions } from '../paymentAccountBankOptions'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -51,6 +53,7 @@ import {
   cancelPaymentAccountExchange,
   cancelPaymentAccountTransfer,
   calculatePaymentAccountExchange,
+  getPaymentAccountSystemExchangeRates,
   createPaymentAccountExchange,
   createPaymentAccount,
   createPaymentAccountTransfer,
@@ -1672,6 +1675,13 @@ export function PaymentAccountExchangeModal({
   const exchangeCurrencyCode = selectedFromRegister?.Currency?.Code || ''
   const exchangeRateCurrencyCode = getExchangeRateCurrencyCode(selectedFromRegister, selectedToRegister)
   const exchangeTraderOptions = toCurrencyTraderSelectOptions(currencyTraders, exchangeRateCurrencyCode)
+  const [systemRates, setSystemRates] = useValueState<SystemExchangeRate[]>([])
+  const [confirmedFarRate, setConfirmedFarRate] = useValueState<number | null>(null)
+  const systemRate = getExchangeSystemRate(
+    systemRates,
+    selectedFromRegister?.Currency?.Code || '',
+    selectedToRegister?.Currency?.Code || '',
+  )
   const [convertedAmount, setConvertedAmount] = useValueState<number | null>(null)
   const convertedAmountLabel = isCalculatingExchange
     ? t('Рахується')
@@ -1718,6 +1728,38 @@ export function PaymentAccountExchangeModal({
       isActive = false
     }
   }, [account, canCreate, opened, setBankAccounts, setCurrencyTraders, setDraft, setError, setLoading, setMovements, t])
+
+  useEffect(() => {
+    if (!opened || !canCreate) {
+      return
+    }
+
+    let isActive = true
+
+    // Optional: without system rates the user still types the rate, just without a default and check.
+    void getPaymentAccountSystemExchangeRates()
+      .then((rates) => {
+        if (isActive) {
+          setSystemRates(rates)
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      isActive = false
+    }
+  }, [canCreate, opened, setSystemRates])
+
+  useEffect(() => {
+    if (!systemRate) {
+      return
+    }
+
+    // Offer the system rate when nothing was typed or picked from a trader yet.
+    setDraft((current) => current.exchangeRate.trim() || current.currencyTraderNetId
+      ? current
+      : { ...current, exchangeRate: formatExchangeRate(systemRate) })
+  }, [setDraft, systemRate])
 
   useEffect(() => {
     if (!opened || !canCreate) {
@@ -1837,6 +1879,15 @@ export function PaymentAccountExchangeModal({
       return
     }
 
+    if (systemRate && isExchangeRateFarFromSystem(exchangeRate, systemRate) && confirmedFarRate !== exchangeRate) {
+      // A rate typed with a wrong order of magnitude turned 10 EUR into 999 999 999 990 UAH.
+      setConfirmedFarRate(exchangeRate)
+      setError(t('Курс {rate} відрізняється від системного {systemRate} більш ніж на 20%. Перевірте його і натисніть «Зберегти» ще раз, щоб підтвердити.')
+        .replace('{rate}', formatExchangeRate(exchangeRate))
+        .replace('{systemRate}', formatExchangeRate(systemRate)))
+      return
+    }
+
     if (!tryStartSubmitting()) {
       return
     }
@@ -1878,13 +1929,15 @@ export function PaymentAccountExchangeModal({
           <Card className="app-section-card" withBorder padding={12} radius="md">
             <div className="payment-account-transaction-row">
               <Select
+                // Re-picking the chosen option must not clear a required field.
+                allowDeselect={false}
                 data={toCurrencyRegisterSelectOptions(currencyRegisters)}
                 disabled={isLoading || isSubmitting}
                 label={t('З валюти')}
                 required
                 searchable
                 value={draft.fromPaymentCurrencyRegisterNetId || null}
-                onChange={(value) => setDraft((current) => ({
+                onChange={(value) => setDraft((current) => value === current.fromPaymentCurrencyRegisterNetId ? current : ({
                   ...current,
                   currencyTraderNetId: '',
                   exchangeRate: '',
@@ -1893,16 +1946,21 @@ export function PaymentAccountExchangeModal({
                 }))}
               />
               <Select
+                allowDeselect={false}
                 data={toCurrencyRegisterSelectOptions(destinationRegisters)}
-                disabled={!selectedFromRegister || isLoading || isSubmitting}
+                description={selectedFromRegister && !isLoading && destinationRegisters.length === 0
+                  ? t('Немає рахунку в іншій валюті: обмін можливий між валютами цього рахунку або рахунками того ж банку')
+                  : undefined}
+                disabled={!selectedFromRegister || destinationRegisters.length === 0 || isLoading || isSubmitting}
                 label={t('У валюту')}
                 required
                 searchable
                 value={draft.toPaymentCurrencyRegisterNetId || null}
-                onChange={(value) => setDraft((current) => ({
+                onChange={(value) => setDraft((current) => value === current.toPaymentCurrencyRegisterNetId ? current : ({
                   ...current,
                   currencyTraderNetId: '',
-                  exchangeRate: '',
+                  // A rate the user typed stays; only a trader's rate belongs to the old pair.
+                  exchangeRate: current.currencyTraderNetId ? '' : current.exchangeRate,
                   toPaymentCurrencyRegisterNetId: value || '',
                 }))}
               />
@@ -1945,6 +2003,7 @@ export function PaymentAccountExchangeModal({
                 }}
               />
               <TextInput maw={160}
+                description={systemRate ? `${t('Системний')}: ${formatExchangeRate(systemRate)}` : undefined}
                 disabled={isSubmitting}
                 inputMode="decimal"
                 label={t('Курс')}
@@ -3004,6 +3063,15 @@ function validateForm(
 
   if (!isEditMode && !currencyDrafts.some((draft) => draft.selected)) {
     return t('Оберіть валюту')
+  }
+
+  if (!isEditMode) {
+    // «abc» used to be saved as 0 and «1,555» came back as a raw English server error.
+    const unreadable = currencyDrafts.find((draft) => draft.selected && getOpeningAmountError(draft.amount))
+
+    if (unreadable) {
+      return `${t('Сума')} ${unreadable.currency.Code || ''}: ${t(getOpeningAmountError(unreadable.amount) || '')}`
+    }
   }
 
   if (!isEditMode && currencyDrafts.some((draft) => {

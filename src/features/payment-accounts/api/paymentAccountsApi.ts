@@ -1,3 +1,4 @@
+import type { SystemExchangeRate } from '../exchangeRateGuard'
 import { readEuroValuation } from '../euroValuation'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
@@ -440,4 +441,11 @@ function readNumber(value: unknown): number {
   }
 
   return 0
+}
+
+/** Current commercial rates (hryvnia per unit), used to prefill and sanity-check the exchange «Курс». */
+export async function getPaymentAccountSystemExchangeRates(): Promise<SystemExchangeRate[]> {
+  const result = await apiRequest<unknown>('/exchangerates/get/current')
+
+  return Array.isArray(result) ? (result as SystemExchangeRate[]) : []
 }
