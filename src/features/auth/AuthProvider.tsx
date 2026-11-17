@@ -39,6 +39,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [runtimePermissionKeys, setRuntimePermissionKeys] = useState<RuntimePermissionKeys>(null)
   const [isPermissionsLoading, setPermissionsLoading] = useState(false)
   const permissionRequestRef = useRef(0)
+  // Set while the user signs out on purpose: late 401s from requests still in flight must not
+  // remember the page as a return path for the next, unrelated login.
+  const explicitLogoutRef = useRef(false)
 
   const syncSession = useCallback(() => {
     setSession(readSession())
@@ -73,9 +76,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [])
 
   const logout = useCallback(async () => {
+    explicitLogoutRef.current = true
+
     try {
       await signOut()
     } catch (error) {
+      explicitLogoutRef.current = false
       notifications.show({
         color: 'red',
         message: error instanceof Error
@@ -96,7 +102,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     navigate('/login', { replace: true })
   }, [navigate])
   const logoutAfterUnauthorized = useCallback(() => {
-    rememberAuthReturnPath(location)
+    if (!explicitLogoutRef.current) {
+      rememberAuthReturnPath(location)
+    }
 
     clearSession()
     permissionRequestRef.current += 1
@@ -248,6 +256,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         try {
           const nextSession = await enrichSession(await signIn(username, password))
+          explicitLogoutRef.current = false
           setSession(nextSession)
           navigate(consumeAuthReturnPath(), { replace: true })
         } finally {

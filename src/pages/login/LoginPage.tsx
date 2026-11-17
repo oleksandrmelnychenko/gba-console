@@ -15,6 +15,10 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [passwordVisible, setPasswordVisible] = useState(false)
+  // login() navigates to the saved return path itself. Router navigations run as transitions,
+  // so the session update can re-render this page first; without this flag the redirect below
+  // would win and send every re-login after a session expiry to /dashboard.
+  const [isSigningIn, setSigningIn] = useState(false)
   const form = useForm({
     initialValues: { username: '', password: '' },
     validate: {
@@ -23,7 +27,7 @@ export function LoginPage() {
     },
   })
 
-  if (!isLoading && isAuthenticated) {
+  if (!isLoading && isAuthenticated && !isSigningIn) {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -50,9 +54,11 @@ export function LoginPage() {
               if (!tryStartSubmitting()) {
                 return
               }
+              setSigningIn(true)
               try {
                 await login(values.username.trim(), values.password)
               } catch (loginError) {
+                setSigningIn(false)
                 setError(loginError instanceof Error ? loginError.message : t('Не вдалося увійти'))
               } finally {
                 setSubmitting(false)

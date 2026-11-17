@@ -182,3 +182,60 @@ it('follows a sign-out made in another tab', async () => {
     await waitFor(() => expect(screen.getByTestId('authenticated').textContent).toBe('false'))
   })
 })
+
+describe('return path after sign-out', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+    mocks.getCurrentUserProfile.mockReset().mockResolvedValue(null)
+    mocks.getMyPermissions.mockReset().mockResolvedValue({ catalogVersion: null, permissionKeys: [] })
+    mocks.getServerSession.mockReset().mockResolvedValue({ csrfToken: 'csrf-token' })
+    mocks.signOut.mockReset().mockResolvedValue(undefined)
+  })
+
+  function renderAt(path: string) {
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <AuthProvider>
+          <AuthLifecycleProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+  }
+
+  it('remembers the page when the session is revoked', async () => {
+    renderAt('/users')
+    await waitFor(() => expect(screen.getByTestId('authenticated').textContent).toBe('true'))
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('gba-console-auth-unauthorized'))
+    })
+
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/login'))
+    expect(sessionStorage.getItem('gba:auth:return-path')).toBe('/users')
+  })
+
+  it('does not leave a return path behind when a late 401 arrives during an explicit logout', async () => {
+    const pendingLogout = deferred<void>()
+    mocks.signOut.mockReturnValueOnce(pendingLogout.promise)
+    renderAt('/users')
+    await waitFor(() => expect(screen.getByTestId('authenticated').textContent).toBe('true'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'logout' }))
+    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce())
+    act(() => {
+      window.dispatchEvent(new CustomEvent('gba-console-auth-unauthorized'))
+    })
+    expect(sessionStorage.getItem('gba:auth:return-path')).toBeNull()
+    await act(async () => {
+      pendingLogout.resolve(undefined)
+      await pendingLogout.promise
+    })
+
+    await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/login'))
+    act(() => {
+      window.dispatchEvent(new CustomEvent('gba-console-auth-unauthorized'))
+    })
+    expect(sessionStorage.getItem('gba:auth:return-path')).toBeNull()
+  })
+})

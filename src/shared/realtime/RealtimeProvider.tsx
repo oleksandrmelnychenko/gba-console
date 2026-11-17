@@ -26,7 +26,9 @@ import { applyDataSyncNotification } from './dataSyncProgressStore'
 import { humanizeSyncStepKeys } from './syncStepLabel'
 import { DATA_SYNC_ERROR_NOTIFICATION_ID, getDataSyncToastAction } from './dataSyncNotificationToast'
 import { reconcileDataSyncProgressWithServer, useDataSyncProgressWatchdog } from './dataSyncStatusReconciler'
-import { manageConnections } from './hubConnectionManager'
+import { manageConnections, nextHubReconnectDelay, type HubAuthGuard } from './hubConnectionManager'
+import { readSession } from '../auth/session'
+import { refreshAuthSession } from '../api/apiClient'
 import { createEcommerceOrderNotification } from '../notification-center/ecommerceOrderNotification'
 import { createEcommerceInterestNotification } from '../notification-center/ecommerceInterestNotification'
 import { createEcommerceImageSearchNotification } from '../notification-center/ecommerceImageSearchNotification'
@@ -41,7 +43,13 @@ const hubPaths = {
   supplyOrders: '/hubs/supplies/orders',
 } as const
 
-const reconnectDelays = [0, 2_000, 5_000, 10_000, 30_000]
+// A hub negotiate rejected with 401 means the session was revoked server-side. Refresh it once
+// (shared with the REST client); when the refresh is definitively refused the auth layer clears
+// the session and redirects to /login, so the hubs stop instead of retrying with 401 forever.
+const hubSessionGuard: HubAuthGuard<string | undefined> = {
+  snapshot: () => readSession()?.accessTokenExpiresAt,
+  recover: async (observedExpiresAt) => Boolean(await refreshAuthSession(observedExpiresAt)),
+}
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -73,10 +81,13 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
       createSalesCockpitConnection(),
       dataSyncConnection,
     ]
-    const stopManagedConnections = manageConnections(connections, () => disposed, (connection) => {
-      if (connection === dataSyncConnection && canViewDataSyncErrors) {
-        void reconcileDataSyncProgressWithServer()
-      }
+    const stopManagedConnections = manageConnections(connections, () => disposed, {
+      auth: hubSessionGuard,
+      onStarted: (connection) => {
+        if (connection === dataSyncConnection && canViewDataSyncErrors) {
+          void reconcileDataSyncProgressWithServer()
+        }
+      },
     })
 
     if (canViewDataSyncErrors) {
@@ -255,13 +266,7 @@ function createConnection(path: string): HubConnection {
       withCredentials: true,
     })
     .withAutomaticReconnect({
-      nextRetryDelayInMilliseconds: (context: RetryContext) => {
-        if (!navigator.onLine) {
-          return null
-        }
-
-        return reconnectDelays[context.previousRetryCount] ?? reconnectDelays[reconnectDelays.length - 1]
-      },
+      nextRetryDelayInMilliseconds: (context: RetryContext) => nextHubReconnectDelay(context),
     })
     .configureLogging(LogLevel.Warning)
     .build()

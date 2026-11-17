@@ -459,6 +459,12 @@ async function refreshStoredSessionCore(): Promise<AuthSession | null> {
   const payload = await readPayload(response)
 
   if (!response.ok) {
+    if (!isDefinitiveRefreshFailure(response.status)) {
+      // 5xx/429 while the API restarts or is overloaded: the session may still be valid,
+      // so keep it and let the caller (or the refresh scheduler) retry later.
+      throw new ApiError(getErrorMessage(payload, response.status), response.status, payload, response.headers)
+    }
+
     clearSession()
     notifyUnauthorized()
     return null
@@ -469,6 +475,11 @@ async function refreshStoredSessionCore(): Promise<AuthSession | null> {
   saveSession(nextSession)
 
   return nextSession
+}
+
+/** The server refused the refresh token itself (revoked, expired, unknown): a new login is required. */
+export function isDefinitiveRefreshFailure(status: number): boolean {
+  return status === 400 || status === 401 || status === 403
 }
 
 function toAuthSession(token: TokenResponse | null, previous?: AuthSession): AuthSession {

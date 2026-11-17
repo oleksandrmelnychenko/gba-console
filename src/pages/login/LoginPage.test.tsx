@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -51,6 +51,25 @@ describe('login form', () => {
     expect((screen.getByLabelText('Пароль', { exact: true }) as HTMLInputElement).type).toBe('text')
     await user.click(screen.getByRole('button', { name: 'Приховати пароль' }))
     expect((screen.getByLabelText('Пароль', { exact: true }) as HTMLInputElement).type).toBe('password')
+  })
+
+  it('leaves the post-login redirect to login() so a saved return path is not overridden by /dashboard', async () => {
+    let finishLogin!: () => void
+    auth.login.mockImplementation(() => new Promise<void>((resolve) => { finishLogin = resolve }))
+    const view = renderLogin()
+    fireEvent.change(screen.getByLabelText('Логін'), { target: { value: 'qa-user' } })
+    fireEvent.change(screen.getByLabelText('Пароль', { exact: true }), { target: { value: 'secret' } })
+    fireEvent.submit(screen.getByRole('form', { name: 'Вхід у систему' }))
+    await waitFor(() => expect(auth.login).toHaveBeenCalledOnce())
+
+    // The session becomes authenticated before login()'s own (transition) navigation commits.
+    auth.isAuthenticated = true
+    view.rerender(<MemoryRouter initialEntries={['/login']}><MantineProvider theme={theme}>
+      <Routes><Route path="/login" element={<LoginPage />} /><Route path="/dashboard" element={<div>Dashboard</div>} /></Routes>
+    </MantineProvider></MemoryRouter>)
+    await act(async () => { finishLogin() })
+
+    expect(screen.queryByText('Dashboard')).toBeNull()
   })
 
   it('redirects an authenticated user to the dashboard', () => {
