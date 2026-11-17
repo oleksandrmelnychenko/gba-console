@@ -1648,6 +1648,15 @@ function PerfectClientEditorModal({
   )
 }
 
+type TaxInspectionFieldErrors = Partial<Record<keyof TaxInspectionFormValues, string>>
+
+function validateTaxInspectionForm(values: TaxInspectionFormValues): TaxInspectionFieldErrors {
+  return {
+    InspectionName: values.InspectionName.trim() ? undefined : translate('Вкажіть назву інспекції'),
+    InspectionNumber: values.InspectionNumber.trim() ? undefined : translate('Вкажіть код ДПІ'),
+  }
+}
+
 function TaxInspectionEditorModal({
   error,
   isSaving,
@@ -1666,19 +1675,27 @@ function TaxInspectionEditorModal({
   onSave: (values: TaxInspectionFormValues) => void
 }) {
   const [values, setValues] = useValueState<TaxInspectionFormValues>(() => taxInspectionToFormValues(taxInspection))
+  const [fieldErrors, setFieldErrors] = useValueState<TaxInspectionFieldErrors>({})
 
   function setField<K extends keyof TaxInspectionFormValues>(key: K, value: TaxInspectionFormValues[K]) {
     setValues((currentValues) => ({
       ...currentValues,
       [key]: value,
     }))
+    setFieldErrors((currentErrors) => ({ ...currentErrors, [key]: undefined }))
   }
 
   return (
     <AppModal centered className="client-resources-modal" opened={opened} size="lg" title={<span style={RESOURCE_MONO_STYLE}>{title}</span>} onClose={onClose}>
       <form
+        noValidate
         onSubmit={(event) => {
           event.preventDefault()
+          const nextErrors = validateTaxInspectionForm(values)
+          setFieldErrors(nextErrors)
+          if (isSaving || Object.values(nextErrors).some(Boolean)) {
+            return
+          }
           onSave(values)
         }}
       >
@@ -1691,12 +1708,16 @@ function TaxInspectionEditorModal({
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               autoFocus
+              error={fieldErrors.InspectionName}
               label={translate("Назва")}
+              required
               value={values.InspectionName}
               onChange={(event) => setField('InspectionName', event.currentTarget.value)}
             />
             <TextInput
+              error={fieldErrors.InspectionNumber}
               label={translate("Код ДПІ")}
+              required
               value={values.InspectionNumber}
               onChange={(event) => setField('InspectionNumber', event.currentTarget.value)}
             />
@@ -2314,7 +2335,7 @@ function ModalActions({ isSaving, onClose }: { isSaving: boolean; onClose: () =>
       <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
         Скасувати
       </Button>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
+      <Button color={CREATE_ACTION_COLOR} disabled={isSaving} leftSection={<Save size={16} />} loading={isSaving} type="submit">
         Зберегти
       </Button>
     </AppModalFooter>
@@ -2964,7 +2985,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       setEditor(null)
       state.reload()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти налогову інспекцію'))
+      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти податкову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -2993,7 +3014,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       setDeleteTarget(null)
       state.reload()
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити налогову інспекцію'))
+      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити податкову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -3098,7 +3119,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                     <TableRowAction
                       action="delete"
                       disabled={!inspection.NetUid}
-                      label={translate("Видалити налогову інспекцію")}
+                      label={translate("Видалити податкову інспекцію")}
                       onClick={() => {
                         setFormError(null)
                         setDeleteTarget({ type: 'taxInspection', taxInspection: inspection })
@@ -5205,7 +5226,7 @@ function getDeleteTargetMessage(target: ClientResourceDeleteTarget | null): stri
   }
 
   if (target.type === 'taxInspection') {
-    return `${translate('Видалити налогову інспекцію')} "${displayValue(target.taxInspection.InspectionName)}"?`
+    return `${translate('Видалити податкову інспекцію')} "${displayValue(target.taxInspection.InspectionName)}"?`
   }
 
   if (target.type === 'pricing') {
