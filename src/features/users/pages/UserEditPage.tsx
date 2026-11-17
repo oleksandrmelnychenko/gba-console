@@ -48,6 +48,9 @@ type UserEditRouteState = {
 
 type UserEditTab = 'profile' | 'password'
 
+type PasswordField = 'password' | 'confirmPassword'
+type PasswordFieldError = { field: PasswordField; message: string }
+
 type UserFieldChangeHandler = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) => void
 type UserEditStatus = {
   isDeleting: boolean
@@ -93,6 +96,8 @@ function UserEditPageContent() {
   const routeState = location.state as UserEditRouteState | null
   const returnPath = routeState?.returnPath || '/users'
   const [user, setUser] = useValueState<UserProfile | null>(null)
+  // The profile as last loaded or saved: the sheet asks before dropping edits made since.
+  const [savedUser, setSavedUser] = useValueState<UserProfile | null>(null)
   const [roles, setRoles] = useValueState<UserRole[]>([])
   const [password, setPassword] = useValueState('')
   const [confirmPassword, setConfirmPassword] = useValueState('')
@@ -102,6 +107,8 @@ function UserEditPageContent() {
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [isResettingPassword, setResettingPassword, tryStartResettingPassword] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [confirmCloseOpened, setConfirmCloseOpened] = useValueState(false)
+  const [passwordFieldError, setPasswordFieldError] = useValueState<PasswordFieldError | null>(null)
   const [activeTab, setActiveTab] = useState<UserEditTab>('profile')
   const saveControllerRef = useRef<AbortController | null>(null)
   const canEdit = hasPermission(PermissionKeys.Users.User.Edit)
@@ -127,6 +134,7 @@ function UserEditPageContent() {
 
         if (!cancelled) {
           setUser(nextUser)
+          setSavedUser(nextUser)
           setRoles(nextRoles)
         }
       } catch (loadError) {
@@ -150,7 +158,7 @@ function UserEditPageContent() {
     return () => {
       cancelled = true
     }
-  }, [canEdit, netid, setError, setLoading, setRoles, setUser, t])
+  }, [canEdit, netid, setError, setLoading, setRoles, setSavedUser, setUser, t])
 
   if (!netid) {
     return <Navigate to="/users" replace />
@@ -176,6 +184,31 @@ function UserEditPageContent() {
     saveControllerRef.current?.abort()
     saveControllerRef.current = null
     navigate(returnPath, { replace: true, state: { mutated: hasMutatedRef.current } })
+  }
+
+  const hasUnsavedChanges =
+    (canEdit && user !== null && savedUser !== null && JSON.stringify(user) !== JSON.stringify(savedUser)) ||
+    password !== '' ||
+    confirmPassword !== ''
+
+  // Escape, the close button, a click outside and Скасувати ask before dropping unsaved edits.
+  function requestClose() {
+    if (isDeleting || isResettingPassword) {
+      return
+    }
+
+    if (!isSaving && hasUnsavedChanges) {
+      setConfirmCloseOpened(true)
+      return
+    }
+
+    closeSheet()
+  }
+
+  function changePassword(field: PasswordField, value: string) {
+    if (field === 'password') setPassword(value)
+    else setConfirmPassword(value)
+    setPasswordFieldError(null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -211,6 +244,7 @@ function UserEditPageContent() {
         return
       }
       setUser(updatedUser || payload)
+      setSavedUser(updatedUser || payload)
       hasMutatedRef.current = true
       notifications.show({
         color: 'green',
@@ -273,9 +307,11 @@ function UserEditPageContent() {
     const validationError = validatePasswordPair(password, confirmPassword)
 
     if (validationError) {
-      setError(validationError)
+      // The message is attached to the field it is about (aria-invalid + text under the input).
+      setPasswordFieldError({ field: getInvalidPasswordField(password, confirmPassword), message: validationError })
       return
     }
+    setPasswordFieldError(null)
 
     if (!tryStartResettingPassword()) {
       return
@@ -306,7 +342,10 @@ function UserEditPageContent() {
   return (
     <AppModal className="app-compact-form"
       opened
-      closeOnClickOutside={!isSaving && !isDeleting && !isResettingPassword}
+      // A nested confirmation owns Escape / outside clicks while it is open.
+      closeOnClickOutside={!isSaving && !isDeleting && !isResettingPassword && !deleteModalOpened && !confirmCloseOpened}
+      closeOnEscape={!deleteModalOpened && !confirmCloseOpened}
+      trapFocus={!deleteModalOpened && !confirmCloseOpened}
       keepMounted={false}
       size={780}
       aria-label={user ? getUserFullName(user) : t('Користувач')}
@@ -315,7 +354,7 @@ function UserEditPageContent() {
           {user ? `${t('Редагування користувача')} · ${getUserFullName(user)}` : t('Редагування користувача')}
         </span>
       }
-      onClose={closeSheet}
+      onClose={requestClose}
     >
       <Stack className="user-sheet" gap={10}>
         {error && (
@@ -330,6 +369,7 @@ function UserEditPageContent() {
           canResetPassword={canResetPassword}
           confirmPassword={confirmPassword}
           password={password}
+          passwordFieldError={passwordFieldError}
           roles={roles}
           status={{
             isDeleting,
@@ -338,8 +378,8 @@ function UserEditPageContent() {
             isSaving,
           }}
           user={user}
-          onChangeConfirmPassword={setConfirmPassword}
-          onChangePassword={setPassword}
+          onChangeConfirmPassword={(value) => changePassword('confirmPassword', value)}
+          onChangePassword={(value) => changePassword('password', value)}
           onChangeTab={setActiveTab}
           onFieldChange={setField}
           onPasswordReset={handlePasswordReset}
@@ -355,9 +395,34 @@ function UserEditPageContent() {
             onDelete={handleDelete}
           />
         )}
+
+        <AppModal
+          centered
+          opened={confirmCloseOpened}
+          title={t('Є незбережені зміни')}
+          onClose={() => setConfirmCloseOpened(false)}
+        >
+          <Stack gap={10}>
+            <Text size="sm">{t('Якщо закрити вікно, зміни користувача не будуть збережені.')}</Text>
+            <AppModalFooter>
+              <Button variant="default" color="gray" onClick={() => setConfirmCloseOpened(false)}>
+                {t('Залишитися')}
+              </Button>
+              <Button
+                color="red"
+                onClick={() => {
+                  setConfirmCloseOpened(false)
+                  closeSheet()
+                }}
+              >
+                {t('Закрити без збереження')}
+              </Button>
+            </AppModalFooter>
+          </Stack>
+        </AppModal>
       </Stack>
       <AppModalFooter>
-        <Button color="gray" variant="default" disabled={isDeleting || isResettingPassword} onClick={closeSheet}>{t('Скасувати')}</Button>
+        <Button color="gray" variant="default" disabled={isDeleting || isResettingPassword} onClick={requestClose}>{t('Скасувати')}</Button>
         <UserEditActions
           canDelete={canDelete}
           // The password tab has its own primary action (Змінити пароль); the profile Зберегти is shown only on the profile tab.
@@ -425,6 +490,7 @@ function UserEditContent({
   canResetPassword,
   confirmPassword,
   password,
+  passwordFieldError,
   roles,
   status,
   user,
@@ -440,6 +506,7 @@ function UserEditContent({
   canResetPassword: boolean
   confirmPassword: string
   password: string
+  passwordFieldError: PasswordFieldError | null
   roles: UserRole[]
   status: UserEditStatus
   user: UserProfile | null
@@ -526,6 +593,7 @@ function UserEditContent({
             confirmPassword={confirmPassword}
             isResettingPassword={status.isResettingPassword}
             password={password}
+            passwordFieldError={passwordFieldError}
             onChangeConfirmPassword={onChangeConfirmPassword}
             onChangePassword={onChangePassword}
             onSubmit={onPasswordReset}
@@ -540,6 +608,7 @@ function UserPasswordPanel({
   confirmPassword,
   isResettingPassword,
   password,
+  passwordFieldError,
   onChangeConfirmPassword,
   onChangePassword,
   onSubmit,
@@ -547,6 +616,7 @@ function UserPasswordPanel({
   confirmPassword: string
   isResettingPassword: boolean
   password: string
+  passwordFieldError: PasswordFieldError | null
   onChangeConfirmPassword: (value: string) => void
   onChangePassword: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -569,6 +639,8 @@ function UserPasswordPanel({
               label={t('Новий пароль')}
               placeholder="*** *** ***"
               required
+              error={passwordFieldError?.field === 'password' ? passwordFieldError.message : undefined}
+              aria-invalid={passwordFieldError?.field === 'password' || undefined}
               value={password}
               onChange={(event) => onChangePassword(event.currentTarget.value)}
             />
@@ -577,6 +649,8 @@ function UserPasswordPanel({
               label={t('Підтвердження пароля')}
               placeholder="*** *** ***"
               required
+              error={passwordFieldError?.field === 'confirmPassword' ? passwordFieldError.message : undefined}
+              aria-invalid={passwordFieldError?.field === 'confirmPassword' || undefined}
               value={confirmPassword}
               onChange={(event) => onChangeConfirmPassword(event.currentTarget.value)}
             />
@@ -637,6 +711,12 @@ function DeleteUserModal({
       </Stack>
     </AppModal>
   )
+}
+
+function getInvalidPasswordField(password: string, confirmPassword: string): PasswordField {
+  if (!password) return 'password'
+  if (!confirmPassword || password !== confirmPassword) return 'confirmPassword'
+  return 'password'
 }
 
 function isUserNotFoundError(error: unknown): boolean {

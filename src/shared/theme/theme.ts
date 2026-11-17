@@ -1,4 +1,4 @@
-import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, PasswordInput, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
@@ -87,6 +87,10 @@ export const theme = createTheme({
     }),
     FileInput: FileInput.extend({
       defaultProps: { placeholder: translate('Оберіть файл') },
+    }),
+    // Mantine labels the eye button «Toggle password visibility» in English.
+    PasswordInput: PasswordInput.extend({
+      defaultProps: { visibilityToggleButtonProps: { 'aria-label': translate('Показати або приховати пароль') } },
     }),
     Loader: Loader.extend({
       defaultProps: {
