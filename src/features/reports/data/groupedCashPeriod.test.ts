@@ -47,7 +47,7 @@ it('requires eight columns and a closed period while permitting empty population
   const data = groupedCashRequest()
   expect(cashPeriodConfigurationError(data, groupedCashDataset, '2026-10-01')).toBeNull()
   expect(cashPeriodConfigurationError({ ...data, to: '2026-10-01' }, groupedCashDataset, '2026-10-01')).toMatch(/завершені/)
-  expect(cashPeriodConfigurationError({ ...data, sorted: cashPeriodRequest().sorted }, groupedCashDataset, '2026-10-01')).toMatch(/фіксована/)
+  expect(cashPeriodConfigurationError({ ...data, sorted: cashPeriodRequest().sorted }, groupedCashDataset, '2026-10-01')).toMatch(/вісім показників/)
   const unsupportedBalance = { ...data, currentBalance: 1 }
   expect(cashPeriodConfigurationError(unsupportedBalance, groupedCashDataset, '2026-10-01')).not.toBeNull()
 })

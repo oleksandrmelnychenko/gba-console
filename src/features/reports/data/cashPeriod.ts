@@ -11,6 +11,11 @@ export const CASH_PERIOD_ROWS = [43, 40, 42, 41] as const
 export const CASH_PERIOD_MEASURES = [84, 85, 86, 87] as const
 const CASH_PERIOD_MANAGEMENT_MEASURES = [92, 93, 94, 95] as const
 export const CASH_PERIOD_ALL_MEASURES = [...CASH_PERIOD_MEASURES, ...CASH_PERIOD_MANAGEMENT_MEASURES] as const
+const CASH_PERIOD_ALL_MEASURES_ERROR = 'Позначте всі вісім показників: у відомості по коштах залишки, надходження й видаток показуються у валюті рахунку та в EUR разом.'
+const CASH_PERIOD_ACCOUNT_MEASURES_ERROR = 'Позначте всі чотири показники: початковий залишок, надходження, видаток і кінцевий залишок.'
+const CASH_PERIOD_MEASURE_ORDER_ERROR = 'Колонки цього шаблону стоять в іншому порядку. Відкрийте відомість по коштах заново з меню «Грошові кошти».'
+const CASH_PERIOD_LAYOUT_ERROR = 'Оберіть форму руху коштів зі списку.'
+const CASH_PERIOD_SINGLE_ACCOUNT_FILTERS_ERROR = 'Відбори доступні для всіх або вибраних рахунків. Натисніть «Перейти до всіх / вибраних рахунків».'
 
 type CashPeriodScope = {
   CurrencyRegisterId: string
@@ -124,14 +129,18 @@ export function cashPeriodConfigurationError(data: ReportRequestBody, dataset?: 
   const allowed = new Set(['numberPresentation', 'NumberPresentation', 'dataSource', 'from', 'to', 'sorted', 'selections', grouped ? 'groupedCashPeriod' : 'cashPeriod'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key) && !(grouped && ['GroupedCashPeriod', 'cashReadMode', 'CashReadMode', 'workbookPresentation', 'WorkbookPresentation', 'filterExpression', 'FilterExpression'].includes(key)) && value != null))
     return 'Для руху коштів недоступні додаткові відбори та перерахунок за поточним курсом.'
-  if (!Array.isArray(data.selections) || !grouped && data.selections.length !== 0
-    || !data.sorted || !(exact(data.sorted.Row?.map(item => item.type), CASH_PERIOD_ROWS)
-      || grouped && (!dataset || groupedCashWorkbookSupported(dataset)) && exact(data.sorted.Row?.map(item => item.type), CASH_WORKBOOK_ROWS)
-      || grouped && requestWorkbookPresentation(data) != null && (exact(data.sorted.Row?.map(item => item.type), [40])
-        || exact(data.sorted.Row?.map(item => item.type), [42]) && (!dataset || cashCurrencyRecordWorkbookSupported(dataset))))
-    || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0
-    || !exact(data.sorted.Measurements?.map(item => item.Type), grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope))
-    || data.sorted.Measurements.some(item => item.IsChecked === false))
-    return 'Структура звіту руху коштів фіксована: деталізація валютних записів або форма рахунок → тип → організація; чотири або вісім показників відповідно до вибраних валют.'
+  if (!Array.isArray(data.selections)) return CASH_PERIOD_LAYOUT_ERROR
+  if (!grouped && data.selections.length !== 0) return CASH_PERIOD_SINGLE_ACCOUNT_FILTERS_ERROR
+  const rows = data.sorted?.Row?.map(item => item.type)
+  if (!data.sorted || !(exact(rows, CASH_PERIOD_ROWS)
+      || grouped && (!dataset || groupedCashWorkbookSupported(dataset)) && exact(rows, CASH_WORKBOOK_ROWS)
+      || grouped && requestWorkbookPresentation(data) != null && (exact(rows, [40])
+        || exact(rows, [42]) && (!dataset || cashCurrencyRecordWorkbookSupported(dataset))))
+    || !Array.isArray(data.sorted.Col) || data.sorted.Col.length !== 0) return CASH_PERIOD_LAYOUT_ERROR
+  const expected = grouped ? CASH_PERIOD_ALL_MEASURES : cashPeriodMeasurements(scope)
+  const measures = Array.isArray(data.sorted.Measurements) ? data.sorted.Measurements : []
+  if (measures.some(item => item.IsChecked === false) || !exact([...measures.map(item => item.Type)].sort((a, b) => a - b), [...expected].sort((a, b) => a - b)))
+    return expected.length === CASH_PERIOD_ALL_MEASURES.length ? CASH_PERIOD_ALL_MEASURES_ERROR : CASH_PERIOD_ACCOUNT_MEASURES_ERROR
+  if (!exact(measures.map(item => item.Type), expected)) return CASH_PERIOD_MEASURE_ORDER_ERROR
   return null
 }

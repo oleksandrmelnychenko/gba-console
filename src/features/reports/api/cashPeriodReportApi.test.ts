@@ -32,7 +32,7 @@ it('accepts v2 eight columns and preserves legacy four columns on a v2 server', 
   expect(cashPeriodConfigurationError(cashPeriodRequest(), cashPeriodManagementDataset, '2026-09-27')).toBeNull()
   expect(cashPeriodConfigurationError(eight, cashPeriodDataset, '2026-09-27')).toMatch(/ще не підтримує/)
   expect(cashPeriodConfigurationError({ ...eight, sorted: cashPeriodRequest().sorted },
-    cashPeriodManagementDataset, '2026-09-27')).toMatch(/фіксована/)
+    cashPeriodManagementDataset, '2026-09-27')).toMatch(/вісім показників/)
   expect(cashPeriodConfigurationError({ ...eight, cashPeriod: { ...cashPeriodManagementScope,
     CurrencyBasis: 'AccountCurrency' } }, cashPeriodManagementDataset, '2026-09-27')).toMatch(/точний рахунок/)
 })
@@ -56,7 +56,7 @@ it('accepts only completed Kyiv periods up to 31 inclusive days with an exact le
   expect(cashPeriodConfigurationError({ ...request, cashPeriod: { ...cashPeriodScope, CurrencyRegisterId: Number(cashPeriodScope.CurrencyRegisterId) } }, cashPeriodDataset, '2026-09-27')).toMatch(/точний рахунок/)
   expect(cashPeriodConfigurationError({ ...request, cashPeriod: { ...cashPeriodScope, CurrencyBasis: 'ManagementCurrency' } }, cashPeriodDataset, '2026-09-27')).toMatch(/точний рахунок/)
   expect(cashPeriodConfigurationError({ ...request, dataSource: 36, cashPeriod: undefined, CashPeriod: cashPeriodScope }, undefined, '2026-09-27')).toMatch(/лише/)
-  expect(cashPeriodConfigurationError({ ...request, selections: [{ IsChecked: false }] as typeof request.selections }, cashPeriodDataset, '2026-09-27')).toMatch(/фіксована/)
+  expect(cashPeriodConfigurationError({ ...request, selections: [{ IsChecked: false }] as typeof request.selections }, cashPeriodDataset, '2026-09-27')).toMatch(/всіх або вибраних рахунків/)
 })
 
 it('retains exact Int64 string and NetUID through a PascalCase saved template', async () => {

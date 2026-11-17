@@ -1,6 +1,7 @@
 import type { ReportGroupingItem, ReportMeasurementGroup, ReportRequestBody, ReportSelection } from '../types'
 import { flattenCheckedMeasurements } from './reportOptions'
 import { reportSelectionsForRequest } from './reportFilterExpression'
+import { CASH_PERIOD_ALL_MEASURES } from './cashPeriod'
 
 type BuilderValues = {
   presentationCurrency?: unknown
@@ -33,6 +34,14 @@ type BuilderValues = {
   measurements: ReportMeasurementGroup[]; selections: ReportSelection[]
 }
 
+function requestMeasurements(dataSource: number, measurements: ReportMeasurementGroup[]) {
+  const checked = flattenCheckedMeasurements(measurements)
+  if (dataSource !== 40) return checked
+  const order = CASH_PERIOD_ALL_MEASURES as readonly number[]
+  const rank = (type: number) => order.includes(type) ? order.indexOf(type) : order.length
+  return [...checked].sort((left, right) => rank(left.Type) - rank(right.Type))
+}
+
 /** Tree indices address this exact selection array; only the legacy request omits unchecked rows. */
 export function buildReportBuilderRequest(values: BuilderValues): ReportRequestBody {
   const { dataSource, returnsOnly, from, to, ordering, filterExpression, topGroups, abcClassification, threshold, productClassification, sourceOrganizations, sourceBuyerSubtree, dayOrganizationBasis, supplierBasis, supplierSourceWorld, settlementPeriod, groupedSettlementPeriod, cashPeriod, rowGroups, colGroups, measurements, selections } = values
@@ -58,7 +67,7 @@ export function buildReportBuilderRequest(values: BuilderValues): ReportRequestB
     ...(cashPeriod !== undefined ? { cashPeriod } : {}),
     ...(values.groupedCashPeriod !== undefined ? { groupedCashPeriod: values.groupedCashPeriod } : {}),
     ...(values.workbookPresentation !== undefined ? { workbookPresentation: values.workbookPresentation } : {}),
-    sorted: { Col: colGroups, Row: rowGroups, Measurements: flattenCheckedMeasurements(measurements) },
+    sorted: { Col: colGroups, Row: rowGroups, Measurements: requestMeasurements(dataSource, measurements) },
     selections: reportSelectionsForRequest(selections, filterExpression),
   }
 }

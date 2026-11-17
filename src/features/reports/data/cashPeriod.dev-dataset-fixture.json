@@ -1,0 +1,454 @@
+{
+ "DataSource": 40,
+ "Name": "Відомість по коштах",
+ "Description": "Початкові й кінцеві залишки, підписані надходження та витрати поточних банківських рахунків і кас у власній та записаній управлінській валюті.",
+ "Groupings": [
+  {
+   "Type": 43,
+   "Name": "Організація рахунку",
+   "Selectable": true
+  },
+  {
+   "Type": 40,
+   "Name": "Каса / рахунок (усі валюти)",
+   "Selectable": true
+  },
+  {
+   "Type": 42,
+   "Name": "Каса / рахунок",
+   "Selectable": true
+  },
+  {
+   "Type": 41,
+   "Name": "Валюта рахунку",
+   "Selectable": true
+  },
+  {
+   "Type": 44,
+   "Name": "Тип рахунку",
+   "Selectable": true
+  }
+ ],
+ "Measurements": [
+  {
+   "Type": 84,
+   "Name": "Початковий залишок",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "accountCurrency",
+    "unitPolicy": "currency",
+    "aggregation": "sumWithinConfirmedCurrency",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 85,
+   "Name": "Надходження",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "accountCurrency",
+    "unitPolicy": "currency",
+    "aggregation": "sumWithinConfirmedCurrency",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 86,
+   "Name": "Видаток",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "accountCurrency",
+    "unitPolicy": "currency",
+    "aggregation": "sumWithinConfirmedCurrency",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 87,
+   "Name": "Кінцевий залишок",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "accountCurrency",
+    "unitPolicy": "currency",
+    "aggregation": "sumWithinConfirmedCurrency",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 92,
+   "Name": "Початковий залишок (EUR)",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "EUR",
+    "unitPolicy": "currency",
+    "aggregation": "sum",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 93,
+   "Name": "Надходження (EUR)",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "EUR",
+    "unitPolicy": "currency",
+    "aggregation": "sum",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 94,
+   "Name": "Видаток (EUR)",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "EUR",
+    "unitPolicy": "currency",
+    "aggregation": "sum",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  },
+  {
+   "Type": 95,
+   "Name": "Кінцевий залишок (EUR)",
+   "Selectable": true,
+   "valueSemantics": {
+    "kind": "money",
+    "currencyPolicy": "EUR",
+    "unitPolicy": "currency",
+    "aggregation": "sum",
+    "scalable": true,
+    "defaultDecimalPlaces": 2,
+    "defaultMinimumDecimalPlaces": 2
+   }
+  }
+ ],
+ "Filters": [
+  {
+   "Type": 29,
+   "Name": "Рахунок",
+   "Selectable": true
+  },
+  {
+   "Type": 30,
+   "Name": "Валюта рахунку",
+   "Selectable": true
+  },
+  {
+   "Type": 32,
+   "Name": "Організація рахунку",
+   "Selectable": true
+  },
+  {
+   "Type": 33,
+   "Name": "Тип рахунку",
+   "Selectable": true
+  }
+ ],
+ "Limitations": [
+  "Один точний валютний запис або поточні рахунки й каси з відборами рахунку, валюти, організації та виду. Старі та оригінальні форми підтримують до 31 завершеного київського дня; явний режим поточних документів — до 120 календарних місяців від 01.01.2025 включно з поточним київським днем.",
+  "Кожний валютний запис покриває власна чинна публікація дня завершення. Відсутнє покриття залишає рядок і залежні підсумки порожніми; різні валюти рахунків не додаються.",
+  "Після скидання або зміни нативного зіставлення потрібне нове штатне оновлення. Created та поточний Amount не визначають початковий залишок.",
+  "Чотири показники у валюті рахунку або вісім разом із записаними управлінськими сумами. Для восьми потрібна підтверджена управлінська валюта тієї ж публікації."
+ ],
+ "PeriodRequired": true,
+ "PeriodSupported": true,
+ "numberPresentation": {
+  "version": 1,
+  "moneyScales": [
+   1,
+   1000,
+   1000000
+  ],
+  "minimumDecimalPlaces": 0,
+  "maximumDecimalPlaces": 6
+ },
+ "configuration": {
+  "version": 1,
+  "axisMode": "fixedLayouts",
+  "allowedRows": [
+   43,
+   40,
+   42,
+   41,
+   44
+  ],
+  "allowedColumns": [],
+  "minimumRows": 3,
+  "maximumRows": 4,
+  "allowRowReorder": false,
+  "rowLayouts": [
+   [
+    43,
+    40,
+    42,
+    41
+   ],
+   [
+    40,
+    44,
+    43
+   ]
+  ],
+  "columnLayouts": [
+   []
+  ],
+  "mutuallyExclusiveRows": [],
+  "period": {
+   "required": true,
+   "supported": true,
+   "maximumDays": 31,
+   "maximumMonths": null,
+   "minimumDate": null,
+   "endDatePolicy": "beforeKyivToday",
+   "maximumDate": null,
+   "inclusiveEnd": true
+  },
+  "variants": [
+   {
+    "key": "currentDocuments",
+    "axisMode": null,
+    "allowedRows": null,
+    "allowedColumns": null,
+    "minimumRows": null,
+    "maximumRows": null,
+    "rowLayouts": null,
+    "columnLayouts": null,
+    "period": {
+     "required": true,
+     "supported": true,
+     "maximumDays": null,
+     "maximumMonths": 120,
+     "minimumDate": "2025-01-01",
+     "endDatePolicy": "throughKyivToday",
+     "maximumDate": "2099-12-31",
+     "inclusiveEnd": true
+    },
+    "filters": null,
+    "maximumColumns": null
+   },
+   {
+    "key": "originalNormal",
+    "axisMode": null,
+    "allowedRows": null,
+    "allowedColumns": null,
+    "minimumRows": null,
+    "maximumRows": null,
+    "rowLayouts": null,
+    "columnLayouts": null,
+    "period": {
+     "required": true,
+     "supported": true,
+     "maximumDays": 31,
+     "maximumMonths": null,
+     "minimumDate": null,
+     "endDatePolicy": "beforeKyivToday",
+     "maximumDate": null,
+     "inclusiveEnd": true
+    },
+    "filters": null,
+    "maximumColumns": null
+   },
+   {
+    "key": "exactRecord",
+    "axisMode": null,
+    "allowedRows": null,
+    "allowedColumns": null,
+    "minimumRows": 4,
+    "maximumRows": 4,
+    "rowLayouts": [
+     [
+      43,
+      40,
+      42,
+      41
+     ]
+    ],
+    "columnLayouts": null,
+    "period": {
+     "required": true,
+     "supported": true,
+     "maximumDays": 31,
+     "maximumMonths": null,
+     "minimumDate": null,
+     "endDatePolicy": "beforeKyivToday",
+     "maximumDate": null,
+     "inclusiveEnd": true
+    },
+    "filters": [],
+    "maximumColumns": null
+   },
+   {
+    "key": "presentationAccount",
+    "axisMode": null,
+    "allowedRows": null,
+    "allowedColumns": null,
+    "minimumRows": 1,
+    "maximumRows": 1,
+    "rowLayouts": [
+     [
+      40
+     ]
+    ],
+    "columnLayouts": null,
+    "period": null,
+    "filters": null,
+    "maximumColumns": null
+   },
+   {
+    "key": "presentationCurrencyRecord",
+    "axisMode": null,
+    "allowedRows": null,
+    "allowedColumns": null,
+    "minimumRows": 1,
+    "maximumRows": 1,
+    "rowLayouts": [
+     [
+      42
+     ]
+    ],
+    "columnLayouts": null,
+    "period": null,
+    "filters": null,
+    "maximumColumns": null
+   }
+  ],
+  "maximumColumns": 0
+ },
+ "workbookPresentation": {
+  "version": 1,
+  "additionalFields": [
+   {
+    "type": 30,
+    "caption": "Валюта рахунку (каси)",
+    "placement": "inline"
+   },
+   {
+    "type": 33,
+    "caption": "Вид коштів",
+    "placement": "inline"
+   }
+  ],
+  "orderings": []
+ },
+ "cashPeriod": {
+  "Version": 2,
+  "MaximumDays": 31,
+  "CurrencyBasis": "AccountAndManagementCurrency",
+  "PeriodCalendar": "Europe/Kyiv",
+  "RequiresCurrencyRegisterNetUid": true,
+  "RequiresOneCompleteClosingDayGeneration": true,
+  "ManagementCurrencySupported": true,
+  "CurrentDaySupported": false,
+  "ManagementCurrencyUnavailableReason": "Для управлінських сум потрібна публікація коштів із підтвердженою валютою управлінського обліку та її чинним зіставленням у GBA.",
+  "FixedRowGroupings": [
+   43,
+   40,
+   42,
+   41
+  ],
+  "FixedMeasurements": [
+   84,
+   85,
+   86,
+   87,
+   92,
+   93,
+   94,
+   95
+  ]
+ },
+ "groupedCashPeriod": {
+  "Version": 1,
+  "MaximumDays": 31,
+  "CurrencyBasis": "AccountAndManagementCurrency",
+  "UsesCurrentNativeAccounts": true,
+  "PreservesUnavailableValues": true,
+  "RequiresCommonSourceObservation": false,
+  "FixedRowGroupings": [
+   43,
+   40,
+   42,
+   41
+  ],
+  "FixedMeasurements": [
+   84,
+   85,
+   86,
+   87,
+   92,
+   93,
+   94,
+   95
+  ],
+  "Filters": [
+   29,
+   30,
+   32,
+   33
+  ],
+  "RegisterKinds": [
+   1,
+   2
+  ],
+  "RowLayouts": [
+   [
+    43,
+    40,
+    42,
+    41
+   ],
+   [
+    40,
+    44,
+    43
+   ]
+  ],
+  "PresentedWorkbookRows": [
+   40
+  ],
+  "PresentedCurrencyRecordRows": [
+   42
+  ]
+ },
+ "FilterExpression": {
+  "Version": 1,
+  "MaximumDepth": 8,
+  "MaximumLeaves": 64,
+  "MaximumNodes": 128,
+  "Operators": [
+   1,
+   2
+  ]
+ },
+ "HideZero": null,
+ "cashReadMode": {
+  "Version": 1,
+  "SupportedModes": [
+   0,
+   1
+  ],
+  "CurrentDocumentsMaximumMonths": 120,
+  "LegacyInferencePreserved": false
+ }
+}
