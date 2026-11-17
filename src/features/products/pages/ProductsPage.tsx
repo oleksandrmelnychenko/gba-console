@@ -117,11 +117,15 @@ import {
 } from '../productPricing'
 import {
   buildProductFileUploadConfiguration,
+  countProductFileUploadRows,
   createProductFileUploadForm,
+  getProductFileUploadDoneMessage,
+  getProductFileUploadSkipReasonLabel,
   type ProductFileUploadColumnForm,
   type ProductFileUploadForm,
   type ProductFileUploadPriceRow,
   type ProductFileUploadPriceSource,
+  type ProductFileUploadResult,
 } from '../productFileUpload'
 import { NATIVE_PRODUCT_CLASSIFICATION_REQUIRED } from '../productNativeClassification'
 import { ShopImageGallery } from '../components/ShopImageGallery'
@@ -228,6 +232,7 @@ const productFileUploadModeOptions: Array<{ label: string; value: string }> = [
   { label: 'Оновити', value: '1' },
   { label: 'Видалити', value: '2' },
 ]
+const PRODUCT_UPLOAD_SKIPPED_ROWS_SHOWN = 50
 const productFileUploadFieldLabels: Array<{ field: keyof ProductFileUploadColumnForm; label: string; required?: boolean }> = [
   { field: 'startRow', label: 'З', required: true },
   { field: 'endRow', label: 'По', required: true },
@@ -2560,6 +2565,7 @@ export function ProductFileUploadModal({
     isLoading: true,
   })
   const [error, setError] = useState<string | null>(null)
+  const [skippedReport, setSkippedReport] = useState<{ message: string; result: ProductFileUploadResult } | null>(null)
   const [isUploading, setUploading, tryStartUploading] = useBusyState()
   const hasPriceRows = form.prices.length > 0
   const requiresClassification = form.mode === 0
@@ -2626,6 +2632,7 @@ export function ProductFileUploadModal({
 
   function setField<K extends keyof ProductFileUploadForm>(field: K, value: ProductFileUploadForm[K]) {
     setError(null)
+    setSkippedReport(null)
     setForm((currentForm) => ({
       ...currentForm,
       [field]: value,
@@ -2634,6 +2641,7 @@ export function ProductFileUploadModal({
 
   function setColumnField(field: keyof ProductFileUploadColumnForm, value: number | string) {
     setError(null)
+    setSkippedReport(null)
     setForm((currentForm) => ({
       ...currentForm,
       [field]: readProductUploadNumber(value),
@@ -2709,16 +2717,39 @@ export function ProductFileUploadModal({
       return
     }
 
+    // Deleting is the one operation of this dialog that cannot be taken back: name how many rows go.
+    if (form.mode === 2 && !window.confirm(t('Видалити товари з файлу? Рядків до видалення: {count} (з {from} по {to}). Скасувати видалення не можна.', {
+      count: countProductFileUploadRows(form),
+      from: form.startRow,
+      to: form.endRow,
+    }))) {
+      return
+    }
+
     if (!tryStartUploading()) {
       return
     }
     setError(null)
+    setSkippedReport(null)
 
     try {
-      await uploadProductsFromFile(buildProductFileUploadConfiguration(form), form.file)
-      notifications.show({ color: 'green', message: t('Файл товарів завантажено') })
-      onClose()
+      const result = await uploadProductsFromFile(buildProductFileUploadConfiguration(form), form.file)
+      const message = !result
+        ? t(getProductFileUploadDoneMessage(form.mode))
+        : result.processed > 0
+          ? t('{message}: {count}', { count: result.processed, message: t(getProductFileUploadDoneMessage(form.mode)) })
+          : t('Жоден рядок файлу не застосовано')
+
       onUploadSuccess()
+
+      if (result && result.skipped.length > 0) {
+        // Rows the server left out stay on screen until the user has read them.
+        setSkippedReport({ message, result })
+        return
+      }
+
+      notifications.show({ color: result && result.processed === 0 ? 'yellow' : 'green', message })
+      onClose()
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити файл товарів'))
     } finally {
@@ -2737,6 +2768,28 @@ export function ProductFileUploadModal({
         {!error && !pricingState.error && hasDuplicatePricingRows ? (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {t('Один тип ціни вибрано кілька разів. Приберіть дубль перед завантаженням.')}
+          </Alert>
+        ) : null}
+        {skippedReport ? (
+          <Alert
+            color="yellow"
+            data-testid="product-upload-skipped-report"
+            icon={<TriangleAlert size={18} />}
+            title={`${skippedReport.message}. ${t('Пропущено рядків: {count}', { count: skippedReport.result.skipped.length })}`}
+            variant="light"
+          >
+            <Stack gap={2}>
+              {skippedReport.result.skipped.slice(0, PRODUCT_UPLOAD_SKIPPED_ROWS_SHOWN).map((skippedRow, index) => (
+                <Text key={`${skippedRow.row}-${index}`} size="sm">
+                  {t('Рядок {row}', { row: skippedRow.row })} · {skippedRow.vendorCode} — {t(getProductFileUploadSkipReasonLabel(skippedRow.reason))}
+                </Text>
+              ))}
+              {skippedReport.result.skipped.length > PRODUCT_UPLOAD_SKIPPED_ROWS_SHOWN ? (
+                <Text c="dimmed" size="sm">
+                  {t('…і ще {count}', { count: skippedReport.result.skipped.length - PRODUCT_UPLOAD_SKIPPED_ROWS_SHOWN })}
+                </Text>
+              ) : null}
+            </Stack>
           </Alert>
         ) : null}
 

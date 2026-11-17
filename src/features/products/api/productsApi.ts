@@ -5,6 +5,7 @@ import {
   NATIVE_PRODUCT_CLASSIFICATION_REQUIRED,
 } from '../productNativeClassification'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeProductFileUploadResult, type ProductFileUploadResult } from '../productFileUpload'
 import { readSession } from '../../../shared/auth/session'
 import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
@@ -70,14 +71,17 @@ export async function getProductUploadPricings(): Promise<Pricing[]> {
   return (normalizeArray(result) as Pricing[]).filter((pricing) => !pricing.BasePricingId)
 }
 
-export async function uploadProductsFromFile(configuration: ProductFileUploadConfiguration, file: File): Promise<void> {
+export async function uploadProductsFromFile(
+  configuration: ProductFileUploadConfiguration,
+  file: File,
+): Promise<ProductFileUploadResult | null> {
   const formData = new FormData()
   const normalizedConfiguration = normalizeProductFileUploadConfiguration(configuration)
 
   formData.append('file', file)
   formData.append('configuration', JSON.stringify(normalizedConfiguration))
 
-  await apiRequest<unknown>('/products/assortment/upload/file', {
+  const result = await apiRequest<unknown>('/products/assortment/upload/file', {
     method: 'POST',
     body: formData,
     errorMessages: {
@@ -85,6 +89,8 @@ export async function uploadProductsFromFile(configuration: ProductFileUploadCon
       network: 'Сервер завантаження товарів недоступний',
     },
   })
+
+  return normalizeProductFileUploadResult(result)
 }
 
 function normalizeProductFileUploadConfiguration(

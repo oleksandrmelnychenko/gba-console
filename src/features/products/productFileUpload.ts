@@ -132,3 +132,74 @@ function buildPriceSourceConfiguration(
 
   return { ImportedForAmg: priceSource === null ? null : priceSource === 'amg' }
 }
+
+export type ProductFileUploadSkippedRow = {
+  reason: string
+  row: number
+  vendorCode: string
+}
+
+/** What the server did with the file: how many rows were applied and which rows it left out, with the reason. */
+export type ProductFileUploadResult = {
+  processed: number
+  skipped: ProductFileUploadSkippedRow[]
+}
+
+/** Reads the upload answer. An older API answers with no body — that is `null`, not "nothing was applied". */
+export function normalizeProductFileUploadResult(body: unknown): ProductFileUploadResult | null {
+  if (!body || typeof body !== 'object') {
+    return null
+  }
+
+  const source = body as Record<string, unknown>
+  const processed = Number(source.Processed ?? source.processed)
+  const skippedSource = source.Skipped ?? source.skipped
+
+  if (!Number.isFinite(processed)) {
+    return null
+  }
+
+  return {
+    processed,
+    skipped: (Array.isArray(skippedSource) ? skippedSource : []).map((item) => {
+      const row = (item && typeof item === 'object' ? item : {}) as Record<string, unknown>
+
+      return {
+        reason: String(row.Reason ?? row.reason ?? ''),
+        row: Number(row.Row ?? row.row) || 0,
+        vendorCode: String(row.VendorCode ?? row.vendorCode ?? ''),
+      }
+    }),
+  }
+}
+
+/** Rows the server will read: «З» … «По», both included. */
+export function countProductFileUploadRows(form: Pick<ProductFileUploadForm, 'endRow' | 'startRow'>): number {
+  return form.startRow > 0 && form.endRow >= form.startRow ? form.endRow - form.startRow + 1 : 0
+}
+
+const productFileUploadDoneMessages: Record<ProductFileUploadMode, string> = {
+  0: 'Товари з файлу додано',
+  1: 'Товари з файлу оновлено',
+  2: 'Товари з файлу видалено',
+}
+
+/** The success text names the operation that was sent, never a fixed "added". */
+export function getProductFileUploadDoneMessage(mode: ProductFileUploadMode): string {
+  return productFileUploadDoneMessages[mode]
+}
+
+export function getProductFileUploadSkipReasonLabel(reason: string): string {
+  switch (reason) {
+    case 'DuplicateInFile':
+      return 'код повторюється у файлі'
+    case 'AlreadyExists':
+      return 'товар з таким кодом уже існує'
+    case 'NotFound':
+      return 'товар з таким кодом не знайдено'
+    case 'NewVendorCodeTaken':
+      return 'новий код уже зайнятий'
+    default:
+      return 'рядок пропущено'
+  }
+}

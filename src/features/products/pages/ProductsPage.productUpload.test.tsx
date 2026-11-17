@@ -1,11 +1,14 @@
 import { MantineProvider } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getProductUploadPricings, uploadProductsFromFile } from '../api/productsApi'
 import {
   buildProductFileUploadConfiguration,
+  countProductFileUploadRows,
   createProductFileUploadForm,
+  normalizeProductFileUploadResult,
 } from '../productFileUpload'
 
 vi.mock('../api/productsApi', async (importOriginal) => {
@@ -27,7 +30,13 @@ beforeEach(() => {
   getProductUploadPricingsMock.mockReset()
   uploadProductsFromFileMock.mockReset()
   getProductUploadPricingsMock.mockResolvedValue([{ Id: 12, Name: 'ЦО2' }])
-  uploadProductsFromFileMock.mockResolvedValue()
+  uploadProductsFromFileMock.mockResolvedValue(null)
+  // Mantine's Select scrolls the active option into view; jsdom has no layout.
+  Element.prototype.scrollIntoView = vi.fn()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('ProductFileUploadModal price source', () => {
@@ -148,6 +157,120 @@ describe('ProductFileUploadModal goods or service choice', () => {
   })
 })
 
+describe('ProductFileUploadModal operation result', () => {
+  it('asks before sending a delete file, names the row count, and sends nothing when declined', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    renderModal()
+    await chooseOperation('Видалити')
+    fillRequiredUploadFields()
+
+    const submit = screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement
+    await waitFor(() => expect(submit.disabled).toBe(false))
+    fireEvent.click(submit)
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(confirmSpy.mock.calls[0][0]).toBe(
+      'Видалити товари з файлу? Рядків до видалення: 2 (з 2 по 3). Скасувати видалення не можна.',
+    )
+    expect(uploadProductsFromFileMock).not.toHaveBeenCalled()
+  })
+
+  it('sends the delete file after confirmation and answers with the delete text', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const showSpy = vi.spyOn(notifications, 'show')
+    const { onClose } = renderModal()
+    await chooseOperation('Видалити')
+    fillRequiredUploadFields()
+
+    const submit = screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement
+    await waitFor(() => expect(submit.disabled).toBe(false))
+    fireEvent.click(submit)
+
+    await waitFor(() => expect(uploadProductsFromFileMock).toHaveBeenCalledTimes(1))
+    expect(uploadProductsFromFileMock.mock.calls[0][0]).toMatchObject({ Mode: 2 })
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(showSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'Товари з файлу видалено' }))
+  })
+
+  it('does not ask for confirmation when adding and names the add operation', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm')
+    const showSpy = vi.spyOn(notifications, 'show')
+    uploadProductsFromFileMock.mockResolvedValue({ processed: 3, skipped: [] })
+    const { onClose } = renderModal()
+    fillRequiredUploadFields()
+    fireEvent.click(screen.getByRole('radio', { name: 'Товар' }))
+
+    const submit = screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement
+    await waitFor(() => expect(submit.disabled).toBe(false))
+    fireEvent.click(submit)
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(confirmSpy).not.toHaveBeenCalled()
+    expect(showSpy).toHaveBeenCalledWith(expect.objectContaining({ color: 'green', message: 'Товари з файлу додано: 3' }))
+  })
+
+  it('keeps the dialog open and lists every row the server left out', async () => {
+    const showSpy = vi.spyOn(notifications, 'show')
+    uploadProductsFromFileMock.mockResolvedValue({
+      processed: 1,
+      skipped: [
+        { reason: 'DuplicateInFile', row: 3, vendorCode: 'F3-PRD-004' },
+        { reason: 'AlreadyExists', row: 4, vendorCode: 'F3-PRD-001' },
+      ],
+    })
+    const { onClose, onUploadSuccess } = renderModal()
+    fillRequiredUploadFields()
+    fireEvent.click(screen.getByRole('radio', { name: 'Товар' }))
+
+    const submit = screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement
+    await waitFor(() => expect(submit.disabled).toBe(false))
+    fireEvent.click(submit)
+
+    const report = await screen.findByTestId('product-upload-skipped-report')
+    expect(report.textContent).toContain('Товари з файлу додано: 1. Пропущено рядків: 2')
+    expect(report.textContent).toContain('Рядок 3 · F3-PRD-004 — код повторюється у файлі')
+    expect(report.textContent).toContain('Рядок 4 · F3-PRD-001 — товар з таким кодом уже існує')
+    expect(onUploadSuccess).toHaveBeenCalledTimes(1)
+    expect(onClose).not.toHaveBeenCalled()
+    expect(showSpy).not.toHaveBeenCalled()
+  })
+
+  it('says that nothing was applied when every row was left out', async () => {
+    uploadProductsFromFileMock.mockResolvedValue({
+      processed: 0,
+      skipped: [{ reason: 'AlreadyExists', row: 2, vendorCode: 'F3-PRD-002' }],
+    })
+    renderModal()
+    fillRequiredUploadFields()
+    fireEvent.click(screen.getByRole('radio', { name: 'Товар' }))
+
+    const submit = screen.getByRole('button', { name: 'Завантажити' }) as HTMLButtonElement
+    await waitFor(() => expect(submit.disabled).toBe(false))
+    fireEvent.click(submit)
+
+    const report = await screen.findByTestId('product-upload-skipped-report')
+    expect(report.textContent).toContain('Жоден рядок файлу не застосовано. Пропущено рядків: 1')
+    expect(report.textContent).not.toContain('додано')
+  })
+
+  it('reads the server answer and tolerates an API that sends no body', () => {
+    expect(normalizeProductFileUploadResult(null)).toBeNull()
+    expect(normalizeProductFileUploadResult(undefined)).toBeNull()
+    expect(normalizeProductFileUploadResult({
+      Mode: 0,
+      Processed: 1,
+      Skipped: [{ Reason: 'DuplicateInFile', Row: 3, VendorCode: 'F3-PRD-004' }],
+    })).toEqual({ processed: 1, skipped: [{ reason: 'DuplicateInFile', row: 3, vendorCode: 'F3-PRD-004' }] })
+    expect(countProductFileUploadRows({ endRow: 3, startRow: 2 })).toBe(2)
+    expect(countProductFileUploadRows({ endRow: 1, startRow: 2 })).toBe(0)
+  })
+})
+
+async function chooseOperation(label: string) {
+  fireEvent.click(screen.getByRole('combobox', { name: 'Операція' }))
+  fireEvent.click(await screen.findByRole('option', { name: label, hidden: true }))
+}
+
 function fillRequiredUploadFields() {
   fireEvent.change(screen.getByRole('textbox', { name: /^З(\s|\*|$)/ }), { target: { value: '2' } })
   fireEvent.change(screen.getByRole('textbox', { name: /^По(\s|\*|$)/ }), { target: { value: '3' } })
@@ -157,15 +280,20 @@ function fillRequiredUploadFields() {
 }
 
 function renderModal() {
+  const onClose = vi.fn()
+  const onUploadSuccess = vi.fn()
+
   render(
     <MantineProvider>
       <I18nProvider>
         <ProductFileUploadModal
           opened
-          onClose={vi.fn()}
-          onUploadSuccess={vi.fn()}
+          onClose={onClose}
+          onUploadSuccess={onUploadSuccess}
         />
       </I18nProvider>
     </MantineProvider>,
   )
+
+  return { onClose, onUploadSuccess }
 }
