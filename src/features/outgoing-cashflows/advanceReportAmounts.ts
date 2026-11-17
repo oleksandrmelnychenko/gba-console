@@ -75,14 +75,16 @@ export function calculateAdvanceReportDifference({
 /**
  * The fuel form keeps only the amount the user typed (price per litre or the
  * total) and zeroes the other one; the other field shows the derived value.
+ * The VAT sum is derived from the VAT percent the same way.
  */
 export function getFuelAmountFieldValues(
-  form: { pricePerLiter: number; totalPriceWithVat: number },
-  preview: Pick<CompanyCarFueling, 'PricePerLiter' | 'TotalPriceWithVat'>,
-): { pricePerLiter: number; totalPriceWithVat: number } {
+  form: { pricePerLiter: number; totalPriceWithVat: number; vatAmount: number },
+  preview: Pick<CompanyCarFueling, 'PricePerLiter' | 'TotalPriceWithVat' | 'VatAmount'>,
+): { pricePerLiter: number; totalPriceWithVat: number; vatAmount: number } {
   return {
     pricePerLiter: form.pricePerLiter || preview.PricePerLiter || 0,
     totalPriceWithVat: form.totalPriceWithVat || preview.TotalPriceWithVat || 0,
+    vatAmount: form.vatAmount || preview.VatAmount || 0,
   }
 }
 

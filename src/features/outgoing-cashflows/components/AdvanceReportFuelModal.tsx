@@ -462,7 +462,7 @@ export function AdvanceReportFuelModal({
               disabled={isLoading}
               label={t('Сума ПДВ')}
               min={0}
-              value={form.vatAmount}
+              value={amountFieldValues.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
           </div>

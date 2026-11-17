@@ -102,18 +102,18 @@ describe('advance report amounts', () => {
     // 30 l × 55,50: the form keeps only the typed price, the total is derived.
     expect(
       getFuelAmountFieldValues(
-        { pricePerLiter: 55.5, totalPriceWithVat: 0 },
-        { PricePerLiter: 55.5, TotalPriceWithVat: 1665 },
+        { pricePerLiter: 55.5, totalPriceWithVat: 0, vatAmount: 0 },
+        { PricePerLiter: 55.5, TotalPriceWithVat: 1665, VatAmount: 277.5 },
       ),
-    ).toEqual({ pricePerLiter: 55.5, totalPriceWithVat: 1665 })
+    ).toEqual({ pricePerLiter: 55.5, totalPriceWithVat: 1665, vatAmount: 277.5 })
   })
 
   it('shows the derived price in the fuel form when the total was typed', () => {
     expect(
       getFuelAmountFieldValues(
-        { pricePerLiter: 0, totalPriceWithVat: 1665 },
-        { PricePerLiter: 55.5, TotalPriceWithVat: 1665 },
+        { pricePerLiter: 0, totalPriceWithVat: 1665, vatAmount: 100 },
+        { PricePerLiter: 55.5, TotalPriceWithVat: 1665, VatAmount: 100 },
       ),
-    ).toEqual({ pricePerLiter: 55.5, totalPriceWithVat: 1665 })
+    ).toEqual({ pricePerLiter: 55.5, totalPriceWithVat: 1665, vatAmount: 100 })
   })
 })
