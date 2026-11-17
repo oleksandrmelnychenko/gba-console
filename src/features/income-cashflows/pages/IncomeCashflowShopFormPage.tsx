@@ -1,4 +1,6 @@
 import { paymentAgreementWithoutDocumentaryRead, paymentClientWithoutDocumentaryRead } from '../incomeDocumentaryReadBoundary'
+import { AmountInput } from '../../../shared/ui/AmountInput'
+import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
 import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -997,13 +999,12 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
             />
             </SimpleGrid>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-            <NumberInput
+            <AmountInput
               className="cashflow-field-amount"
-              allowNegative={false}
-              decimalScale={2}
               disabled={isLoading || isSaving}
+              max={MAX_CASH_ORDER_AMOUNT}
+              maxMessage={t('Сума не може перевищувати 10 000 000 000')}
               label={t('Сума')}
-              min={0}
               required
               value={form.amount}
               onChange={handleAmountChanged}

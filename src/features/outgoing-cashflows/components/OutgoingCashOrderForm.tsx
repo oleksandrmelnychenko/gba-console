@@ -1,11 +1,12 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
+import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import {
   ActionIcon,
   Alert,
   Button,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -497,13 +498,12 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
               />
             </SimpleGrid>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-              <NumberInput
+              <AmountInput
                 className="cashflow-field-amount"
-                allowNegative={false}
-                decimalScale={2}
                 disabled={isLoading || isSaving}
+                max={MAX_CASH_ORDER_AMOUNT}
+                maxMessage={t('Сума не може перевищувати 10 000 000 000')}
                 label={t('Сума')}
-                min={0}
                 required
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}

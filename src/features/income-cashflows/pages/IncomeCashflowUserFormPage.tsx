@@ -1,4 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
+import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
@@ -563,36 +565,31 @@ function IncomeCashflowUserFormPageContent() {
             />
             </SimpleGrid>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
-            <NumberInput
+            <AmountInput
               className="cashflow-field-amount"
-              allowNegative={false}
-              decimalScale={2}
               disabled={isLoading || isSaving}
+              max={MAX_CASH_ORDER_AMOUNT}
+              maxMessage={t('Сума не може перевищувати 10 000 000 000')}
               label={t('Сума')}
-              min={0}
               required
               value={form.amount}
               onChange={handleAmountChanged}
             />
-            <NumberInput
+            <AmountInput
               className="cashflow-field-vat"
-              allowNegative={false}
-              decimalScale={2}
               disabled={isLoading || isSaving}
-              label={t('Ставка ПДВ')}
               max={100}
-              min={0}
+              maxMessage={t('Ставка ПДВ — від 0 до 100%')}
+              label={t('Ставка ПДВ')}
               value={form.vatRate}
               onChange={handleVatRateChanged}
             />
-            <NumberInput
+            <AmountInput
               className="cashflow-field-amount"
-              allowNegative={false}
-              decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Сума ПДВ')}
               max={form.amount}
-              min={0}
+              maxMessage={t('Сума ПДВ не може перевищувати суму')}
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
