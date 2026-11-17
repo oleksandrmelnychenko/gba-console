@@ -98,6 +98,26 @@ describe('accounting cash-flow permissions', () => {
     vi.mocked(getSalesUkraineSaleDetails).mockResolvedValue(null)
   })
 
+  it('does not show a zero «Кредитовий залишок» next to an advance balance (chain-bank#9, chain-outgoing#12)', async () => {
+    allowedPermissions.add(PermissionKeys.Clients.AccountingCashFlow.Open)
+    vi.mocked(getAccountingCashFlowCounterparty).mockResolvedValue({
+      Id: 7, NetUid: 'client-1',
+      DocumentaryDebtAging: documentaryOverlayFixture({ Agreements: [documentarySummaryFixture({
+        PositiveDebtTotal: 100, CreditBalance: 0, KnownOverdueTotal: 100, KnownOverdueCount: 1,
+        KnownNotOverdueCount: 0, UnknownDateDebtCount: 1, UnknownDateDebtTotal: 50,
+        HasCompleteAging: false, OverdueTotal: null, MaxKnownDaysPastDue: 12,
+      })] }),
+      ClientAgreements: [{ AgreementId: 9, NetUid: 'agreement-1', AccountBalance: 0, Agreement: {
+        Id: 9, Name: 'Договір документального боргу', NumberDaysDebt: 30,
+        ClientInDebts: [{ Debt: { Days: 999999, Total: 100 } }],
+      } }],
+    })
+    renderPage()
+    const card = await screen.findByRole('button', { name: /Договір документального боргу/ })
+    expect(within(card).queryByText('Кредитовий залишок')).toBeNull()
+    expect(within(card).getByRole('note').textContent).toContain('Без підтвердженої дати: 1')
+  })
+
   it('renders root documentary aging without netting credit or reusing legacy raw days', async () => {
     allowedPermissions.add(PermissionKeys.Clients.AccountingCashFlow.Open)
     vi.mocked(getAccountingCashFlowCounterparty).mockResolvedValue({

@@ -1461,7 +1461,7 @@ function IncomeCashflowClientFormPageContent() {
                 <Stack gap="xs">
                   <Text size="sm">
                     {t('Відоме прострочення')}: {documentaryPresentation.knownOverdue === null ? t('Не визначено') : formatMoney(documentaryPresentation.knownOverdue)} {agreementCurrency?.Code || ''}
-                    {' · '}{t('Кредитовий залишок')}: {documentaryPresentation.creditBalance === null ? t('Не визначено') : formatMoney(documentaryPresentation.creditBalance)} {agreementCurrency?.Code || ''}
+                    {documentaryPresentation.creditBalance !== 0 ? <>{' · '}{t('Кредитовий залишок')}: {documentaryPresentation.creditBalance === null ? t('Не визначено') : formatMoney(documentaryPresentation.creditBalance)} {agreementCurrency?.Code || ''}</> : null}
                   </Text>
                   <DocumentaryDebtNotice presentation={documentaryPresentation} asOf={documentaryIndex.overlay?.AsOfBusinessDay} />
                 </Stack>

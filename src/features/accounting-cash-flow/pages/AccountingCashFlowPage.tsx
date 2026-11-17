@@ -1255,8 +1255,14 @@ function AgreementDebtTile({
           ) : null}
           {debt.documentary && (
             <span className="accounting-cash-flow-agreement-card__stat">
-              <small>{t('Кредитовий залишок')}</small>
-              <strong>{debt.documentary.creditBalance === null ? t('Не визначено') : formatMoney(debt.documentary.creditBalance)}</strong>
+              {/* «Кредитовий залишок» sums credit (negative) debt documents only; an advance is the agreement balance.
+                  A zero next to a positive «Баланс» read as a contradiction, so it is shown only when there is one. */}
+              {debt.documentary.creditBalance !== 0 ? (
+                <>
+                  <small>{t('Кредитовий залишок')}</small>
+                  <strong>{debt.documentary.creditBalance === null ? t('Не визначено') : formatMoney(debt.documentary.creditBalance)}</strong>
+                </>
+              ) : null}
               <DocumentaryDebtNotice presentation={debt.documentary} asOf={documentaryIndex.overlay?.AsOfBusinessDay} />
             </span>
           )}
