@@ -59,12 +59,17 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     groupTotals.set(anchor, [...(groupTotals.get(anchor) ?? []), group]
       .sort((left, right) => documentLayout ? right.Level - left.Level : left.Level - right.Level))
   }
+  const groupPathLabels = !products && preview.Request?.DataSource === 'NativeSupplierGrossProfit'
   const groupTotalRows = (row: NativeReportPreviewAxis) => (groupTotals.get(row.SourceIndex) ?? []).map(group => {
     const first = preview.Rows[rowPositions.get(group.RowSourceIndex) ?? 0] ?? row
     return <tr key={`group-${group.Level}-${group.RowSourceIndex}`} className="report-inline-preview__group-total" data-level={group.Level}>
-      <th scope="row" colSpan={rowHeaders.length}>
-        {`Підсумок: ${rowDimensionCaption(preview, group.Level, rowCaption(first, group.Level), sharedNames[group.Level])}`}
-      </th>
+      {groupPathLabels
+        ? rowHeaders.map((_, level) => <th scope="row" key={level}>
+          {level <= group.Level ? rowDimensionCaption(preview, level, rowCaption(first, level), sharedNames[level]) : ''}
+        </th>)
+        : <th scope="row" colSpan={rowHeaders.length}>
+          {`Підсумок: ${rowDimensionCaption(preview, group.Level, rowCaption(first, group.Level), sharedNames[group.Level])}`}
+        </th>}
       {totalCells(group.Values)}
     </tr>
   })
