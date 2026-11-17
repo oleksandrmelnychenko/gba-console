@@ -86,5 +86,6 @@ describe('Новий товар: Одиниця виміру and Артикул'
     )
 
     expect(screen.getByRole('textbox', { name: 'Артикул' }).getAttribute('maxlength')).toBe('3')
+    expect(screen.getByRole('textbox', { name: 'Назва' }).getAttribute('maxlength')).toBe('150')
   })
 })

@@ -248,6 +248,11 @@ function ConsumableProductsPageContent() {
       return
     }
 
+    if (draft.name.trim().length > PRODUCT_NAME_MAX_LENGTH) {
+      setError(t('Назва товару — не більше 150 символів'))
+      return
+    }
+
     if (!tryStartSaving()) {
       return
     }
@@ -260,6 +265,7 @@ function ConsumableProductsPageContent() {
         await updateConsumableProduct({
           ...editor.product,
           MeasureUnit: draft.measureUnit || editor.product.MeasureUnit || null,
+          MeasureUnitId: (draft.measureUnit || editor.product.MeasureUnit)?.Id,
           Name: draft.name.trim(),
           VendorCode: draft.vendorCode.trim(),
         })
@@ -268,6 +274,8 @@ function ConsumableProductsPageContent() {
           ConsumableProductCategory: category,
           ConsumableProductCategoryId: category.Id,
           MeasureUnit: draft.measureUnit,
+          // The server stores the unit by Id; send it explicitly as well.
+          MeasureUnitId: draft.measureUnit?.Id,
           Name: draft.name.trim(),
           VendorCode: draft.vendorCode.trim(),
         })
@@ -372,6 +380,7 @@ function ConsumableProductsPageContent() {
                 size="sm"
                 onClick={() => {
                   if (selectedCategory) {
+                    setError(null)
                     setProductEditor({ category: selectedCategory, mode: 'create' })
                   }
                 }}
@@ -380,7 +389,7 @@ function ConsumableProductsPageContent() {
               </Button>
             </PermissionGate>
             <PermissionGate permissionKey={PermissionKeys.ConsumableProducts.Category.Create}>
-              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={() => { setError(null); setCategoryEditor({ mode: 'create' }) }}>
                 {t('Додати категорію')}
               </Button>
             </PermissionGate>
@@ -460,7 +469,11 @@ function ConsumableProductsPageContent() {
         editor={categoryEditor}
         error={error}
         isSubmitting={isSaving}
-        onClose={() => setCategoryEditor(null)}
+        onClose={() => {
+          // An error of this dialog must not show up in the next one.
+          setError(null)
+          setCategoryEditor(null)
+        }}
         onSubmit={saveCategory}
       />
 
@@ -468,7 +481,10 @@ function ConsumableProductsPageContent() {
         editor={productEditor}
         error={error}
         isSubmitting={isSaving}
-        onClose={() => setProductEditor(null)}
+        onClose={() => {
+          setError(null)
+          setProductEditor(null)
+        }}
         onSubmit={saveProduct}
       />
 
@@ -884,7 +900,7 @@ export function ProductEditorForm({
 
   return (
     <Stack className="app-compact-form" gap={10}>
-      <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+      <TextInput label={t('Назва')} maxLength={PRODUCT_NAME_MAX_LENGTH} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <SimpleGrid cols={2} spacing={10}>
         <TextInput
           className="consumable-product-vendor-input"
@@ -1016,6 +1032,8 @@ function DeleteModal({
 
 /** dbo.ConsumableProductCategory.Name is nvarchar(150). */
 const CATEGORY_NAME_MAX_LENGTH = 150
+/** dbo.ConsumableProduct.Name is nvarchar(150). */
+const PRODUCT_NAME_MAX_LENGTH = 150
 /** dbo.ConsumableProduct.VendorCode is nvarchar(3). */
 const VENDOR_CODE_MAX_LENGTH = 3
 

@@ -17,6 +17,7 @@ export type ConsumableProduct = EntityFields & {
   ConsumableProductCategoryId?: number
   IsOpenEditMode?: boolean
   MeasureUnit?: MeasureUnit | null
+  MeasureUnitId?: number
   Name?: string
   TotalQty?: number
   VendorCode?: string
