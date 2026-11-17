@@ -293,9 +293,9 @@ function CrossSellLoadingCards() {
         <div key={index} className="wizard-cross-sell-loading__card">
           <Skeleton height={112} radius={12} width={112} />
           <div>
-            <Skeleton height={10} mb={10} radius="xl" width="32%" />
-            <Skeleton height={13} mb={14} radius="xl" width="78%" />
-            <Skeleton height={22} radius={7} width="92%" />
+            <Skeleton height={10} mb={8} radius="xl" width="32%" />
+            <Skeleton height={13} mb={12} radius="xl" width="78%" />
+            <Skeleton height={22} radius={8} width="92%" />
           </div>
           <Skeleton height={34} radius={8} width={106} />
         </div>

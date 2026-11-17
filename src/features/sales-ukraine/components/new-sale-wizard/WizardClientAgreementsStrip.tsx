@@ -129,7 +129,7 @@ const WizardAgreementCard = memo(function WizardAgreementCard({
               </Text>
               <TableChip tone={hasDebtAlert ? "danger" : isInactive || (debt.documentary && !debt.documentary.complete) ? "neutral" : "success"} value={statusLabel} />
             </Group>
-            <Group gap={6} wrap="nowrap" className="new-sale-agreement-card__chips">
+            <Group gap={8} wrap="nowrap" className="new-sale-agreement-card__chips">
               <TableChip tone="product" value={organizationName || t('Організація не вказана')} />
               <TableChip tone="source" value={currencyCode} />
             </Group>

@@ -151,7 +151,7 @@ function FutureReservationForm({
   return (
     <Stack
       className="app-compact-form"
-      gap={10}
+      gap={8}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault()
@@ -164,7 +164,7 @@ function FutureReservationForm({
       }}
     >
       <Stack gap={4}>
-        <Group gap={6}>
+        <Group gap={8}>
           <TableChip tone="product" value={product.VendorCode || product.Articul} />
         </Group>
         <Text fw={600} size="sm">{product.NameUA || product.Name}</Text>
@@ -174,7 +174,7 @@ function FutureReservationForm({
         <Alert color="blue" icon={<CalendarClock size={18} />} variant="light">
           <Stack gap={4}>
             <Text size="xs" fw={600}>{t('Найближча поставка')}</Text>
-            <Group gap={6}>
+            <Group gap={8}>
               <TableChip tone="document" value={order?.Number} />
               <Text size="xs" ff="var(--font-mono)">
                 {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}

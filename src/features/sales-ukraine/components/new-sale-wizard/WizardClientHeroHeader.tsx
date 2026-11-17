@@ -247,7 +247,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
           </Box>
           <Box className="new-sale-client-hero__details">
             {(clientContacts.length > 0 || (resolvedClient.USREOU && clientCode !== resolvedClient.USREOU)) && (
-              <Group className="new-sale-client-hero__contacts" gap={6} wrap="wrap">
+              <Group className="new-sale-client-hero__contacts" gap={8} wrap="wrap">
                 {clientContacts.map((item) => (
                   <a key={item.key} title={item.value} href={item.key === 'phone' ? `tel:${item.value.replace(/[^+\d]/g, '')}` : `mailto:${item.value}`}>
                     {item.icon}
@@ -262,7 +262,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
               </Group>
             )}
             {(clientDebtTotal > 0 || (identityAttention && identityAttention.AttentionLevel !== 'none')) && (
-              <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
+              <Group className="new-sale-client-hero__chips" gap={8} wrap="wrap">
                 {clientDebtTotal > 0 && (
                   <span className="new-sale-client-hero__debt">
                     <TriangleAlert size={12} />

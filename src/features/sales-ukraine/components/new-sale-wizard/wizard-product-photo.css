@@ -12,7 +12,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   overflow: hidden;
-  padding: 6px;
+  padding: 8px;
   pointer-events: none;
 }
 
@@ -52,8 +52,8 @@
   bottom: 12px;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 50%;
   color: var(--mantine-color-gray-7);

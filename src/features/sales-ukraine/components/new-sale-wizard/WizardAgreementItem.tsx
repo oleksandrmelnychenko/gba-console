@@ -60,7 +60,7 @@ export function WizardAgreementItem({
         <Box className="new-sale-hero-agreement__top">
           <Box className="new-sale-hero-agreement__identity">
             <TableChip tone="product" value={organizationName || 'Організація не вказана'} />
-            <Group gap={7} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               <Text className="new-sale-hero-agreement__name" title={agreementName} truncate>
                 {agreementName}
               </Text>

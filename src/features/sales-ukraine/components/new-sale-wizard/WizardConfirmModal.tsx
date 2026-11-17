@@ -39,7 +39,7 @@ export function WizardConfirmModal({
       closeOnClickOutside={!isBusy}
       closeButtonProps={{ disabled: isBusy }}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <Text>{message}</Text>
 
         <AppModalFooter>

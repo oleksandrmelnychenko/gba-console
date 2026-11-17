@@ -42,7 +42,7 @@ export function WizardClientAgreementsPopover({
           </Text>
           <span>{agreements.length}</span>
         </Group>
-        <Stack className="new-sale-hero-agreements-dropdown__list" gap={7}>
+        <Stack className="new-sale-hero-agreements-dropdown__list" gap={8}>
           {agreements.map((item) => {
             const key = getHeroAgreementKey(item)
 

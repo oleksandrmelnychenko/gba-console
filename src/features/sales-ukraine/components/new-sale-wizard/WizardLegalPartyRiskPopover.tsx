@@ -32,9 +32,9 @@ export function WizardLegalPartyRiskPopover({
         </Box>
       </Popover.Target>
       <Popover.Dropdown className={`new-sale-client-legal-risk ${isCritical ? 'is-critical' : 'is-warning'}`}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Box className="new-sale-client-legal-risk__header">
-            <Group gap={7} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               <TriangleAlert size={16} aria-hidden="true" />
               <Text className="new-sale-client-legal-risk__title">{t('Що потребує уваги')}</Text>
             </Group>
@@ -70,7 +70,7 @@ export function WizardLegalPartyRiskPopover({
           )}
           {risk.Candidates.length > 1 && (
             <Box className="new-sale-client-legal-risk__candidates">
-              <Group gap={6}>
+              <Group gap={8}>
                 <Text className="new-sale-client-legal-risk__section-title">{t('Картки для перевірки')}</Text>
                 <TableChip value={risk.Candidates.length} />
               </Group>

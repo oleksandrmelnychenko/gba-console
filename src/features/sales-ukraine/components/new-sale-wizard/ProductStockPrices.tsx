@@ -50,8 +50,8 @@ export const ProductStockPrices = memo(function ProductStockPrices({
       )}
       {(discountRate != null || nearestSupplyOrder) && (
         <Group gap={16} className="new-sale-product-detail__extra">
-          {discountRate != null && <Group gap={6}><Text size="xs">{t('Знижка')}</Text><TableChip tone="document" value={priceFormatter.format(discountRate) + '%'} /></Group>}
-          {nearestSupplyOrder && <Group gap={6}>
+          {discountRate != null && <Group gap={8}><Text size="xs">{t('Знижка')}</Text><TableChip tone="document" value={priceFormatter.format(discountRate) + '%'} /></Group>}
+          {nearestSupplyOrder && <Group gap={8}>
             <Text size="xs">{t('Найближча партія')}</Text>
             <TableChip tone="document" value={nearestSupplyOrder.OrderArrivedDate ? formatLocalDate(new Date(nearestSupplyOrder.OrderArrivedDate)) : '—'} />
             <span className="app-money">{qtyFormatter.format(nearestSupplyOrder.Qty ?? 0)}</span><TableChip value={measureUnit} />

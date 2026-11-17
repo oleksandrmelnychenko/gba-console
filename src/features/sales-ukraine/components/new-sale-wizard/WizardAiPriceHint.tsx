@@ -102,7 +102,7 @@ export function WizardAiPriceHint({ productNetId, clientAgreementNetId, withVat 
 
   if (current.isLoading) {
     return (
-      <Group gap={6} wrap="nowrap">
+      <Group gap={8} wrap="nowrap">
         <AiFeatureBadge compact size="xs" tooltip={t('AI-рекомендація ціни')} />
         <Loader color="orange" size={12} />
       </Group>

@@ -51,7 +51,7 @@ export function ChangeQtyModal({
       closeButtonProps={{ disabled: isBusy }}
     >
       {opened && (
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <div className="new-sale-quantity-modal__main">
             <Group gap={8} justify="center" className="new-sale-quantity-modal__available">
               <Text size="sm">{t('Доступно')}</Text>

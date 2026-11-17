@@ -11,7 +11,7 @@ export const WizardClientStack = memo(function WizardClientStack({ clients, sele
   onPick: (client: Client) => void
 }) {
   return (
-    <Stack gap={5}>
+    <Stack gap={4}>
       {clients.map((client, index) => (
         <ClientViewerRow key={getClientKey(client, index)} client={client}
           isSelected={isSelectedClient(client, selectedClientKey)} onPick={onPick} />

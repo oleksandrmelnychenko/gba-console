@@ -31,7 +31,7 @@ const integerFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits:
 // Reserved on every render (even with no client / while loading) so the panel keeps a constant
 // height and the content below never jumps when a client appears or changes. Sized to hug a row
 // of debt badges so the overdue blocks sit flush by height.
-const WIZARD_HEADER_MIN_HEIGHT = 46
+const WIZARD_HEADER_MIN_HEIGHT = 44
 
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
   0: 'Рахунок',
@@ -252,7 +252,7 @@ function WizardSaleHeaderContent({
       style={isInline ? undefined : { borderBottom: '1px solid var(--mantine-color-gray-3)' }}
     >
       {!isInline && (
-        <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+        <Group gap={8} wrap="nowrap" style={{ minWidth: 0 }}>
           {!client.IsSubClient && !client.IsTradePoint && client.RegionCode?.Value && (
             <Text c="dimmed" size="sm">
               {client.RegionCode.Value}
@@ -277,7 +277,7 @@ function WizardSaleHeaderContent({
             <Text fw={600} mb="xs" size="sm">
               {t('Договори')}
             </Text>
-            <Stack gap={6} mah={320} style={{ overflowY: 'auto' }}>
+            <Stack gap={8} mah={320} style={{ overflowY: 'auto' }}>
               {clientAgreements.map((item, index) => (
                 <WizardAgreementItem key={String(item.NetUid || item.Id || index)} clientAgreement={item} />
               ))}
@@ -416,7 +416,7 @@ function WizardSaleHeaderContent({
       </Group>
 
       {sale && (
-        <Group gap={6} ml="auto" wrap="nowrap">
+        <Group gap={8} ml="auto" wrap="nowrap">
           <Tooltip label={t('Копіювати товари')} position="bottom">
             <ActionIcon aria-label={t('Копіювати товари')} color="gray" size="lg" variant="subtle" onClick={() => void copySaleData(sale)}>
               <Copy size={18} />

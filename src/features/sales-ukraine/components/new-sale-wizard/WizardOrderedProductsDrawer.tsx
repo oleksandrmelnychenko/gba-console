@@ -55,7 +55,7 @@ const WizardOrderedProductsContent = memo(function WizardOrderedProductsContent(
   }
 
   return (
-    <Table className="app-static-table" highlightOnHover stickyHeader verticalSpacing={6} withColumnBorders>
+    <Table className="app-static-table" highlightOnHover stickyHeader verticalSpacing={8} withColumnBorders>
       <Table.Thead>
         <Table.Tr>
           <Table.Th w={140}>{t('Код товару')}</Table.Th>

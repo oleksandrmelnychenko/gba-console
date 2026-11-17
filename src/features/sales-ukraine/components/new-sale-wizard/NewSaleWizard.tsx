@@ -1372,7 +1372,7 @@ function NewSaleWizardContent({
   // on every keystroke that touched host state.
   const wizardHeaderTools = useMemo(
     () => (
-      <Group gap={6} justify="flex-end" wrap="nowrap">
+      <Group gap={8} justify="flex-end" wrap="nowrap">
         <WizardSaleHeader
           clientNetId={state.clientNetId}
           hideAgreementsAction

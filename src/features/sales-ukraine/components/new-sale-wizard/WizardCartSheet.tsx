@@ -142,8 +142,8 @@ export function WizardCartSheet({
             className="wizard-cart-sheet__view"
             color="orange"
             data={[
-              { value: 'cards', label: <Group gap={6} wrap="nowrap"><LayoutList size={16} /><span>{t('Картки')}</span></Group> },
-              { value: 'table', label: <Group gap={6} wrap="nowrap"><Table2 size={16} /><span>{t('Таблиця')}</span></Group> },
+              { value: 'cards', label: <Group gap={8} wrap="nowrap"><LayoutList size={16} /><span>{t('Картки')}</span></Group> },
+              { value: 'table', label: <Group gap={8} wrap="nowrap"><Table2 size={16} /><span>{t('Таблиця')}</span></Group> },
             ]}
             size="xs"
             value={view}
