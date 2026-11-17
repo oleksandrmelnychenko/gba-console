@@ -51,7 +51,7 @@ vi.mock('../components/OrganizationClientForm', () => ({
         type="button"
         onClick={() => {
           onFieldChange('FullName', 'New organization')
-          onFieldChange('NIP', '123456')
+          onFieldChange('NIP', '1234563218')
           onFieldChange('MarginAmount', 10)
           onFieldChange('Address', 'Main street')
           onFieldChange('Country', 'Ukraine')

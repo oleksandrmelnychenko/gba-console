@@ -89,6 +89,8 @@ function OrganizationClientEditPageContent({
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const hasMutatedRef = useRef(false)
+  // The NIP as stored: a legacy value is not re-checked unless the user edits it.
+  const savedNipRef = useRef<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -105,6 +107,7 @@ function OrganizationClientEditPageContent({
         const nextClient = await getOrganizationClient(netId)
 
         if (!cancelled) {
+          savedNipRef.current = nextClient?.NIP ?? null
           setClient(nextClient)
         }
       } catch (loadError) {
@@ -213,7 +216,7 @@ function OrganizationClientEditPageContent({
     }
 
     const payload = normalizeClientForSave(client)
-    const validationError = validateOrganizationClient(payload)
+    const validationError = validateOrganizationClient(payload, { baselineNip: savedNipRef.current })
 
     if (validationError) {
       setError(validationError)
@@ -228,6 +231,7 @@ function OrganizationClientEditPageContent({
     try {
       const updatedClient = await updateOrganizationClient(payload)
       setClient(updatedClient || payload)
+      savedNipRef.current = (updatedClient || payload).NIP ?? null
       hasMutatedRef.current = true
       notifications.show({
         color: 'green',

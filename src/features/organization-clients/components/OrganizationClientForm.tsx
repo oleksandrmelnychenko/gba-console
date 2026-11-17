@@ -30,6 +30,7 @@ export function OrganizationClientForm({ client, disabled = false, onFieldChange
             />
             <TextInput
               disabled={disabled}
+              description={t('10 цифр, дозволені дефіси')}
               label="NIP"
               maxLength={20}
               required
@@ -39,7 +40,9 @@ export function OrganizationClientForm({ client, disabled = false, onFieldChange
             <NumberInput
               decimalScale={2}
               disabled={disabled}
-              label={t('Маржа')}
+              clampBehavior="none"
+              label={t('Маржа, %')}
+              max={100}
               min={0}
               required
               value={client.MarginAmount ?? ''}

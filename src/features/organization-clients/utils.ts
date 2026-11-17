@@ -108,7 +108,18 @@ export function normalizeClientForSave(client: OrganizationClient): Organization
   }
 }
 
-export function validateOrganizationClient(client: OrganizationClient): string | null {
+/** Polish NIP: 10 digits, dashes/spaces allowed, optional «PL» prefix. */
+export function isValidNip(value: string): boolean {
+  return /^(PL)?\d{10}$/i.test(value.replace(/[\s-]/g, ''))
+}
+
+/** Маржа is a markup percent (prices are UnitPrice + UnitPrice * Маржа / 100). */
+export const ORGANIZATION_CLIENT_MAX_MARGIN = 100
+
+export function validateOrganizationClient(
+  client: OrganizationClient,
+  options: { baselineNip?: string | null } = {},
+): string | null {
   const fullName = client.FullName?.trim() || ''
   const nip = client.NIP?.trim() || ''
   const address = client.Address?.trim() || ''
@@ -133,8 +144,17 @@ export function validateOrganizationClient(client: OrganizationClient): string |
     return translate('NIP має містити не більше {count} символів', { count: nipMaxLength })
   }
 
+  // A legacy NIP the user did not touch does not block saving other fields.
+  if (nip !== (options.baselineNip?.trim() || '') && !isValidNip(nip)) {
+    return translate('NIP має містити 10 цифр (дозволені дефіси)')
+  }
+
   if (!Number.isFinite(marginAmount) || marginAmount <= 0) {
     return translate('Вкажіть коректну маржу')
+  }
+
+  if (marginAmount > ORGANIZATION_CLIENT_MAX_MARGIN) {
+    return translate('Маржа — відсоток, не більше 100')
   }
 
   if (!address) {
