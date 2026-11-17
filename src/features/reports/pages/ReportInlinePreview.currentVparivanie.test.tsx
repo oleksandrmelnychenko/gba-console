@@ -66,7 +66,8 @@ it.each([true, false])('shows known incoming=%s separately from the unconfirmed 
   render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={preview} /></I18nProvider></MantineProvider>)
   const row = screen.getByRole('rowheader', { name: '0000123' }).closest('tr')!
   expect(within(row).getAllByRole('cell').slice(-2).map(cell => cell.textContent)).toEqual(incomingKnown ? ['12,5', '—'] : ['—', '12,5'])
-  expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('ВО-00041')
+  expect(screen.getByText('Партію не підтверджено: 1 рядок')).toBeTruthy()
+  expect(document.body.textContent).not.toContain('ВО-00041')
   expect(screen.queryByText(/Неповне підтвердження руху/)).toBeNull()
 })
 
@@ -101,4 +102,16 @@ it('names a product without its internal key and qualifies only names the row pa
   expect(show(['900013-AL', '900104-AL'])).toEqual(['900013-AL', 'Амортизатор подвески', '900104-AL', 'Амортизатор подвески'])
   expect(show(['900013-AL', '900013-AL']).filter(text => text?.startsWith('Амортизатор')))
     .toEqual(['Амортизатор подвески [38700635]', 'Амортизатор подвески [38700636]'])
+})
+
+it('leaves the not-applicable buyer level out of the stock column header', () => {
+  const source = analysisPreview()
+  source.ColumnSchema = [{ Identity: 'CurrentVparivanieGroup', Caption: 'Показник' }, { Identity: 'CurrentVparivanieCounterparty', Caption: 'Покупець (деталізація)' },
+    { Identity: '$measureGroup', Caption: 'Показник' }, { Identity: '$measure', Caption: 'Показник' }]
+  source.Columns = [{ Ordinal: 0, SourceIndex: 0, Values: [{ Caption: 'Залишки', Identity: { Kind: 'signedInteger', Value: '1', Provenance: 'columnAxisKey' } },
+    { Caption: 'Не застосовується', Identity: { Kind: 'text', Value: 'analysis:na', Provenance: 'columnAxisKey' } }, { Caption: 'Результат' }, { Caption: 'Результат' }] }]
+  const view = render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: source })} /></I18nProvider></MantineProvider>)
+  const headers = [...view.container.querySelectorAll('thead th')].map(cell => `${cell.textContent} ${cell.getAttribute('aria-label') ?? ''}`)
+  expect(headers.join('|')).not.toContain('Не застосовується')
+  expect(headers.some(header => header.includes('Залишки'))).toBe(true)
 })

@@ -17,9 +17,9 @@ export function addGroupings(axis: 'рядків' | 'колонок', checkboxes
 }
 
 export function applyOrganizationProductSalesLayout() {
-  removeGrouping('Документ продажу. Відповідальний менеджер що перевів в статус накладної')
-  removeGrouping('Документ продажу. Відповідальний менеджер що забив товар')
-  addGroupings('рядків', ['Вибрати Товар. Назва'])
+  removeGrouping('Відповідальний менеджер що перевів в статус накладної')
+  removeGrouping('Відповідальний менеджер що забив товар')
+  addGroupings('рядків', ['Вибрати Назва товару'])
 }
 
 export function generateButton() {

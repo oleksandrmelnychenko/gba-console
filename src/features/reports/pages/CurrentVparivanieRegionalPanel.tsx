@@ -1,17 +1,16 @@
 import { PartialCoverageLine } from '../../../shared/ui/product-movement-history/PartialCoverageLine'
-import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
+import { PhysicalQuantityExceptionLine } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { ReportRowPagination } from './ReportRowPagination'
-import { requestCurrentVparivanieAnalysis } from '../data/currentVparivanieAnalysis'
 import { movementSelection } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { Map as MapIcon } from 'lucide-react'
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
   currentVparivanieStockSentence } from '../data/currentVparivanie'
 import { currentVparivanieV2CellKey, currentVparivanieV2Columns } from '../data/currentVparivanieV2Export'
-import { currentVparivanieRegionalAvailable, type CurrentVparivanieRegionalResult } from '../data/currentVparivanieRegional'
+import { currentVparivanieRegionalAvailable, currentVparivanieRegionalRequest, type CurrentVparivanieRegionalResult } from '../data/currentVparivanieRegional'
 import { currentRegionalCellText, currentRegionalColumnCaption, currentRegionalCsv,
   currentRegionalPdf, currentRegionalXlsx, CURRENT_REGIONAL_TITLE } from '../data/currentVparivanieRegionalExport'
 import type { ReportDataset, ReportRequestBody } from '../types'
@@ -57,16 +56,17 @@ function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
 function regionalConfigurationError(dataset: ReportDataset | null, request: ReportRequestBody): string | null {
   const invalid = dataset ? currentVparivanieConfigurationError(request, dataset) : null
   if (invalid) return invalid
-  if (requestCurrentVparivanieAnalysis(request)) return 'Розширене групування доступне у звичайному перегляді.'
   return movementSelection(request)
     ? 'Прихід і розхід доступні у звичайній формі звіту. Для регіональної форми вимкніть ці показники.'
     : null
 }
 
-export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange, historyRun }: {
+export function CurrentVparivanieRegionalPanel({ dataset, request: form, enabled, disabled, fullScope, onFullScopeChange, historyRun }: {
   dataset: ReportDataset | null; request: ReportRequestBody; enabled: boolean; disabled: boolean
   fullScope?: boolean; onFullScopeChange?: (value: boolean) => void; historyRun?: { token: number; excel: boolean } | null
 }) {
+  const derived = useMemo(() => currentVparivanieRegionalRequest(form), [form])
+  const request = derived.request
   const requestKey = JSON.stringify(request)
   const currentKey = useRef(requestKey)
   const active = useRef<AbortController | null>(null)
@@ -82,7 +82,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   const result = snapshot?.key === requestKey ? snapshot.result : null
   const error = failure?.key === requestKey ? failure.message : null
   const busy = busyKey === requestKey, exporting = exportKey === requestKey
-  const rejected = regionalConfigurationError(dataset, request)
+  const rejected = derived.error ?? regionalConfigurationError(dataset, request)
 
   const handledHistory = useRef(0)
   const runHistory = useEffectEvent(async (run: { token: number; excel: boolean }) => {
@@ -135,9 +135,9 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
           {`Завантажити ${format.toUpperCase()}`}</Button>)}</Group>
-      {rejected && !requestCurrentVparivanieAnalysis(request) ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
+      {rejected ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {result ? <><PartialCoverageLine coverage={result.PhysicalCoverage} /><PhysicalQuantityExceptionNotice exceptions={result.PhysicalQuantityExceptions} />
+      {result ? <><PartialCoverageLine coverage={result.PhysicalCoverage} /><PhysicalQuantityExceptionLine exceptions={result.PhysicalQuantityExceptions} />
         <Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
         ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}
     </Stack>

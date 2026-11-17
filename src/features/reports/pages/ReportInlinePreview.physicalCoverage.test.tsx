@@ -37,8 +37,8 @@ it('does not warn when the imported period is complete', () => {
 
 it.each([true, false])('retains the exact batch exception in Preview even with empty rows=%s and complete period', empty => {
   show(empty, true, true)
-  expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('ВО-00041')
-  expect(screen.getByText('Партію не підтверджено').closest('[role="alert"]')?.textContent).toContain('Розхід: 1')
+  expect(screen.getByText('Партію не підтверджено: 1 рядок')).toBeTruthy()
+  expect(document.body.textContent).not.toContain('ВО-00041')
   expect(document.body.textContent).not.toMatch(/unconfirmed_batch|38423019/)
   expect(document.querySelector('tfoot')?.textContent).toContain('—')
   if (!empty) expect(document.querySelector('tbody')?.textContent).toContain('—')

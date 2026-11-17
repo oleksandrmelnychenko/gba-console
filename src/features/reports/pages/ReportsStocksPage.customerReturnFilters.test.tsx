@@ -63,9 +63,9 @@ it('lists the common return-line fields with shared labels and offers І/АБО 
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
   expect(fieldOptions(row)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Покупець',
-    'Покупець. Регіон', 'Покупець. Код по регіону', 'Покупець. Договір', 'Покупець. Відповідальний менеджер покупця',
+    'Регіон', 'Код по регіону', 'Договір', 'Відповідальний менеджер покупця',
     'Повернення від клієнта', 'Причина повернення', 'Склад'])
-  fireEvent.click(screen.getByRole('option', { name: 'Покупець. Договір' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Договір' }))
   const search = row.getByPlaceholderText('Пошук значення')
   act(() => search.focus())
   fireEvent.change(search, { target: { value: 'Дог' } })

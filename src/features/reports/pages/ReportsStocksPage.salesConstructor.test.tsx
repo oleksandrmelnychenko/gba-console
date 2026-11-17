@@ -33,9 +33,9 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
   expect(vi.mocked(previewStockReport).mock.calls[0][0].sorted.Row.map(item => item.type)).toEqual([4, 20])
   expect(vi.mocked(previewStockReport).mock.calls[0][0].sorted.Col.map(item => item.type)).toEqual([19])
   expect(within(screen.getByRole('region', { name: 'Групування рядків' })).getAllByRole('listitem').map(item => item.textContent))
-    .toEqual(['ОрганізаціяЕлементи', 'Документ продажу. Відповідальний менеджер що перевів в статус накладноїЕлементи'])
+    .toEqual(['ОрганізаціяЕлементи', 'Відповідальний менеджер що перевів в статус накладноїЕлементи'])
   expect(within(screen.getByRole('region', { name: 'Групування колонок' })).getAllByRole('listitem').map(item => item.textContent))
-    .toEqual(['Документ продажу. Відповідальний менеджер що забив товарЕлементи'])
+    .toEqual(['Відповідальний менеджер що забив товарЕлементи'])
   fireEvent.click(within(tabs).getByRole('button', { name: 'Відкрити Валовий прибуток' }))
   const measurements = screen.getByRole('region', { name: 'Показники' })
   const ratioNames = ['Рентабельність без ПДВ, %', 'Рентабельність з ПДВ, %']

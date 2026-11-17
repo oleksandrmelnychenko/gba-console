@@ -16,7 +16,7 @@ describe('report dataset capabilities', () => {
     expect(datasetFilters(dataset)).toEqual([
       { label: 'Топ', value: '3', field: { Type: 3, Name: 'ProductTop' } },
       { label: 'Товарна група', value: '4', field: { Type: 4, Name: 'ProductGroup' } },
-      { label: 'Покупець. Регіон', value: '7', field: { Type: 7, Name: 'CustomerRegion' } },
+      { label: 'Регіон', value: '7', field: { Type: 7, Name: 'CustomerRegion' } },
     ])
     expect(dataset).toEqual(before)
   })

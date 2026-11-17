@@ -53,7 +53,7 @@ const buyers = ([
 const buyer = buyers[0]
 const organization: ReportSelection = { IsChecked: true, SelectedField: { Type: 0, Name: 'Організація' },
   FilterCondition: { Type: 0, Name: 'Рівне' }, Values: [{ Name: 'ТОВ «АМГ «КОНКОРД»', Value: 10565, Data: { Id: 10565 } }] }
-const fields = [{ Type: 6, Name: 'Покупець. Контрагент' }, { Type: 8, Name: 'Покупець. Код по регіону' }]
+const fields = [{ Type: 6, Name: 'Покупець. Контрагент' }, { Type: 8, Name: 'Код по регіону' }]
 
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()

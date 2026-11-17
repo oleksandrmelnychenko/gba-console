@@ -92,7 +92,7 @@ import { Suspense, type FormEvent, type ReactNode, useCallback, useEffect, useEf
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { getReportHistorySettings, type ReportHistorySettings } from '../api/reportHistoryApi'
-import { clearReportHandoff, droppedSettingsLine, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
+import { clearReportHandoff, droppedSettingsLine, historyReportName, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
 import type { MovementHistoryRun } from './WarehouseStockMovementPanel'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -158,7 +158,7 @@ import { usesNativeReportLookup, supportsFullReportDateRange, hasFixedReportAxes
 import { CURRENT_VPARIVANIE_NOTICE, currentVparivanieConfigurationError, currentVparivanieFilterConditions, currentVparivanieNotice, currentVparivanieFullScope, withCurrentVparivanieMovementScope } from '../data/currentVparivanie'
 import { previousKyivDay } from '../data/cashPeriod'
 import { availableBug1274WorkbookLaunches, bug1274WorkbookRequest, opensOnPreviousDay, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
-import { bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets } from '../data/bug1274WorkbookGuide'
+import { bug1274WorkbookGuide, bug1274WorkbookPeriod, reportPeriodPresets, workbookMenuName } from '../data/bug1274WorkbookGuide'
 import { supportedAnalysisRules } from '../data/supportedAnalysisRules'
 import { reportFileBaseName } from '../data/reportFileName'
 import { resolveBug1274WorkbookFilters, resolvesWorkbookFilters, workbookFiltersNotice, type ResolvedWorkbookFilters } from '../data/bug1274WorkbookFilters'
@@ -1006,6 +1006,9 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const selectionOnly = activeWorkbook === 'Впарювання.xls' || (dataSource === 2 && returnsOnly === true)
   const activeProfile = readReportProfile(reportProfile)
   const deskTitle = activeProfile ? salesConstructorTitle(activeProfile) : workbookDeskTitle(activeWorkbook, dataSource)
+  const openedLaunch = workbookLaunches.find(item => item.fileName === activeWorkbook)
+  const runTitle = activeProfile ? deskTitle : openedLaunch ? workbookMenuName(openedLaunch)
+    : historyReportName(reportBody, dataSource, datasetStorage.datasets, workbookLaunches)
   const deskReportKey = `${activeWorkbook ?? ''}|${dataSource}`
   const deskSummary = workbookRequestSummary(reportBody, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t))
   const builder = {
@@ -1190,7 +1193,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
             onSaveTemplate={() => openDeskTemplates(true)}
             applyLabel="Застосувати й показати" /></>}
           {lastRun ? <Text size="sm" role="status">{t('Період показаного результату')}: {workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period}</Text> : null}
-          <WorkbookResult dataSource={dataSource} title={deskTitle} period={workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period} isLoading={isLoading}
+          <WorkbookResult dataSource={dataSource} title={runTitle} period={workbookRequestSummary(resultRequest, dataset, selection => getSelectionFieldSummary(selection, filterFieldOptions, t)).period} isLoading={isLoading}
             error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
             stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
             table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={resultRequest} embedded /> : null}

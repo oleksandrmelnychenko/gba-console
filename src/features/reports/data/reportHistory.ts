@@ -7,7 +7,7 @@ import {
   type StockMovementFilterField, type StockMovementFilterRow, type StockMovementFilterWire, type StockMovementLookupItem, type StockMovementRequest,
 } from './warehouseStockMovement'
 import type { WorkbookLaunch } from './bug1274WorkbookLaunch'
-import { bug1274DatasetTitle } from './bug1274WorkbookGuide'
+import { bug1274DatasetTitle, workbookMenuName } from './bug1274WorkbookGuide'
 import { datasetFilters, datasetGroupings } from './reportDatasets'
 import { readReportFilterExpression, requestFilterExpression } from './reportFilterExpression'
 import { getReportFieldLabel } from './reportOptions'
@@ -74,10 +74,10 @@ export function historyReportName(data: ReportRequestBody | null, dataSource: nu
   launches: readonly WorkbookLaunch[]): string {
   const profile = data ? readReportProfile(requestReportProfile(data)) : undefined
   if (profile) return salesConstructorTitle(profile)
-  const entry = ALL_NAVIGATION_ENTRIES.find(item => item.file !== null && !profileForWorkbook(item.file)
-    && launches.some(launch => launch.fileName === item.file && launch.dataset.DataSource === dataSource))
-  const launch = launches.find(item => item.dataset.DataSource === dataSource && !profileForWorkbook(item.fileName))
-  return entry?.label ?? launch?.label ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
+  const own = (item: WorkbookLaunch) => item.dataset.DataSource === dataSource && !profileForWorkbook(item.fileName)
+  const launch = ALL_NAVIGATION_ENTRIES.flatMap(entry => launches.filter(item => item.fileName === entry.file && own(item)))[0]
+    ?? launches.find(own)
+  return (launch ? workbookMenuName(launch) : null) ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
 }
 
 export function historyReportKeyName(key: string, datasets: readonly ReportDataset[], launches: readonly WorkbookLaunch[]): string {

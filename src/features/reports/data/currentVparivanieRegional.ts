@@ -1,5 +1,7 @@
 import { readPhysicalQuantityExceptions, type PhysicalQuantityException } from '../../../shared/ui/product-movement-history/physicalQuantityExceptions'
-import type { ReportDataset, ReportRequestBody } from '../types'
+import type { ReportDataset, ReportGroupingItem, ReportRequestBody, ReportSelection, ReportSelectedValue } from '../types'
+import { analysisHierarchyIdentity, requestCurrentVparivanieAnalysis } from './currentVparivanieAnalysis'
+import { exactId as exactEntityId } from './exactId'
 import { readPhysicalCoverage, type PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { isCurrentVparivanieDataset, currentVparivanieFullScope, CURRENT_VPARIVANIE_FULL_NOTE,
   isCurrentVparivanieStockAnchor, type CurrentVparivanieStockAnchor } from './currentVparivanie'
@@ -35,6 +37,56 @@ function scaledQuantity(value: unknown): bigint | null {
   const negative = value.startsWith('-')
   const [whole, fraction = ''] = (negative ? value.slice(1) : value).split('.')
   return (negative ? -1n : 1n) * BigInt(whole + fraction.padEnd(28, '0'))
+}
+
+export const CURRENT_REGIONAL_FILTERS_ERROR = 'Для регіональної форми залиште відбори: товари або одна група товарів, покупець, основний менеджер покупця, склади.'
+
+function regionalValue(field: number, value: ReportSelectedValue, kind: 'item' | 'group'): ReportSelectedValue | null {
+  const typed = value.Data && typeof value.Data === 'object' ? analysisHierarchyIdentity(field, value.Data) : null
+  if (typed) {
+    if (typed.world || (kind === 'group') !== typed.group) return null
+    return { ...value, Data: { Id: String(typed.id), ...(value.Name ? { Name: value.Name } : {}) } }
+  }
+  return kind === 'item' && exactEntityId(value.Data) !== null ? value : null
+}
+
+function regionalSelection(selection: ReportSelection): ReportSelection | null {
+  const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
+  if (field === 60) return selection
+  const values = (kind: 'item' | 'group', type = field) => {
+    const reduced = selection.Values.map(value => regionalValue(type, value, kind))
+    return reduced.every(value => value !== null) ? reduced as ReportSelectedValue[] : null
+  }
+  if ((field === 1 || field === 4) && [3, 6].includes(condition) && selection.Values.length === 1) {
+    const group = values('group', 4)
+    return group ? { ...selection, SelectedField: { Type: 4, Name: 'ProductGroup' }, FilterCondition: { Type: 6, Name: 'У групі' }, Values: group } : null
+  }
+  if ((field === 1 || field === 5 || field === 21) && [0, 2].includes(condition)) {
+    const items = values('item')
+    return items ? { ...selection, Values: items } : null
+  }
+  return null
+}
+
+function axis(groups: readonly ReportGroupingItem[] | undefined, type: number, key: string, label: string): ReportGroupingItem {
+  return groups?.find(group => group.type === type) ?? { key, label, type }
+}
+
+export function currentVparivanieRegionalRequest(request: ReportRequestBody): { request: ReportRequestBody; error: string | null } {
+  try { if (!requestCurrentVparivanieAnalysis(request)) return { request, error: null } } catch { return { request, error: null } }
+  const selections: ReportSelection[] = []
+  for (const selection of request.selections ?? []) {
+    const reduced = regionalSelection(selection)
+    if (!reduced) return { request, error: CURRENT_REGIONAL_FILTERS_ERROR }
+    selections.push(reduced)
+  }
+  const sorted = request.sorted
+  const data: ReportRequestBody = { ...request, selections, sorted: { ...sorted,
+    Row: [axis(sorted.Row, 5, 'Product', 'Товар')],
+    Col: [axis(sorted.Col, 74, 'CurrentVparivanieGroup', 'Показник'), axis(sorted.Col, 75, 'CurrentVparivanieCounterparty', 'Покупець (деталізація)')] } }
+  delete (data as Record<string, unknown>).currentVparivanieAnalysis
+  delete (data as Record<string, unknown>).CurrentVparivanieAnalysis
+  return { request: data, error: null }
 }
 
 export function currentVparivanieRegionalAvailable(dataset: ReportDataset | null | undefined): boolean {

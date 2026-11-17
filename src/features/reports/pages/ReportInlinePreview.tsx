@@ -1,6 +1,6 @@
 import { PartialCoverageLine } from '../../../shared/ui/product-movement-history/PartialCoverageLine'
 import { compactMeasureCaptions, isMeasureOnlyColumnSchema } from '../data/reportMeasureHeading'
-import { PhysicalQuantityExceptionNotice } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
+import { PhysicalQuantityExceptionLine } from '../../../shared/ui/product-movement-history/PhysicalQuantityExceptionNotice'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { effectiveConstructorNumberPresentation, formatReportDecimal, formatReportQuantity, moneyScaleLabel, reportValueUnit } from '../data/reportNumberPresentation'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -110,7 +110,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const stickyRowHeader = (index: number) => wide ? { className: 'is-sticky-row-header', style: { left: `${index * WIDE_ROW_HEADER_REM}rem` } } : {}
   const columnPaths = preview.Columns.map(column => documentMeasurePath(preview.Request?.DataSource, semanticsByMeasure.get(column.SourceIndex),
     (products ? column.Values.slice(0, 1) : sharedGroup ? column.Values.slice(1) : column.Values)
-      .map((value, index) => sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
+      .map((value, index) => value.Identity?.Value === 'analysis:na' ? '' : sharedGroup ? value.Caption : columnIdentityCaption(column, index)).filter(Boolean))
     .filter((caption, index, path) => index === 0 || caption !== path[index - 1]))
   const tiers = products || !columnPaths.some((path, position) => position > 0 && path.length > 1
     && columnPaths[position - 1].length > 1 && path[0] === columnPaths[position - 1][0]) ? 1 : Math.max(1, ...columnPaths.map(path => path.length))
@@ -156,7 +156,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
     </div>
     <PartialCoverageLine coverage={preview.PhysicalCoverage} />
     {preview.Request?.Warnings?.map(warning => <Text key={warning} size="sm" c="orange.8" role="status">{warning}</Text>)}
-    <PhysicalQuantityExceptionNotice exceptions={preview.PhysicalQuantityExceptions} />
+    <PhysicalQuantityExceptionLine exceptions={preview.PhysicalQuantityExceptions} />
     <IgnoredFilterAttribution filters={preview.Request?.IgnoredFilters ?? null} />
     {preview.Request?.presentationCurrency ? <Text size="sm">Валюта звіту: {preview.Request.presentationCurrency.code}</Text> : null}
     <ReportTableScrollArea label="Таблиця попереднього перегляду">

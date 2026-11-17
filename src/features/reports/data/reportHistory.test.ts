@@ -7,6 +7,12 @@ import {
   historyReportKeyName, historyReportName, historyReportOptions, historySummary, MOVEMENT_REPORT_KEY, movementDraftFromHistory,
   movementHistorySummary, peekReportHandoff, REGIONAL_REPORT_KEY, verifyHistoryValues, rememberHistoryRun, rememberWorkbookOpen, sanitizeHistorySettings, takeHistoryRun,
 } from './reportHistory'
+import catalog from './constructorDatasets.dev-fixture.json'
+import { parseReportDatasets } from '../api/reportWorkspaceApi'
+import { availableBug1274WorkbookLaunches, PURCHASES_CONSTRUCTOR_FILE, STOCK_PERIOD_CONSTRUCTOR_FILE } from './bug1274WorkbookLaunch'
+import { workbookMenuName } from './bug1274WorkbookGuide'
+import { profileForWorkbook } from './salesConstructorProfiles'
+import { CASH_NAVIGATION, SALES_NAVIGATION, SPECIAL_NAVIGATION } from './reportNavigationEntries'
 
 function selection(type: number, name: string, values: Array<[number, string]>): ReportSelection {
   return { FilterCondition: { Name: 'Дорівнює', Type: 0 }, IsChecked: true, SelectedField: { Name: name, Type: type },
@@ -197,10 +203,10 @@ describe('І/АБО in the entry summary', () => {
 
   it('names reports with the menu wording so no ids are needed', () => {
     const launches = [{ fileName: 'ВП.xls', label: 'Валовий прибуток за днем', notice: '', dataset: { ...netDataset, DataSource: 35 } }]
-    expect(historyReportName(null, 35, [], launches)).toBe('Валовий прибуток за днем')
+    expect(historyReportName(null, 35, [], launches)).toBe('ВП')
     expect(historyReportKeyName('2:grossProfit', [], launches)).toBe('Валовий прибуток')
     expect(historyReportOptions([{ ...netDataset, DataSource: 35 }], launches, new Set([35])).map(option => option.label))
-      .toEqual(['Валовий прибуток за днем', 'Рух товару'])
+      .toEqual(['ВП', 'Рух товару'])
   })
 })
 
@@ -214,5 +220,37 @@ describe('inactive values stay, deleted values go', () => {
     const { data, dropped } = await verifyHistoryValues(source, search, 30, () => 'Група товару')
     expect(data.selections[0].Values.map(value => value.Value)).toEqual([11])
     expect(dropped).toEqual(['Група товару: Видалена група'])
+  })
+})
+
+describe('report names follow the reports menu', () => {
+  const datasets = parseReportDatasets(catalog)
+  const launches = [...availableBug1274WorkbookLaunches(datasets),
+    { fileName: 'ВП.xls', label: 'Валовий прибуток за днем', notice: '', dataset: { ...netDataset, DataSource: 35 } },
+    { fileName: 'ВП по постачальниках.xls', label: 'Валовий прибуток за постачальниками', notice: '', dataset: { ...netDataset, DataSource: 38 } }]
+
+  it('names stock, purchases and gross profit workbooks exactly as the menu does', () => {
+    const named = (file: string) => {
+      const launch = launches.find(item => item.fileName === file)!
+      return [workbookMenuName(launch), historyReportKeyName(String(launch.dataset.DataSource), datasets, launches)]
+    }
+    expect(named(STOCK_PERIOD_CONSTRUCTOR_FILE)).toEqual(['Звіт по залишкам', 'Звіт по залишкам'])
+    expect(named(PURCHASES_CONSTRUCTOR_FILE)).toEqual(['Звіт по закупам', 'Звіт по закупам'])
+    expect(named('ВП.xls')).toEqual(['ВП', 'ВП'])
+    expect(named('ВП по постачальниках.xls')).toEqual(['ВП по постачальниках', 'ВП по постачальниках'])
+  })
+
+  it('never lets a history name drift from the switcher or dropdown name', () => {
+    for (const launch of launches) {
+      const profile = profileForWorkbook(launch.fileName)
+      const key = profile ? `${launch.dataset.DataSource}:${profile}` : String(launch.dataset.DataSource)
+      const shared = launches.filter(item => item.dataset.DataSource === launch.dataset.DataSource && !profileForWorkbook(item.fileName))
+      if (!profile && shared.length > 1) continue
+      expect(historyReportKeyName(key, datasets, launches)).toBe(workbookMenuName(launch))
+    }
+    for (const entry of [...SALES_NAVIGATION, ...CASH_NAVIGATION, ...SPECIAL_NAVIGATION]) {
+      const launch = launches.find(item => item.fileName === entry.file)
+      if (launch) expect(entry.label).toBe(workbookMenuName(launch))
+    }
   })
 })

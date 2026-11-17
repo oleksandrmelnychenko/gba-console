@@ -111,6 +111,11 @@ export function workbookDisplayFileName(fileName: string): string {
   return WORKBOOK_NAMES[fileName] ?? fileName
 }
 
+export function workbookMenuName(launch: { fileName: string; label: string }): string {
+  const name = workbookDisplayFileName(launch.fileName)
+  return name === launch.fileName ? launch.label : name
+}
+
 const WORKBOOK_NAMES: Readonly<Record<string, string>> = {
   'Продажі порівнянням по групах цін.xls': 'Продажі порівнянням за типами цін',
   'Порівняння роботи клієнтів.xls': 'Порівняння роботи клієнтів',

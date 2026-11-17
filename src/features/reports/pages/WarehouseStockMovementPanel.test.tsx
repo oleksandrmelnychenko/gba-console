@@ -397,7 +397,8 @@ it.each([false, true])('keeps unknown warehouse totals and explicit exception th
   }))
   render(panel())
   const table = await applyReport()
-  expect(screen.getByRole('alert').textContent).toContain('ВО-00041')
+  expect(screen.getByText('Партію не підтверджено: 1 рядок')).toBeTruthy()
+  expect(document.body.textContent).not.toContain('ВО-00041')
   const footer = table.querySelector('tfoot')!
   expect(footer.textContent).toBe('Підсумок———')
   expect(footer.querySelector('[data-negative="true"]')).toBeNull()

@@ -29,7 +29,7 @@ export function constructorProfile(request: ReportRequestBody): SalesConstructor
   return request.dataSource === 2 ? readReportProfile(requestReportProfile(request)) : undefined
 }
 
-export type ConstructorField = { type: number; label: string; path: string[] }
+export type ConstructorField = { type: number; label: string; path: string[]; caption?: string }
 
 const PERIOD_TYPES = new Set([0, 1, 2, 3])
 const SALES_GROUPING_LABELS: Readonly<Record<number, { label: string; path?: string; caption?: string }>> = {
@@ -75,7 +75,7 @@ function groupingCategory(type: number): string | undefined {
 export function constructorGroupingField(request: ReportRequestBody, type: number, name: string): ConstructorField {
   if (constructorProfile(request)) {
     const known = SALES_GROUPING_LABELS[type]
-    if (known) return { type, label: known.label, path: known.path ? [known.path] : [] }
+    if (known) return { type, label: known.label, path: known.path ? [known.path] : [], caption: known.caption ?? known.label }
   }
   const category = groupingCategory(type)
   return { type, label: name, path: category ? [category] : [] }
@@ -85,7 +85,7 @@ export function constructorGroupingCaption(request: ReportRequestBody, type: num
   if (!constructorProfile(request)) return name
   const known = SALES_GROUPING_LABELS[type]
   if (!known) return name
-  return known.caption ?? (known.path ? `${known.path}. ${known.label}` : known.label)
+  return known.caption ?? known.label
 }
 
 export function constructorFilterField(request: ReportRequestBody, type: number, name: string): ConstructorField {

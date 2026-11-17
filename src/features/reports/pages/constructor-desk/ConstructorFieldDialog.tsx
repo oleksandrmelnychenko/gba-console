@@ -50,7 +50,7 @@ export function ConstructorFieldDialog({ opened, title, fields, onAdd, onClose }
       return <li key={node.key} className="constructor-tree__node">
         <div className="constructor-tree-row">
           <span className="constructor-tree-row__toggle" aria-hidden="true" />
-          <Checkbox size="xs" aria-label={`Вибрати ${fields.some(other => other.type !== field.type && other.label === field.label) && field.path.length ? `${field.path.join('. ')}. ` : ''}${field.label}`} checked={chosen.has(field.type)}
+          <Checkbox size="xs" aria-label={`Вибрати ${!fields.some(other => other.type !== field.type && other.label === field.label) ? field.label : field.caption ?? (field.path.length ? `${field.label} (${field.path.join(' / ')})` : field.label)}`} checked={chosen.has(field.type)}
             onChange={event => toggle([field.type], event.currentTarget.checked)}
             label={<span className={!field.path.length && ![0, 1, 2, 3].includes(field.type) ? 'constructor-field-dialog__root' : undefined}>{field.label}</span>} />
         </div>

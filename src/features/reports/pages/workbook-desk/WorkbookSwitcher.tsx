@@ -5,7 +5,7 @@ import { workbookIcon } from './workbookIcons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
-import { workbookDeskEntry } from '../../data/workbookDesk'
+import { workbookMenuName } from '../../data/bug1274WorkbookGuide'
 
 type Props = {
   compact?: boolean
@@ -60,7 +60,7 @@ export function WorkbookSwitcher({ compact = false, launches, active, disabled, 
       {launches.map(launch => {
         const current = launch.fileName === active
         const Icon = workbookIcon(launch.fileName, launch.dataset.DataSource)
-        const name = t(workbookDeskEntry(launch.fileName)?.name ?? launch.label)
+        const name = t(workbookMenuName(launch))
         return <button key={launch.fileName} type="button" className={`app-screen-tab${current ? ' is-active' : ''}`}
           aria-current={current ? 'true' : undefined} disabled={disabled}
           aria-label={t('Відкрити {file}', { file: name })} onClick={() => { if (!current) onOpen(launch) }}>

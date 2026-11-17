@@ -192,7 +192,7 @@ it('shows what is happening while the report is formed and the server reason whe
   vi.mocked(previewStockReport).mockImplementation(() => new Promise((_, reject) => { fail = reject }))
   await openDayWorkbook()
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
-  expect(await screen.findByText(/^Формуємо «Валовий прибуток» за /)).toBeTruthy()
+  expect(await screen.findByText(/^Формуємо «ВП» за /)).toBeTruthy()
   expect(screen.getByText('Звіт формується…')).toBeTruthy()
   expect(screen.getByText('0 с')).toBeTruthy()
   expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(true)

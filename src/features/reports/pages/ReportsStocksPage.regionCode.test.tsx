@@ -20,7 +20,7 @@ const buyer = { Id: 635170, Name: 'МАРЧУК Ю. В.  з ПДВ ціни', Fu
 const caption = `${code.Value} — ${buyer.Name}`
 const secondBuyer = { Id: 633135, Name: 'ЕР СІ ГРЕЙН ТОВ', RegionCodeId: 901653,
   RegionCode: { Id: 901653, NetUid: 'ba93333e-77bf-445d-bee6-4fb2cdec3f0e', RegionId: 16466, Value: 'BCE00605' } }
-const field = { Type: 8, Name: 'Покупець. Код по регіону' }
+const field = { Type: 8, Name: 'Код по регіону' }
 
 function Form({ condition = 2, source = 0 }: { condition?: number; source?: number }) {
   const [selection, setSelection] = useState<ReportSelection>({ IsChecked: true, SelectedField: field,

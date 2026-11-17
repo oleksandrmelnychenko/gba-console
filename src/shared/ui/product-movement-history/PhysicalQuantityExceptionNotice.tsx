@@ -13,6 +13,15 @@ export function PhysicalQuantityExceptionNotice({ exceptions = [] }: { exception
     </Text>)}
   </Alert>
 }
+export function physicalQuantityExceptionLine(count: number): string {
+  const tail = count % 100 >= 11 && count % 100 <= 14 ? 'рядків' : count % 10 === 1 ? 'рядок' : count % 10 >= 2 && count % 10 <= 4 ? 'рядки' : 'рядків'
+  return `Партію не підтверджено: ${count} ${tail}`
+}
+export function PhysicalQuantityExceptionLine({ exceptions = [] }: { exceptions?: readonly PhysicalQuantityException[] }) {
+  const { t } = useI18n()
+  if (!exceptions.length) return null
+  return <Text size="sm" c="orange.8" role="status">{t(physicalQuantityExceptionLine(exceptions.length))}</Text>
+}
 export function PhysicalQuantityRowNote({ row }: { row: PhysicalQuantityState }) {
   const { t } = useI18n()
   if (row.QuantityKnown !== false && row.QuantityStatus !== 'unconfirmed_batch') return null

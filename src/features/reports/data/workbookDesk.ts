@@ -15,7 +15,6 @@ import { SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from
 
 type WorkbookDeskEntry = {
   fileName: string
-  name: string
   reportName: string
   description: string
 }
@@ -23,21 +22,21 @@ type DeskChip = { label: string; title: string; kind: 'filter' | 'view' }
 type DeskSummary = { period: string; organizations: string | null; chips: DeskChip[] }
 
 const ENTRIES: readonly WorkbookDeskEntry[] = [
-  { fileName: SALES_CONSTRUCTOR_WORKBOOK, name: 'Звіт по продажам', reportName: 'Звіт по продажам', description: 'Продажі й повернення за датами документів.' },
-  { fileName: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, name: 'Валовий прибуток', reportName: 'Валовий прибуток', description: 'Продажі, повернення і собівартість.' },
-  { fileName: 'ВП.xls', name: 'ВП', reportName: 'Валовий прибуток',
+  { fileName: SALES_CONSTRUCTOR_WORKBOOK, reportName: 'Звіт по продажам', description: 'Продажі й повернення за датами документів.' },
+  { fileName: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, reportName: 'Валовий прибуток', description: 'Продажі, повернення і собівартість.' },
+  { fileName: 'ВП.xls', reportName: 'Валовий прибуток',
     description: 'Продажі, собівартість і прибуток по днях та організаціях.' },
-  { fileName: 'ВП по постачальниках.xls', name: 'ВП по постачальниках', reportName: 'Валовий прибуток по постачальниках',
+  { fileName: 'ВП по постачальниках.xls', reportName: 'Валовий прибуток по постачальниках',
     description: 'Продажі, собівартість і прибуток: склад → організація → постачальник.' },
-  { fileName: 'Впарювання.xls', name: 'Аналіз залишків і продажів', reportName: 'Аналіз залишків і продажів',
+  { fileName: 'Впарювання.xls', reportName: 'Аналіз залишків і продажів',
     description: 'Товари групи: залишок на кінець періоду, продажі по місяцях і покупці.' },
-  { fileName: 'Ведомость по денежным средствам.xls', name: 'Відомість по коштах', reportName: 'Відомість по коштах',
+  { fileName: 'Ведомость по денежным средствам.xls', reportName: 'Відомість по коштах',
     description: 'Початковий залишок, надходження, видаток і кінцевий залишок по кожній касі та рахунку.' },
-  { fileName: 'Взаємороз всі.xls', name: 'Взаєморозрахунки всі', reportName: 'Взаєморозрахунки з контрагентами',
+  { fileName: 'Взаємороз всі.xls', reportName: 'Взаєморозрахунки з контрагентами',
     description: 'Борги покупців: організація → валюта → контрагент, з менеджером і кодом регіону.' },
-  { fileName: 'ДБіторка.xls', name: 'Дебіторська заборгованість', reportName: 'Відомість по взаєморозрахунках з контрагентами',
+  { fileName: 'ДБіторка.xls', reportName: 'Відомість по взаєморозрахунках з контрагентами',
     description: 'Дебіторська заборгованість покупців: організація → контрагент, усі валюти договорів в одному рядку.' },
-  { fileName: SALES_BY_RESPONSIBLES_WORKBOOK_FILE, name: SALES_BY_RESPONSIBLES_TITLE, reportName: SALES_BY_RESPONSIBLES_TITLE,
+  { fileName: SALES_BY_RESPONSIBLES_WORKBOOK_FILE, reportName: SALES_BY_RESPONSIBLES_TITLE,
     description: 'Продажі мінус повернення в EUR без ПДВ і з ПДВ: організація → відповідальний документа продажу, у колонках — відповідальний замовлення покупця.' },
 ]
 

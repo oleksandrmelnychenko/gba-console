@@ -25,7 +25,7 @@ const choices = [
   { field: 21, label: "Склад", id: "id:2962", name: "Автопарк Конкорд [2962]", data: { Id: 2962 } },
   { field: 1, label: "Товар", id: "id:38182879", name: "Акумулятор RITAR RT1270 [38182879]", data: { Id: 38182879 } },
   { field: 5, label: "Покупець", id: "id:630804", name: "AMG CONCORD LLC [630804]", data: { Id: 630804 } },
-  { field: 60, label: "Покупець. Відповідальний менеджер покупця", id: "EC8D2243AED0D54794502E1DAFA56A68", name: "Administrator Local [10193]", data: { Id: "EC8D2243AED0D54794502E1DAFA56A68" } },
+  { field: 60, label: "Відповідальний менеджер покупця", id: "EC8D2243AED0D54794502E1DAFA56A68", name: "Administrator Local [10193]", data: { Id: "EC8D2243AED0D54794502E1DAFA56A68" } },
 ]
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear(); sessionStorage.clear()
@@ -60,7 +60,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   for (const name of ["Показники", "Групування"]) expect(screen.queryByRole("group", { name })).toBeNull()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
-  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець", "Покупець. Відповідальний менеджер покупця", "Склад"])
+  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець", "Відповідальний менеджер покупця", "Склад"])
 })
 it("submits all four selected identities through the existing inline sales-style controls", async () => {
   await open()
