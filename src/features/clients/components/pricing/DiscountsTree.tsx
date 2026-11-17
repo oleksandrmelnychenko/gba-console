@@ -397,7 +397,7 @@ export function DiscountsTree({
   }
 
   return (
-    <Stack className="client-discounts" gap={10}>
+    <Stack className="client-discounts" gap={8}>
       <Group gap={8} justify="space-between">
         <Text className="client-section-title">{t('Знижки за групами')}</Text>
         <TableChip tone="document" value={selectedAgreementName} />

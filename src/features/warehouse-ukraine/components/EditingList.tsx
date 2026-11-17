@@ -277,7 +277,7 @@ export function EditingList({ canProcess, kind, layoutVersion, loader, onLoaded,
   }
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-editing">
           <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => applyFilters({ ...filterDraft, from, to })} />
@@ -816,7 +816,7 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
 function SummaryLine({ changed, icon, label, link, mono, value }: { changed?: boolean; icon?: ReactNode; label: string; link?: boolean; mono?: boolean; value?: string }) {
   return (
     <Group
-      gap={6}
+      gap={8}
       wrap="nowrap"
       align="flex-start"
       style={changed ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 4, padding: '1px 4px' } : undefined}

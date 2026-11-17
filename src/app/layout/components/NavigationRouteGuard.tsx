@@ -75,7 +75,7 @@ function NavigationRouteState({
           <Title order={3} size="h4">
             {title}
           </Title>
-          <Text mt={6} size="sm">
+          <Text mt={8} size="sm">
             {description}
           </Text>
         </Alert>

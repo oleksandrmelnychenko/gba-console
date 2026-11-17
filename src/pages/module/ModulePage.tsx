@@ -47,7 +47,7 @@ export function ModulePage({ fallback = false, module }: ModulePageProps) {
               {description}
             </Text>
             {label && (
-              <Text mt={6} size="sm" fw={600}>
+              <Text mt={8} size="sm" fw={600}>
                 {label}
               </Text>
             )}

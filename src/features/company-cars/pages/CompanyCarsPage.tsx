@@ -179,14 +179,14 @@ function CompanyCarsPageContent() {
   }, [normalizedSearchValue, reloadKey, t])
 
   return (
-    <Stack className="company-cars-page console-table-page" gap={6}>
+    <Stack className="company-cars-page console-table-page" gap={8}>
       <div className="company-cars-card console-table-shell">
         <div className="app-filter-bar company-cars-filter-bar">
           <TextInput
             className="company-cars-search-input"
             size="sm"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Місце вводу для пошуку')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}

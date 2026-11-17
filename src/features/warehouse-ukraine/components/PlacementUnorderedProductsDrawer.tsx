@@ -110,7 +110,7 @@ function PlacementUnorderedProductsContent({
   return (
     <Stack gap="md">
       <Box style={{ overflowX: 'auto' }}>
-        <Table className="app-static-table" withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={6}>
+        <Table className="app-static-table" withColumnBorders highlightOnHover horizontalSpacing="sm" stickyHeader verticalSpacing={8}>
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={48}>#</Table.Th>
@@ -237,7 +237,7 @@ function AddUnorderedProductForm({
     <Stack gap="sm">
       <TextInput
         autoFocus
-        label={t('Пошук по товару')}
+        aria-label={t('Пошук по товару')}
         leftSection={<Search size={16} />}
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
@@ -257,7 +257,7 @@ function AddUnorderedProductForm({
                 <UnstyledButton
                   key={product.Id || index}
                   p="xs"
-                  style={{ borderRadius: 6 }}
+                  style={{ borderRadius: 8 }}
                   onClick={() => setSelected(product)}
                 >
                   <Text fw={600} size="sm">

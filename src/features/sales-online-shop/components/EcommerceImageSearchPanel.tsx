@@ -203,13 +203,13 @@ export function EcommerceImageSearchPanel({
   )
 
   return (
-    <Stack className="ecommerce-image-search-panel" gap={6}>
+    <Stack className="ecommerce-image-search-panel" gap={8}>
       <Card className="app-filter-card image-search-audit-toolbar" withBorder radius="md" padding={0}>
         <div className="app-filter-bar">
           <div className="app-filter-fields image-search-audit-filter-row">
             <TextInput
               className="image-search-audit-search"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={16} />}
               placeholder={t('Назва деталі, категорія, IP або SHA-256')}
               value={searchDraft}

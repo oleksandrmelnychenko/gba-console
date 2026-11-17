@@ -667,7 +667,6 @@ function ProcurementConstructorContent() {
             </div>
             <TextInput
               aria-label={t('Пошук у плані')}
-              label={t('Пошук у плані')}
               leftSection={<Search size={15} />}
               onChange={(event) => setSearchQuery(event.currentTarget.value)}
               placeholder={t('Товар, код або виробник')}
@@ -722,6 +721,7 @@ function ProcurementConstructorContent() {
                       key={session.id}
                       rightSection={
                         <ActionIcon
+                          aria-label={t('Видалити сесію')}
                           color="red"
                           component="div"
                           size="sm"
@@ -859,14 +859,14 @@ function ProcurementConstructorContent() {
         title={t('Кошик замовлень')}
         onClose={() => setBasketOpen(false)}
         headerTools={
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <TableChip value={`${basketCount} ${t('поз.')}`} />
             <Tooltip label={t('Очистити кошик')}>
               <ActionIcon
                 aria-label={t('Очистити кошик')}
                 color="red"
                 disabled={basketCount === 0}
-                size={30}
+                size={32}
                 variant="subtle"
                 onClick={() => setBasket(new Map<string, BasketLine>())}
               >
@@ -896,7 +896,7 @@ function ProcurementConstructorContent() {
               </div>
             </div>
             <div className="procure-cockpit__basket-body">
-              <Stack gap={10}>
+              <Stack gap={8}>
                 {basketByProducer.map((group) => (
                   <Box key={group.producerId} className="procure-cockpit__basket-group">
                     <button
@@ -1226,7 +1226,7 @@ function usePlanColumns({
         id: 'unitCost',
         header: t('Оцінка одиниці, EUR без ПДВ'),
         accessor: (row) => row.unit_cost_eur,
-        cell: (row) => <Stack gap={3}><ProcurementMoneyCell value={row.unit_cost_eur} unit /><ProcurementCostBadge proof={row.cost_provenance} /></Stack>,
+        cell: (row) => <Stack gap={4}><ProcurementMoneyCell value={row.unit_cost_eur} unit /><ProcurementCostBadge proof={row.cost_provenance} /></Stack>,
         align: 'right',
         width: 128,
       },
@@ -1412,9 +1412,9 @@ function computeOverview(rows: ReorderSuggestion[]): Overview {
 
 function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) => string }) {
   return (
-    <SimpleGrid cols={{ base: 1, md: 3 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, md: 3 }} spacing={8}>
       <Card padding="sm" radius="md" withBorder>
-        <Text c="dimmed" mb={6} size="xs">
+        <Text c="dimmed" mb={8} size="xs">
           {t('Терміновість позицій')}
         </Text>
         {overview.urgencyDonut.length > 0 ? (
@@ -1431,7 +1431,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
       </Card>
 
       <Card padding="sm" radius="md" withBorder>
-        <Text c="dimmed" mb={6} size="xs">
+        <Text c="dimmed" mb={8} size="xs">
           {t('Відомі оцінки, EUR без ПДВ · топ виробників')}
         </Text>
         <BarChart
@@ -1448,7 +1448,7 @@ function OverviewCharts({ overview, t }: { overview: Overview; t: (key: string) 
       </Card>
 
       <Card padding="sm" radius="md" withBorder>
-        <Text c="dimmed" mb={6} size="xs">
+        <Text c="dimmed" mb={8} size="xs">
           {t('Розподіл днів покриття')}
         </Text>
         <BarChart

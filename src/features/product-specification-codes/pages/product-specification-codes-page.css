@@ -1,9 +1,9 @@
 .product-specification-codes-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .product-specification-codes-card {
@@ -187,8 +187,8 @@
   }
 
   .product-specification-codes-filter-row .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
@@ -210,7 +210,7 @@
 }
 
 @container specification-codes-toolbar (max-width: 1350px) {
-  .product-specification-codes-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-specification-codes-filter-row .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
   .product-specification-codes-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

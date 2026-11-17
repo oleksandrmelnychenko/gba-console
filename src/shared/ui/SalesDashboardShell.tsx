@@ -118,7 +118,7 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
   usePageBreadcrumb(activeTab ? t(activeTab.label) : null)
 
   return (
-    <Stack className="sales-dashboard-shell" gap={6}>
+    <Stack className="sales-dashboard-shell" gap={8}>
       <div className="sales-dashboard-shell__card console-table-shell">
         <div className="sales-dashboard-shell__tabs pill-tabs app-screen-tabs">
           {visibleTabs.map((tab) => {

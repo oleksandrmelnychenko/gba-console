@@ -16,12 +16,12 @@
 }
 
 .new-merged-service-section-body {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .new-merged-service-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -61,7 +61,7 @@
 }
 
 .new-merged-service-checkbox {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .new-merged-service-checkbox .mantine-Checkbox-input:checked {

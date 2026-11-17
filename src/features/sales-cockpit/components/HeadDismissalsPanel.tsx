@@ -144,7 +144,7 @@ export function HeadDismissalsPanel({ managerId }: { managerId: number | null })
         ) : (
           <>
             {data.top_reasons.length > 0 && (
-              <Group gap={6} wrap="wrap">
+              <Group gap={8} wrap="wrap">
                 {data.top_reasons.slice(0, TOP_REASONS_SHOWN).map((reason) => (
                   <TableChip key={reason.reason} value={`${reason.reason} · ${reason.count}`} tone="neutral" />
                 ))}

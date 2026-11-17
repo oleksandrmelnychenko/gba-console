@@ -297,7 +297,7 @@ function ProtocolIncomePlacementDrawerContent({
       title={t('Розміщення')}
       onClose={onClose}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text fw={600}>{headerText}</Text>
         {isReadOnly && (
           <Alert color="blue">
@@ -360,7 +360,7 @@ function ProtocolIncomePlacementDrawerContent({
         )}
 
         {draft && (
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text fw={600}>{t('Оприходування')}</Text>
             <TextInput w={220} maw="100%" readOnly label={t('Код Виробника')} value={product?.VendorCode || ''} />
 
@@ -373,7 +373,7 @@ function ProtocolIncomePlacementDrawerContent({
             )}
 
             {draft.useNewAddress ? (
-              <Group align="end" gap={10}>
+              <Group align="end" gap={8}>
                 <TextInput
                   w={140} maw="100%"
                   label={t('Склад')}

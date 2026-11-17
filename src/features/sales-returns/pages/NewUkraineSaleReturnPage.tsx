@@ -788,7 +788,7 @@ export function NewUkraineSaleReturnPage() {
 
           <TextInput
             className="new-sale-return-search-input"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Номер, клієнт, договір або продаж')}
             value={searchDraft}
@@ -879,7 +879,7 @@ export function NewUkraineSaleReturnPage() {
           </Group>
         }
       >
-        <Stack className={`new-sale-return-create-workspace${!saleItemRows.length ? ' is-empty' : ''}`} gap={10}>
+        <Stack className={`new-sale-return-create-workspace${!saleItemRows.length ? ' is-empty' : ''}`} gap={8}>
           {createError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {createError}
@@ -996,7 +996,7 @@ export function NewUkraineSaleReturnPage() {
           </Group>
         }
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           {reviewError ? (
             <Alert color="red" icon={<CircleAlert size={16} />} title={t('Помилка')}>
               {reviewError}
@@ -1004,14 +1004,14 @@ export function NewUkraineSaleReturnPage() {
           ) : null}
 
           {groupDraftsByClient(drafts).map((group) => (
-            <Stack className="new-sale-return-review-group" gap={10} key={group.key}>
+            <Stack className="new-sale-return-review-group" gap={8} key={group.key}>
               <TableChip tone="warning" value={group.clientName} />
               <Stack gap="xs">
                 {group.drafts.map((draft) => (
-                  <Group className="new-sale-return-review-item" key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap={10}>
+                  <Group className="new-sale-return-review-item" key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap={8}>
                     <div className="new-sale-return-review-item__main">
                       <ReturnDraftProduct product={draft.orderItem.Product} onOpen={setProductCardNetId} />
-                      <Group className="new-sale-return-review-item__meta" gap={6}>
+                      <Group className="new-sale-return-review-item__meta" gap={8}>
                         <span>{t('Кількість')}</span>
                         <TableChip value={formatAmount(draft.qty)} />
                         <TableChip title={t('Причина')} value={getStatusLabel(draft.status, t)} />
@@ -1039,10 +1039,10 @@ export function NewUkraineSaleReturnPage() {
 
       <AppModal className="new-sale-return-editor" opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Позиція повернення')}</span>}>
         {editor ? (
-          <Stack className="app-compact-form" gap={10}>
+          <Stack className="app-compact-form" gap={8}>
             <div className="new-sale-return-editor-product">
               <ReturnDraftProduct product={editor.row.item.Product} onOpen={setProductCardNetId} />
-              <Group gap={6}>
+              <Group gap={8}>
                 <TableChip tone="document" value={editor.row.sale.SaleNumber?.Value} />
                 <TableChip tone="warning" value={editor.row.sale.ClientAgreement?.Client?.FullName || editor.row.sale.ClientAgreement?.Client?.Name} />
               </Group>
@@ -1128,7 +1128,7 @@ export function NewUkraineSaleReturnPage() {
 
       <AppModal className="new-sale-return-cancel-modal" size={420} opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
         <Stack className="app-compact-form" gap={12}>
-          <Group gap={6} className="new-sale-return-cancel-message">
+          <Group gap={8} className="new-sale-return-cancel-message">
             <Text>{t('Скасувати повернення')}</Text>
             <TableChip tone="document" value={cancelCandidate?.Number} />
             <Text>?</Text>

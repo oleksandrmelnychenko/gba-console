@@ -246,7 +246,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
       <div className="app-filter-bar cockpit-panel-bar">
         <div className="cockpit-panel-heading">
           <Text className="app-section-title" fw={600} size="sm">{t('Мої клієнти')}</Text>
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <TableChip value={isLoading ? '…' : response?.total ?? '—'} />
           </Group>
         </div>
@@ -260,7 +260,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
           onChange={(value) => { setSegment((value ?? 'all') as CockpitClientSegment); setPage(1) }}
         />
         <TextInput
-          label={t('Пошук клієнта')}
+          aria-label={t('Пошук клієнта')}
           leftSection={<Search size={15} />}
           placeholder={t('Назва, телефон або email')}
           value={search}
@@ -502,7 +502,7 @@ function ClientRecommendationsForAgreement({
             <Text c="dimmed" size="xs">
               {t('Відмітьте товари, які опрацювали сьогодні, і сформуйте персональну пропозицію')}
             </Text>
-            <Group gap={6} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               {canCreateSale && (
                 <Tooltip disabled={!offerDisabledReason} label={offerDisabledReason} withArrow>
                   <span>

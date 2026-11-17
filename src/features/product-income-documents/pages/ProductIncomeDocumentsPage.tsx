@@ -688,15 +688,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
   } = model
 
   return (
-    <Stack className="product-income-documents-page" gap={6}>
+    <Stack className="product-income-documents-page" gap={8}>
       <Card className="app-data-card product-income-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-income-documents-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-income-documents-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-income-documents-filter-row">
             <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { clearTransientSelection(); setPage(1); setDateFrom(from); setDateTo(to) }} />
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, постачальник або коментар')}
               value={searchDraft}
               className="product-income-documents-search-filter"
@@ -1338,10 +1338,10 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
         />
       )}
 
-      <SimpleGrid className="income-return-totals" cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={10}>
+      <SimpleGrid className="income-return-totals" cols={{ base: 1, sm: 2, md: 4 }} spacing={12} verticalSpacing={8}>
         <DocumentDetailRow label={t('Всього позицій')} mono value={String(items.length)} />
         <DocumentDetailRow label={t('Вся кількість')} mono value={totals.qty == null ? '—' : formatAmount(totals.qty)} />
-        <DocumentDetailRow label={t('Загальна сума')} mono value={<Group component="span" gap={6}><span>{totalAmount == null ? '—' : formatMoney(totalAmount)}</span><TableChip tone="source" value={currencyCode} /></Group>} />
+        <DocumentDetailRow label={t('Загальна сума')} mono value={<Group component="span" gap={8}><span>{totalAmount == null ? '—' : formatMoney(totalAmount)}</span><TableChip tone="source" value={currencyCode} /></Group>} />
         {isVat && <DocumentDetailRow label={t('ПДВ')} mono value={totalVat == null ? '—' : formatMoney(totalVat)} />}
       </SimpleGrid>
     </DocumentDetailSection>

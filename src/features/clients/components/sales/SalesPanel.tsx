@@ -343,7 +343,7 @@ function SaleAccordionItem({
           <ThemeIcon color="red" radius="sm" variant="light">
             <Text fw={700}>X</Text>
           </ThemeIcon>
-          <ActionIcon color="gray" variant="subtle" onClick={onToggle}>
+          <ActionIcon aria-label={t('Розгорнути продаж')} color="gray" variant="subtle" onClick={onToggle}>
             {isOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </ActionIcon>
           <Box flex={1} miw={0}>
@@ -525,7 +525,7 @@ function SaleOrderItemRow({
         <CreatedInfo date={item.Created} lastName={item.User?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.TotalAmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
+        <Group gap={8} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.TotalAmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
         <Text c="dimmed" size="xs">
           {item.Qty ?? 0} {t('Кількість')}
         </Text>
@@ -560,7 +560,7 @@ function SaleReturnItemRow({
         <CreatedInfo date={item.Created} lastName={item.CreatedBy?.LastName} />
       </Box>
       <Stack align="flex-end" gap={2}>
-        <Group gap={6} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.AmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
+        <Group gap={8} wrap="nowrap"><Text className="app-money" fw={700} size="sm">{roundTotal(item.AmountLocal)}</Text><TableChip tone="source" value={currencyCode} /></Group>
         <Text c="dimmed" size="xs">
           {item.Qty ?? 0} {t('Кількість')}
         </Text>
@@ -586,7 +586,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
           <DetailRow
             mono
             label={t('Сума')}
-            value={<Group component="span" gap={6}><span>{formatAmount(sale.TotalAmountLocal)}</span><TableChip tone="source" value={currencyCode} /></Group>}
+            value={<Group component="span" gap={8}><span>{formatAmount(sale.TotalAmountLocal)}</span><TableChip tone="source" value={currencyCode} /></Group>}
           />
           <DetailRow label={t('Кількість')} value={String(sale.TotalCount ?? 0)} />
           <DetailRow label={t('Дата')} value={formatDateTime(sale.ChangedToInvoice || sale.Created)} />

@@ -90,8 +90,8 @@ export function ClientActionsModal({
       onClose={onClose}
     >
       {client && (
-        <Stack gap={10}>
-          <Group gap={6}>
+        <Stack gap={8}>
+          <Group gap={8}>
             {String(client.RegionCode?.Value || '').trim() && (
               <Badge className="app-role-pill is-blue" variant="light">
                 {String(client.RegionCode?.Value || '').trim()}

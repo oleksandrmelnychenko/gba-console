@@ -184,7 +184,7 @@ export function OneCExportPanel() {
     <Stack gap={12}>
       <Box className="sync-config-panel">
         <Text className="app-section-title">{t('Вивантаження в 1С')}</Text>
-        <Stack gap={10} mt={10}>
+        <Stack gap={8} mt={8}>
           <Group gap={16}>
             {ONE_C_EXPORT_BASES.map((base) => (
               <Checkbox
@@ -200,7 +200,7 @@ export function OneCExportPanel() {
               />
             ))}
           </Group>
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={10}>
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing={8}>
             <Select
               label={t('Період')}
               data={ONE_C_EXPORT_PRESETS.map((value) => ({ value, label: t(ONE_C_EXPORT_PRESET_LABELS[value]) }))}
@@ -235,7 +235,7 @@ export function OneCExportPanel() {
             value={types}
             onChange={(value) => setTypes(ONE_C_EXPORT_TYPES.filter((type) => value.includes(type)))}
           >
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={6} mt={6}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8} mt={8}>
               {ONE_C_EXPORT_TYPES.map((type) => (
                 <Checkbox
                   key={type}

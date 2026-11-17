@@ -124,11 +124,11 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
       title={t('Сформувати звіт')}
       onClose={handleClose}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Card className="app-section-card client-returns-report-section" withBorder padding="sm" radius="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" size="sm" fw={600}>{t('Параметри звіту')}</Text>
-            <Group className="client-returns-report-dates" gap={10}>
+            <Group className="client-returns-report-dates" gap={8}>
               <AppDateInput
                 label={t('Від')}
                 type="date"

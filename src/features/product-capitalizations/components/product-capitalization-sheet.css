@@ -70,7 +70,7 @@
 /* Items table cells (§5.1): mono codes and row numbers. */
 .product-capitalization-cell-code {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
   color: var(--mantine-color-gray-8);
@@ -84,9 +84,9 @@
 }
 
 .product-capitalization-sheet .mantine-Modal-body { background: var(--mantine-color-gray-0); }
-.product-capitalization-form-section { min-width: 0; padding: 12px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; }
+.product-capitalization-form-section { min-width: 0; padding: 12px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; }
 .product-capitalization-form-section > .app-section-title { margin-bottom: 12px; }
-.product-capitalization-item-entry { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(3, minmax(110px, 1fr)) auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+.product-capitalization-item-entry { display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(3, minmax(108px, 1fr)) auto; gap: 8px; align-items: end; margin-bottom: 12px; }
 @media (max-width: 850px) { .product-capitalization-item-entry { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .product-capitalization-item-entry { grid-template-columns: minmax(0, 1fr); } }
 

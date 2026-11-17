@@ -151,7 +151,7 @@ export function OrganizationClientAgreementsPanel({
   }
 
   return (
-    <Stack className="organization-client-agreements" gap={10}>
+    <Stack className="organization-client-agreements" gap={8}>
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Договори')}</Text>
         <Button

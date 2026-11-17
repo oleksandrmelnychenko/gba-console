@@ -281,7 +281,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
         fill: true,
         accessor: (row) => `${row.serviceOrganization || ''} ${row.organization || ''}`,
         cell: (row) => (
-          <Stack gap={4}>
+          <Stack gap={0}>
             <Text size="sm">{displayValue(row.serviceOrganization)}</Text>
             <TableChip tone="product" value={displayValue(row.organization)} />
           </Stack>
@@ -313,7 +313,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
   }, [resetFilters, setSearchValue])
 
   return (
-    <Stack className="act-providing-services-page console-table-page" gap={6}>
+    <Stack className="act-providing-services-page console-table-page" gap={8}>
       <div className="console-table-shell">
         <div className="app-filter-bar act-services-filter-bar">
           <div className="app-filter-fields act-services-filter-row">
@@ -322,7 +322,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             <TextInput
               className="act-services-search-input"
               leftSection={<Search size={15} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, акт, інвойс, постачальник')}
               value={searchValue}
               onChange={(event) => {

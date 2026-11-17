@@ -136,10 +136,14 @@ function createPinnedStyle(
 
   return {
     background: 'var(--data-table-cell-bg, var(--mantine-color-white))',
+    // Outermost right-pinned header also covers the transparent scrollbar
+    // gutter to its right (see getPinnedStyle).
     boxShadow:
       pinned === 'left'
         ? '1px 0 0 var(--mantine-color-gray-2)'
-        : '-1px 0 0 var(--mantine-color-gray-2)',
+        : (pinnedRightPx ?? 0) === 0
+          ? '-1px 0 0 var(--mantine-color-gray-2), 16px 0 0 var(--data-table-cell-bg, var(--mantine-color-white))'
+          : '-1px 0 0 var(--mantine-color-gray-2)',
     left: pinned === 'left' ? `${pinnedLeftPx ?? 0}px` : undefined,
     position: 'sticky',
     right: pinned === 'right' ? `${pinnedRightPx ?? 0}px` : undefined,
@@ -208,7 +212,7 @@ function DataTableHeaderCellInner<TData>({
         textAlign: align,
       }}
     >
-      <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify={justify}>
+      <Group className="data-table-header-inner" gap={8} wrap="nowrap" justify={justify}>
         <UnstyledButton
           {...(canReorder ? attributes : {})}
           {...(canReorder ? listeners : {})}

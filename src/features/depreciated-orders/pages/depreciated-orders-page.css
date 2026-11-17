@@ -1,9 +1,9 @@
 .depreciated-orders-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 /* .console-frame .mantine-Card-root strips border/box-shadow globally
@@ -30,7 +30,7 @@
 .depreciated-orders-filter-bar {
   align-items: end;
   display: grid;
-  grid-template-columns: 310px minmax(0, 1fr) auto auto;
+  grid-template-columns: 308px minmax(0, 1fr) auto auto;
   min-width: 0;
   overflow-x: auto;
 }
@@ -50,7 +50,7 @@
 }
 
 .depreciated-orders-alert {
-  margin: 10px 8px 0;
+  margin: 8px 8px 0;
 }
 
 /* Registry controls stay together at natural widths on laptop screens. */
@@ -60,7 +60,7 @@
 .depreciated-orders-page .depreciated-orders-filter-bar .app-filter-table-toolbar-slot { flex: 0 0 auto; margin-left: 0; }
 .depreciated-orders-page .depreciated-orders-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
 @media (max-width: 1050px) {
-  .depreciated-orders-page .depreciated-orders-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .depreciated-orders-page .depreciated-orders-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .depreciated-orders-page .depreciated-orders-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .depreciated-orders-page .depreciated-orders-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

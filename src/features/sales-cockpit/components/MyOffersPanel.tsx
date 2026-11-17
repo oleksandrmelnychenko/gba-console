@@ -278,7 +278,7 @@ export function MyOffersPanel() {
   return (
     <Card className="app-section-card cockpit-panel-card" withBorder padding={0} radius="md">
       <div className="cockpit-offers-header">
-        <Group gap={6}>
+        <Group gap={8}>
           <Text className="app-section-title" fw={600} size="sm">{t('Мої пропозиції')}</Text>
           {!isLoading && !error && <TableChip value={visibleOffers.length} title={t('Всього пропозицій')} />}
         </Group>
@@ -302,7 +302,7 @@ export function MyOffersPanel() {
         </div>
         <div className="app-filter-field cockpit-offers-search">
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Номер або клієнт')}
             value={search}

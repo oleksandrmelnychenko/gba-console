@@ -4,10 +4,70 @@ import type { DataTableColumn } from './types'
 const ACTION_COLUMN_ID_PATTERN =
   /^(?:(?:.+)Action|actions|operations?|controls?|edit|delete|remove|archive|view|open|process|print|cancel|reassign|menu)$/i
 
-const ACTION_ICON_SIZE = 28
+// Row actions are 24px icons (--app-control-height-xs) in a cell with 8px
+// inline padding, so one action needs 40px, two 68px, three 96px.
+const ACTION_ICON_SIZE = 24
 const ACTION_GAP = 4
 const ACTION_CELL_INLINE_PADDING = 16
-const MIN_ACTION_COLUMN_WIDTH = 56
+const MIN_ACTION_COLUMN_WIDTH = 40
+const ACTION_CONTROL_SELECTOR = 'button, a[href], [role="button"], input, .mantine-ActionIcon-root'
+
+// Share of rows whose actions must fit on one line. A rare row with more
+// actions (e.g. one advance report among 40 payments) wraps its icons onto a
+// second line instead of widening the column for every row.
+const ACTION_FIT_ROW_SHARE = 0.8
+
+/**
+ * Width an action column needs for what it actually renders: the horizontal
+ * span of the controls in its body cells (80th percentile over rows, so the
+ * typical row fits on one line) plus the cell's inline padding. Returns null
+ * when nothing measurable is rendered (no rows, jsdom).
+ */
+export function measureActionColumnFitWidth(
+  root: ParentNode,
+  columnId: string,
+): number | null {
+  const cells = root.querySelectorAll<HTMLElement>(
+    `td[data-column-id="${CSS.escape(columnId)}"]`,
+  )
+  const spans: number[] = []
+  let inlinePadding = ACTION_CELL_INLINE_PADDING
+
+  cells.forEach((cell) => {
+    // Use the cell's real padding (some pages pad their actions column).
+    const style = getComputedStyle(cell)
+    const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+    if (Number.isFinite(padding) && padding > 0) inlinePadding = padding
+
+    const controls = Array.from(cell.querySelectorAll<HTMLElement>(ACTION_CONTROL_SELECTOR))
+      .map((control) => control.getBoundingClientRect())
+      .filter((rect) => rect.width > 0)
+
+    if (controls.length === 0) return
+
+    // Controls may already wrap onto several lines: measure the widest line.
+    const lines = new Map<number, DOMRect[]>()
+    controls.forEach((rect) => {
+      const key = Math.round(rect.top)
+      lines.set(key, [...(lines.get(key) ?? []), rect])
+    })
+    const span = Math.max(
+      ...Array.from(lines.values()).map((line) =>
+        Math.max(...line.map((rect) => rect.right)) - Math.min(...line.map((rect) => rect.left)),
+      ),
+    )
+    spans.push(span)
+  })
+
+  if (spans.length === 0) return null
+
+  spans.sort((a, b) => a - b)
+  const span = spans[Math.min(spans.length - 1, Math.ceil(spans.length * ACTION_FIT_ROW_SHARE) - 1)]
+
+  if (span <= 0) return null
+
+  return Math.max(MIN_ACTION_COLUMN_WIDTH, Math.ceil(span + inlinePadding))
+}
 
 export function isDataTableActionColumn<TData>(
   column: DataTableColumn<TData>,

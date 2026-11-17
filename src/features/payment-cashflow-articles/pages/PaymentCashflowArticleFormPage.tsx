@@ -266,7 +266,7 @@ export function PaymentCashflowArticleFormPage() {
       onClose={handleCancel}
     >
       <form id="payment-cashflow-article-form" onSubmit={handleSubmit}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -330,7 +330,7 @@ export function PaymentCashflowArticleFormPage() {
         title={t('Видалити статтю руху коштів')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
           </Text>

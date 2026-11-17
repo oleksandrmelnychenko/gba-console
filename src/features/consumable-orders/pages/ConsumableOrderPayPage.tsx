@@ -651,7 +651,7 @@ function PaymentMovementModal({
   return (
     <AppModal className="app-compact-form" opened={opened} size={600} title={t('Нова стаття руху коштів')} onClose={onClose}>
       <form className="consumable-order-pay-movement-modal" onSubmit={onSubmit}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Card className="app-section-card" withBorder padding={12} radius="md">
             <TextInput
               autoFocus

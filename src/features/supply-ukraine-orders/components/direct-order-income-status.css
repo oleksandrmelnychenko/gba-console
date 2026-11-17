@@ -2,7 +2,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: 8px 8px;
   padding-right: 8px;
 }
 
@@ -17,9 +17,9 @@
 }
 
 .direct-order-income-summary {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
 }
 
@@ -27,7 +27,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: var(--mantine-color-gray-8);
   font-size: 12px;
   font-weight: 600;
@@ -50,8 +50,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-top: 7px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .direct-order-income-summary__owner {

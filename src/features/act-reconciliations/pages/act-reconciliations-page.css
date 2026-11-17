@@ -1,9 +1,9 @@
 .act-reconciliations-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .act-reconciliations-shell {
@@ -34,16 +34,16 @@
 }
 
 .act-reconciliations-page .act-reconciliations-filter-row > .act-reconciliations-status-filter {
-  flex: 0 1 230px;
-  min-width: 190px;
-  width: 230px;
+  flex: 0 1 228px;
+  min-width: 188px;
+  width: 228px;
 }
 
 .act-reconciliations-page .act-reconciliations-filter-row > .app-filter-date-range {
-  flex: 0 1 330px;
+  flex: 0 1 328px;
   grid-template-columns: repeat(2, minmax(140px, 1fr));
-  width: 330px;
-  min-width: 290px;
+  width: 328px;
+  min-width: 288px;
 }
 
 .act-reconciliations-filter-bar .mantine-InputWrapper-label {
@@ -64,7 +64,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;
@@ -99,7 +99,7 @@
   }
 
   .act-reconciliations-page .act-reconciliations-filter-row > .act-reconciliations-status-filter {
-    flex: 1 1 190px;
+    flex: 1 1 188px;
     min-width: 0;
   }
 }
@@ -120,7 +120,7 @@
 .app-filter-bar.act-reconciliations-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .act-reconciliations-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container act-reconciliations-toolbar (max-width: 800px) {
-  .app-filter-bar.act-reconciliations-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.act-reconciliations-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.act-reconciliations-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.act-reconciliations-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

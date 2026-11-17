@@ -1,9 +1,9 @@
 .sad-list-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .sad-list-page__toolbar {
@@ -42,7 +42,7 @@
 .sad-list-page__toolbar .sad-list-page__actions { margin-left: 0; flex: 0 0 auto; }
 
 @container registry (max-width: 600px) {
- .app-filter-bar .sad-list-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .sad-list-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .sad-list-toolbar-caption-action .mantine-Button-label { display: none; }
  .sad-list-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }

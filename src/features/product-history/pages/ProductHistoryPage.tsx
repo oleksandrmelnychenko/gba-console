@@ -362,10 +362,10 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
   const showStateMessage = !isLoading && !isLoadingStorages && Boolean(stateMessage)
 
   return (
-    <Stack className="product-history-page" gap={6}>
+    <Stack className="product-history-page" gap={8}>
       <Card className="app-data-card product-history-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-history-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-history-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-history-filter-row">
             <AppDateInput
               className="product-history-date-filter"
               label={t('Дата')}
@@ -393,7 +393,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             <TextInput
               className="product-history-search-filter"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}
@@ -729,7 +729,7 @@ function useProductHistoryColumns(
           }
 
           return (
-            <Group gap={6} wrap="wrap">
+            <Group gap={8} wrap="wrap">
               {availabilities.map((availability) => (
                 <StorageAvailabilityHistory key={availability.NetUid || availability.StorageId} availability={availability} t={t} />
               ))}

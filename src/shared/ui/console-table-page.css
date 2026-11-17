@@ -1,11 +1,11 @@
 .console-table-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  /* docs/console-page-shell-spacing-pattern.md: 6px frame gap above/below the
-     card and 4px side gutters. The height formula accounts for both frame gaps. */
-  padding: 6px 4px 0;
+  /* docs/console-page-shell-spacing-pattern.md: 4px gap between the frame and
+     the card on every side. The height formula accounts for both frame gaps. */
+  padding: 4px 4px 0;
 }
 
 /* .console-table-shell card shell + .console-table-command-bar strip chrome
@@ -15,8 +15,8 @@
 .console-table-command-bar {
   align-items: end;
   display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(170px, 210px) minmax(170px, 210px) minmax(280px, 1fr) auto;
+  gap: 8px;
+  grid-template-columns: minmax(168px, 208px) minmax(168px, 208px) minmax(280px, 1fr) auto;
 }
 
 .console-table-command-bar.is-search-only {
@@ -33,7 +33,7 @@
 .console-table-actions {
   align-items: center;
   display: flex;
-  gap: 7px;
+  gap: 8px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -48,9 +48,9 @@
   flex: 0 0 auto;
   font-size: 11px;
   font-weight: 680;
-  height: 30px;
+  height: 28px;
   line-height: 1;
-  padding: 0 10px;
+  padding: 0 8px;
   white-space: nowrap;
 }
 
@@ -83,7 +83,7 @@
 .console-table-page .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  padding-right: 10px;
+  padding-right: 8px;
 }
 
 .console-table-page .data-table-table {
@@ -102,7 +102,7 @@
 .console-table-entity-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -119,7 +119,7 @@
   height: 32px;
   justify-content: center;
   line-height: 1;
-  padding: 0 3px;
+  padding: 0 4px;
   text-align: center;
   width: 32px;
 }
@@ -140,7 +140,7 @@
 
 .console-table-entity-title {
   color: var(--mantine-color-gray-9);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 720;
   line-height: 1.15;
 }
@@ -150,7 +150,7 @@
   font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .console-table-value {
@@ -181,7 +181,7 @@
 
 @media (max-width: 640px) {
   .console-table-page {
-    padding: 6px 4px 0;
+    padding: 4px 4px 0;
   }
 
   .console-table-command-bar,

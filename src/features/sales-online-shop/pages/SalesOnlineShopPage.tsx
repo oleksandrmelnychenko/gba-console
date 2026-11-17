@@ -223,7 +223,7 @@ function SalesOnlineShopPageContent() {
   }
 
   return (
-    <Stack className="sales-online-shop-workspace" gap={6}>
+    <Stack className="sales-online-shop-workspace" gap={8}>
       <Card className="app-filter-card sales-online-shop-workspace-switcher" withBorder radius="md" padding={0}>
         <div className="app-filter-bar">
           <div className="app-filter-field">
@@ -810,7 +810,7 @@ function SalesOnlineShopOrdersPage() {
   }
 
   return (
-    <Stack className="sales-online-shop-page console-table-page" gap={6}>
+    <Stack className="sales-online-shop-page console-table-page" gap={8}>
       <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
         <Stack className="sales-ukraine-content" gap={0}>
           <div className="sales-filter-bar">
@@ -818,7 +818,7 @@ function SalesOnlineShopOrdersPage() {
               <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
               <TextInput
                 className="sales-filter-search"
-                label={t('Пошук')}
+                aria-label={t('Пошук')}
                 leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 value={filterDraft.value}

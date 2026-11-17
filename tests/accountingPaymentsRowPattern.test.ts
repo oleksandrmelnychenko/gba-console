@@ -50,12 +50,13 @@ describe('accounting payments body-row pattern', () => {
     expect(source).toContain('size="md"')
     expect(source).toContain('variant="subtle"')
     expect(source).toContain('<Icon aria-hidden="true" size={16}')
+    // 24px = the 32px row minus 4px cell padding top and bottom.
     expect(declarations(action)).toMatchObject({
-      flex: '0 0 28px',
-      height: '28px',
-      'min-height': '28px',
-      'min-width': '28px',
-      width: '28px',
+      flex: '0 0 var(--app-control-height-xs)',
+      height: 'var(--app-control-height-xs)',
+      'min-height': 'var(--app-control-height-xs)',
+      'min-width': 'var(--app-control-height-xs)',
+      width: 'var(--app-control-height-xs)',
     })
     expect(declarations(glyph)).toMatchObject({
       height: '16px',
@@ -82,7 +83,7 @@ describe('accounting payments body-row pattern', () => {
     const badge = findRule(root, `${summarySelector} .mantine-Badge-root`)
 
     expect(declarations(summary)).toMatchObject({
-      'min-height': '30px',
+      'min-height': '28px',
       'overflow-x': 'auto',
       padding: '4px 12px',
     })

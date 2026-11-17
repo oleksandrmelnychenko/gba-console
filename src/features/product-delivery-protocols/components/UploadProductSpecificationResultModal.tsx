@@ -64,7 +64,7 @@ function UploadProductSpecificationResultContent({ result }: { result: UploadPro
       <Tabs value={activeTab} onChange={(value) => setActiveTab((value as ResultTab) || initialTab)}>
         <Tabs.List>
           <Tabs.Tab value="updated">
-            <Group gap={6}>
+            <Group gap={8}>
               <Text size="sm">{t('Оновлені')}</Text>
               <Badge color="green" variant="light">
                 {updated.length}
@@ -72,7 +72,7 @@ function UploadProductSpecificationResultContent({ result }: { result: UploadPro
             </Group>
           </Tabs.Tab>
           <Tabs.Tab value="missing">
-            <Group gap={6}>
+            <Group gap={8}>
               <Text size="sm">{t('Неіснуючі')}</Text>
               <Badge color="red" variant="light">
                 {missing.length}
@@ -80,7 +80,7 @@ function UploadProductSpecificationResultContent({ result }: { result: UploadPro
             </Group>
           </Tabs.Tab>
           <Tabs.Tab value="notRequired">
-            <Group gap={6}>
+            <Group gap={8}>
               <Text size="sm">{t('Не оновлені')}</Text>
               <Badge color="gray" variant="light">
                 {notRequired.length}
@@ -94,7 +94,7 @@ function UploadProductSpecificationResultContent({ result }: { result: UploadPro
         <CopyButton value={items.join('\n')}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? t('Скопійовано') : t('Копіювати')}>
-              <ActionIcon color={copied ? 'green' : 'gray'} variant="light" onClick={copy}>
+              <ActionIcon aria-label={copied ? t('Скопійовано') : t('Копіювати')} color={copied ? 'green' : 'gray'} variant="light" onClick={copy}>
                 {copied ? <Check size={18} /> : <Copy size={18} />}
               </ActionIcon>
             </Tooltip>

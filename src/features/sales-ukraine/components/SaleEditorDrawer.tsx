@@ -496,7 +496,7 @@ function SaleEditorContent({ initialSale, loadSale }: { initialSale: SalesUkrain
               )}
               {isLoading && <Loader size="xs" />}
             </Group>
-            <Group gap={6} wrap="nowrap">{useEurToUah ? (
+            <Group gap={8} wrap="nowrap">{useEurToUah ? (
               <Tooltip label={t(getEurToUahNote(sale))}>
                 <Text className="app-money sale-editor-summary__amount">{amountFormatter.format(headerTotal)}</Text>
               </Tooltip>
@@ -1183,12 +1183,12 @@ function AddProductForm({
   }
 
   return (
-    <Stack gap={10} className="sale-add-product app-compact-form">
+    <Stack gap={8} className="sale-add-product app-compact-form">
       <DocumentDetailLayout summary={null}>
       <DocumentDetailSection title={t('Товар')} stacked>
       <TextInput
         autoFocus
-        label={t('Пошук по товару')}
+        aria-label={t('Пошук по товару')}
         leftSection={<Search size={16} />}
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
@@ -1593,7 +1593,7 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
   }
 
   return (
-    <Stack className="sale-editor-client" gap={10}>
+    <Stack className="sale-editor-client" gap={8}>
       <Stack gap={8}>
         <DetailRow label={t('Клієнт')} value={getClientName(sale)} />
         <div className="app-detail-field"><span>{t('Організація')}</span><TableChip tone="product" value={getOrganizationDisplayName(sale.ClientAgreement?.Agreement?.Organization)} /></div>

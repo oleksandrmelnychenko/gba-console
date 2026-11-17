@@ -34,7 +34,7 @@
 .user-roles-filter-bar .mantine-Input-wrapper,
 .user-roles-filter-bar .mantine-Input-input {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;
@@ -50,7 +50,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-height: var(--app-filter-control-height);
   min-width: 0;
@@ -73,20 +73,20 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .user-roles-list-pane {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   flex: 0 0 auto;
   min-width: 0;
-  padding: 6px;
+  padding: 8px;
 }
 
 .user-roles-editor-pane {
@@ -121,7 +121,7 @@
   display: flex;
   flex: 1 0 auto;
   gap: 2px;
-  padding-right: 6px;
+  padding-right: 8px;
 }
 
 .user-role-list-item:hover {
@@ -141,7 +141,7 @@
   cursor: pointer;
   flex: 1 1 auto;
   min-height: 36px;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .user-role-list-select:focus-visible {
@@ -152,7 +152,7 @@
 .user-role-list-main {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .user-role-list-name {
@@ -178,15 +178,15 @@
 }
 
 .user-roles-list-empty {
-  padding: 16px 10px;
+  padding: 16px 8px;
 }
 
 .user-role-list-skeleton {
   align-items: center;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   min-height: 48px;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .user-roles-permissions-panel {
@@ -219,7 +219,7 @@
 }
 .app-filter-bar.user-roles-filter-bar > .user-roles-search-input { flex: 0 0 280px; width: 280px; min-width: 0; max-width: 100%; }
 @container registry (max-width: 950px) {
- .user-roles-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .user-roles-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .user-roles-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .user-roles-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

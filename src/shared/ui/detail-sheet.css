@@ -10,17 +10,17 @@
   border-radius: 8px;
   box-shadow: none;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
 }
 
 .app-detail-eyebrow {
   color: var(--mantine-color-gray-6);
   display: block;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -29,7 +29,7 @@
 
 .app-detail-title {
   display: grid;
-  margin-top: 7px;
+  margin-top: 8px;
   min-width: 0;
 }
 
@@ -59,8 +59,8 @@
 .app-detail-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .app-detail-hero__side {
@@ -103,7 +103,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -124,7 +124,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 10px;
   font-weight: 500;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 /* Сітка пар «лейбл ——— значення» — leader-рядки у 2 колонки. */

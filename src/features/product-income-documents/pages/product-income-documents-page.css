@@ -1,9 +1,9 @@
 .product-income-documents-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 /* .console-frame .mantine-Card-root strips border/box-shadow globally
@@ -63,7 +63,7 @@
 .product-income-documents-page .product-income-documents-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
 .product-income-documents-page .product-income-documents-filter-bar .product-income-documents-search-filter { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
 @media (max-width: 1050px) {
-  .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .product-income-documents-page .product-income-documents-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

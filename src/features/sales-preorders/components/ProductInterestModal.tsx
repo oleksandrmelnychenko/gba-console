@@ -119,9 +119,9 @@ export function ProductInterestModal({
       onClose={closeModal}
     >
       <form onSubmit={submitForm}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Card className="app-section-card" withBorder>
-            <Stack gap={10}>
+            <Stack gap={8}>
             <NumberInput
               allowDecimal={false}
               allowNegative={false}

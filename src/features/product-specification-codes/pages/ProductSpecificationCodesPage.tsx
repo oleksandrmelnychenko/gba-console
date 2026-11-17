@@ -201,7 +201,7 @@ function ProductSpecificationCodesPageContent() {
   }
 
   return (
-    <Stack className="product-specification-codes-page" gap={6}>
+    <Stack className="product-specification-codes-page" gap={8}>
       <Card className="app-data-card product-specification-codes-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-specification-codes-filter-bar">
           <div className="app-filter-fields product-specification-codes-filter-row">
@@ -311,7 +311,7 @@ function SpecificationUploadResultModal({
   return (
     <AppModal className="product-specification-upload-modal app-compact-form" centered opened={Boolean(result)} title={t('Результат завантаження')} onClose={onClose}>
       {result && (
-        <Stack gap={10}>
+        <Stack gap={8}>
           <div className="product-specification-codes-upload-stats">
             <UploadStat label={t('Розпізнано')} value={result.ParsedCount} />
             <UploadStat color="teal" label={t('Оновлено')} value={result.SuccessfullyUpdatedCount} />

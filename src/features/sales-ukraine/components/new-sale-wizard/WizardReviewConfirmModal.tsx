@@ -41,7 +41,7 @@ export function WizardReviewConfirmModal({
       withCloseButton={false}
       onClose={onCancel}
     >
-      <Stack className="app-compact-form" gap={10} onKeyDown={handleKeyDown}>
+      <Stack className="app-compact-form" gap={8} onKeyDown={handleKeyDown}>
         <Text size="sm">{t('Закрити вікно?')}</Text>
         <AppModalFooter>
           <Button color="gray" variant="default" onClick={onCancel}>

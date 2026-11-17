@@ -61,7 +61,7 @@
 
 .product-income-page-header {
   flex: 0 0 auto;
-  min-height: 30px;
+  min-height: 28px;
 }
 
 .product-income-page-title,
@@ -69,7 +69,7 @@
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 8px 8px;
 }
 
 .product-delivery-protocol-income-sheet-title {
@@ -91,7 +91,7 @@
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -114,7 +114,7 @@
   font-size: 11px;
   line-height: 1;
   min-height: 22px;
-  padding: 3px 7px;
+  padding: 4px 8px;
 }
 
 .product-income-summary-panel,
@@ -133,7 +133,7 @@
 }
 
 .product-income-summary-panel {
-  padding: 10px 12px 12px;
+  padding: 8px 12px 12px;
 }
 
 .product-income-summary-panel.is-placed {
@@ -142,8 +142,8 @@
 
 .product-income-summary-grid {
   display: grid;
-  gap: 12px 18px;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
   margin-top: 12px;
 }
 
@@ -151,7 +151,7 @@
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -190,11 +190,11 @@
 }
 
 .product-income-controls-panel {
-  padding: 10px 12px 12px;
+  padding: 8px 12px 12px;
 }
 
 .product-income-controls-panel > .mantine-Group-root {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .product-income-controls {
@@ -203,18 +203,18 @@
 }
 
 .product-income-control {
-  flex: 1 1 170px;
-  min-width: 150px;
+  flex: 1 1 168px;
+  min-width: 148px;
   max-width: 220px;
 }
 
 .product-income-control.is-date {
-  flex-basis: 150px;
-  max-width: 170px;
+  flex-basis: 148px;
+  max-width: 168px;
 }
 
 .product-income-control.is-vat {
-  flex-basis: 110px;
+  flex-basis: 108px;
   max-width: 120px;
 }
 
@@ -257,7 +257,7 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
 }
 
@@ -274,9 +274,9 @@
 
 .product-income-grid-summary {
   display: grid;
-  flex: 1 1 650px;
+  flex: 1 1 648px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   padding: 0;
   background: white;
@@ -287,13 +287,13 @@
   flex: 0 0 auto;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
 }
 
 .product-income-page > .product-income-footer {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--mantine-color-gray-2);
   background: var(--mantine-color-white);
 }
@@ -317,7 +317,7 @@
   min-width: 0;
   flex-direction: column;
   gap: 4px;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .product-income-summary-metric span {
@@ -385,7 +385,7 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.product-income-summary-metric-value { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.product-income-summary-metric-value { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .product-income-table-toolbar-slot { display: flex; flex-wrap: wrap; margin-left: auto; }
 .product-income-table-toolbar-slot .data-table-toolbar { padding: 0; margin: 0; }
 .product-income-page .app-section-title { color: var(--mantine-color-gray-9); }

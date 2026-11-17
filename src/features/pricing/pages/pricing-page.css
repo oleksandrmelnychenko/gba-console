@@ -7,7 +7,7 @@
   grid-template-columns:
     minmax(260px, 1fr)
     minmax(240px, 0.85fr)
-    minmax(250px, 0.9fr);
+    minmax(248px, 0.9fr);
   min-width: 0;
   overflow-x: auto;
 }
@@ -22,9 +22,9 @@
   display: grid;
   gap: 12px;
   grid-auto-rows: max-content;
-  grid-template-columns: minmax(560px, 1.55fr) minmax(330px, 0.78fr);
+  grid-template-columns: minmax(560px, 1.55fr) minmax(328px, 0.78fr);
   overflow-y: auto;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .pricing-page__section {
@@ -45,8 +45,8 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  min-height: 51px;
-  padding: 10px 16px;
+  min-height: 52px;
+  padding: 8px 16px;
 }
 
 .pricing-page__recommendation-heading {
@@ -71,13 +71,13 @@
 .pricing-page__recommendation-status {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
-  padding: 4px 6px;
+  padding: 4px 8px;
 }
 
 .pricing-page__recommendation-status.is-ready {
@@ -87,7 +87,7 @@
 }
 
 .pricing-page__recommendation-body {
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .pricing-page__recommendation-empty {
@@ -95,7 +95,7 @@
   display: flex;
   flex-direction: column;
   min-height: 184px;
-  padding: 18px 0 8px;
+  padding: 16px 0 8px;
   text-align: left;
 }
 
@@ -112,16 +112,16 @@
 
 .pricing-page__recommendation-empty-copy {
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
-  margin-top: 6px;
+  margin-top: 8px;
   max-width: 360px;
 }
 
 .pricing-page__recommendation-steps {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin-top: 16px;
 }
 
@@ -129,14 +129,14 @@
   align-items: center;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
-  gap: 5px;
-  padding: 5px 7px;
+  gap: 4px;
+  padding: 4px 8px;
 }
 
 .pricing-page__recommendation-step.is-active {
@@ -151,7 +151,7 @@
   }
 
   .pricing-page__recommendation-empty {
-    min-height: 150px;
+    min-height: 148px;
   }
 }
 
@@ -163,7 +163,7 @@
 
 @media (max-width: 640px) {
   .pricing-page__content {
-    padding-inline: 6px;
+    padding-inline: 8px;
   }
 
   .pricing-page__recommendation-status {

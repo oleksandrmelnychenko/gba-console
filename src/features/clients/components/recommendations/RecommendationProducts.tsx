@@ -57,7 +57,7 @@ export function RecommendationsList({
 
   if (products.length === 0) {
     return (
-      <Stack className="client-recommendations-empty" align="center" gap={6} role="status">
+      <Stack className="client-recommendations-empty" align="center" gap={8} role="status">
         <ShoppingCart size={24} aria-hidden="true" />
         <Text fw={500} size="sm">{t('Рекомендацій не знайдено')}</Text>
         <Text c="dimmed" size="xs">{t('За вибраним договором немає рекомендованих товарів')}</Text>
@@ -115,7 +115,7 @@ const RecommendationCard = memo(function RecommendationCard({ product, index, se
         </Group>
         <Text fw={500} size="sm">{displayValue(product.NameUA || product.Name)}</Text>
         {product.MainOriginalNumber && (
-          <Group gap={6}>
+          <Group gap={8}>
             <Text size="xs" fw={600}>OEM:</Text>
             <Badge className="recommendation-product-oem" color="orange" variant="light" size="sm">{product.MainOriginalNumber}</Badge>
           </Group>

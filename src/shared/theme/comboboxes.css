@@ -1,4 +1,6 @@
-/* Dropdowns live in portals, so typography must not depend on a toolbar ancestor. */
+/* Dropdowns live in portals, so typography must not depend on a toolbar ancestor.
+   Option rules repeat their :is() group: theme.ts loads before Mantine's stylesheet,
+   so a single class would lose to Mantine's own option padding/height. */
 :is(.mantine-Select-input, .mantine-MultiSelect-input, .mantine-Autocomplete-input, .checkbox-multi-select .mantine-Input-input),
 :is(.mantine-Combobox-search, .mantine-Select-search, .mantine-MultiSelect-search, .mantine-Autocomplete-search),
 :is(.mantine-Combobox-groupLabel, .mantine-Select-groupLabel, .mantine-MultiSelect-groupLabel, .mantine-Autocomplete-groupLabel),
@@ -10,13 +12,13 @@
   letter-spacing: 0;
 }
 
-:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option) {
-  min-height: 30px;
-  padding: 7px 8px;
-  border-radius: 6px;
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option) {
+  min-height: 32px;
+  padding: 8px 8px;
+  border-radius: 8px;
 }
 
-:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(
+:is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(
   :hover, [data-combobox-selected], [data-combobox-active], [aria-selected='true']
 ):not([data-combobox-disabled]) {
   background: var(--mantine-color-gray-1);

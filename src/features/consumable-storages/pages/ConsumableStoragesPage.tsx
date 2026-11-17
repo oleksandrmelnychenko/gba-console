@@ -236,12 +236,12 @@ function ConsumableStoragesPageContent() {
   }
 
   return (
-    <Stack className="consumable-storages-page" gap={6}>
+    <Stack className="consumable-storages-page" gap={8}>
       <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar consumable-storages-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields consumable-storages-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields consumable-storages-filter-row">
             <TextInput
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={16} />}
               placeholder={t('Пошук')}
               value={searchValue}
@@ -574,10 +574,10 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
   return (
     <Stack className="consumable-storage-detail-panel" gap={0}>
       <div className="app-filter-bar consumable-storage-detail-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
-        label={t('Пошук')}
+        aria-label={t('Пошук')}
         placeholder={t('Назва або артикул')}
         value={searchValue}
         className="consumable-storages-search"
@@ -860,12 +860,12 @@ function DeprecatedConsumableOrdersPanel({
   return (
     <Stack className="consumable-storage-detail-panel" gap={0}>
       <div className="app-filter-bar consumable-storage-detail-filter-bar consumable-storage-detail-filter-bar--two-row">
-      <Group align="end" justify="space-between" gap={10} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
+      <Group align="end" justify="space-between" gap={8} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
         <Group align="end" gap="sm" wrap="wrap">
           <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to) }} />
           <TextInput
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Номер, артикул, товар або отримувач')}
             value={searchValue}
             className="consumable-storages-search"

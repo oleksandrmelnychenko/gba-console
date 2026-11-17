@@ -944,7 +944,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   <TableChip value={selectedRegionCodes.length} />
                 </Group>
                 {selectedRegion ? (
-                  <Group gap={6}>
+                  <Group gap={8}>
                     <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
                       <TableRowAction action="edit" label={translate('Редагувати регіон')} onClick={() => openEditRegion(selectedRegion)} />
                     </PermissionGate>
@@ -1169,7 +1169,7 @@ function RegionCodeEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1578,7 +1578,7 @@ function PerfectClientEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1682,7 +1682,7 @@ function TaxInspectionEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1794,7 +1794,7 @@ function PricingEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -1891,7 +1891,7 @@ function PricingEditorModal({
                 const world = definition.ImportedForAmg ? 'AMG' : translate('Контех')
 
                 return (
-                  <Stack gap={6} key={definition.ImportedForAmg ? 'amg' : 'fenix'}>
+                  <Stack gap={8} key={definition.ImportedForAmg ? 'amg' : 'fenix'}>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                       {definition.BasePricingId || sourceFieldsEditable ? (
                         <Select
@@ -1964,7 +1964,7 @@ function CurrencyEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2033,7 +2033,7 @@ function StorageEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2139,7 +2139,7 @@ function MeasureUnitEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2197,7 +2197,7 @@ function ReserveEditorModal({
           onSave(days)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -2256,7 +2256,7 @@ function TransporterEditorModal({
           onSave(values)
         }}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} strokeWidth={1.8} />} variant="light">
               {error}
@@ -3443,7 +3443,7 @@ function PricingResourceTable({
           const definitions = pricing.IsSourceManaged ? getSortedPricingSourceDefinitions(pricing) : []
 
           return (
-            <Group gap={6} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               {definitions.length > 0 ? definitions.map((definition) => (
                 <TableChip
                   key={definition.ImportedForAmg ? 'amg' : 'fenix'}
@@ -4864,7 +4864,7 @@ function PanelToolbar({
         {onSearchChange ? (
           <TextInput
             className="client-resources-search"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} strokeWidth={1.8} />}
             onChange={(event) => {
               pagination?.onReset()
@@ -5946,7 +5946,7 @@ function displayTranslationBadges(translations?: ClientResourceTranslation[]) {
   }
 
   return (
-    <Group gap={6}>
+    <Group gap={8}>
       {names.map((name) => (
         <TableChip key={name} value={name} />
       ))}

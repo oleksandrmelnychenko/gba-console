@@ -218,14 +218,14 @@ function PaymentAccountsPageContent() {
   }
 
   return (
-    <Stack className="payment-accounts-page" gap={6}>
+    <Stack className="payment-accounts-page" gap={8}>
       <Card className="app-data-card payment-accounts-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar payment-accounts-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-accounts-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields payment-accounts-filter-row">
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Введіть значення')}
               value={searchValue}
               onChange={(event) => setSearchValue(event.currentTarget.value)}

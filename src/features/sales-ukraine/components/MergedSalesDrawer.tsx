@@ -635,7 +635,7 @@ function MergedSaleCard({
             <Text className="sales-merge-client" size="sm">
               {displayValue(client?.FullName)}
             </Text>
-            <Group gap={6}>
+            <Group gap={8}>
               <TableChip tone="warning" value={getUserLastName(sale)} />
               <Text className="sales-merge-meta">{formatDateTime(sale.Updated)}</Text>
             </Group>

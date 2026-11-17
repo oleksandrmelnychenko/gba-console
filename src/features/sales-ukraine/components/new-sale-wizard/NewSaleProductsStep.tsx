@@ -799,7 +799,7 @@ export function NewSaleProductsStep({
   ))
   const hasComponentRows = Boolean(selectedMainProduct && componentEntries.entries.length > 0)
   const analoguePanel = (
-    <Stack className="new-sale-products-step__related-panel" gap={7}>
+    <Stack className="new-sale-products-step__related-panel" gap={8}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Аналоги')}</Text>
         <TableChip value={isAnalogueLoading ? '…' : hasAnalogueRows ? analogueState.items.length : 0} tone="neutral" />
@@ -832,7 +832,7 @@ export function NewSaleProductsStep({
     </Stack>
   )
   const componentPanel = (
-    <Stack className="new-sale-products-step__related-panel new-sale-products-step__component-panel" gap={7}>
+    <Stack className="new-sale-products-step__related-panel new-sale-products-step__component-panel" gap={8}>
       <Group className="new-sale-products-step__related-head" justify="space-between" wrap="nowrap">
         <Text className="new-sale-products-step__related-title">{t('Комплектуючі')}</Text>
         <TableChip value={isComponentLoading ? '…' : componentEntries.entries.length} tone="neutral" />
@@ -1010,11 +1010,11 @@ export function NewSaleProductsStep({
               </Alert>
             )}
             {showProductSearchEmpty ? (
-              <Stack align="center" className="new-sale-client-empty new-sale-products-step-empty" gap={10} justify="center">
+              <Stack align="center" className="new-sale-client-empty new-sale-products-step-empty" gap={8} justify="center">
                 <span className="new-sale-client-empty__icon">
                   <Search size={30} strokeWidth={1.55} />
                 </span>
-                <Stack align="center" gap={3}>
+                <Stack align="center" gap={4}>
                   <Text className="new-sale-client-empty__title">{productSearchEmptyTitle}</Text>
                   <Text className="new-sale-client-empty__description">
                     {productSearchEmptyDescription}

@@ -13,7 +13,7 @@ export function SaleDocumentDownloads({ documents }: { documents: SaleDocumentDo
   return (
     <Stack className="app-compact-form" gap={8}>
       {documents.map((document, index) => (
-        <Paper key={`${document.label}-${index}`} className="app-section-card" withBorder p={10} radius="md">
+        <Paper key={`${document.label}-${index}`} className="app-section-card" withBorder p={8} radius="md">
           <Group gap={8} justify="space-between" wrap="wrap">
             <Text className="app-section-title" fw={600} size="sm" style={{ flex: '1 1 180px' }}>
               {document.label}

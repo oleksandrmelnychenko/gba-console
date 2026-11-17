@@ -15,7 +15,7 @@
   background: #f8f9fa;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .available-payment-task-list__selection-label {
@@ -57,7 +57,7 @@
 .available-payment-task-list__amount {
   align-items: baseline;
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
   white-space: nowrap;
   width: 100%;
@@ -98,7 +98,7 @@
   display: grid;
   gap: 12px;
   min-width: 0;
-  padding: 14px 16px 16px;
+  padding: 12px 16px 16px;
 }
 
 .available-payment-task-details__content .mantine-Stack-root {
@@ -137,7 +137,7 @@
 .available-payment-cash-flow-table__summary-row {
   align-items: stretch;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 120px 135px;
+  grid-template-columns: minmax(0, 1fr) 120px 120px 136px;
   min-height: 32px;
 }
 
@@ -150,7 +150,7 @@
   display: flex;
   gap: 8px;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 8px 8px;
 }
 
 .available-payment-cash-flow-table__summary-label span:first-child {
@@ -177,7 +177,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   justify-content: flex-end;
-  padding: 6px 8px;
+  padding: 8px 8px;
   white-space: nowrap;
 }
 
@@ -190,7 +190,7 @@
   align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .available-payment-outcome-row > * {
@@ -205,7 +205,7 @@
 }
 
 .available-payment-outcome-row > .available-payment-outcome-time {
-  flex-basis: 110px;
+  flex-basis: 108px;
 }
 
 @media (max-width: 520px) {

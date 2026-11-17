@@ -396,13 +396,13 @@ function TransportersPageContent({
   }
 
   return (
-    <Stack className="transporters-page console-table-page" gap={6}>
+    <Stack className="transporters-page console-table-page" gap={8}>
       <div className="transporters-shell console-table-shell">
         <div className="app-filter-bar transporters-command-bar">
           <div className="transporters-command-search">
             <TextInput
               className="transporters-search-input"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={15} />}
               placeholder={t('Пошук перевізника')}
               value={search}
@@ -570,7 +570,7 @@ function TransportersPageContent({
         title={t('Архівувати перевізника')}
         onClose={() => setArchiveTarget(null)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {archiveTarget
               ? t('Перевізник "{name}" буде прибраний з активного списку.', { name: getTransporterName(archiveTarget) })
@@ -625,7 +625,7 @@ function TransporterActionsModal({
       onClose={onClose}
     >
       {transporter && (
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Stack className="app-modal-actions" gap="xs">
             {canEdit && (
               <Button
@@ -704,7 +704,7 @@ function TransporterEditorModal({
           onSave(values)
         }}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error ? (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}

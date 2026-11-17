@@ -307,7 +307,7 @@ export function ConsignmentNoteSettingsDrawer({
       title={t('Друк ТТН')}
       onClose={onClose}
     >
-      <Stack className="consignment-note-settings" gap={10}>
+      <Stack className="consignment-note-settings" gap={8}>
         {noteState.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {noteState.error}

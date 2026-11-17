@@ -30,15 +30,15 @@
 }
 
 .sales-chart-filter-row.is-topnx {
-  grid-template-columns: 310px 150px minmax(34px, 1fr) auto;
+  grid-template-columns: 308px 148px minmax(32px, 1fr) auto;
 }
 
 .sales-chart-filter-row.is-manager-top {
-  grid-template-columns: 310px 240px 240px minmax(34px, 1fr) auto;
+  grid-template-columns: 308px 240px 240px minmax(32px, 1fr) auto;
 }
 
 .sales-chart-filter-row.is-client {
-  grid-template-columns: 310px minmax(240px, 300px) 160px minmax(34px, 1fr);
+  grid-template-columns: 308px minmax(240px, 300px) 160px minmax(32px, 1fr);
 }
 
 .sales-chart-filter-control {
@@ -81,7 +81,7 @@
   gap: 8px 20px;
   justify-content: space-between;
   min-height: 64px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sales-chart-panel__heading h2,
@@ -100,7 +100,7 @@
 .sales-chart-metric {
   display: grid;
   align-content: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .sales-chart-metric dt {
@@ -155,7 +155,7 @@
 .sales-chart-table-heading {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sales-chart-table-wrap {

@@ -361,7 +361,7 @@ export function AdvanceReportFuelModal({
       title={t('Додати пальне')}
       onClose={requestClose}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -369,7 +369,7 @@ export function AdvanceReportFuelModal({
         )}
 
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Group gap={8} mb={10}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
+          <Group gap={8} mb={8}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
           <div className="advance-report-entry-parties">
             <SearchableSelect
               data={supplierOptions}
@@ -490,7 +490,7 @@ export function AdvanceReportFuelModal({
             }
           }}
         >
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
             <AppModalFooter>
               <Button color="gray" disabled={isSaving} variant="default" onClick={() => setConfirmCloseOpen(false)}>

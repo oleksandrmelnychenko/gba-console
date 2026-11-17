@@ -256,7 +256,7 @@ export function SyncControl() {
         className="sync-modal"
         centered
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <SyncSessionPanel
             isRefreshing={state.isStatusRefreshing}
             onRefresh={() => void loadStatus(true)}
@@ -390,7 +390,7 @@ function SyncConfirmation({
         <Text fw={650} size="sm">
           {t('Підтвердити запуск')}
         </Text>
-        <Group gap="lg" mt={6} wrap="wrap">
+        <Group gap="lg" mt={8} wrap="wrap">
           <SyncConfirmationItem
             label={t('Режим')}
             value={t(mode === 'full' ? 'Повна синхронізація' : 'Щоденна синхронізація')}

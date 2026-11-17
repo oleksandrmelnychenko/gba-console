@@ -57,14 +57,14 @@ export function SupplyUkraineOrderDocumentsModal({
             </Text>
             {newDocuments.map((document) => (
               <Group key={document.id} justify="space-between" wrap="nowrap">
-                <Group gap={6} wrap="nowrap">
+                <Group gap={8} wrap="nowrap">
                   <DocumentTypeIcon contentType={document.contentType} />
                   <Text size="sm" lineClamp={1}>
                     {document.fileName}
                   </Text>
                 </Group>
                 <Tooltip label={t('Видалити')}>
-                  <ActionIcon color="red" disabled={isSaving} variant="subtle" onClick={() => onRemoveNewDocument(document)}>
+                  <ActionIcon aria-label={t('Видалити')} color="red" disabled={isSaving} variant="subtle" onClick={() => onRemoveNewDocument(document)}>
                     <Trash2 size={16} />
                   </ActionIcon>
                 </Tooltip>
@@ -80,7 +80,7 @@ export function SupplyUkraineOrderDocumentsModal({
             </Text>
             {existingDocuments.map((document, index) => (
               <Group key={getDocumentKey(document, index)} justify="space-between" wrap="nowrap">
-                <Group gap={6} wrap="nowrap">
+                <Group gap={8} wrap="nowrap">
                   <DocumentTypeIcon contentType={document.ContentType} />
                   {document.DocumentUrl ? (
                     <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">
@@ -96,6 +96,7 @@ export function SupplyUkraineOrderDocumentsModal({
                 </Group>
                 <Tooltip label={document.Deleted ? t('Відновити') : t('Видалити')}>
                   <ActionIcon
+                    aria-label={document.Deleted ? t('Відновити') : t('Видалити')}
                     color={document.Deleted ? 'gray' : 'red'}
                     disabled={isSaving}
                     variant="subtle"

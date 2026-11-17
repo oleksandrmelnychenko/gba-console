@@ -4,7 +4,7 @@
   --ai-fleet-fail: var(--mantine-color-red-6);
   --ai-fleet-unknown: var(--mantine-color-gray-5);
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -12,7 +12,7 @@
 .ai-fleet-dashboard__card-heading {
   align-items: flex-start;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -25,7 +25,7 @@
 .ai-fleet-dashboard__live-grid,
 .ai-fleet-dashboard__detail-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -44,7 +44,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   min-width: 0;
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 
 .ai-fleet-dashboard__score-card {
@@ -125,7 +125,7 @@
 
 .ai-fleet-distribution {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   margin: 0;
 }
 
@@ -134,7 +134,7 @@
   color: var(--mantine-color-gray-8);
   display: flex;
   font-size: 12px;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -193,14 +193,14 @@
   flex-wrap: wrap;
   font-family: var(--font-mono);
   font-size: 10px;
-  gap: 5px 12px;
+  gap: 4px 12px;
 }
 
 .ai-fleet-distribution__legend span,
 .ai-fleet-session-legend span {
   align-items: center;
   display: inline-flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .ai-fleet-distribution__legend i,
@@ -221,7 +221,7 @@
 }
 
 .ai-fleet-dashboard__chart {
-  min-height: 190px;
+  min-height: 188px;
   min-width: 0;
 }
 
@@ -237,7 +237,7 @@
 .ai-fleet-dashboard__collecting {
   align-content: center;
   background: var(--mantine-color-gray-0);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-6);
   display: grid;
   justify-items: center;
@@ -248,7 +248,7 @@
 
 .ai-fleet-dashboard__collecting > :first-child {
   color: var(--mantine-color-gray-5);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .ai-fleet-dashboard__figure-caption {
@@ -264,14 +264,14 @@
 
 .ai-fleet-threshold {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
 .ai-fleet-threshold__heading {
   align-items: baseline;
   display: flex;
   font-size: 11px;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -373,7 +373,7 @@
 }
 
 .ai-fleet-dashboard__matrix-card > .ai-fleet-dashboard__card-heading {
-  padding: 13px 13px 0;
+  padding: 12px 12px 0;
 }
 
 .ai-fleet-matrix-scroll {
@@ -390,14 +390,14 @@
   border-collapse: collapse;
   color: var(--mantine-color-gray-8);
   font-size: 12px;
-  min-width: 610px;
+  min-width: 608px;
   width: 100%;
 }
 
 .ai-fleet-matrix th,
 .ai-fleet-matrix td {
   border-top: 1px solid var(--mantine-color-gray-2);
-  padding: 9px 10px;
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   text-align: left;
   vertical-align: middle;
 }
@@ -446,21 +446,21 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-8);
   display: grid;
-  gap: 9px;
+  gap: 8px;
   grid-template-columns: auto minmax(0, 1fr);
-  padding: 9px;
+  padding: 8px;
 }
 
 .ai-fleet-dashboard__actions-empty {
   align-items: center;
   background: var(--mantine-color-gray-0);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-teal-8);
   display: flex;
   gap: 8px;
   justify-content: center;
   min-height: 80px;
-  padding: 18px;
+  padding: 16px;
   text-align: center;
 }
 
@@ -494,7 +494,7 @@
 
   .ai-fleet-dashboard__score-card,
   .ai-fleet-dashboard__card {
-    padding: 11px;
+    padding: 12px;
   }
 
   .ai-fleet-dashboard__matrix-card {
@@ -502,7 +502,7 @@
   }
 
   .ai-fleet-dashboard__matrix-card > .ai-fleet-dashboard__card-heading {
-    padding: 11px 11px 0;
+    padding: 12px 12px 0;
   }
 
   .ai-fleet-dashboard__chart {
@@ -512,7 +512,7 @@
   .ai-fleet-threshold__heading {
     align-items: flex-start;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
   }
 }
 
@@ -528,7 +528,7 @@
 .ai-fleet-dashboard__loading {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--mantine-color-gray-6);

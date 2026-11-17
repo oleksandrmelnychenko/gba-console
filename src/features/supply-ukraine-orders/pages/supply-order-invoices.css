@@ -9,7 +9,7 @@
   background: transparent;
   border: 0;
   border-radius: 0;
-  gap: 6px;
+  gap: 8px;
   padding: 0;
   width: fit-content;
   max-width: 100%;
@@ -18,8 +18,8 @@
 .supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab {
   border: 0;
   border-radius: 8px;
-  min-height: 34px;
-  padding: 7px 12px;
+  min-height: 32px;
+  padding: 8px 12px;
   margin: 0;
   font: 600 12px/20px var(--font-mono);
   color: var(--mantine-color-gray-8);
@@ -29,7 +29,7 @@
   background: var(--brand-orange);
 }
 .supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab:disabled { opacity: .45; }
-.supply-invoices-workspace .supply-invoices-table-card { padding: 10px; }
+.supply-invoices-workspace .supply-invoices-table-card { padding: 8px; }
 .supply-invoices-workspace .supply-invoice-product-link {
   color: var(--mantine-color-gray-9);
   text-align: left;
@@ -69,7 +69,7 @@
   box-shadow: none;
 }
 .supply-invoice-upload-tabs .mantine-SegmentedControl-label {
-  padding: 7px 14px;
+  padding: 8px 12px;
   font: 600 12px/20px var(--font-mono);
   color: var(--mantine-color-gray-8);
 }
@@ -79,10 +79,10 @@
 .supply-invoice-selector-group { max-width: 100%; min-width: 0; }
 .supply-invoices-workspace .supply-invoice-selector.mantine-Button-root[data-variant] {
   position: relative;
-  min-height: 34px;
+  min-height: 32px;
   height: auto;
   max-width: 100%;
-  padding: 5px 8px 5px 11px;
+  padding: 4px 8px 4px 12px;
   border: 1px solid var(--mantine-color-gray-4);
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
@@ -106,7 +106,7 @@
 .supply-invoice-selector .mantine-Button-label {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
   justify-content: flex-start;
   white-space: normal;
   line-height: 20px;
@@ -124,9 +124,9 @@
   flex-shrink: 0;
   background: var(--mantine-color-gray-0);
   border-radius: 8px;
-  padding: 7px 10px;
+  padding: 8px 8px;
   color: var(--mantine-color-gray-8);
   font: 400 12px/20px var(--font-sans);
 }
 .supply-invoices-balance .app-table-chip { font-size: 12px; }
-.supply-invoices-balance-item { display: inline-flex; align-items: center; gap: 6px; }
+.supply-invoices-balance-item { display: inline-flex; align-items: center; gap: 8px; }

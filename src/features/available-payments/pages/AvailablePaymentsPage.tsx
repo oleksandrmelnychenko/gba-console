@@ -572,7 +572,7 @@ function AvailablePaymentsPageContent() {
   const model = useAvailablePaymentsPageModel()
 
   return (
-    <Stack className="available-payments-page" gap={6}>
+    <Stack className="available-payments-page" gap={8}>
       <AvailablePaymentsTableCard model={model} />
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
@@ -672,7 +672,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   return (
     <Card className="app-data-card available-payments-card" withBorder radius="md" padding={0}>
       <div className="app-filter-bar available-payments-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields available-payments-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields available-payments-filter-row">
           <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
           <Select
             data={organizationOptions}

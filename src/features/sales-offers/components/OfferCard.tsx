@@ -131,7 +131,7 @@ function OfferLine({ canEdit, currencyCode, isOfferProcessed, item, onOpenProduc
           {item.Product?.NetUid ? <Anchor className="offer-line-product-link" component="button" type="button" underline="hover"
             onClick={() => onOpenProductCard(item.Product!.NetUid!)}>{name}</Anchor>
             : <Text className="offer-line-product-name">{name}</Text>}
-          <Group gap={6}>
+          <Group gap={8}>
             {item.Product?.VendorCode && <TableChip tone="product" value={item.Product.VendorCode} />}
             {item.Product?.MainOriginalNumber && <TableChip tone="product" value={item.Product.MainOriginalNumber} />}
             <span className="offer-line-meta">{formatDateTime(item.Created)} {item.User?.LastName ?? ''}</span>

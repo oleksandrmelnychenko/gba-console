@@ -9,7 +9,7 @@
   align-items: center;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   justify-content: center;
   min-height: 68px;

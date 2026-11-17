@@ -1,9 +1,9 @@
 .product-availabilities-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .product-availabilities-card {
@@ -73,17 +73,17 @@
   font: 400 12px / 16px var(--font-mono);
 }
 .product-availabilities-storage-dropdown [data-combobox-option] {
-  min-height: 30px;
-  padding: 7px 8px;
-  border-radius: 6px;
+  min-height: 28px;
+  padding: 8px 8px;
+  border-radius: 8px;
 }
 .product-availabilities-storage-dropdown [data-combobox-option]:is(:hover, [data-combobox-selected], [aria-selected='true']) {
   background: var(--mantine-color-gray-1);
 }
 @container product-availabilities (max-width: 1320px) {
   .product-availabilities-filter-row .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-availabilities-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
@@ -92,8 +92,8 @@
 
 @container product-availabilities (max-width: 1000px) {
   .product-availabilities-filter-row .product-availabilities-action {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-availabilities-action-label { display: none; }

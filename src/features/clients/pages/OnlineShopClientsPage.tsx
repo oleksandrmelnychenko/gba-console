@@ -210,13 +210,13 @@ function OnlineShopClientsPageContent() {
   }
 
   return (
-    <Stack className="online-shop-clients-page console-table-page" gap={6}>
+    <Stack className="online-shop-clients-page console-table-page" gap={8}>
       <Box className="online-shop-clients-shell console-table-shell">
         <div className="app-filter-bar online-shop-clients-filter-bar">
           <TextInput
             className="online-shop-clients-search"
             leftSection={<Search size={16} />}
-            label={t('Пошук клієнта')}
+            aria-label={t('Пошук клієнта')}
             placeholder={t('Клієнт, телефон або email')}
             value={searchValue}
             onChange={(event) => {

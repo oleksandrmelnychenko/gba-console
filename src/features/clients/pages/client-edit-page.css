@@ -44,9 +44,9 @@
   border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 13px;
-  height: 36px;
+  height: var(--app-control-height);
   letter-spacing: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
 }
 
 .client-edit-title-code {
@@ -58,7 +58,7 @@
 .client-edit-sheet .mantine-Card-root {
   border: 1px solid var(--mantine-color-gray-2);
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 /* The shell wrappers are invisible containers — their own padding only added
@@ -70,11 +70,11 @@
 }
 
 /* Navigation stays beside the content at sheet widths, independently of viewport breakpoints. */
-.client-edit-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 12px; align-items: start; }
+.client-edit-layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 12px; align-items: start; }
 .client-edit-sidebar { position: sticky; top: 0; min-width: 0; }
 .client-edit-content { min-width: 0; }
-.client-edit-nav { gap: 4px; padding: 6px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; }
-.client-edit-nav .client-edit-nav-item { min-height: 36px; height: auto; flex-shrink: 0; padding: 8px 10px; border: 0; border-radius: 8px; color: var(--mantine-color-gray-8); background: transparent; font-size: 12px; }
+.client-edit-nav { gap: 4px; padding: 8px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; }
+.client-edit-nav .client-edit-nav-item { min-height: 36px; height: auto; flex-shrink: 0; padding: 8px 8px; border: 0; border-radius: 8px; color: var(--mantine-color-gray-8); background: transparent; font-size: 12px; }
 .client-edit-nav-item:hover { background: var(--mantine-color-gray-1); }
 .client-edit-nav-item.is-active, .client-edit-nav-item.is-active:hover { background: var(--brand-orange); color: white; }
 .client-edit-nav-item .mantine-Button-inner { height: auto; }
@@ -86,7 +86,7 @@
 .client-edit-title-name { overflow-wrap: anywhere; }
 .client-edit-title-code { flex-shrink: 0; }
 .client-edit-sheet :is(.mantine-Input-input, .mantine-Textarea-input):disabled { color: var(--mantine-color-gray-8); -webkit-text-fill-color: var(--mantine-color-gray-8); opacity: 1; background: var(--mantine-color-gray-0); border-color: var(--mantine-color-gray-3); }
-.client-edit-sheet .mantine-InputWrapper-label { color: var(--mantine-color-gray-9); font-size: 12px; margin-bottom: 5px; }
+.client-edit-sheet .mantine-InputWrapper-label { color: var(--mantine-color-gray-9); font-size: 12px; margin-bottom: 4px; }
 .client-edit-sheet .mantine-Input-input { font-size: 12px; }
 .client-edit-sheet .mantine-Switch-label { color: var(--mantine-color-gray-8); }
 @container registry (max-width: 800px) {
@@ -103,7 +103,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  margin: 8px 8px 3px;
+  margin: 8px 8px 4px;
   text-transform: uppercase;
 }
 
@@ -115,17 +115,17 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   border-top: 1px solid var(--mantine-color-gray-2);
   margin: 8px 0;
-  padding: 5px 0 8px;
+  padding: 4px 0 8px;
 }
 
 .client-edit-folder-tree .client-edit-nav-group-title {
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .client-edit-folder-tree-view .app-tree-node-row {
   gap: 4px;
   min-height: 36px;
-  padding: 4px 4px 4px calc(3px + var(--app-tree-indent, 0px));
+  padding: 4px 4px 4px calc(4px + var(--app-tree-indent, 0px));
 }
 
 .client-edit-folder-tree-view .app-tree-disclosure-spacer {
@@ -162,8 +162,8 @@
 
 .client-edit-folder-tree .mantine-Alert-root {
   font-size: 11px;
-  margin: 6px 4px 0;
-  padding: 7px 8px;
+  margin: 8px 4px 0;
+  padding: 8px 8px;
 }
 
 .client-edit-selected-client {
@@ -173,9 +173,9 @@
   border-radius: 8px;
   color: var(--mantine-color-orange-8);
   display: flex;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .client-edit-selected-client > div {
@@ -208,26 +208,26 @@
 .client-info-section { min-width: 0; padding: 16px; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; background: white; }
 .client-info-section.is-wide { grid-column: 1 / -1; }
 .client-info-section h3 { margin: 0; font-size: 14px; color: var(--mantine-color-gray-9); }
-.client-info-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 14px 0 0; }
+.client-info-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 12px 0 0; }
 .client-info-fields.has-three-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.client-info-fields dt { font-size: 12px; color: var(--mantine-color-gray-7); margin-bottom: 5px; }
+.client-info-fields dt { font-size: 12px; color: var(--mantine-color-gray-7); margin-bottom: 4px; }
 .client-info-fields dd { margin: 0; color: var(--mantine-color-gray-9); font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
 @container registry (max-width: 600px) {
   .client-info-summary, .client-info-fields, .client-info-fields.has-three-columns { grid-template-columns: minmax(0, 1fr); }
 }
 
-.client-recipient-row { padding: 10px 0; border-bottom: 1px solid var(--mantine-color-gray-2); }
+.client-recipient-row { padding: 8px 0; border-bottom: 1px solid var(--mantine-color-gray-2); }
 .client-recipient-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .client-recipient-row.is-deleted { opacity: .6; }
 .client-recipient-row .mantine-ActionIcon-root { flex-shrink: 0; }
 
 /* Client structure uses the filled tab treatment at every sheet width. */
 .app-drawer .client-structure-tabs-root > .client-structure-tabs {
-  justify-content: flex-start; gap: 6px; padding: 8px; background: white; border-bottom: 1px solid var(--mantine-color-gray-2);
+  justify-content: flex-start; gap: 8px; padding: 8px; background: white; border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 .app-drawer .client-structure-tabs::before { display: none; }
 .app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab {
-  min-height: 38px; padding: 8px 12px; margin: 0; border: 0; border-radius: 8px; background: transparent; color: var(--mantine-color-gray-8); font-family: var(--font-mono); font-size: 13px; font-weight: 500;
+  min-height: 36px; padding: 8px 12px; margin: 0; border: 0; border-radius: 8px; background: transparent; color: var(--mantine-color-gray-8); font-family: var(--font-mono); font-size: 13px; font-weight: 500;
 }
 .app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab[data-active] { background: var(--brand-orange); color: white; }
 .app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab:not([data-active]):hover { background: var(--mantine-color-gray-1); }

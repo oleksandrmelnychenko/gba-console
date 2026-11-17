@@ -1,9 +1,9 @@
 .balances-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .balances-filter-bar {
@@ -43,7 +43,7 @@
 .app-filter-bar.balances-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .balances-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container balances-toolbar (max-width: 1200px) {
-  .app-filter-bar.balances-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.balances-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.balances-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.balances-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

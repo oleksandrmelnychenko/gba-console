@@ -654,7 +654,7 @@ function MergedServiceTaskSections({
 
   return (
     <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
-      <Stack gap={10}>
+      <Stack gap={8}>
       <Text className="app-section-title" fw={600} size="sm">{t('Платіжні задачі')}</Text>
       {!service.SupplyPaymentTask && (
         <Checkbox
@@ -999,7 +999,7 @@ function MergedServicePrimaryFields({
         </div>
       </Card>
       <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text className="app-section-title" fw={600} size="sm">{t('Витрати')}</Text>
           <div className="merged-service-edit-cost-grid">
             <TextInput
@@ -1066,7 +1066,7 @@ function MergedServicePrimaryFields({
         </Stack>
       </Card>
       <Card className="app-section-card merged-service-edit-section" withBorder radius="md" padding="sm">
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text className="app-section-title" fw={600} size="sm">{t('Доставка')}</Text>
       <Checkbox
         checked={draft.createInformationTask}

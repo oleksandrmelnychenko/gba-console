@@ -55,7 +55,7 @@
 }
 
 .app-modal.app-form-sheet.offers-create-modal .mantine-InputWrapper-label {
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 600;
@@ -69,7 +69,7 @@
 
 .offers-create-modal .app-modal-footer {
   margin-top: 0;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .offers-create-modal__table-scroll {
@@ -135,12 +135,12 @@
 .offers-create-select-dropdown {
   padding: 4px;
   border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: var(--app-radius-md);
 }
 
 .offers-create-select-option {
-  min-height: 30px;
-  padding: 6px 8px;
+  min-height: 28px;
+  padding: 8px 8px;
   color: var(--mantine-color-gray-9);
   font: 400 12px / 1.4 var(--font-mono);
 }
@@ -166,10 +166,10 @@
 .offers-create-modal__fields {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
 }

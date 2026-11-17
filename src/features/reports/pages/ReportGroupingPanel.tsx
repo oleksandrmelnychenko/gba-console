@@ -30,7 +30,7 @@ export function ReportGroupingPanel({ locked, layout, axis, allowed, onOpenPicke
   const limitHint = isRows ? null : columnGroupingLimitHint(groups.map(group => ({ type: group.type, label: group.label || getReportFieldLabel(group.key) })))
   return <section className="reports-stocks-grouping-field" aria-label={t(title)}>
     <div className="reports-stocks-legacy-panel__header">
-      <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+      <Group className="reports-stocks-legacy-panel__title" gap={8} wrap="nowrap">
         <span className="reports-stocks-grouping-icon" aria-hidden="true">{isRows ? <Rows3 size={16} /> : <Columns3 size={16} />}</span>
         <Text className="reports-stocks-grouping-label" component="h3" fw={600} size="sm">{t(isRows ? 'Рядки' : 'Стовпці')}</Text>
         <TableChip value={groups.length} />

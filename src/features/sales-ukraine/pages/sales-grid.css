@@ -47,7 +47,7 @@
 .sales-filter-period-icon-wrap {
   flex: 0 0 36px;
   align-self: end;
-  width: 36px;
+  width: var(--app-control-height);
 }
 
 .sales-filter-label {
@@ -65,8 +65,8 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  height: 36px;
-  padding-left: 10px;
+  height: var(--app-control-height);
+  padding-left: 8px;
   padding-right: 8px;
   width: 100%;
 }
@@ -88,7 +88,7 @@
   color: var(--mantine-color-gray-8);
   display: block;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.2;
   overflow: hidden;
@@ -112,7 +112,7 @@
     var(--mantine-color-white);
   border-radius: 12px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
 }
 
@@ -129,8 +129,8 @@
 }
 
 .sales-filter-period-menu .mantine-Input-input {
-  min-height: 36px;
-  height: 36px;
+  min-height: var(--app-control-height);
+  height: var(--app-control-height);
   padding-inline: 8px;
   font: 400 12px var(--font-mono);
 }
@@ -138,7 +138,7 @@
 .sales-filter-period-menu .mantine-Button-root {
   height: 32px;
   min-height: 32px;
-  padding-inline: 10px;
+  padding-inline: 8px;
   font: 600 12px var(--font-mono);
 }
 
@@ -152,31 +152,31 @@
   border-radius: 999px;
   display: block;
   height: 1px;
-  margin-bottom: 17px;
+  margin-bottom: 16px;
   width: 16px;
 }
 
 .sales-filter-period-presets {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
 }
 
 .sales-filter-period-presets .mantine-Button-root {
-  border-radius: 7px;
+  border-radius: 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 650;
-  min-height: 26px;
-  padding-left: 9px;
-  padding-right: 9px;
+  min-height: 24px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .sales-filter-actions {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -187,24 +187,24 @@
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
   white-space: nowrap;
 }
 
 .sales-filter-dropdown {
   --combobox-padding: 0px;
-  --combobox-option-padding: 7px 10px;
+  --combobox-option-padding: 8px 8px;
   background:
     linear-gradient(180deg, rgba(248, 249, 250, 0.92), transparent 42px),
     var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: var(--app-radius-md);
   box-shadow: 0 16px 36px rgba(20, 28, 38, 0.13);
   max-width: calc(100vw - 28px);
   min-width: var(--popover-anchor-width);
   overflow-x: auto;
-  padding: 10px !important;
+  padding: var(--app-space-1) !important;
   scrollbar-width: thin;
   width: max-content !important;
 }
@@ -225,18 +225,18 @@
 
 .sales-filter-dropdown [data-combobox-option],
 .sales-filter-dropdown-option {
-  border-radius: 7px;
+  border-radius: 8px;
   box-sizing: border-box;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 16px; /* 8 + 16 + 8 = 32px option, same tier as shared comboboxes */
   max-width: none;
-  min-height: 30px;
+  min-height: 32px;
   min-width: 100%;
   overflow: visible;
-  padding: 7px 10px !important;
+  padding: 8px 8px !important;
   text-overflow: clip;
   transition:
     background-color 120ms var(--tx-ease-smooth),
@@ -279,13 +279,13 @@
   cursor: pointer;
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
-  height: 36px;
+  height: var(--app-control-height);
   justify-content: space-between;
   line-height: 1.2;
   min-width: 0;
-  padding: 0 30px 0 11px;
+  padding: 0 28px 0 12px;
   position: relative;
   text-align: left;
   transition:
@@ -306,7 +306,7 @@
 
 .sales-filter-organisation-trigger.has-value {
   color: var(--mantine-color-gray-8);
-  padding-right: 58px;
+  padding-right: 56px;
 }
 
 .sales-filter-organisation-trigger span {
@@ -331,7 +331,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-5);
   cursor: pointer;
   display: inline-flex;
@@ -339,7 +339,7 @@
   justify-content: center;
   padding: 0;
   position: absolute;
-  right: 29px;
+  right: 29px; /* grid-exempt: optical slot left of the Select chevron section */
   top: 7px;
   transition:
     background-color 120ms var(--tx-ease-smooth),
@@ -356,9 +356,9 @@
 .sales-filter-organisation-menu {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 16px 36px rgba(20, 28, 38, 0.13);
-  padding: 10px;
+  padding: 8px;
 }
 
 .sales-filter-organisation-search {
@@ -382,7 +382,7 @@
 
 .sales-filter-organisation-options {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   max-height: 236px;
   overflow-y: auto;
   padding-right: 4px;
@@ -393,7 +393,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-8);
   cursor: pointer;
   display: grid;
@@ -402,8 +402,8 @@
   font-weight: 500;
   gap: 4px;
   grid-template-columns: 10px minmax(0, 1fr);
-  min-height: 30px;
-  padding: 7px 10px 7px 4px;
+  min-height: 28px;
+  padding: 8px 8px 8px 4px;
   text-align: left;
   transition:
     background-color 120ms var(--tx-ease-smooth),
@@ -437,7 +437,7 @@
 .sales-filter-organisation-empty {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .sales-filter-ecommerce {
@@ -447,7 +447,7 @@
   border-radius: 0;
   display: flex;
   min-width: 0;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   padding: 0;
 }
 
@@ -463,7 +463,7 @@
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-weight: 600;
-  padding-left: 6px;
+  padding-left: 8px;
   white-space: nowrap;
 }
 
@@ -502,7 +502,7 @@
   overflow-x: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 10px 12px;
+  padding: 0 8px 12px;
   scrollbar-gutter: stable;
 }
 
@@ -525,7 +525,7 @@
   display: grid;
   grid-template-columns: var(--sales-grid-columns);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .sales-grid-head {
@@ -538,8 +538,8 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: 34px;
-  padding: 8px 12px 7px 6px;
+  min-height: 32px;
+  padding: 8px 12px 8px 8px;
   position: sticky;
   top: 0;
   z-index: 4;
@@ -600,11 +600,14 @@
 .sales-grid-row {
   background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  contain-intrinsic-size: auto 58px;
+  contain-intrinsic-size: auto 44px;
   content-visibility: auto;
   cursor: pointer;
-  min-height: 58px;
-  padding: 8px 12px 8px 6px;
+  /* Rows live in a flex column: never shrink below their content. */
+  flex-shrink: 0;
+  /* Same compact rhythm as DataTable rows (--app-table-* tokens). */
+  min-height: var(--app-table-row-height-relaxed);
+  padding: var(--app-table-cell-py) 12px var(--app-table-cell-py) var(--app-table-cell-px);
   position: relative;
 }
 
@@ -664,8 +667,8 @@
   grid-template-columns: repeat(2, 28px);
   align-items: center;
   column-gap: 2px;
-  flex: 0 0 62px;
-  width: 62px;
+  flex: 0 0 62px; /* grid-exempt: pairs with .sg-client-actions width 62px */
+  width: 62px; /* grid-exempt: 2×28px buttons + 2px gap + 4px padding, mirrors flex-basis */
   padding-right: 4px;
   position: relative;
 }
@@ -711,7 +714,7 @@
   appearance: none;
   background: rgba(250, 82, 82, 0.08);
   border: 1px solid rgba(250, 82, 82, 0.18);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-red-6);
   align-items: center;
   display: inline-flex;
@@ -732,7 +735,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0; /* name line + meta line = the 32px two-line cell */
 }
 
 .sg-client-heading {
@@ -781,12 +784,12 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
   font-size: 13px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: var(--app-table-line-height);
   /* §5.1 — names are Onest 600 gray-8, not near-black gray-9 */
   color: var(--mantine-color-gray-8);
 }
@@ -797,8 +800,8 @@
 }
 
 .app-table-chip.sg-client-code {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 13px; /* BUG-1394: the client code reads larger than document metadata */
+  line-height: var(--app-table-line-height);
 }
 
 .sg-client-name-text {
@@ -818,9 +821,9 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 2px 6px;
+  gap: 2px 8px;
   overflow: hidden;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.2;
   color: var(--mantine-color-gray-6);
   white-space: nowrap;
@@ -876,12 +879,12 @@
   border: 1px solid var(--app-chip-neutral-border);
   border-radius: 999px;
   color: var(--app-chip-neutral-text);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1;
-  max-width: 150px;
+  max-width: 148px;
   overflow: hidden;
-  padding: 3px 7px;
+  padding: 4px 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -910,9 +913,9 @@
   border-left: 1px dashed var(--mantine-color-gray-2);
   display: grid;
   font-size: 13px;
-  line-height: 1.1;
-  min-height: 34px;
-  padding-left: 10px;
+  line-height: var(--app-table-line-height); /* two 16px lines = 32px cell */
+  min-height: 32px;
+  padding-left: 8px;
   text-align: right;
   white-space: nowrap;
 }
@@ -926,12 +929,12 @@
 
 .sg-amt > .app-table-chip {
   justify-self: end;
-  margin-top: 3px;
+  margin-top: 0; /* value line + chip line = 32px, same as DataTable two-line cells */
 }
 
 .sg-amt-unit {
   display: block;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 550;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -954,7 +957,7 @@
 .sg-slot {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
 }
 
@@ -986,7 +989,7 @@
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
-  padding: 0 6px;
+  padding: 0 8px;
   white-space: nowrap;
 }
 
@@ -1037,7 +1040,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 5px;
+  gap: 0; /* chip + status line = two 16px table lines */
+  line-height: var(--app-table-line-height);
   text-align: right;
   min-width: 0;
 }
@@ -1046,7 +1050,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 5px;
+  gap: 4px;
   color: var(--mantine-color-gray-7);
   font-size: 11px;
   font-weight: 500;
@@ -1065,7 +1069,7 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   contain-intrinsic-size: auto 120px;
   content-visibility: auto;
-  padding: 8px 12px 10px 100px;
+  padding: 8px 12px 8px 100px;
 }
 
 .sale-expand-content {
@@ -1091,7 +1095,7 @@
   color: var(--mantine-color-gray-7);
   display: flex;
   min-height: 48px;
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 
 .sale-expand-content.is-empty .mantine-Text-root {
@@ -1104,7 +1108,7 @@
 .sale-expand-content-item {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: var(--expand-grid);
   min-width: 780px;
 }
@@ -1118,8 +1122,8 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: 35px;
-  padding: 6px 10px;
+  min-height: 36px;
+  padding: 8px 8px;
 }
 
 .sale-expand-content-head span:not(:first-child) {
@@ -1127,14 +1131,14 @@
 }
 
 .sale-expand-content-head span:last-child {
-  padding-right: 34px;
+  padding-right: 32px;
 }
 
 .sale-expand-content-item {
   background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   min-height: 48px;
-  padding: 6px 10px;
+  padding: 8px 8px;
   position: relative;
 }
 
@@ -1198,7 +1202,7 @@
 .sale-expand-product-cell {
   align-items: flex-start;
   display: flex;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1222,14 +1226,14 @@
 
 .sale-expand-product-copy {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .sale-expand-product-main {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1249,7 +1253,7 @@
   color: var(--mantine-color-gray-8);
   display: block;
   font-family: Onest, Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   min-width: 0;
@@ -1265,7 +1269,7 @@
   flex-wrap: wrap;
   font-size: 11px;
   font-weight: 550;
-  gap: 4px 10px;
+  gap: 4px 8px;
   line-height: 1.2;
   min-width: 0;
 }
@@ -1338,7 +1342,7 @@
   align-items: center;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-5);
   display: inline-flex;
   flex: 0 0 auto;
@@ -1390,12 +1394,12 @@
 .sale-expand-discount-line .app-table-chip {
   font-size: 11px;
   line-height: 16px;
-  padding-inline: 6px;
+  padding-inline: 8px;
 }
 
 .sale-expand-discount-cell {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   justify-items: end;
   min-width: 0;
   position: relative;
@@ -1405,8 +1409,8 @@
 .sale-expand-discount-line {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 62px 28px;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) 62px 28px; /* grid-exempt: client actions column = .sg-client-actions 62px */
+  gap: 8px;
   min-height: 22px;
   min-width: 0;
   width: 100%;
@@ -1425,7 +1429,7 @@
 }
 
 .sale-expand-discount-user {
-  margin-right: 34px;
+  margin-right: 32px;
 }
 
 .sale-expand-discount-action {
@@ -1445,10 +1449,10 @@
 .sale-expand-discount-user {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 550;
   line-height: 1.15;
-  max-width: 138px;
+  max-width: 136px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1537,28 +1541,28 @@
 /* Use natural field widths. Only crowded toolbars switch to compact controls. */
 .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex: 0 1 140px; }
 .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex: 0 1 180px; }
-.sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex: 0 1 150px; }
-.sales-ukraine-page .app-filter-fields > .sales-filter-search { flex: 0 1 190px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex: 0 1 148px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-search { flex: 0 1 188px; }
 .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex: 0 1 200px; }
 
 @container registry (max-width: 1700px) {
-  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 108px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 140px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 130px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 128px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 140px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 150px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 148px; }
 }
 
 @container registry (max-width: 1360px) {
   .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 100px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 130px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 128px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 108px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 120px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 140px; }
   .sales-ukraine-page .sales-filter-ecommerce .mantine-Checkbox-label { display: none; }
   .sales-ukraine-page .sales-filter-create {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .sales-ukraine-page .sales-filter-create .mantine-Button-label { display: none; }

@@ -225,7 +225,7 @@ function SalesCockpitPageContent() {
   }
 
   return (
-    <Stack className="cockpit-page" gap={6}>
+    <Stack className="cockpit-page" gap={8}>
       <CockpitSourceStatus />
       <div className="app-screen-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
         {(

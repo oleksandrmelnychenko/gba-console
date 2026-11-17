@@ -1,10 +1,10 @@
 .sales-geography-page {
   box-sizing: border-box;
   flex: 1 1 auto;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .console-frame .sales-geography-page .mantine-Card-root {
@@ -38,7 +38,7 @@
   border-radius: 8px;
   display: flex;
   height: var(--app-filter-control-height, 36px);
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .sales-geography-actions {
@@ -73,7 +73,7 @@
 .sales-geography-metric {
   display: grid;
   align-content: center;
-  gap: 5px;
+  gap: 4px;
   min-height: 64px;
   padding: 8px 12px;
 }
@@ -89,7 +89,7 @@
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sales-geography-metric dt::before {
@@ -138,7 +138,7 @@
   flex-wrap: wrap;
   gap: 8px;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sales-geography-section-heading h2 {
@@ -165,8 +165,16 @@
 }
 
 .sales-geography-map-bubble {
-  outline: none;
   transition: fill-opacity 120ms ease;
+}
+
+.sales-geography-map-bubble:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sales-geography-map-bubble:focus-visible {
+  outline: 2px solid rgba(var(--brand-orange-rgb), 0.58);
+  outline-offset: 2px;
 }
 
 .sales-geography-map-label {
@@ -207,7 +215,7 @@
 .sales-geography-legend-values li {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .sales-geography-rating-body {
@@ -219,7 +227,7 @@
 
 .sales-geography-region-code {
   color: var(--mantine-color-gray-6);
-  flex: 0 0 26px;
+  flex: 0 0 24px;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
@@ -235,7 +243,7 @@
   border-top: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-6);
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 @media (max-width: 1100px) {
@@ -278,13 +286,13 @@
 .sales-geography-toolbar .sales-geography-actions { flex: 0 0 auto; margin-left: 0; }
 
 @container registry (max-width: 850px) {
- .app-filter-bar .sales-geography-toolbar-caption-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .app-filter-bar .sales-geography-toolbar-caption-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .sales-geography-toolbar-caption-action .mantine-Button-label { display: none; }
  .sales-geography-toolbar-caption-action .mantine-Button-section { margin: 0; }
 }
 
 .sales-geography-context { display: grid; gap: 4px; padding: 4px; }
-.sales-geography-amount { display: inline-flex; flex-direction: column; gap: 3px; }
+.sales-geography-amount { display: inline-flex; flex-direction: column; gap: 4px; }
 .sales-geography-amount small { color: var(--mantine-color-gray-6); font-size: 11px; font-weight: 400; }
 .sales-geography-map-note { color: var(--mantine-color-gray-6); padding: 4px 12px 8px; }
 .sales-geography-metric dd { overflow-wrap: anywhere; }

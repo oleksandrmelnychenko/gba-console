@@ -25,6 +25,5 @@ export function TaskSourceEvidence({ value }: { value: unknown }) {
   return <Stack gap={2}>
     <Text size="sm">{label}{observed ? ` · ${t('Перевірено')}: ${observed}` : ''}</Text>
     {documents.map((document) => <Text size="xs" key={document}>{document}</Text>)}
-    {value.kind === 'purchase' && <Text size="xs" c="dimmed">{t('Покупка пояснює оновлення поради; це не підтвердження оплати чи виручки від контакту.')}</Text>}
   </Stack>
 }

@@ -1,9 +1,9 @@
 .income-cashflows-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .income-cashflows-filter-bar {
@@ -43,7 +43,7 @@
 .income-cashflows-create-menu .mantine-Menu-item {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -105,10 +105,10 @@
   align-self: flex-start;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
+  border-radius: 8px;
   max-width: 100%;
   opacity: 1;
-  padding: 3px;
+  padding: 4px;
   width: fit-content;
 }
 
@@ -122,19 +122,19 @@
 
 .income-cashflow-client-form__tabs .mantine-SegmentedControl-indicator {
   background: var(--brand-orange);
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   box-shadow: none;
 }
 
 .income-cashflow-client-form__tabs .mantine-SegmentedControl-label {
   align-items: center;
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   color: var(--mantine-color-gray-7);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  height: 30px;
+  height: 28px;
   justify-content: center;
   letter-spacing: 0;
   line-height: 1;
@@ -144,7 +144,7 @@
 }
 
 .income-cashflow-client-form__operation-tabs .mantine-SegmentedControl-label {
-  padding-inline: 13px;
+  padding-inline: 12px;
 }
 
 .income-cashflow-client-form__tabs .mantine-SegmentedControl-innerLabel {
@@ -193,8 +193,8 @@
   border-left: 2px solid var(--brand-orange);
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  padding: 2px 0 2px 10px;
+  gap: 4px 8px;
+  padding: 2px 0 2px 8px;
   width: fit-content;
 }
 
@@ -224,7 +224,7 @@
 }
 
 .income-cashflow-client-form__debts-header {
-  gap: 14px 24px;
+  gap: 12px 24px;
 }
 
 .income-cashflow-client-form__debts-identity {
@@ -244,14 +244,14 @@
   border-left: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 2px;
-  min-width: 138px;
-  padding: 1px 14px;
+  min-width: 136px;
+  padding: 1px 12px;
 }
 
 .income-cashflow-client-form__debt-metric > span {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   white-space: nowrap;
@@ -293,7 +293,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-6);
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 /* Async loading and dependent selectors should communicate read-only state
@@ -366,7 +366,7 @@
   .income-cashflow-client-form__accounting-flags {
     align-items: flex-start;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   .income-cashflow-client-form__debt-metrics {
@@ -376,7 +376,7 @@
   .income-cashflow-client-form__debt-metric {
     border-left: 0;
     border-top: 1px solid var(--mantine-color-gray-2);
-    flex: 1 1 145px;
+    flex: 1 1 144px;
     padding: 8px 0 0;
   }
 }
@@ -389,20 +389,20 @@
 .app-filter-bar.income-cashflows-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .income-cashflows-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container income-cashflows-toolbar (max-width: 1060px) {
-  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 @container income-cashflows-toolbar (max-width: 1500px) {
   .app-filter-bar.income-cashflows-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 120px; width: 120px; }
   .app-filter-bar.income-cashflows-filter-bar .income-cashflows-organization-filter { --app-multi-select-width: 120px; flex: 0 0 120px; width: 120px; }
-  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.income-cashflows-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container income-cashflows-toolbar (max-width: 1250px) {
- .income-cashflows-filter-bar .finance-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+ .income-cashflows-filter-bar .finance-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-label { display: none; }
  .income-cashflows-filter-bar .finance-toolbar-action .mantine-Button-section { margin: 0; }
 }
@@ -415,10 +415,10 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   gap: 8px;
 }
-.income-cashflow-compact-form .mantine-SimpleGrid-root { gap: 8px 10px; }
+.income-cashflow-compact-form .mantine-SimpleGrid-root { gap: 8px 8px; }
 .income-cashflow-compact-form.app-form-sheet .app-section-title { color: var(--mantine-color-gray-9); font: 600 13px/1.4 var(--font-mono); margin: 0; }
 .income-cashflow-compact-form.app-form-sheet :is(.mantine-InputWrapper-label, .mantine-Checkbox-label) { color: var(--mantine-color-gray-9); font: 500 12px/1.4 var(--font-sans); }
 .income-cashflow-compact-form.app-form-sheet .mantine-Input-input { min-height: 32px; height: 32px; font: 400 12px/1.4 var(--font-mono); }
@@ -426,20 +426,20 @@
 .income-cashflow-compact-form.app-form-sheet .mantine-Button-root { height: 32px; min-height: 32px; font: 500 12px/1.3 var(--font-mono); }
 .income-cashflow-compact-form.app-form-sheet .mantine-ActionIcon-root { height: 32px; width: 32px; min-height: 32px; min-width: 32px; }
 .income-cashflow-compact-form .income-cashflow-client-form__accounting-flags { gap: 12px 20px; padding-top: 2px; }
-.income-cashflow-compact-form .income-cashflow-client-form__tabs .mantine-SegmentedControl-label { height: 26px; font-size: 12px; padding-inline: 10px; }
+.income-cashflow-compact-form .income-cashflow-client-form__tabs .mantine-SegmentedControl-label { height: 24px; font-size: 12px; padding-inline: 8px; }
 .income-cashflow-compact-form .app-modal-footer { margin-top: 12px; }
 @media (max-width: 700px) {
   .income-cashflow-compact-form .income-cashflow-client-form__titlebar { flex-wrap: wrap; }
   .income-cashflow-compact-form .income-cashflow-client-form__title { white-space: normal; }
 }
 
-.income-cashflow-compact-form .cashflow-fields-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px; }
+.income-cashflow-compact-form .cashflow-fields-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 8px; }
 .income-cashflow-compact-form .cashflow-fields-row > * { flex: 0 1 280px; min-width: 0; max-width: 100%; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-date { flex-basis: 140px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-time { flex-basis: 100px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-number { flex-basis: 160px; }
-.income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 130px; }
-.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-amount { flex-basis: 150px; }
+.income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 128px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-amount { flex-basis: 148px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-article { flex-basis: 320px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-purpose { flex: 1 1 280px; }
 @media (max-width: 600px) {

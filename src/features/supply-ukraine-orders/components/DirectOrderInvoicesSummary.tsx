@@ -47,7 +47,7 @@ export function DirectOrderInvoicesSummary({
   }
 
   return (
-    <Stack gap={10}>
+    <Stack gap={8}>
       {invoices.map((invoice, index) => (
         <InvoiceSummaryCard
           canEditDiscount={canEditDiscount}
@@ -103,21 +103,21 @@ function InvoiceSummaryCard({
       role="group"
       withBorder
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Group gap="xs" wrap="nowrap">
           <Text className="app-section-title" fw={600} size="sm">
             {t('Інвойс')}
           </Text>
         </Group>
 
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={12} verticalSpacing={10}>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={12} verticalSpacing={8}>
           <InvoiceField label={t('Номер')} value={invoiceNumber} chip="document" />
           <InvoiceField label={t('Дата')} value={formatDateTime(invoice.DateFrom)} />
           <InvoiceField label={t('Валюта')} value={currency} chip="source" />
           <InvoiceField label={t('Кількість')} value={formatNumber(invoice.TotalQuantity)} />
         </SimpleGrid>
 
-        <SimpleGrid className="supply-order-invoice-financials" cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={10}>
+        <SimpleGrid className="supply-order-invoice-financials" cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={8}>
           <InvoiceField label={t('Сума нетто')} value={formatMoney(amounts.net)} />
           <InvoiceField label={t('ПДВ')} value={formatMoney(amounts.vat)} />
           <InvoiceField label={t('Сума з ПДВ')} value={formatMoney(amounts.withVat)} />
@@ -160,7 +160,7 @@ function InvoiceSummaryCard({
         </SimpleGrid>
 
         <Stack className={`supply-order-documents${documents.length === 0 ? ' is-empty' : ''}`} gap={8}>
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <Text className="app-section-title" fw={600} size="sm">
               {t('Документи')}
             </Text>

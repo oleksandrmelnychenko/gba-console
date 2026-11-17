@@ -195,11 +195,11 @@ export function NewSaleClientStep({
               />
             </>
           ) : (
-            <Stack align="center" className="new-sale-client-empty" gap={10} justify="center">
+            <Stack align="center" className="new-sale-client-empty" gap={8} justify="center">
               <span className="new-sale-client-empty__icon">
                 <UserSearch size={20} strokeWidth={1.7} />
               </span>
-              <Stack align="center" gap={3}>
+              <Stack align="center" gap={4}>
                 <Text className="new-sale-client-empty__title">{t(focusedGroup ? 'Оберіть картку групи' : 'Оберіть клієнта')}</Text>
                 <Text className="new-sale-client-empty__description">
                   {t(focusedGroup ? 'Натисніть Enter, щоб відкрити групу, та оберіть потрібну картку стрілками.' : 'Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}

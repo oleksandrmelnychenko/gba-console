@@ -200,7 +200,7 @@ export function CurrencyConvertorFormPage() {
     >
       <form id="currency-trader-form" onSubmit={handleSubmit}>
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             {error && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {error}
@@ -283,7 +283,7 @@ export function CurrencyConvertorFormPage() {
         title={t('Видалити валютного трейдера')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити трейдера')}{' '}
             <Text span fw={600}>

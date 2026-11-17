@@ -187,7 +187,7 @@ function UserNewPageContent() {
       onClose={closeSheet}
 
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -196,7 +196,7 @@ function UserNewPageContent() {
 
         <form autoComplete="off" id="user-new-form" onSubmit={handleSubmit}>
           <Card className="app-section-card" withBorder radius="md" padding={12}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600}>
                 {t('Дані користувача')}
               </Text>

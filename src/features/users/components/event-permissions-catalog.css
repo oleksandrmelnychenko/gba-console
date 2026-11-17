@@ -8,7 +8,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-search {
@@ -19,11 +19,11 @@
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-risk {
-  flex: 0 0 150px;
+  flex: 0 0 148px;
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-selection {
-  flex: 0 0 130px;
+  flex: 0 0 128px;
 }
 
 .event-permissions-actions,
@@ -37,7 +37,7 @@
 }
 
 .event-permissions-alert {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .event-permissions-state {
@@ -66,7 +66,7 @@
 
   .app-filter-bar.event-permissions-filters > .event-permissions-risk,
   .app-filter-bar.event-permissions-filters > .event-permissions-selection {
-    flex: 0 0 130px;
+    flex: 0 0 128px;
   }
 
   .event-permissions-stats {
@@ -77,7 +77,7 @@
 /* Compact tree: keep the hierarchy, remove ornamental separators. */
 .event-permissions-editor .role-tree-modules {
   gap: 0;
-  padding-right: 6px;
+  padding-right: 8px;
 }
 
 .event-permissions-editor .role-tree-module {
@@ -92,9 +92,9 @@
 }
 
 .event-permissions-editor .role-tree-module-header {
-  gap: 6px;
-  min-height: 38px;
-  padding: 4px 6px;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 8px;
 }
 
 .event-permissions-editor .role-tree-module-header:hover {
@@ -102,19 +102,19 @@
 }
 
 .event-permissions-editor .role-tree-node-row {
-  gap: 6px;
+  gap: 8px;
   padding-left: calc(28px + var(--role-tree-indent, 0px));
   min-height: 36px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .event-permissions-editor .role-tree-permission {
-  gap: 6px;
+  gap: 8px;
   padding-left: calc(52px + var(--role-tree-indent, 0px));
-  min-height: 34px;
-  padding-top: 3px;
-  padding-bottom: 3px;
+  min-height: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .event-permissions-editor .role-tree-permission-body {
@@ -135,7 +135,7 @@
 .event-permissions-editor .role-tree-check {
   background: var(--mantine-color-white);
   border-color: var(--mantine-color-gray-4);
-  border-radius: 5px;
+  border-radius: 4px;
   height: 20px;
   width: 20px;
 }
@@ -162,7 +162,7 @@
 
 .event-permissions-editor .role-tree-permission-meta {
   flex-wrap: wrap;
-  gap: 3px 8px;
+  gap: 4px 8px;
 }
 
 .event-permission-description {
@@ -200,7 +200,7 @@
 
 /* The extra selection action appears only for filtered results. Keep all captions. */
 @container event-permissions (max-width: 1250px) {
-  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-search { flex-basis: 150px; width: 150px; }
+  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-search { flex-basis: 148px; width: 148px; }
   .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-risk { flex-basis: 120px; width: 120px; }
   .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-selection { flex-basis: 100px; width: 100px; }
 }

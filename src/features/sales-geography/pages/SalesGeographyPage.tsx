@@ -76,7 +76,7 @@ export function SalesGeographyPage() {
         header: t('Регіон'),
         accessor: (row) => row.name,
         cell: (row) => (
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <span className="sales-geography-region-code">{row.code === 'unassigned' ? '—' : row.code}</span>
             <Text fw={600} size="sm" title={t(row.name)} truncate>
               {t(row.name)}
@@ -109,7 +109,7 @@ export function SalesGeographyPage() {
   )
 
   return (
-    <Stack className="sales-geography-page" gap={6}>
+    <Stack className="sales-geography-page" gap={8}>
       <Card className="app-filter-card sales-geography-filter-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar sales-geography-toolbar">
           <div className="app-filter-field sales-geography-filter-field">

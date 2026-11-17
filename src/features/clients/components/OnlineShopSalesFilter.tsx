@@ -108,7 +108,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
       <Popover.Target>
         <TextInput
           leftSection={<Search size={16} />}
-          label={t('Пошук')}
+          aria-label={t('Пошук')}
           placeholder={t('Пошук по номеру телефону')}
           value={searchValue}
           onChange={(event) => setSearchValue(event.currentTarget.value)}
@@ -128,7 +128,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
                 <UnstyledButton
                   key={getFastClientNetUid(client) || String(getFastClientId(client) || index)}
                   px="sm"
-                  py={6}
+                  py={8}
                   onClick={() => selectClient(client)}
                 >
                   <Text size="sm" truncate>

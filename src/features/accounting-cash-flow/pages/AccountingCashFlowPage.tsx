@@ -824,7 +824,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   )
   const statementNotes = getCashFlowStatementNotes({ cashFlow, hasAgreement: Boolean(selectedAgreement?.NetUid), mode })
   return (
-    <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
+    <Stack className="cash-flow-page accounting-cash-flow-page" gap={8}>
       {(counterpartyError || cashFlowError) && (
         <Alert className="accounting-cash-flow-alert" color="red" icon={<CircleAlert size={18} />} variant="light">
           {counterpartyError || cashFlowError}
@@ -849,7 +849,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => updateFilterDraft({ ...filterDraft, ...range })} />
             <TextInput
               className="accounting-cash-flow-search"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={14} />}
               placeholder={t('Номер або документ')}
               value={itemSearch}
@@ -1380,7 +1380,7 @@ function SaleReturnDetailContent({
         <DocumentDetailSummary variant="inventory" eyebrow={t('Повернення від покупця')}
           title={returnNumber || '—'}
           meta={<Group gap={8}><span>{formatDateTime(item.FromDate)}</span><span>{clientName || t('Клієнта не вказано')}</span>{agreementName ? <TableChip tone="neutral" value={agreementName} /> : null}</Group>}
-          metrics={<Group gap={10}>
+          metrics={<Group gap={8}>
             <ReturnMetric label={t('Позиції')} value={String(items.length)} meta={`${formatAmount(totalQuantity)} ${t('шт.')}`} />
             <ReturnMetric label={t('Сума')} value={formatMoney(item.CurrentValue)} meta="UAH" />
             <ReturnMetric label={t('Баланс')} value={formatMoney(item.CurrentBalance)} meta="UAH" accent />

@@ -331,7 +331,7 @@ function SessionTrendChart({
             dataKey="time"
             fillOpacity={0.04}
             gridAxis="y"
-            h={190}
+            h={188}
             series={[
               { color: 'teal.6', label: t('OK'), name: 'pass' },
               { color: 'orange.6', label: t('Застаріло'), name: 'warning' },

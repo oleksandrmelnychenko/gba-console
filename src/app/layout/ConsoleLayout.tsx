@@ -17,7 +17,7 @@ export function ConsoleLayout() {
     <NavigationProvider>
       <PageHeaderActionsProvider>
         <AppShell
-          header={{ height: 108 }}
+          header={{ height: 88 }}
           footer={{ height: showFooter ? 32 : 0 }}
           padding={0}
         >

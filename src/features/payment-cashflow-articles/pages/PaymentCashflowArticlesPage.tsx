@@ -164,12 +164,12 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
   const content = (
     <>
       <div className="app-filter-bar payment-cashflow-articles-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields payment-cashflow-articles-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields payment-cashflow-articles-filter-row">
           <TextInput
             className="console-table-search-input"
             size="sm"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Введіть назву статті')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
@@ -247,7 +247,7 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
   }
 
   return (
-    <Stack className="payment-cashflow-articles-page console-table-page" gap={6}>
+    <Stack className="payment-cashflow-articles-page console-table-page" gap={8}>
       <div className="console-table-shell payment-cashflow-articles-card">{content}</div>
     </Stack>
   )

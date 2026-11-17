@@ -49,7 +49,7 @@ function PaymentTaskBlock({
 
   return (
     <Card withBorder radius="sm" padding="sm">
-      <Stack gap={6}>
+      <Stack gap={8}>
         <Group justify="space-between" align="center">
           <Text fw={700} size="sm">
             {title}
@@ -139,7 +139,7 @@ export function MergedServiceViewCard({
 
   return (
     <Card className="protocol-service-card" withBorder radius="md" padding={12}>
-      <Stack className="protocol-service-grid" gap={10}>
+      <Stack className="protocol-service-grid" gap={8}>
         {actionsTarget ? createPortal(actions, actionsTarget) : actions}
 
         {!service.IsCalculatedValue && (

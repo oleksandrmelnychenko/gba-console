@@ -171,7 +171,7 @@ export function HeadDashboardChartsPanel({
 
   return (
     <section className="app-section-card cockpit-analytics-panel">
-      <Stack gap={10}>
+      <Stack gap={8}>
         <div className="cockpit-head-section-heading">
           <div>
             <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Аналітика навантаження')}</Text>

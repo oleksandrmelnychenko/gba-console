@@ -33,7 +33,7 @@ export function ReportDraftControl({ renderTrigger, pending, canRestore, canUndo
       aria-haspopup="dialog" aria-expanded={opened} onClick={() => setOpened(true)}>{t('Чернетка')}</Button>}
     <ReportModal opened={opened} onClose={() => setOpened(false)} title={t('Чернетка звіту')} size={496} centered
       closeButtonProps={{ 'aria-label': t('Закрити чернетку') }}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         {savedAt ? <dl className="report-draft__saved">
           <dt>{t('Збережено')}</dt>
           <dd><time dateTime={savedAt}>{formatDateTime(savedAt)}</time></dd>

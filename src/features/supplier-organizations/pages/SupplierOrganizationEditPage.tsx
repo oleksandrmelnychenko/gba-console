@@ -393,7 +393,7 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         </>
       }
     >
-      <Stack className="supplier-organization-sheet" gap={10}>
+      <Stack className="supplier-organization-sheet" gap={8}>
       <div aria-label={t('Розділи постачальника')} className="pill-tabs supplier-organization-edit-tabs" role="tablist">
         {SUPPLIER_EDIT_TABS.map((tab) => {
           const TabIcon = tab.icon
@@ -522,7 +522,7 @@ function GeneralInfoForm({
   return (
     <form id="supplier-organization-general-form" onSubmit={submit}>
       <SupplierSheetSection title={t('Основні дані')}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--general">
             <TextInput
               error={errors.Name ? t(errors.Name) : undefined}
@@ -589,7 +589,7 @@ function BankDetailsForm({
   return (
     <form id="supplier-organization-bank-form" onSubmit={submit}>
       <SupplierSheetSection title={t('Банківські реквізити')}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--bank">
             <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
             <TextInput label={t('Номер рахунку')} value={values.AccountNumber} onChange={(event) => setField('AccountNumber', event.currentTarget.value)} />
@@ -639,7 +639,7 @@ function ContactPersonForm({
   return (
     <form id="supplier-organization-contact-form" onSubmit={submit}>
       <SupplierSheetSection title={t('Контактна особа')}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--contact">
             <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
             <TextInput label={t('Телефон')} value={values.ContactPersonPhone} onChange={(event) => setField('ContactPersonPhone', event.currentTarget.value)} />
@@ -988,9 +988,9 @@ function AgreementDrawer({
       onClose={onClose}
     >
       <form id="supplier-organization-agreement-form" onSubmit={submit}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Card className="app-section-card" withBorder>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <TextInput
                 error={errors.name ? t(errors.name) : undefined}
                 label={t('Назва')}
@@ -999,7 +999,7 @@ function AgreementDrawer({
                 onChange={(event) => setField('name', event.currentTarget.value)}
               />
               <TextInput label={t('Номер договору')} value={values.number} onChange={(event) => setField('number', event.currentTarget.value)} />
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <Select
                   data={ownerOrganizations.map((organization) => ({
                     label: displayValue(organization.Name),
@@ -1045,7 +1045,7 @@ function AgreementDrawer({
               </SimpleGrid>
 
               <Divider label={t('Документи')} />
-              <Stack className="supplier-agreement-documents" gap={6}>
+              <Stack className="supplier-agreement-documents" gap={8}>
                 {documents.map((document) => {
                   const documentUrl = getSupplierAgreementDocumentUrl(document)
                   const documentPdfUrl = getSupplierAgreementDocumentPdfUrl(document)

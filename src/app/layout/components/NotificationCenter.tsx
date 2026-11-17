@@ -99,7 +99,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
             </Box>
           </Group>
 
-          <Group className="console-notification-header-actions" gap={6} wrap="nowrap">
+          <Group className="console-notification-header-actions" gap={8} wrap="nowrap">
             <Tooltip label={t('Позначити все прочитаним')}>
               <ActionIcon
                 aria-label={t('Позначити все прочитаним')}
@@ -144,7 +144,7 @@ export function NotificationCenter({ userKey }: NotificationCenterProps) {
                   onClick={() => openNotification(notification)}
                 >
                   <Box className="console-notification-copy">
-                    <Group className="console-notification-item-heading" gap={6} wrap="nowrap">
+                    <Group className="console-notification-item-heading" gap={8} wrap="nowrap">
                       <Box className={`console-notification-icon is-${notification.kind}`} aria-hidden="true">
                         {getNotificationIcon(notification.kind)}
                       </Box>

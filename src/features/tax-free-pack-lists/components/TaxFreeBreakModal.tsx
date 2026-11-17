@@ -81,7 +81,7 @@ export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdat
 
   return (
     <AppModal className="app-compact-form" centered opened={opened} size={620} title={t('Розбиття Tax Free')} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -89,7 +89,7 @@ export function TaxFreeBreakModal({ canBreak, opened, packList, onClose, onUpdat
         )}
 
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Group align="end" gap={10}>
+          <Group align="end" gap={8}>
             <NumberInput w={170} maw="100%"
               label={t('Макс. вага в TF')}
               min={0}

@@ -3,12 +3,12 @@
   flex: 1 1 auto;
   width: 100%;
   height: calc(
-    100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px
+    100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px
   );
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 /* `.console-frame .mantine-Card-root` strips every Card border inside the
@@ -66,12 +66,12 @@
 }
 
 .role-dashboard-selector .mantine-Select-input {
-  height: 36px;
-  min-height: 36px;
+  height: var(--app-control-height);
+  min-height: var(--app-control-height);
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .role-dashboard-selector .mantine-Select-input:focus {
@@ -106,12 +106,12 @@
 }
 
 .role-dashboard-content {
-  --dashboard-surface-radius: 10px;
+  --dashboard-surface-radius: var(--app-radius-md);
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
   overflow: auto;
-  padding: 0 2px 6px 0;
+  padding: 0 2px 8px 0;
 }
 
 .role-dashboard-page .role-dashboard-content .pill-tabs {
@@ -129,7 +129,7 @@
 }
 
 .role-dashboard-page.role-dashboard-page--bounded {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
 }
@@ -149,12 +149,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: 6px;
+  gap: 8px;
 }
 
 .role-dashboard-section-head {
   min-height: 56px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
@@ -199,7 +199,7 @@
 }
 
 .role-dashboard-kpis > .role-dashboard-refresh {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .role-dashboard-refresh .mantine-ActionIcon-root {
@@ -210,13 +210,13 @@
 .role-dashboard-updated {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .role-dashboard-inline-alert {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 /* ---- KPI tiles ----
@@ -225,7 +225,7 @@
 .role-dashboard-kpi-grid {
   display: grid;
   grid-template-columns: repeat(var(--role-dashboard-kpi-columns, 4), minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 .role-dashboard-kpi-button {
@@ -234,7 +234,7 @@
   min-width: 0;
   color: inherit;
   text-align: left;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .role-dashboard-kpi {
@@ -244,11 +244,11 @@
   gap: 12px;
   min-width: 0;
   height: 100%;
-  min-height: 66px;
-  padding: 10px 12px;
+  min-height: 64px;
+  padding: 8px 12px;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
@@ -264,7 +264,7 @@
 
 .role-dashboard-kpi-body {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -272,7 +272,7 @@
   min-width: 0;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -280,7 +280,7 @@
 .role-dashboard-kpi-value {
   display: inline-flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 8px;
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 22px;
@@ -318,7 +318,7 @@
   align-items: flex-end;
   align-self: stretch;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
 }
 
 .role-dashboard-kpi-aside:empty {
@@ -348,12 +348,12 @@
 }
 
 .role-dashboard-kpi-empty {
-  padding: 16px 14px;
+  padding: 16px 12px;
   color: var(--mantine-color-gray-6);
   font-size: 13px;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 /* ---- System services (AI fleet look: score card + status table) ---- */
@@ -363,12 +363,12 @@
 }
 
 .role-dashboard-system-body > .mantine-Alert-root {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .role-dashboard-system-grid {
   display: grid;
-  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(248px, 320px) minmax(0, 1fr);
   align-items: stretch;
   gap: 12px;
   min-width: 0;
@@ -378,7 +378,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: 13px 14px;
+  padding: 12px 12px;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-left: 4px solid var(--mantine-color-gray-3);
@@ -476,8 +476,8 @@
 
 .role-dashboard-fleet-legend {
   display: grid;
-  gap: 7px;
-  margin: 14px 0;
+  gap: 8px;
+  margin: 12px 0;
   padding: 0;
   list-style: none;
 }
@@ -489,7 +489,7 @@
   gap: 8px;
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -532,7 +532,7 @@
 .role-dashboard-fleet-facts {
   display: grid;
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   padding: 12px 0 0;
   border-top: 1px solid var(--mantine-color-gray-2);
 }
@@ -552,7 +552,7 @@
   white-space: nowrap;
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -570,9 +570,9 @@
   align-items: flex-start;
   gap: 8px;
   margin: auto 0 0;
-  padding: 9px 11px;
+  padding: 8px 12px;
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
   background: var(--mantine-color-gray-0);
@@ -649,7 +649,7 @@
 .role-dashboard-service-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -682,7 +682,7 @@
 .role-dashboard-service-name {
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 650;
   line-height: 1.3;
 }
@@ -699,13 +699,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
   align-items: start;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .role-dashboard-ops-rail {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -717,15 +717,15 @@
 
 .role-dashboard-action {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: start;
   gap: 12px;
   min-width: 0;
-  padding: 13px 14px;
+  padding: 12px 12px;
   color: inherit;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
@@ -744,8 +744,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   color: var(--mantine-color-gray-7);
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 50%;
@@ -754,7 +754,7 @@
 
 .role-dashboard-action-copy {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -782,15 +782,15 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   padding: 4px 8px;
   color: var(--mantine-color-gray-7);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.35;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .role-dashboard-action-metric b {
@@ -817,7 +817,7 @@
 }
 
 .role-dashboard-action-arrow {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--mantine-color-gray-5);
   transition: color 120ms ease, transform 120ms ease;
 }
@@ -839,7 +839,7 @@
   align-items: center;
   gap: 8px;
   min-height: 52px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--mantine-color-gray-6);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
@@ -859,22 +859,22 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .role-dashboard-attention-body {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   padding: 12px;
 }
 
 .role-dashboard-attention-item {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 10px 11px;
+  padding: 8px 12px;
   color: inherit;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
@@ -908,8 +908,8 @@ button.role-dashboard-attention-item:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   background: var(--mantine-color-white);
   border-radius: 8px;
 }
@@ -925,7 +925,7 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-attention-label {
   min-width: 0;
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.35;
 }
@@ -961,8 +961,8 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-attention-empty {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   color: var(--mantine-color-green-8);
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
@@ -976,12 +976,12 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-cash-body {
   display: grid;
   gap: 12px;
-  padding: 12px 14px 14px;
+  padding: 12px 12px 12px;
 }
 
 .role-dashboard-cash-row {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .role-dashboard-cash-caption,
@@ -1036,7 +1036,7 @@ button.role-dashboard-attention-item:focus-visible {
 }
 
 .role-dashboard-cash-net {
-  padding-top: 11px;
+  padding-top: 12px;
   border-top: 1px solid var(--mantine-color-gray-2);
 }
 
@@ -1057,7 +1057,7 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-cash-ratio {
   margin-top: -4px;
   color: var(--mantine-color-gray-6);
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 @media (max-width: 62em) {
@@ -1094,7 +1094,7 @@ button.role-dashboard-attention-item:focus-visible {
   }
 
   .role-dashboard-section-head {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .role-dashboard-fleet-score strong {
@@ -1104,7 +1104,7 @@ button.role-dashboard-attention-item:focus-visible {
 
 @media (max-width: 30em) {
   .role-dashboard-kpi {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .role-dashboard-kpi-value {
@@ -1115,16 +1115,16 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-sync {
   min-width: 0;
   display: grid;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 12px 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
 }
 .role-dashboard-sync__metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px 16px;
+  gap: 8px 16px;
   margin: 0;
 }
 .role-dashboard-sync__metrics dt {
@@ -1136,20 +1136,20 @@ button.role-dashboard-attention-item:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   font: 12px var(--font-mono);
 }
 .role-dashboard-source-details summary {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
   width: fit-content;
   color: var(--mantine-color-gray-6);
   font: 11px var(--font-mono);
 }
-.role-dashboard-source-details[open] summary { margin-bottom: 6px; }
+.role-dashboard-source-details[open] summary { margin-bottom: 8px; }
 @media (max-width: 768px) {
   .role-dashboard-sync__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -1158,13 +1158,13 @@ button.role-dashboard-attention-item:focus-visible {
 }
 
 .role-dashboard-cash-caption b,
-.role-dashboard-cash-net b { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 600; }
+.role-dashboard-cash-net b { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-weight: 600; }
 .role-dashboard-data-details { color: var(--mantine-color-gray-6); font-size: 12px; }
-.role-dashboard-data-details > summary { display: flex; align-items: center; gap: 6px; width: fit-content; cursor: pointer; font-family: var(--font-mono); }
+.role-dashboard-data-details > summary { display: flex; align-items: center; gap: 8px; width: fit-content; cursor: pointer; font-family: var(--font-mono); }
 .role-dashboard-data-details[open] > summary { margin-bottom: 8px; }
 .role-dashboard-source-date { font-family: var(--font-mono); }
 
-.role-dashboard-comparison { display: grid; gap: 3px; min-width: 0; margin-top: 4px; }
+.role-dashboard-comparison { display: grid; gap: 4px; min-width: 0; margin-top: 4px; }
 .role-dashboard-comparison > .mantine-Text-root { font-family: var(--font-mono); font-size: 10px; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .role-dashboard-comparison > .role-dashboard-comparison-period { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -1181,15 +1181,15 @@ button.role-dashboard-attention-item:focus-visible {
   border-radius: 8px;
 }
 .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-icon { width: 20px; height: 20px; }
-.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-body { gap: 5px; }
-.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-label { min-height: 30px; }
-.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-value { margin-block: 3px; flex-wrap: wrap; line-height: 1.2; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-body { gap: 4px; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-label { min-height: 28px; }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-value { margin-block: 4px; flex-wrap: wrap; line-height: 1.2; }
 .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi.is-empty .role-dashboard-kpi-value { color: var(--mantine-color-gray-7); }
 .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-kpi-reason { font-size: 11px; line-height: 1.4; }
-.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-comparison { padding-top: 7px; border-top: 1px solid var(--mantine-color-gray-2); }
+.role-dashboard-kpis[data-workspace='finance'] .role-dashboard-comparison { padding-top: 8px; border-top: 1px solid var(--mantine-color-gray-2); }
 .role-dashboard-kpis[data-workspace='finance'] .role-dashboard-comparison > .mantine-Text-root { color: var(--mantine-color-gray-7); font-size: 11px; }
 
-.role-dashboard-payables { padding: 12px !important; margin-top: 6px; }
+.role-dashboard-payables { padding: 12px !important; margin-top: 8px; }
 .role-dashboard-payables__header { padding-bottom: 8px; border-bottom: 1px solid var(--mantine-color-gray-2); }
 .role-dashboard-payables__header .app-section-title { font-size: 14px; }
 .role-dashboard-payables .role-dashboard-payables__world {
@@ -1199,7 +1199,7 @@ button.role-dashboard-attention-item:focus-visible {
   padding: 12px !important;
   min-width: 0;
 }
-.role-dashboard-payables__currency { padding-block: 10px; border-top: 1px solid var(--mantine-color-gray-2); min-width: 0; }
+.role-dashboard-payables__currency { padding-block: 8px; border-top: 1px solid var(--mantine-color-gray-2); min-width: 0; }
 .role-dashboard-payables__currency:last-child { padding-bottom: 0; }
 .role-dashboard-payables__amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0; }
 .role-dashboard-payables__amounts dt { font-size: 12px; color: var(--mantine-color-gray-7); }
@@ -1219,3 +1219,20 @@ button.role-dashboard-attention-item:focus-visible {
 }
 .role-dashboard-kpi.is-warning .role-dashboard-kpi-value,
 .role-dashboard-kpi.is-critical .role-dashboard-kpi-value { color: var(--mantine-color-gray-8); }
+
+/* Group headings that sit on the canvas between cards line up with the card
+   titles inside them: card padding (12px) + its 1px border. */
+.role-dashboard-ai-analytics .ai-fleet-dashboard__header {
+  padding-inline: calc(var(--app-space-3) + 1px);
+}
+
+/* Top-level dashboard cards sit 4px inside the 16px console frame, like the
+   registry cards: concentric 12px corners (--app-radius-md). Inner tiles keep 8px.
+   Mantine Card reads --paper-radius (written inline), hence !important. */
+.role-dashboard-page > .role-dashboard-toolbar-card.mantine-Card-root {
+  --paper-radius: var(--app-radius-md) !important;
+}
+
+.role-dashboard-page :is(.role-dashboard-kpi, .role-dashboard-sync, .ai-fleet-dashboard__score-card, .ai-fleet-dashboard__card) {
+  border-radius: var(--app-radius-md);
+}

@@ -638,7 +638,7 @@ function WizardSaleItemProductCell({
   const productName = item.Product?.Name || fallbackName
 
   return (
-    <Group className="new-sale-item-product-cell" gap={9} wrap="nowrap">
+    <Group className="new-sale-item-product-cell" gap={8} wrap="nowrap">
       <Box className="new-sale-item-product-icon">
         <Package size={16} />
       </Box>

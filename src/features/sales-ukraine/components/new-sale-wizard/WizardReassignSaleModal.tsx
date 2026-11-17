@@ -163,13 +163,13 @@ function WizardReassignSaleForm({
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       {loading ? (
         <Group justify="center" py="md">
           <Loader size="sm" />
         </Group>
       ) : (
-        <Stack gap={10} mah={420} style={{ overflowY: 'auto' }}>
+        <Stack gap={8} mah={420} style={{ overflowY: 'auto' }}>
           {!rootClient && structureClients.length === 0 && (
             <Text c="dimmed" py="md" size="sm" ta="center">
               {t('Немає структури клієнта для переміщення')}
@@ -221,7 +221,7 @@ function WizardReassignSaleForm({
 function WizardReassignSection({ children, label }: { children: ReactNode; label: string }) {
   return (
     <Box>
-      <Text className="app-section-title" fw={600} mb={6} size="xs">
+      <Text className="app-section-title" fw={600} mb={8} size="xs">
         {label}
       </Text>
       <Stack gap={8}>{children}</Stack>

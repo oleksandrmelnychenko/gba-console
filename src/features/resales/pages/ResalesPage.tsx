@@ -406,7 +406,7 @@ export function ResalesPage() {
     <Stack className="resales-page" gap={0}>
       <div className="sales-dashboard-tab-content resales-card">
         <div className="app-filter-bar resales-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields resales-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields resales-filter-row">
             <ToolbarDateRangeFilter
               from={fromDate}
               to={toDate}
@@ -1003,7 +1003,7 @@ function NewResalePageContent({
       }
       onClose={closeSheet}
     >
-      <Stack className="resales-new-sheet" gap={10}>
+      <Stack className="resales-new-sheet" gap={8}>
         <Card className="resales-new-filter-card" withBorder radius="md" padding={10}>
           <Stack gap={8}>
             <Text className="app-section-title">{t('Налаштування підбору')}</Text>
@@ -1757,7 +1757,7 @@ function ResaleDetailContent() {
   }
 
   return (
-    <Stack className="resale-detail-page" gap={10}>
+    <Stack className="resale-detail-page" gap={8}>
       <DocumentDetailLayout variant="inventory" summary={
         <DocumentDetailSummary
           variant="inventory"
@@ -1838,14 +1838,14 @@ function ResaleDetailContent() {
       <section className="resale-detail-table-section">
         <Group className="resale-detail-table-heading" justify="space-between" align="center">
           <Text className="app-section-title">{t('Позиції перепродажу')}</Text>
-          <Group gap={6}>
+          <Group gap={8}>
             <TableChip tone="source" value="UAH" title={t('Валюта цін і сум позицій')} />
             <TableChip value={`${filteredRows.length} / ${rows.length}`} />
           </Group>
         </Group>
         <div className="console-table-command-bar resale-detail-command-bar">
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} />}
             placeholder={t('Код, назва, специфікація або розміщення')}
             value={itemSearch}
@@ -1934,7 +1934,7 @@ function ResaleDetailContent() {
         )}
         onClose={() => setEditDrawerOpened(false)}
       >
-        <Stack className="resale-edit-drawer" gap={10}>
+        <Stack className="resale-edit-drawer" gap={8}>
           {(error || warning) && (
             <Alert color={warning ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               <Stack gap={4}>
@@ -2889,7 +2889,7 @@ function ProcessSelectionConfirmDrawer({
       title={t('Підтвердження обробки')}
       onClose={onClose}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         <div className="resale-confirm-summary">
           <div><span>{t('Позицій')}</span><strong>{rows.length}</strong></div>
           <div><span>{t('Кількість')}</span><strong>{formatAmount(totals.qty)}</strong></div>
@@ -3129,7 +3129,7 @@ function ResaleProcessDrawer({
       title={t('Обробка перепродажу')}
       onClose={closeProcessDrawer}
     >
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         {processForm.warning && (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
             {processForm.warning.Message}
@@ -3585,7 +3585,7 @@ function ConsignmentNoteSettingsDrawer({
       title={t('Друк ТТН')}
       onClose={onClose}
     >
-      <Stack className="resale-ttn-form" gap={10}>
+      <Stack className="resale-ttn-form" gap={8}>
         {noteState.error && (
           <Alert className="resale-ttn-validation" color="red" icon={<CircleAlert size={14} />} variant="light">
             {noteState.error}

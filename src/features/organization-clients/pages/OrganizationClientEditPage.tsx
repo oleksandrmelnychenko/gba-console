@@ -315,7 +315,7 @@ function OrganizationClientEditPageContent({
         </Group>
       }
     >
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -333,7 +333,7 @@ function OrganizationClientEditPageContent({
         </Card>
       ) : client ? (
         <form id="organization-client-edit-form" onSubmit={handleSubmit}>
-            <Stack className="app-compact-form" gap={10}>
+            <Stack className="app-compact-form" gap={8}>
               <OrganizationClientForm
                 client={client}
                 disabled={!permissions.canEdit || isSaving || isDeleting}

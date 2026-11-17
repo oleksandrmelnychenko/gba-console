@@ -167,7 +167,7 @@ function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExp
         <TextInput
           className="console-table-search-input"
           leftSection={<Search size={16} />}
-          label={t('Пошук')}
+          aria-label={t('Пошук')}
           placeholder={t('Введіть назву статті')}
           value={searchValue}
           onChange={(event) => setSearchValue(event.currentTarget.value)}
@@ -240,7 +240,7 @@ function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExp
   }
 
   return (
-    <Stack className="payment-expense-articles-page console-table-page" gap={6}>
+    <Stack className="payment-expense-articles-page console-table-page" gap={8}>
       <div className="console-table-shell">{content}</div>
     </Stack>
   )

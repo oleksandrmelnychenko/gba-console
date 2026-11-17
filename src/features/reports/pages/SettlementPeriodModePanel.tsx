@@ -34,7 +34,7 @@ export function SettlementPeriodModePanel({ dataset, grouped, groups, available,
   return <Stack gap="sm">
     {shows('source') && onReadModeChange && <SettlementReadModeSelect capability={dataset.settlementReadMode} value={readMode}
       disabled={disabled} onChange={onReadModeChange} />}
-    {shows('form') && <Select label={<Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />{t('Форма взаєморозрахунків')}</Group>} disabled={disabled} allowDeselect={false}
+    {shows('form') && <Select label={<Group component="span" gap={8} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />{t('Форма взаєморозрахунків')}</Group>} disabled={disabled} allowDeselect={false}
       value={rows.map(row => row.type).join(',')} data={[
         { value: '4,41,76', label: t('Організація → валюта → контрагент') },
         { value: '4,76', label: t('Організація → контрагент') },

@@ -46,7 +46,7 @@ export function ProductPriceSourcePanel({
 
   return (
     <Stack gap={8}>
-      <Group gap={6} wrap="nowrap">
+      <Group gap={8} wrap="nowrap">
         <SegmentedControl
           aria-label={t('Джерело цін')}
           className="product-price-source-control"
@@ -65,7 +65,7 @@ export function ProductPriceSourcePanel({
 
       <div className="product-price-source-pane">
         {isLoading && !currentComparison && !error ? (
-          <Stack gap={10} py={4}>
+          <Stack gap={8} py={4}>
             {Array.from({ length: 8 }, (_, index) => (
               <Group gap="sm" key={index} wrap="nowrap">
                 <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
@@ -159,7 +159,7 @@ function SourcePriceRow({ otherLabel, price }: { otherLabel: string; price: Prod
         <PriceValue value={price.PriceLocal} />
       </Group>
       {showDetails ? (
-        <Group gap={6} mt={1} wrap="wrap">
+        <Group gap={8} mt={1} wrap="wrap">
           <Text c="gray.8" lh={1.1} style={{ fontSize: 12 }}>
             {t('База EUR')}: <span className="app-money app-money-meta">{formatPrice(price.BasePriceEur)}</span>
           </Text>

@@ -111,12 +111,12 @@ export function UploadDeliveryDocumentsModal({
         }
       }}
     >
-      <Stack className="app-compact-form customs-import-layout" gap={10}>
-        <Stack className="customs-import-fields" gap={10}>
+      <Stack className="app-compact-form customs-import-layout" gap={8}>
+        <Stack className="customs-import-fields" gap={8}>
           {canSelectSupplier && (
             <section className="customs-import-section" aria-label={t('Постачальник послуг')}>
               <Text className="app-section-title">{t('Постачальник послуг')}</Text>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <Select
                   clearable
                   data={organizationOptions}
@@ -148,7 +148,7 @@ export function UploadDeliveryDocumentsModal({
 
           <section className="customs-import-section" aria-label={t('Митна декларація')}>
             <Text className="app-section-title">{t('Митна декларація')}</Text>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
               <TextInput
                 disabled={isSaving}
                 label={t('Номер митної декларації')}
@@ -215,7 +215,7 @@ export function UploadDeliveryDocumentsModal({
                 </Text>
                 {existingDocuments.map((document) => (
                   <Group className="customs-import-file" key={document.id} justify="space-between" wrap="nowrap">
-                    <Group gap={6} wrap="nowrap">
+                    <Group gap={8} wrap="nowrap">
                       {document.documentUrl ? (
                         <Anchor href={upgradeHttpToHttps(document.documentUrl)} target="_blank" rel="noreferrer">
                           <Group gap={4} wrap="nowrap">

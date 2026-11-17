@@ -11,7 +11,7 @@ export function ProtocolDetailsCard({ protocol }: { protocol: ProtocolDetail }) 
 
   return (
     <Card className="protocol-summary-card" withBorder radius="md" padding={12}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Group gap="xs">
           <Text className="app-section-title" fw={600} size="sm">
             {t('Протокол')}

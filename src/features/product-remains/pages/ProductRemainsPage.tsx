@@ -746,7 +746,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const isWarningAlert = Boolean(filterError)
 
   return (
-    <Stack className="product-remains-page" gap={6}>
+    <Stack className="product-remains-page" gap={8}>
       <Card className="app-data-card product-remains-card" withBorder radius="md" padding={0}>
         <div className="app-screen-tabs">
           {([
@@ -769,7 +769,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         </div>
 
         <div className="app-filter-bar product-remains-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-remains-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-remains-filter-row">
             <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={({ from, to }) => { resetAllData(); setDateFrom(from); setDateTo(to) }} />
             <CheckboxMultiSelect
               className="product-remains-storage-filter"
@@ -805,7 +805,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             {activeTab === 'products' && (
               <TextInput
                 leftSection={<Search size={16} />}
-                label={t('Пошук товару')}
+                aria-label={t('Пошук товару')}
                 placeholder={t('Артикул')}
                 value={productSearchDraft}
                 className="product-remains-search-filter"
@@ -849,7 +849,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
           </Group>
         </div>
 
-        <Stack className="product-remains-body" gap={10}>
+        <Stack className="product-remains-body" gap={8}>
           {alertMessage && (
             <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {alertMessage}

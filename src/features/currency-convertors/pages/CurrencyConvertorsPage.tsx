@@ -399,14 +399,14 @@ function CurrencyConvertorsPageContent() {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack className="currency-convertors-page" gap={6}>
+    <Stack className="currency-convertors-page" gap={8}>
 
       <Card className="app-data-card currency-convertors-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar currency-convertors-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields currency-convertors-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields currency-convertors-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t("Ім'я, прізвище, по батькові або телефон")}
               size="sm"
               className="currency-convertors-search"

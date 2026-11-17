@@ -512,7 +512,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack className="organisation-services-page console-table-page" gap={6}>
+    <Stack className="organisation-services-page console-table-page" gap={8}>
       <div className="organisation-services-shell console-table-shell">
         <div className="app-filter-bar organisation-services-filter-bar">
           <ToolbarDateRangeFilter
@@ -646,7 +646,7 @@ function SummaryValue({ label, value }: { label: string; value: number }) {
   const color = value > 0 ? 'green' : value < 0 ? 'red' : 'gray'
 
   return (
-    <Group gap={6}>
+    <Group gap={8}>
       <Text c="dimmed" size="sm">
         {label}
       </Text>
@@ -678,7 +678,7 @@ function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow
           <DocumentDetailSummary variant="inventory" eyebrow={row.serviceTypeLabel}
             title={displayValue(service.Number || service.ServiceNumber)}
             meta={<Group gap={8}><span>{displayDate(row.date)}</span><TableChip tone="product" value={displayValue(getServiceOrganizationName(service))} /></Group>}
-            metrics={<Group gap={6}><span className="app-money">{displayMoney(service.GrossPrice)}</span><TableChip tone="source" value={displayValue(getServiceCurrencyCode(service))} /></Group>}
+            metrics={<Group gap={8}><span className="app-money">{displayMoney(service.GrossPrice)}</span><TableChip tone="source" value={displayValue(getServiceCurrencyCode(service))} /></Group>}
           />
         }>
           <DocumentDetailSection title={t('Дані послуги')}>

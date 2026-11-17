@@ -3,10 +3,10 @@
    pagination; the shell still uses the canonical full-height flex chain. */
 .payment-accounts-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .payment-accounts-card {
@@ -27,7 +27,7 @@
 
 .payment-accounts-page .payment-accounts-filter-row {
   display: grid;
-  grid-template-columns: minmax(170px, 220px) max-content minmax(170px, 220px) max-content max-content max-content;
+  grid-template-columns: minmax(168px, 220px) max-content minmax(168px, 220px) max-content max-content max-content;
   width: 100%;
   min-width: max-content;
   gap: 8px;
@@ -48,13 +48,13 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: var(--mantine-color-white);
-  padding: 3px;
-  height: 36px;
+  padding: 4px;
+  height: var(--app-control-height);
   width: max-content;
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-indicator {
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   background: var(--brand-orange);
   box-shadow: none;
 }
@@ -64,19 +64,19 @@
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-label {
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
   height: 28px;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .payment-accounts-type-label {
   align-items: center;
   display: inline-flex;
-  gap: 6px;
+  gap: 8px;
   height: 100%;
   white-space: nowrap;
 }
@@ -86,7 +86,7 @@
 }
 
 .payment-accounts-type-filter .mantine-SegmentedControl-control:focus-within {
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   outline: 2px solid var(--brand-orange);
   outline-offset: -1px;
 }
@@ -98,10 +98,10 @@
   max-width: 100%;
   width: fit-content;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
   opacity: 1;
-  padding: 3px;
+  padding: 4px;
 }
 
 .payment-account-type-tabs .mantine-SegmentedControl-control {
@@ -109,20 +109,20 @@
 }
 
 .payment-account-type-tabs .mantine-SegmentedControl-indicator {
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   background: var(--brand-orange);
   box-shadow: none;
 }
 
 .payment-account-type-tabs .mantine-SegmentedControl-label {
   align-items: center;
-  border-radius: 6px;
+  border-radius: var(--app-radius-xs);
   color: var(--mantine-color-gray-7);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  height: 30px;
+  height: 28px;
   justify-content: center;
   letter-spacing: 0;
   line-height: 1;
@@ -271,7 +271,7 @@
 .payment-accounts-total-footer {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  min-height: 30px;
+  min-height: 28px;
   overflow-x: auto;
   padding: 4px 12px;
 }
@@ -309,7 +309,7 @@
   font-weight: 500;
   letter-spacing: 0;
   margin-bottom: -1px;
-  padding: 9px 2px 10px;
+  padding: 8px 2px 8px;
   white-space: nowrap;
 }
 
@@ -325,7 +325,7 @@
 }
 
 .payment-account-activity-content {
-  padding: 14px;
+  padding: 12px;
 }
 
 .payment-account-overview {
@@ -336,7 +336,7 @@
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(320px, 1.15fr) minmax(0, 1.85fr);
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 
 .payment-account-currency-selector.is-summary {
@@ -396,7 +396,7 @@
 .payment-account-activity__actions {
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
   margin-left: auto;
 }
@@ -407,7 +407,7 @@
   color: var(--mantine-color-gray-8);
   font-weight: 600;
   min-height: 36px;
-  padding-inline: 13px;
+  padding-inline: 12px;
 }
 
 .payment-account-activity__actions .mantine-Button-root:not(:disabled):hover {
@@ -418,7 +418,7 @@
 
 .payment-account-activity__actions .mantine-Button-section {
   color: var(--mantine-color-gray-6);
-  margin-inline-end: 7px;
+  margin-inline-end: 8px;
 }
 
 .payment-account-activity__actions .mantine-Button-root:not(:disabled):hover .mantine-Button-section {
@@ -485,21 +485,21 @@
 .app-filter-bar.payment-accounts-filter-bar .app-filter-actions { flex: 0 0 auto; }
 .payment-accounts-toolbar-dropdown { width: max-content !important; max-width: calc(100vw - 24px); padding: 4px; }
 @container payment-accounts-toolbar (max-width: 1060px) {
-  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > .payment-accounts-type-filter { flex: 0 0 auto; width: auto; }
 @container payment-accounts-toolbar (max-width: 1400px) {
-  .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 150px; width: 150px; }
+  .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) { flex-basis: 148px; width: 148px; }
   .app-filter-bar.payment-accounts-filter-bar > .app-filter-fields > .payment-accounts-type-filter { flex: 0 0 auto; width: auto; }
-  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 @container payment-accounts-toolbar (max-width: 1250px) {
-  .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-root { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-root { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-label { display: none; }
   .app-filter-bar.payment-accounts-filter-bar .app-filter-actions .mantine-Button-section { margin: 0; }
 }
@@ -510,7 +510,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 10px;
+  gap: 8px;
 }
 
 .payment-account-create-modal .payment-account-fields > * {
@@ -534,7 +534,7 @@
 }
 
 .payment-account-create-currency .mantine-Checkbox-label {
-  padding-inline-start: 6px;
+  padding-inline-start: 8px;
 }
 
 .payment-account-create-currency .mantine-TextInput-root {
@@ -555,8 +555,8 @@
   }
   .payment-account-type-tabs .mantine-SegmentedControl-label {
     height: auto;
-    min-height: 30px;
-    padding: 4px 6px;
+    min-height: 28px;
+    padding: 4px 8px;
     white-space: normal;
     line-height: 1.25;
   }
@@ -572,16 +572,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .payment-account-transaction-row + .payment-account-transaction-row {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .payment-account-transaction-row > * {
-  flex: 0 1 230px;
+  flex: 0 1 228px;
   min-width: 0;
   max-width: 100%;
 }
@@ -592,7 +592,7 @@
 
 
 .payment-account-transaction-row > .mantine-Stack-root {
-  flex-basis: 150px;
+  flex-basis: 148px;
 }
 
 .payment-account-transaction-row > .mantine-Stack-root > .mantine-Text-root:first-child {

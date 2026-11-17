@@ -99,7 +99,7 @@ function OfferGeneratedLink({ offer, onDone }: { offer: ClientShoppingCart; onDo
   }
 
   return (
-    <Stack gap={10}>
+    <Stack gap={8}>
       <Text className="offers-modal-generated-title">
         {t('Пропозиція')} <TableChip tone="document" value={offer.Number} />
       </Text>
@@ -394,7 +394,7 @@ function NewOfferForm({
   }
 
   return (
-    <Stack className="offers-modal-form app-compact-form" gap={10}>
+    <Stack className="offers-modal-form app-compact-form" gap={8}>
       <div className="offers-create-modal__fields">
       <Select
         {...OFFER_SELECT_PROPS}

@@ -127,7 +127,7 @@ function ServicePayerFormFields({
   }
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       <Card className="app-section-card client-inline-form__fields" withBorder>
         <TextInput
           defaultValue={initialValues.LastName}

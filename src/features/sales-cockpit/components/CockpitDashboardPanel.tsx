@@ -179,7 +179,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
     <Card className="app-section-card cockpit-dashboard-panel" withBorder radius="md">
       <Stack gap="md">
         <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Дашборд завдань')}</Text>
-        {dashboard && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {formatBusinessDate(dashboard.as_of) || dashboard.as_of}. {t('Це дата розрахунку, не підтвердження свіжості синхронізації.')}</Text>}
+        {dashboard && <Text size="xs" c="dimmed">{t('Поточний зріз')}: {formatBusinessDate(dashboard.as_of) || dashboard.as_of}</Text>}
         {dashboard && (dashboard.ai_active != null && dashboard.manual_backlog != null && dashboard.active_total != null ? (
           <Text size="sm">{t('Усі активні, включно з відкладеними')}: {dashboard.active_total} · {t('AI-рекомендації')}: {dashboard.ai_active} · {t('Ручні завдання')}: {dashboard.manual_backlog}</Text>
         ) : <Text size="xs" c="dimmed">{t('Поділ активних завдань на AI та ручні недоступний.')}</Text>)}

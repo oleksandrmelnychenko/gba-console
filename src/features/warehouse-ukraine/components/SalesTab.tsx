@@ -430,7 +430,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-sales">
           <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />
@@ -687,7 +687,7 @@ function useSalesColumns({
           const carrierEdited = Boolean(sale.UpdateDataCarrier?.length)
 
           return (
-            <Group gap={6} wrap="nowrap" style={{ position: 'relative' }}>
+            <Group gap={8} wrap="nowrap" style={{ position: 'relative' }}>
               {carrierEdited && (
                 <Tooltip label={t('Перевізника редаговано')}>
                   <span

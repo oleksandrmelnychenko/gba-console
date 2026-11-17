@@ -1,5 +1,8 @@
 # Патерн: відступи/бордер врапера консольних сторінок
 
+> Оновлено 17.11.2026: картка відступає від фрейма на 4px з усіх боків, радіус картки 12px
+> (концентрично до 16px фрейма); формула висоти `- 12px` (= 8px відступ фрейма + 4px знизу).
+
 Повторювана правка, застосована до кількох реєстрових сторінок (`/accounting/income-cashflows`,
 `/accounting/outgoing-cashflow`, `/accounting/payment-expense-articles`,
 `/accounting/payment-cashflow-articles`, `/clients`, `/products/income/documents`,
@@ -28,10 +31,10 @@
 
 ### Причина
 
-- `.console-frame` (`src/app/layout/layout.css`) має `margin: 6px 0 0 0` — 6px
+- `.console-frame` (`src/app/layout/layout.css`) має `margin: 8px 4px 0` — 8px
   зверху й **0px знизу**.
 - Кожна сторінка сама рахує свою висоту через
-  `height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - Npx)`
+  `height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - Npx)`
   і **не** підлаштовується під фактичну висоту фрейма — це паралельний, незалежний
   розрахунок. Якщо константа `N` підібрана «на око» (типово 20 або 24), картка або
   впритул до фрейма зверху (0 паддінга), або лишає «мертвий» запас знизу білого
@@ -39,19 +42,19 @@
 
 ### Формула (виведена і перевірена на кількох сторінках)
 
-Щоб отримати **рівно 6px зверху і 6px знизу** між карткою і краєм `.console-frame`:
+Щоб отримати **рівно 4px зверху, знизу і з боків** між карткою і краєм `.console-frame`:
 
 ```css
 .<page>-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0; /* 6px зверху, 4px по боках, 0 знизу — низ дає висота-калк */
+  padding: 4px 4px 0; /* 8px зверху, 4px по боках, 0 знизу — низ дає висота-калк */
 }
 ```
 
-Ключове: **завжди `-12px` у формулі висоти + `padding: 6px 4px 0`**, незалежно від
+Ключове: **завжди `-12px` у формулі висоти + `padding: 4px 4px 0`**, незалежно від
 того, яка константа була раніше (14, 20, 24 — не важливо, формула самодостатня і
 не залежить від старого значення). `box-sizing: border-box` обов'язковий — без
 нього `padding-top` додасться ПОВЕРХ висоти і зламає розрахунок.
@@ -64,7 +67,7 @@ const shell = document.querySelector('.<клас картки>') // .console-tab
 const f = frame.getBoundingClientRect()
 const s = shell.getBoundingClientRect()
 console.log({ topGap: s.top - f.top, bottomGap: f.bottom - s.bottom })
-// має бути { topGap: 6, bottomGap: 6 }
+// має бути { topGap: 4, bottomGap: 4 }
 ```
 
 ### Де саме міняти
@@ -75,7 +78,7 @@ console.log({ topGap: s.top - f.top, bottomGap: f.bottom - s.bottom })
   **створити** page-specific CSS-файл з цим правилом і заімпортувати його в
   компоненті (`import './<page>-page.css'` після
   `import '../../../shared/ui/console-table-page.css'`).
-- `Stack` рівня сторінки має мати `gap={6}` (не `gap="md"`).
+- `Stack` рівня сторінки має мати `gap={8}` (не `gap="md"`).
 
 ## 2. Фікс бордера картки (тільки для сторінок з Mantine `<Card withBorder>`)
 
@@ -207,10 +210,10 @@ className="app-data-card <page>-card" withBorder ...>` (перевір JSX — �
 /* 1. Кореневий Stack сторінки — фіксована висота (розділ 1 цього файлу) */
 .<page>-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 /* 2. Card/shell — тягнеться на всю висоту Stack-а */
@@ -266,7 +269,7 @@ console.log(frame.getBoundingClientRect().bottom - card.getBoundingClientRect().
 ## Чекліст (коротко)
 
 - [ ] `topGap`/`bottomGap` виміряні через `getBoundingClientRect()` = 6/6
-- [ ] `box-sizing: border-box` + `height: calc(... - 12px)` + `padding: 6px 4px 0`
+- [ ] `box-sizing: border-box` + `height: calc(... - 16px)` + `padding: 4px 4px 0`
       на кореневому `<page>-page`
 - [ ] `Stack gap={6}` на корені
 - [ ] Якщо сторінка на `<Card withBorder>` — бордер/тінь відновлені

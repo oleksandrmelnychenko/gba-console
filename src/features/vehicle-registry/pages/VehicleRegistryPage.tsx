@@ -293,7 +293,7 @@ export function VehicleRegistryPage() {
   }
 
   return (
-    <Stack className="vehicle-registry-page console-table-page" gap={6}>
+    <Stack className="vehicle-registry-page console-table-page" gap={8}>
       <div className="console-table-shell vehicle-registry-shell">
         <div className="pill-tabs vehicle-registry-tabs" role="tablist" aria-label={t('Розділи реєстру')}>
           <button
@@ -320,7 +320,7 @@ export function VehicleRegistryPage() {
           <div className="app-filter-bar vehicle-registry-filter-bar">
             <TextInput
               className="vehicle-registry-search"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={15} />}
               placeholder={t('VIN, номер, власник, модель')}
               value={searchDraft}
@@ -718,7 +718,7 @@ function VehicleDetailDrawer({
       {isLoading && !detail ? (
         <div className="vehicle-registry-drawer-loading"><Loader color="orange" size="sm" /></div>
       ) : (
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error}</Alert>}
           {detail && (
             <>
@@ -806,7 +806,7 @@ function VehicleDetailDrawer({
 
               <section className="app-section-card">
                 <div className="app-detail-section-head">
-                  <Group gap={7}>
+                  <Group gap={8}>
                     <History size={16} />
                     <Text className="app-section-title" fw={600}>{t('Історія обробки')}</Text>
                   </Group>
@@ -847,7 +847,7 @@ function ClientMatchSection({
   return (
     <section className="vehicle-registry-client-matches app-section-card">
       <div className="app-detail-section-head">
-        <Group gap={7}>
+        <Group gap={8}>
           <UserRoundSearch size={17} />
           <Text fw={650}>{t('Звірка з клієнтами GBA')}</Text>
           {matches.length > 0 && (
@@ -975,7 +975,7 @@ function ImportIssuesDrawer({
       onClose={onClose}
     >
       {item && (
-        <Stack gap={10}>
+        <Stack gap={8}>
           <DocumentDetailSummary
             variant="inventory"
             eyebrow={item.Brand || t('Імпорт')}

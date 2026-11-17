@@ -1,7 +1,7 @@
 .stock-movement__table td[data-negative='true'],
 .stock-movement__table th[data-negative='true'] { color: var(--mantine-color-red-7); }
 .stock-movement__table .app-table-cell-number { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
-.stock-movement__label { display: flex; align-items: center; min-width: 0; gap: 6px; }
+.stock-movement__label { display: flex; align-items: center; min-width: 0; gap: 8px; }
 .stock-movement__label-head { min-width: 320px; }
 .stock-movement__label-head > span { display: block; }
 .stock-movement__label-head > span + span { padding-left: 16px; }

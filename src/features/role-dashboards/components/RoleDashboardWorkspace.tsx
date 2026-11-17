@@ -37,12 +37,12 @@ function SummaryWorkspace({ period, toolbarTarget, workspaceKey }: WorkspaceProp
   const summary = <WorkspaceSummary state={state} toolbarTarget={toolbarTarget} />
 
   if (workspaceKey === 'gba') {
-    return <Stack className="role-dashboard-gba-workspace" gap={6}>{summary}<SystemWorkspace showDirectory /></Stack>
+    return <Stack className="role-dashboard-gba-workspace" gap={8}>{summary}<SystemWorkspace showDirectory /></Stack>
   }
 
   if (workspaceKey === 'system') {
-    return <Stack gap={6}>{summary}<SystemWorkspace /></Stack>
+    return <Stack gap={8}>{summary}<SystemWorkspace /></Stack>
   }
 
-  return <Stack gap={6}>{summary}{(workspaceKey === 'finance' || workspaceKey === 'executive') && <PayablesSnapshotPanel key={workspaceKey} workspace={workspaceKey} />}<OperationsWorkspace error={state.error} summary={state.summary} workspaceKey={workspaceKey} /><WorkspaceQueueModal workspace={workspaceKey} /></Stack>
+  return <Stack gap={8}>{summary}{(workspaceKey === 'finance' || workspaceKey === 'executive') && <PayablesSnapshotPanel key={workspaceKey} workspace={workspaceKey} />}<OperationsWorkspace error={state.error} summary={state.summary} workspaceKey={workspaceKey} /><WorkspaceQueueModal workspace={workspaceKey} /></Stack>
 }

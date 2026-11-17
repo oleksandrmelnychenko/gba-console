@@ -13,7 +13,7 @@ export function BuyerWorkspace() {
   const [visited, setVisited] = useState(() => new Set([view]))
 
   return (
-    <Stack className="buyer-workspace" gap={6}>
+    <Stack className="buyer-workspace" gap={8}>
       <div className="app-screen-tabs buyer-workspace__tabs" role="tablist" aria-label={t('Розділи закупівель')}>
         {[{ value: 'plan', label: 'Конструктор закупівель', icon: ShoppingCart }, { value: 'producer', label: 'Умови виробника', icon: Factory }].map((tab) => (
           <button

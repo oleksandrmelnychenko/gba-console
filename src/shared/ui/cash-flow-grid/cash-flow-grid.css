@@ -96,7 +96,7 @@
   flex-direction: column;
   justify-content: center;
   flex: 0 0 auto;
-  padding: 6px 8px;
+  padding: 8px 8px;
   min-width: 0;
   overflow: hidden;
 }
@@ -115,7 +115,7 @@
   flex: 1 1 auto;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .cfg-label-name {
@@ -173,7 +173,7 @@
 }
 
 .cfg-state {
-  padding: 22px 14px;
+  padding: 20px 12px;
   text-align: center;
   color: var(--mantine-color-gray-6);
   font-size: 12px;

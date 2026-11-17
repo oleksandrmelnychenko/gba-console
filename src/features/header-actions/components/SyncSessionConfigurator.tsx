@@ -110,7 +110,7 @@ export function SyncSessionConfigurator({
         </Group>
 
         <Box>
-          <Text fw={600} mb={6} size="xs">
+          <Text fw={600} mb={8} size="xs">
             {t('Типи документів')}
           </Text>
           {mode === 'full' ? (

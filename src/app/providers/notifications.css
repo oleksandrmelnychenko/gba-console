@@ -5,10 +5,10 @@
 }
 
 .app-toasts .mantine-Notification-root {
-  min-height: 46px;
-  padding: 10px 10px 10px 26px;
+  min-height: 44px;
+  padding: 8px 8px 8px 24px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-body);
   box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
 }
@@ -22,7 +22,7 @@
   border-radius: 50%;
 }
 
-.app-toasts .mantine-Notification-root[data-with-icon] { padding-inline-start: 10px; }
+.app-toasts .mantine-Notification-root[data-with-icon] { padding-inline-start: 8px; }
 .app-toasts .mantine-Notification-icon { width: 24px; height: 24px; flex: 0 0 24px; margin-inline-end: 8px; }
 .app-toasts .mantine-Notification-icon svg { width: 15px; height: 15px; }
 .app-toasts .mantine-Notification-loader { margin-inline-end: 8px; }
@@ -36,6 +36,6 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.app-toasts .mantine-Notification-closeButton { width: 26px; height: 26px; min-width: 26px; border-radius: 6px; }
+.app-toasts .mantine-Notification-closeButton { width: 24px; height: 24px; min-width: 24px; border-radius: 8px; }
 .app-toasts .mantine-Notification-closeButton svg { width: 16px; height: 16px; }
 .app-toasts .mantine-Notifications-notification + .mantine-Notifications-notification { margin-top: 8px; }

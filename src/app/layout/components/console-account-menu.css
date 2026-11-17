@@ -11,7 +11,7 @@
   max-width: 100%;
   min-height: 32px;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 4px 8px;
 }
 
 .console-account-trigger:hover,
@@ -44,7 +44,7 @@
   flex-direction: column;
   font-family: var(--font-mono);
   font-size: 12px;
-  gap: 6px;
+  gap: 8px;
   line-height: 18px;
   padding: 8px;
 }
@@ -68,7 +68,7 @@
 }
 
 .console-account-menu .console-account-menu-item {
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 12px;

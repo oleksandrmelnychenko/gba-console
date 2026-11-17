@@ -75,6 +75,7 @@ function DataTableBodyRowInner<TData>({
       <Table.Td
         key={cell.id}
         className={createDataCellClassName(meta)}
+        data-column-id={cell.column.id}
         style={{
           ...getPinnedStyle(cell.column, 1, pinnedLeftOffset),
           width: columnWidth,

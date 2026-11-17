@@ -10,10 +10,15 @@
    in each feature's own CSS. */
 
 :root {
-  --app-filter-bar-height: 74px;
-  --app-filter-control-height: 36px;
-  --app-filter-label-gap: 4px;
-  --app-filter-label-height: 17px;
+  /* Toolbar density (docs/ui-spacing-grid.md): 32px controls, 16px labels.
+     Bar height = 8px padding × 2 + label + gap + control + 1px bottom border. */
+  --app-filter-control-height: var(--app-control-height, 32px);
+  --app-filter-label-gap: var(--app-space-1, 4px);
+  --app-filter-label-height: 16px;
+  --app-filter-bar-height: calc(
+    2 * var(--app-space-2, 8px) + var(--app-filter-label-height) + var(--app-filter-label-gap) +
+      var(--app-filter-control-height) + 1px
+  );
   --app-multi-select-width: 240px;
 }
 
@@ -48,8 +53,16 @@
 .console-table-shell {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--app-radius-md);
   min-width: 0;
+}
+
+/* Page cards sit 4px inside the 16px console frame, so their corners are
+   concentric at 16 − 4 = 12px (--app-radius-md). Mantine writes --paper-radius
+   inline from radius="md", hence !important on the variable. */
+.app-data-card.mantine-Card-root,
+.sales-ukraine-card.mantine-Card-root {
+  --paper-radius: var(--app-radius-md) !important;
 }
 
 /* ---- Canonical filter strip ---- */
@@ -68,7 +81,7 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   min-width: 0;
-  gap: 10px;
+  gap: 8px;
   /* The pattern padding (docs/ui-patterns.md §5.3) — pages must NOT override.
      Horizontal 8px lines the bar content up with the table text (th/td padding
      is 8px), so the filter labels and the first column start on one vertical.
@@ -93,27 +106,27 @@
   align-items: center;
   display: flex;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   margin-left: auto;
-  min-height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 
 /* DataTable-owned column/density controls live after the page actions and
-   before create buttons. Keep this slot on the same 36px control baseline on
+   before create buttons. Keep this slot on the same control baseline on
    every registry, including action-only filter bars. */
 .app-filter-table-toolbar-slot {
   align-items: center;
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  min-height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height);
   min-width: 0;
 }
 
 .app-filter-table-toolbar-slot .data-table-toolbar {
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-height: 0;
 }
@@ -168,11 +181,11 @@
 .app-filter-date-range {
   align-items: end;
   display: grid;
-  flex: 0 0 310px;
-  gap: 10px;
+  flex: 0 0 312px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: 100%;
-  width: 310px;
+  width: 312px;
 }
 
 .app-filter-bar--stacked > .app-filter-date-range {
@@ -201,10 +214,10 @@
 .sales-filter-bar .app-filter-field > .mantine-SegmentedControl-root,
 .console-table-command-bar .app-filter-field > .mantine-SegmentedControl-root {
   font-family: var(--font-mono);
-  font-size: 12.5px;
-  height: var(--app-filter-control-height, 36px);
+  font-size: 12px;
+  height: var(--app-filter-control-height);
   letter-spacing: 0;
-  min-height: var(--app-filter-control-height, 36px);
+  min-height: var(--app-filter-control-height);
 }
 
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar)
@@ -264,15 +277,15 @@
 }
 
 /* The generic horizontally-scrollable filter row has 1px bottom padding in
-   the app shell. Inside a canonical bar that extra pixel would turn 74px into
-   75px, so the bar owns the row's vertical geometry. */
+   the app shell. Inside a canonical bar that extra pixel would add a
+   pixel to the bar, so the bar owns the row's vertical geometry. */
 .app-filter-bar .clients-filter-row,
 .sales-filter-bar .clients-filter-row,
 .console-table-command-bar .clients-filter-row {
   padding-bottom: 0;
 }
 
-/* ---- Compact inputs: 36px tall, 8px radius, gray-2 border, orange focus ring ---- */
+/* ---- Compact inputs: 32px tall, 8px radius, gray-2 border, orange focus ring ---- */
 .app-filter-bar .mantine-Input-input,
 .sales-filter-bar .mantine-Input-input,
 .sales-filter-period-menu .mantine-Input-input,
@@ -282,10 +295,10 @@
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0;
-  height: var(--app-filter-control-height, 36px);
-  min-height: var(--app-filter-control-height, 36px);
+  height: var(--app-filter-control-height);
+  min-height: var(--app-filter-control-height);
   transition:
     border-color 140ms var(--tx-ease-smooth),
     box-shadow 140ms var(--tx-ease-smooth);
@@ -295,7 +308,7 @@
 .sales-filter-bar .mantine-Input-input,
 .sales-filter-period-menu .mantine-Input-input,
 .console-table-command-bar .mantine-Input-input {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .app-filter-bar .mantine-Input-input::placeholder,
@@ -328,9 +341,9 @@
 /* Text actions in table filters share the New storage button pattern. */
 .mantine-Button-root.app-filter-primary-action {
   border-radius: 8px;
-  height: var(--app-filter-control-height, 36px);
-  min-height: var(--app-filter-control-height, 36px);
-  padding-inline: 18px;
+  height: var(--app-filter-control-height);
+  min-height: var(--app-filter-control-height);
+  padding-inline: 16px;
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 600;
@@ -357,7 +370,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 8px 8px;
   min-width: 0;
   width: 100%;
   max-width: 100%;
@@ -366,7 +379,7 @@
 }
 
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) {
-  flex: 1 1 170px;
+  flex: 1 1 168px;
   min-width: 0;
   max-width: 100%;
 }
@@ -403,7 +416,7 @@
   flex-shrink: 0;
   padding-inline: 12px;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -412,27 +425,28 @@
   font: inherit;
 }
 
-/* The paginator is one 36px control; its inputs must not each inherit 36px
+/* The paginator is one 32px control; its inputs must not each inherit 32px
    plus the surrounding frame. Small arrows keep the existing hit targets. */
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-paginator {
-  --app-filter-control-height: 28px;
+  --app-filter-control-height: var(--app-control-height-xs);
   box-sizing: border-box;
   flex: 0 0 auto;
-  height: 36px;
-  padding: 3px;
+  height: var(--app-control-height);
+  padding: var(--app-space-1);
 }
 
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .mantine-ActionIcon-root:not(.app-paginator *, .mantine-Input-section *) {
-  border-radius: 8px;
+  border-radius: var(--app-radius-sm);
   flex: 0 0 auto;
-  height: 36px;
-  width: 36px;
-  min-height: 36px;
-  min-width: 36px;
+  height: var(--app-control-height);
+  width: var(--app-control-height);
+  min-height: var(--app-control-height);
+  min-width: var(--app-control-height);
 }
 
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar):not(:has(.mantine-InputWrapper-label, .app-filter-label, .sales-filter-label)) {
-  min-height: 53px;
+  /* Unlabelled bar: padding + one control row + bottom border. */
+  min-height: calc(2 * var(--app-space-2) + var(--app-control-height) + 1px);
 }
 
 /* Query the available panel width, including narrow drawers on wide displays. */
@@ -451,7 +465,7 @@
   :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar):not(.app-filter-bar--stacked) {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 10px;
+    gap: 8px 8px;
     min-width: 0;
     overflow: visible;
   }

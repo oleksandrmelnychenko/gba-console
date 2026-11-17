@@ -374,7 +374,7 @@ export function DocumentVerificationTab({ canExport }: { canExport: boolean }) {
   const verificationDate = new Date().toLocaleDateString('uk-UA')
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-verification">
             <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />

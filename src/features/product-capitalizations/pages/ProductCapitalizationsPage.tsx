@@ -428,10 +428,10 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   } = model
 
   return (
-    <Stack className="product-capitalizations-page" gap={6}>
+    <Stack className="product-capitalizations-page" gap={8}>
       <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-capitalizations-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-capitalizations-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-capitalizations-filter-row">
             <ToolbarDateRangeFilter from={activeFilters.from} to={activeFilters.to} onChange={({ from, to }) => { updateFilters({ from, to }) }} />
             <div className="app-filter-actions">
               <Button color="gray" variant="default" leftSection={<RotateCcw size={17} />} onClick={resetFilters}>

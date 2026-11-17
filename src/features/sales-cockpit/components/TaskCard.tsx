@@ -85,7 +85,7 @@ export function TaskCard({
 
   return (
     <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="sm" radius="md" withBorder>
-      <Stack gap={7}>
+      <Stack gap={8}>
         <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
           <Stack gap={4}>
             <Group gap="xs" wrap="nowrap">
@@ -125,21 +125,21 @@ export function TaskCard({
           <Group gap={4} wrap="nowrap">
             {phone && (
               <Tooltip label={`${t('Подзвонити')}: ${phone}`}>
-                <ActionIcon color="green" component="a" href={`tel:${phone}`} variant="light">
+                <ActionIcon aria-label={t('Подзвонити')} color="green" component="a" href={`tel:${phone}`} variant="light">
                   <Phone size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {email && (
               <Tooltip label={`${t('Написати')}: ${email}`}>
-                <ActionIcon color="blue" component="a" href={`mailto:${email}`} variant="light">
+                <ActionIcon aria-label={t('Написати')} color="blue" component="a" href={`mailto:${email}`} variant="light">
                   <Mail size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {viber && (
               <Tooltip label={`Viber: ${viber}`}>
-                <ActionIcon color="orange" component="a" href={`viber://chat?number=${viber}`} variant="light">
+                <ActionIcon aria-label="Viber" color="orange" component="a" href={`viber://chat?number=${viber}`} variant="light">
                   <MessageCircle size={18} />
                 </ActionIcon>
               </Tooltip>

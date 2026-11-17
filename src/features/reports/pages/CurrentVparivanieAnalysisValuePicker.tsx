@@ -119,7 +119,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const options = [...optionMap].map(([value, selected]) => ({ value, label: selected.Name }))
   const itemKind = hierarchy && (groupCondition || field === 4) ? hierarchy.itemKind : undefined
   const label = (value: ReportSelectedValue) => analysisValueLabel(field, value, itemKind)
-  return <Stack gap={6} className="report-analysis-values">
+  return <Stack gap={8} className="report-analysis-values">
     {mixed && hierarchy && !unavailable ? <SegmentedControl aria-label="Тип значення" value={choiceKind}
       data={[{ value: 'group', label: 'Групи' }, { value: 'item', label: ITEM_LABELS[hierarchy.itemKind][1] }]}
       onChange={value => { setChoiceKind(value as 'group' | 'item'); setSearch('') }} /> : null}
@@ -130,7 +130,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
           search={search} onSearchChange={setSearch} onChange={change} loading={!current || pending}
           lookupError={pending ? undefined : current?.error} onRetry={() => { if (current?.values.length) void loadMore(); else setAttempt(value => value + 1) }}
           hasMore={!pending && !!current?.hasMore && current.nextOffset < 4080} loadingMore={current?.loadingMore} onLoadMore={() => void loadMore()} />}
-    <Group gap={6} className="report-analysis-values__actions">
+    <Group gap={8} className="report-analysis-values__actions">
     {!injectedItem && !unavailable && current?.hasMore && current.nextOffset >= 4080
       ? <Text size="xs" c="dimmed">Показано 4080 значень. Звузьте пошук, щоб знайти потрібне.</Text> : null}
     {descriptor && hierarchy && !unavailable && (field === 4 ? !!descriptor.hierarchyBrowse : groupCondition)

@@ -26,7 +26,7 @@ export function CashPeriodModePanel({ dataset, grouped, disabled, onModeChange, 
         <Button mt="xs" size="xs" variant="light" disabled={disabled} onClick={() => onModeChange()}>Перейти до всіх / вибраних рахунків</Button>
       </Alert>}
       {part === 'form' ? null : source}
-      {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt={part === 'form' ? 0 : 'sm'} label={<Group component="span" gap={6} wrap="nowrap"><WalletCards size={16} aria-hidden="true" />Форма руху коштів</Group>} disabled={disabled}
+      {multiple && (groupedCashWorkbookSupported(dataset) || cashWorkbookPresentationSupported(dataset)) ? <Select mt={part === 'form' ? 0 : 'sm'} label={<Group component="span" gap={8} wrap="nowrap"><WalletCards size={16} aria-hidden="true" />Форма руху коштів</Group>} disabled={disabled}
         allowDeselect={false} value={rows.map(row => row.type).join(',')} data={[
           { value: '43,40,42,41', label: 'Організація / Рахунок / Запис / Валюта' },
           { value: '40,44,43', label: 'Рахунок / Тип / Організація' },

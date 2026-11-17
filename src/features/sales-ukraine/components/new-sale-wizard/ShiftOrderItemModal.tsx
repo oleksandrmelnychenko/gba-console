@@ -48,25 +48,25 @@ export function ShiftOrderItemModal({
       closeButtonProps={{ disabled: isBusy }}
     >
       {opened && (
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Stack gap={4}>
-            <Group gap={6}>
+            <Group gap={8}>
               <Text c="gray.9" size="xs">{t('Зарезервовано')}:</Text>
               <Text className="app-money" fw={600} size="sm">{amountFormatter.format(amount)}</Text>
             </Group>
-            <Group gap={6}>
+            <Group gap={8}>
               <Text c="gray.9" size="xs">
                 {t('Для клієнта')}:
               </Text>
               <TableChip tone="document" value={regionCode} />
             </Group>
-            <Group gap={6}>
+            <Group gap={8}>
               <Text c="gray.9" size="xs">
                 {t('З рахунка')}:
               </Text>
               <TableChip tone="document" value={sourceName} />
             </Group>
-            <Group gap={6}>
+            <Group gap={8}>
               <Text c="gray.9" size="xs">
                 {t('Аналітик')}:
               </Text>

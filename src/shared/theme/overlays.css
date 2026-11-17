@@ -1,0 +1,55 @@
+/* Floating surfaces: popovers, menus, combobox dropdowns, tooltips.
+   docs/ui-spacing-grid.md — concentric radii: the dropdown is a 12px surface
+   with 4px padding, so every item inside it is 12 − 4 = 8px. An explicit
+   `radius` prop still wins (Mantine writes --popover-radius inline). Classes are
+   doubled because theme.ts loads before Mantine's stylesheet. */
+.mantine-Popover-dropdown.mantine-Popover-dropdown,
+.mantine-Menu-dropdown.mantine-Menu-dropdown,
+.mantine-Combobox-dropdown.mantine-Combobox-dropdown,
+.mantine-Select-dropdown.mantine-Select-dropdown,
+.mantine-MultiSelect-dropdown.mantine-MultiSelect-dropdown,
+.mantine-Autocomplete-dropdown.mantine-Autocomplete-dropdown,
+.mantine-TagsInput-dropdown.mantine-TagsInput-dropdown {
+  --popover-radius: var(--app-radius-md);
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: 0 8px 24px rgba(20, 28, 38, 0.08), 0 1px 2px rgba(20, 28, 38, 0.04);
+}
+
+.mantine-Menu-dropdown.mantine-Menu-dropdown {
+  padding: var(--app-space-1);
+}
+
+.mantine-Menu-item.mantine-Menu-item {
+  border-radius: var(--app-radius-sm);
+  line-height: 16px;
+  min-height: 32px;
+  padding: var(--app-space-2) var(--app-space-3);
+}
+
+.mantine-Menu-itemSection.mantine-Menu-itemSection[data-position='left'] {
+  margin-inline-end: var(--app-space-2);
+}
+
+.mantine-Menu-itemSection.mantine-Menu-itemSection[data-position='right'] {
+  margin-inline-start: var(--app-space-2);
+}
+
+.mantine-Menu-label.mantine-Menu-label {
+  padding: var(--app-space-2) var(--app-space-3) var(--app-space-1);
+}
+
+.mantine-Menu-divider.mantine-Menu-divider {
+  margin: var(--app-space-1) calc(var(--app-space-1) * -1);
+}
+
+/* Keyboard users must see where they are inside a menu: Mantine marks the
+   roving-focus item with data-hovered; keep a visible ring for real focus. */
+.mantine-Menu-item.mantine-Menu-item:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--app-focus-border);
+  outline: none;
+}
+
+.mantine-Tooltip-tooltip.mantine-Tooltip-tooltip {
+  border-radius: var(--app-radius-sm);
+  padding: var(--app-space-1) var(--app-space-2);
+}

@@ -1,6 +1,6 @@
 .new-sale-review-checkout .new-sale-review-step__body {
   background: var(--mantine-color-gray-0);
-  padding: 10px;
+  padding: 8px;
   scrollbar-gutter: stable;
 }
 
@@ -8,7 +8,7 @@
   background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   max-width: 1680px;
   max-height: none;
@@ -18,19 +18,19 @@
 .new-sale-review-checkout .new-sale-review-layout {
   align-items: start;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
   overflow: visible;
   padding: 0;
 }
 
 .new-sale-review-checkout .new-sale-review-main {
-  gap: 10px;
+  gap: 8px;
 }
 
 .new-sale-review-checkout .new-sale-review-section {
   background: var(--mantine-color-white);
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 8px;
 }
 
 .new-sale-review-checkout .new-sale-review-section__head {
@@ -38,7 +38,7 @@
 }
 
 .new-sale-review-checkout .new-sale-review-grid {
-  gap: 8px 10px;
+  gap: 8px 8px;
 }
 
 .new-sale-review-checkout .new-sale-review-options {
@@ -79,7 +79,7 @@
 }
 
 .new-sale-review-checkout .new-sale-review-option-row {
-  gap: 10px;
+  gap: 8px;
 }
 
 .new-sale-review-checkout .new-sale-review-checkbox,
@@ -95,11 +95,11 @@
 
 @media (max-width: 600px) {
   .new-sale-review-checkout .new-sale-review-step__body {
-    padding: 10px;
+    padding: 8px;
   }
 
   .new-sale-review-checkout .new-sale-review-section {
-    padding: 10px;
+    padding: 8px;
   }
 
   .new-sale-review-checkout .new-sale-review-grid,

@@ -247,13 +247,13 @@ function ProductGroupsPageContent() {
   }
 
   return (
-    <Stack className="product-groups-page" gap={6}>
+    <Stack className="product-groups-page" gap={8}>
       <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-groups-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-groups-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-groups-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Назва або опис')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}

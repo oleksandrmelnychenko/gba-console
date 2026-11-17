@@ -122,10 +122,10 @@ export function AdvancePaymentsPage() {
   }
 
   return (
-    <Stack className="advance-payments-page" gap={6}>
+    <Stack className="advance-payments-page" gap={8}>
       <Card className="app-data-card advance-payments-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advance-payments-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields advance-payments-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields advance-payments-filter-row">
             <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { setPage(1); setFromDate(range.from); setToDate(range.to) }} />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>

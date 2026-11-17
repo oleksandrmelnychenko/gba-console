@@ -442,15 +442,15 @@ function AdvancedReportsPageContent() {
   }, [loadLookups])
 
   return (
-    <Stack className="advanced-reports-page" gap={6}>
+    <Stack className="advanced-reports-page" gap={8}>
       <Card className="app-data-card advanced-reports-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar advanced-reports-filter-bar">
           <Stack className="advanced-reports-filter-content" gap={8}>
-            <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields advanced-reports-filter-row">
+            <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields advanced-reports-filter-row">
               <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { changeFromDate(from); changeToDate(to) }} />
               <TextInput
                 leftSection={<Search size={16} />}
-                label={t('Пошук')}
+                aria-label={t('Пошук')}
                 placeholder={t('Номер, організація, отримувач або коментар')}
                 value={searchValue}
                 className="advanced-reports-search"
@@ -758,7 +758,7 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
     .join(' · ')
 
   return (
-    <Group gap={6} title={title} wrap="nowrap">
+    <Group gap={8} title={title} wrap="nowrap">
       <Text size="sm">{displayValue(row.payedTo)}</Text>
       {row.isUnderReport && (
         <Badge className="app-role-pill is-gray" size="xs" variant="light">
@@ -878,7 +878,7 @@ function AdvancedReportDocumentStructureDrawer({
           <DocumentDetailSummary variant="inventory" eyebrow={t('Структура документів')}
             title={displayValue(row.order.Number || row.order.CustomNumber || row.number)}
             meta={formatDateTime(row.fromDate)}
-            metrics={<Group gap={6}><Text className="app-money">{formatMoney(row.amount)}</Text><TableChip tone="source" value={row.currency} /></Group>}
+            metrics={<Group gap={8}><Text className="app-money">{formatMoney(row.amount)}</Text><TableChip tone="source" value={row.currency} /></Group>}
           />
         }>
           {isCalculating && (
@@ -1008,7 +1008,7 @@ function AdvanceReportStructureSummary({
   const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8} verticalSpacing={8}>
       <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
       <DetailItem label={t('Сума авансового звіту')} mono value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
@@ -1021,7 +1021,7 @@ function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8} verticalSpacing={8}>
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
       <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
@@ -1036,7 +1036,7 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10} verticalSpacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8} verticalSpacing={8}>
       <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
       <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />

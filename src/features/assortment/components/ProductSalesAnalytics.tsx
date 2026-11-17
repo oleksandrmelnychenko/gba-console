@@ -87,7 +87,7 @@ export function ProductSalesAnalytics({ analytics, error }: { analytics: Product
   return <Card className="assort-sales-analytics" radius="md" withBorder>
     <div className="assort-sales-toolbar">
       <Text component="h2" className="app-section-title" fw={600} size="sm">{t('Продажі')}</Text>
-      <Group gap={6}>
+      <Group gap={8}>
         <AnalyticsTabs label={t('Період продажів')} value={months} onChange={setMonths} items={['3', '6', '12'].map(value => ({ value, label: `${value} ${t('міс.')}` }))} />
         <Button size="compact-xs" variant={table ? 'filled' : 'default'} color={table ? 'brand' : 'gray'} aria-pressed={table} leftSection={<Table2 size={14} />} onClick={() => setTable(!table)}>{t('Дані')}</Button>
       </Group>

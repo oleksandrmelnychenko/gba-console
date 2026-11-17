@@ -170,7 +170,7 @@ export function DirectSupplyOrderProFormCard({
 
   return (
     <Card className="supply-detail-card" withBorder radius="md" padding={12}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Group justify="space-between" gap="sm" wrap="wrap">
           <Group gap="xs">
             <Text className="app-section-title" fw={600} size="sm">
@@ -204,7 +204,7 @@ export function DirectSupplyOrderProFormCard({
           ) : null}
         </Group>
 
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={10}>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} spacing={12} verticalSpacing={8}>
           {isEditing ? (
             <>
               <TextInput
@@ -242,7 +242,7 @@ export function DirectSupplyOrderProFormCard({
 
         <Stack className={`supply-order-documents${documents.length === 0 ? ' is-empty' : ''}`} gap={8}>
           <Group justify="space-between" gap="xs" wrap="wrap">
-            <Group gap={6} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Документи')}
               </Text>
@@ -264,7 +264,7 @@ export function DirectSupplyOrderProFormCard({
               {t('Документів немає')}
             </Text>
           ) : (
-            <Stack gap={6}>
+            <Stack gap={8}>
               {documents.map((document, index) => (
                 <Group
                   key={getProFormDocumentKey(document, index)}
@@ -273,8 +273,8 @@ export function DirectSupplyOrderProFormCard({
                   wrap="nowrap"
                   style={{
                     border: '1px solid var(--mantine-color-gray-2)',
-                    borderRadius: 6,
-                    padding: '8px 10px',
+                    borderRadius: 8,
+                    padding: '8px 12px',
                   }}
                 >
                   <Stack gap={0} style={{ minWidth: 0 }}>

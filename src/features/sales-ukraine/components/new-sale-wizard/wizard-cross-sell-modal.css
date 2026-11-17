@@ -1,11 +1,11 @@
 .wizard-cross-sell-modal .mantine-Modal-body {
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .wizard-cross-sell-graph {
   display: grid;
   gap: 56px;
-  grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(268px, 320px) minmax(0, 1fr);
   height: min(680px, calc(100vh - 220px));
   min-height: 440px;
   overflow: hidden;
@@ -17,7 +17,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
   position: relative;
 }
 
@@ -57,7 +57,7 @@
 .wizard-cross-sell-seed__eyebrow > span:first-child {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -88,8 +88,8 @@
 
 .wizard-cross-sell-seed__copy {
   display: grid;
-  gap: 7px;
-  margin-top: 13px;
+  gap: 8px;
+  margin-top: 12px;
   min-width: 0;
 }
 
@@ -112,8 +112,8 @@
 
 .wizard-cross-sell-seed__metrics {
   border-block: 1px solid var(--mantine-color-gray-2);
-  margin-top: 14px;
-  padding-block: 11px;
+  margin-top: 12px;
+  padding-block: 12px;
 }
 
 .wizard-cross-sell-metric {
@@ -121,7 +121,7 @@
   align-content: start;
   gap: 4px;
   min-width: 0;
-  padding-inline: 10px;
+  padding-inline: 8px;
 }
 
 .wizard-cross-sell-metric:first-child {
@@ -171,11 +171,11 @@
   flex: 0 0 auto;
   justify-content: space-between;
   min-height: 48px;
-  padding: 0 2px 9px 44px;
+  padding: 0 2px 8px 44px;
 }
 
 .wizard-cross-sell-related__head .app-section-title {
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .wizard-cross-sell-related__scroll {
@@ -198,11 +198,11 @@
 .wizard-cross-sell-related__list::before,
 .wizard-cross-sell-loading::before {
   background: var(--mantine-color-gray-3);
-  bottom: 54px;
+  bottom: 54px; /* grid-exempt: timeline rail starts/ends at first/last card dot */
   content: '';
   left: 16px;
   position: absolute;
-  top: 54px;
+  top: 54px; /* grid-exempt: timeline rail starts/ends at first/last card dot */
   width: 1px;
 }
 
@@ -211,8 +211,8 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
-  min-height: 118px;
-  padding: 10px 11px;
+  min-height: 116px;
+  padding: 8px 12px;
   position: relative;
 }
 
@@ -255,7 +255,7 @@
   border-radius: 999px;
   content: '';
   height: 9px;
-  left: -33px;
+  left: -33px; /* grid-exempt: 9px dot centred on 1px timeline rail */
   position: absolute;
   top: calc(50% - 4px);
   width: 9px;
@@ -271,20 +271,20 @@
 }
 
 .wizard-cross-sell-card__image {
-  border-radius: 9px;
+  border-radius: 8px;
   height: 112px;
   width: 112px;
 }
 
 .wizard-cross-sell-card__body {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .wizard-cross-sell-card__headline {
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -303,7 +303,7 @@
 
 .wizard-cross-sell-card__name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   overflow: hidden;
@@ -344,7 +344,7 @@
   color: var(--mantine-color-gray-5);
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   justify-content: center;
   margin-left: 44px;
   min-height: 220px;
@@ -355,7 +355,7 @@
 .wizard-cross-sell-empty strong {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -373,7 +373,7 @@
 
 @media (max-width: 900px) {
   .wizard-cross-sell-graph {
-    gap: 14px;
+    gap: 12px;
     grid-template-columns: minmax(0, 1fr);
     height: auto;
     min-height: 0;
@@ -451,7 +451,7 @@
 
   .wizard-cross-sell-card::after,
   .wizard-cross-sell-loading__card::after {
-    left: -25px;
+    left: -25px; /* grid-exempt: 9px dot centred on 1px timeline rail */
   }
 }
 

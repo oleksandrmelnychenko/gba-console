@@ -4,7 +4,7 @@
   align-self: flex-start;
   padding: 8px 12px;
   border: 1px solid color-mix(in srgb, var(--alert-color) 45%, transparent);
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .app-alert .mantine-Alert-wrapper { align-items: flex-start; }

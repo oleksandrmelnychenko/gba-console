@@ -71,7 +71,7 @@ export function TransporterNameWithIcon({
   const displayName = name || ''
 
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
       <TransporterIcon cssClass={cssClass} imageUrl={imageUrl} name={displayName} size={size} />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</span>
     </span>

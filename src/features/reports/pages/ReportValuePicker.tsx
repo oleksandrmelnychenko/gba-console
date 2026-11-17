@@ -110,7 +110,7 @@ export function ReportValuePicker({
 
   return <Stack gap={4} className="report-value-picker" data-mode={freeText ? 'text' : mode}>
     {freeText
-      ? <Group align="end" gap={6} wrap="nowrap">
+      ? <Group align="end" gap={8} wrap="nowrap">
           <div style={{ flex: 1, minWidth: 0 }}>{field}</div>
           <Button type="button" size="sm" color={CREATE_ACTION_COLOR} disabled={locked}
             onMouseDown={event => event.preventDefault()} onClick={addText}>{t('Додати')}</Button>

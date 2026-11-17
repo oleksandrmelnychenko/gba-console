@@ -1,9 +1,9 @@
 .organization-clients-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .organization-clients-card {
@@ -52,7 +52,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
   height: var(--app-filter-control-height);
   letter-spacing: 0;
@@ -70,7 +70,7 @@
   align-items: center;
   align-self: end;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-height: var(--app-filter-control-height);
   min-width: 0;
@@ -92,7 +92,7 @@
 }
 
 .organization-clients-table-toolbar-slot .data-table-toolbar {
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-height: 0;
 }
@@ -113,7 +113,7 @@
 
 .organization-clients-name-cell {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.15;
 }
@@ -169,14 +169,14 @@
 }
 .app-filter-bar.organization-clients-filter-bar > .organization-clients-search-input { flex: 0 0 280px; width: 280px; min-width: 0; max-width: 100%; }
 @container registry (max-width: 950px) {
- .organization-clients-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .organization-clients-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .organization-clients-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .organization-clients-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 900px) {
-  .app-filter-bar .organization-clients-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .organization-clients-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .organization-clients-toolbar-action .mantine-Button-label { display: none; }
   .organization-clients-toolbar-action .mantine-Button-section { margin: 0; }
 }

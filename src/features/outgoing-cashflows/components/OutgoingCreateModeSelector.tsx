@@ -40,7 +40,7 @@ function SelectorSection({
   onNavigate: (path: string) => void
 }) {
   return (
-    <Stack className="outgoing-create-selector__section" gap={6}>
+    <Stack className="outgoing-create-selector__section" gap={8}>
       <Text className="app-section-title" fw={600} size="sm">{title}</Text>
       <Stack className="outgoing-create-selector__list" gap={2}>
         {items.map((item) => (

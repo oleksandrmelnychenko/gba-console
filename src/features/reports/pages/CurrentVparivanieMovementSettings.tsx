@@ -13,7 +13,7 @@ export function CurrentVparivanieMovementSettings({ dataset, value, onChange, di
 }) {
   if (!currentVparivanieMovementsAvailable(dataset) || !currentVparivanieFullScopeAvailable(dataset)) return null
   return <Stack gap="xs" role="group" aria-label="Показники руху товару">
-    <Text size="sm" fw={600}><Group component="span" gap={6} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />Рух товару за період</Group></Text>
+    <Text size="sm" fw={600}><Group component="span" gap={8} wrap="nowrap"><ArrowLeftRight size={16} aria-hidden="true" />Рух товару за період</Group></Text>
     <Group>
       <Checkbox label="Прихід" checked={value.Incoming} disabled={disabled}
         onChange={event => onChange({ ...value, Incoming: event.currentTarget.checked })} />

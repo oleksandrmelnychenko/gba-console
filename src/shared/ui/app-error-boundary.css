@@ -41,7 +41,7 @@
   cursor: pointer;
   font: inherit;
   font-size: 14px;
-  padding: 8px 14px;
+  padding: 8px 12px;
 }
 
 .app-error-boundary__button.is-primary {

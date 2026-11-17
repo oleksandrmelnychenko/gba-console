@@ -42,7 +42,7 @@ export function CockpitQueueSummary({
         </Group>
 
         <div className={`cockpit-queue-priority${topTask ? '' : ' is-empty'}`}>
-          <Stack gap={3}>
+          <Stack gap={4}>
             <Text c="dimmed" size="xs" fw={650}>
               {t('Перший AI-пріоритет')}
             </Text>

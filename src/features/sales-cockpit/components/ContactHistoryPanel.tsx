@@ -24,7 +24,7 @@ export function ContactHistoryPanel({ clientId }: { clientId: number }) {
     <Group justify="space-between"><Text fw={600}>{t('Історія контактів')}</Text><Button variant="subtle" size="xs" onClick={refresh}>{t('Оновити')}</Button></Group>
     {state.query !== query ? <Loader size="sm" /> : state.error ? <Alert color="red">{state.error}</Alert> : state.data ? <>
       {state.data.total === 0 && <Text c="dimmed">{t('Контактів ще не записано')}</Text>}
-      {state.data.events.map((event) => <Stack key={event.event_id} gap={3} style={{ borderBottom: '1px solid var(--mantine-color-default-border)', paddingBottom: 8 }}>
+      {state.data.events.map((event) => <Stack key={event.event_id} gap={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)', paddingBottom: 8 }}>
         <Text size="sm" fw={600}>{t(CONTACT_RESULTS[event.result])}</Text>
         <Text size="xs" c="dimmed">{formatContactDate(event.at)} ({t('Київ')}) · {event.manager_name}</Text>
         {event.note && <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{event.note}</Text>}

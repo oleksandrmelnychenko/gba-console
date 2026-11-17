@@ -31,7 +31,7 @@ export function WorkdayQueue({ revision, paused, actions, onContact }: {
   return <Stack gap={8} className="cockpit-workday-queue">
     <Group justify="space-between" gap={8}>
       <Text className="app-section-title" fw={600}>{t('Робоча черга клієнтів')}</Text>
-      {state.data && !loading && <Group gap={6}>
+      {state.data && !loading && <Group gap={8}>
         <Text className="cockpit-workday-asof">{t('Станом на')}: {formatBusinessDate(state.data.as_of) || state.data.as_of}</Text>
         <TableChip value={`${t('Карток у черзі')}: ${state.data.total}`} />
       </Group>}
@@ -50,7 +50,7 @@ export function WorkdayQueue({ revision, paused, actions, onContact }: {
     </div>
     {loading ? <Loader aria-label={t('Завантаження робочої черги')} /> : state.error ? <Alert color="red">{state.error}</Alert> : state.data ? <>
       {!state.data.total && <div className="cockpit-workday-empty" role="status"><ClipboardList size={24} /><Text size="sm">{t('За цими умовами роботи немає. Змініть фільтри або запишіть контакт у «Мої клієнти».')}</Text></div>}
-      {state.data.rows.map((row) => <Card key={row.key} className="cockpit-workday-client" withBorder padding="sm"><Stack gap={6}>
+      {state.data.rows.map((row) => <Card key={row.key} className="cockpit-workday-client" withBorder padding="sm"><Stack gap={8}>
         <Group justify="space-between"><Text fw={600}>{row.client_name || t('Завдання без клієнта')}</Text><TableChip value={t(WORKDAY_BUCKETS[row.bucket])} tone={row.bucket === 'overdue' ? 'danger' : row.bucket === 'today' ? 'warning' : 'neutral'} /></Group>
         <Text size="sm">{t('Відповідальний')}: {row.manager_name || `#${row.manager_id}`} · {t('Активних задач')}: {row.task_count} · {t('У роботі')}: {row.in_progress_count} · {t('Від керівника')}: {row.manual_count}</Text>
         <Text size="sm">{t('Найближча дія')}: {row.due_at ? `${formatContactDate(row.due_at)} (${t('Київ')})` : t('Без дати')}</Text>

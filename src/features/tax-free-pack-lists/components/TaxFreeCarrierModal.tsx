@@ -133,7 +133,7 @@ export function TaxFreeCarrierModal({ canEdit, opened, taxFree, onClose, onUpdat
 
         <TextInput
           leftSection={<Search size={16} />}
-          label={t('Пошук перевізника')}
+          aria-label={t('Пошук перевізника')}
           placeholder={t('Мінімум 2 символи')}
           value={search}
           onChange={(event) => setSearch(event.currentTarget.value)}

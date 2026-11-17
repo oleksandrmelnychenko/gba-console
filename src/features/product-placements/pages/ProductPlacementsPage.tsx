@@ -578,11 +578,11 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
   const noStorages = !isLoadingStorages && storageOptions.length === 0
 
   return (
-    <Stack className="product-placements-page" gap={6}>
+    <Stack className="product-placements-page" gap={8}>
 
       <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-placements-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-placements-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-placements-filter-row">
             <AppDateInput
               label={t('До')}
               type="date"
@@ -608,7 +608,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               className="product-placements-search"

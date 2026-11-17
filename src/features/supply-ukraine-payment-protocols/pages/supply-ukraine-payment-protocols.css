@@ -1,6 +1,6 @@
 .supply-payment-sheet-title {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -43,7 +43,7 @@
 .supply-payment-section-card.mantine-Card-root {
   border-color: var(--mantine-color-gray-2);
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .supply-payment-section {
@@ -55,7 +55,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   gap: 8px;
   letter-spacing: 0;
@@ -94,7 +94,7 @@
 
 .supply-payment-detail-row {
   align-items: baseline;
-  column-gap: 14px;
+  column-gap: 12px;
   display: grid;
   grid-template-columns: minmax(120px, 0.95fr) minmax(0, 1.25fr);
   min-width: 0;
@@ -113,7 +113,7 @@
 .supply-payment-detail-row > strong,
 .supply-payment-detail-row > .mantine-Text-root:last-child {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   min-width: 0;
@@ -144,14 +144,14 @@
 
 .supply-payment-document-name {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .supply-payment-task-person {
   color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -183,7 +183,7 @@
 @media (max-width: 720px) {
   .supply-payment-detail-row {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 3px;
+    row-gap: 4px;
   }
 
   .supply-payment-detail-row > strong,

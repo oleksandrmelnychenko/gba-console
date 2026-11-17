@@ -262,13 +262,13 @@ function OrganizationClientsPageContent({ permissions }: { permissions: Organiza
   }
 
   return (
-    <Stack className="organization-clients-page console-table-page" gap={6}>
+    <Stack className="organization-clients-page console-table-page" gap={8}>
       <div className="organization-clients-card console-table-shell">
         <div className="app-filter-bar organization-clients-filter-bar">
           <TextInput
             className="organization-clients-search-input"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Назва організації')}
             value={searchDraft}
             onChange={(event) => updateSearch(event.currentTarget.value)}

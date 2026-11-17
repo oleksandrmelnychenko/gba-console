@@ -361,7 +361,7 @@ function IncompleteSalesOnlineShopPageView({
   } = model
 
   return (
-    <Stack className="incomplete-sales-online-shop-page console-table-page" gap={6}>
+    <Stack className="incomplete-sales-online-shop-page console-table-page" gap={8}>
       <IncompleteSalesTableCard
         columns={columns}
         error={error}
@@ -725,7 +725,7 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
   const hasClientSales = Boolean(sale.WithSales && getRetailClientNetUid(sale.RetailClient))
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       {isLoading && (
         <Group justify="center" py="sm">
           <Loader color="orange" size="sm" />

@@ -1,9 +1,9 @@
 .payment-online-shop-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .payment-online-shop-card {
@@ -63,7 +63,7 @@
 .app-filter-bar.payment-online-shop-filter-bar :is(.app-filter-actions, .data-table-toolbar, .data-table-toolbar-left) { flex-wrap: nowrap; gap: 8px; margin-left: 0; }
 .app-filter-bar.payment-online-shop-filter-bar .app-filter-actions { flex: 0 0 auto; }
 @container payment-online-shop-toolbar (max-width: 1250px) {
-  .app-filter-bar.payment-online-shop-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar.payment-online-shop-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .app-filter-bar.payment-online-shop-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .app-filter-bar.payment-online-shop-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

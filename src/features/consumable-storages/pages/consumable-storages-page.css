@@ -1,10 +1,10 @@
 /* Consumable storages registry — full-height console shell pattern. */
 .consumable-storages-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 /* layout.css strips Mantine Card chrome inside .console-frame. This registry
@@ -117,12 +117,12 @@
 
 .consumable-storage-detail-panel__body {
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .consumable-storage-detail-total {
   display: grid;
-  gap: 8px 14px;
+  gap: 8px 12px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   min-width: 0;
 }
@@ -139,7 +139,7 @@
   flex: 0 0 auto;
   gap: 4px;
 }
-.consumable-storage-remnants-toolbar .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
+.consumable-storage-remnants-toolbar .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: var(--app-control-height); padding: 0; }
 .consumable-storage-remnants-toolbar .data-table-toolbar-right:empty { display: none; }
 
 .consumable-storage-deprecated-controls { display: flex; align-items: center; gap: 4px; }
@@ -148,7 +148,7 @@
 .consumable-storage-deprecated-toolbar .data-table-toolbar-right:empty { display: none; }
 .consumable-storage-deprecated-controls .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
 
-.consumable-storage-form-section { display: grid; gap: 12px; background: var(--mantine-color-white); border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 12px; min-width: 0; }
+.consumable-storage-form-section { display: grid; gap: 12px; background: var(--mantine-color-white); border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; padding: 12px; min-width: 0; }
 .consumable-storage-form-section h3 { margin: 0; font-size: 13px; }
 .consumable-storage-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .consumable-storage-form-modal .consumable-storage-form > .mantine-Stack-root { padding: 8px; background: var(--mantine-color-gray-0); border-radius: 12px; }
@@ -166,7 +166,7 @@
 .consumable-storages-page .consumable-storages-filter-bar > .mantine-Button-root { flex: 0 0 auto; }
 .consumable-storages-page .consumable-storages-filter-bar .consumable-storages-search { flex: 0 1 240px; width: 240px; min-width: 0; max-width: 100%; }
 @media (max-width: 1050px) {
-  .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+  .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
   .consumable-storages-page .consumable-storages-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }

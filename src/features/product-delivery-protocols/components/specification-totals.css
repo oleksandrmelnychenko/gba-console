@@ -1,7 +1,7 @@
 .specification-totals {
   column-gap: 28px;
   min-width: 0;
-  row-gap: 10px;
+  row-gap: 8px;
   width: 100%;
 }
 
@@ -15,7 +15,7 @@
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 @container specification-summary (min-width: 440px) {
@@ -38,7 +38,7 @@
 
 .specification-totals.is-flat .specification-total-item {
   min-width: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
   text-align: left;
@@ -77,14 +77,14 @@
 }
 
 .specification-total-item {
-  min-width: 86px;
+  min-width: 84px;
   text-align: right;
 }
 
 .specification-total-label {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -98,7 +98,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -107,7 +107,7 @@
   align-items: baseline;
   display: inline-flex;
   font-size: 15px;
-  gap: 5px;
+  gap: 4px;
   justify-content: flex-end;
   line-height: 1.15;
   margin-top: 4px;
@@ -115,7 +115,7 @@
 }
 
 .specification-total-meta {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1;

@@ -48,7 +48,7 @@ function PayablesGroupPanel({ workspace, partyKind }: { workspace: PayablesWorks
 function PayablesCurrencyCard({ bucket, partyKind, onOpen }: { bucket: PayablesBucket; partyKind: PayablesPartyKind; onOpen: () => void }) {
   const { t } = useI18n()
   return <section className="role-dashboard-payables__currency" data-testid={`payables-currency-${partyKind}-${bucket.currencyCode}`}>
-    <Stack gap={5}>
+    <Stack gap={4}>
       <Group justify="space-between" gap={8}>
         <TableChip tone="source" value={bucket.currencyCode} />
         <Button leftSection={<List size={14} />} size="compact-xs" variant="default" onClick={onOpen}>{t('Розшифровка')} · {bucket.rowCount} {t('договорів')}</Button>

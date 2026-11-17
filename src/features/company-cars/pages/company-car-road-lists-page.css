@@ -1,5 +1,5 @@
 .company-car-road-lists-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
 }
@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   align-items: flex-end;
 }
-.company-car-road-lists-filter-row.app-filter-fields > .mantine-InputWrapper-root { flex: 0 1 170px; min-width: 145px; }
+.company-car-road-lists-filter-row.app-filter-fields > .mantine-InputWrapper-root { flex: 0 1 168px; min-width: 144px; }
 .company-car-road-lists-filter-row .app-filter-actions { margin-left: auto; }
 .company-car-road-lists-filter-row > .mantine-Button-root { flex: 0 0 auto; }
 
@@ -58,14 +58,14 @@
 
 .app-filter-bar.company-car-road-lists-filter-bar > .company-car-road-lists-filter-row { display: contents; }
 @container registry (max-width: 800px) {
- .company-car-road-lists-filter-bar .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
+ .company-car-road-lists-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
  .company-car-road-lists-filter-bar .data-table-layout-control .mantine-Button-label { display: none; }
  .company-car-road-lists-filter-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
 }
 
 /* Captions remain visible until this toolbar needs the icon-only size. */
 @container registry (max-width: 900px) {
-  .app-filter-bar .company-car-road-lists-toolbar-action { width: 36px; min-width: 36px; padding-inline: 0; }
+  .app-filter-bar .company-car-road-lists-toolbar-action { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }
   .company-car-road-lists-toolbar-action .mantine-Button-label { display: none; }
   .company-car-road-lists-toolbar-action .mantine-Button-section { margin: 0; }
 }

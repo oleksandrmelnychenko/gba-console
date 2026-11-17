@@ -58,7 +58,7 @@ export function ClientCommercialStructureView({
   )
 
   return (
-    <Stack className="client-commercial-structure" gap={10}>
+    <Stack className="client-commercial-structure" gap={8}>
       <Group className="client-commercial-hero" align="flex-start" justify="space-between" gap="sm" wrap="wrap">
         <div className="client-commercial-hero__identity">
           <Text className="app-section-title client-commercial-title">{groupTitle}</Text>
@@ -109,7 +109,7 @@ export function ClientCommercialStructureView({
       </SimpleGrid>
 
 
-      <Stack className="client-commercial-parties" gap={7}>
+      <Stack className="client-commercial-parties" gap={8}>
         <Text className="app-section-title">{t('Структура клієнта')}</Text>
         <div className="client-commercial-parties__list">
           {partyHierarchy.map((node) => (
@@ -171,7 +171,7 @@ export function ClientCommercialStructureView({
           }
         }}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text size="sm">{pendingDecision?.description}</Text>
           <Alert color="blue" icon={<CircleAlert size={17} />} variant="light">
             {t('Договори, продажі, платежі та баланси залишаться на своїх картках. Зміниться лише підтверджена структура й спільний кредитний контроль.')}
@@ -632,7 +632,7 @@ function ClientCard({
             {card.IsTradePoint ? <Store size={15} /> : <Building2 size={15} />}
           </ThemeIcon>
           <div className="client-source-card__identity">
-            <Group gap={5} wrap="wrap">
+            <Group gap={4} wrap="wrap">
               <Text className="client-source-card__name" title={displayName}>{repeatsPartyName ? t('Картка клієнта') : displayName}</Text>
               {card.IsTarget ? <TableChip tone="warning" value={t('Обрана')} /> : null}
               {card.IsTradePoint ? <TableChip tone="neutral" value={t('Торгова точка')} /> : null}
@@ -648,7 +648,7 @@ function ClientCard({
               {card.IsBlocked ? <TableChip tone="danger" value={t('Заблокована')} /> : null}
               {!card.IsActive ? <TableChip tone="neutral" value={t('Неактивна')} /> : null}
             </Group>
-            <Group className="client-source-card__meta" gap={5} wrap="wrap">
+            <Group className="client-source-card__meta" gap={4} wrap="wrap">
               {roleLabel ? (
                 <TableChip tone="document" value={roleLabel} />
               ) : null}
@@ -676,7 +676,7 @@ function ClientCard({
             </Group>
           </div>
         </Group>
-        <Group className="client-source-card__stats" gap={6} wrap="wrap">
+        <Group className="client-source-card__stats" gap={8} wrap="wrap">
           <ClientCardMetric label={t('Договори')} value={`${card.ActiveAgreementCount}/${card.AgreementCount}`} />
           <ClientCardMetric label={t('Продажі')} value={card.SaleCount} />
           {onDecision && anchorClientNetUid ? (
@@ -746,7 +746,7 @@ function ClientSourceTreeNode({
           {shortName && shortName !== sourceName ? (
             <Text className="client-source-card__source-short-name">{shortName}</Text>
           ) : null}
-          <Group gap={6} mt={4}>
+          <Group gap={8} mt={4}>
             <TableChip tone="source" value={`${t('Код 1С')}: ${snapshot.SourceCode}`} />
             {snapshot.RegionCode?.trim() && <TableChip value={`${t('Код регіону')}: ${snapshot.RegionCode.trim()}`} />}
           </Group>

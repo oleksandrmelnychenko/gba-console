@@ -57,7 +57,7 @@ function WorkbookFieldControls({ capability, selection, request, disabled, onCha
   return <>
     <div className="workbook-presentation__grid">
     <section className="workbook-advanced-card" aria-label="Додаткові поля форми">
-      <Group gap={6} className="workbook-advanced-card__heading"><ListPlus size={16} aria-hidden="true" /><Text component="h4">Додаткові поля форми</Text><TableChip value={selection?.additionalFields.length ?? 0} /></Group>
+      <Group gap={8} className="workbook-advanced-card__heading"><ListPlus size={16} aria-hidden="true" /><Text component="h4">Додаткові поля форми</Text><TableChip value={selection?.additionalFields.length ?? 0} /></Group>
       <div className="workbook-presentation__fields">
     {capability.additionalFields.map(field => <WorkbookFieldItem key={field.type} field={field} selection={selection}
       disabled={controlsDisabled} fenix={availability.fenix} onChange={onChange} />)}
@@ -65,7 +65,7 @@ function WorkbookFieldControls({ capability, selection, request, disabled, onCha
       <WorkbookFieldsNote dataSource={request.dataSource} />
     </section>
     {capability.orderings.length > 0 ? <section className="workbook-advanced-card" aria-label="Порядок рядків">
-      <Group gap={6} className="workbook-advanced-card__heading"><ArrowDownWideNarrow size={16} aria-hidden="true" /><Text component="h4">Порядок рядків</Text></Group>
+      <Group gap={8} className="workbook-advanced-card__heading"><ArrowDownWideNarrow size={16} aria-hidden="true" /><Text component="h4">Порядок рядків</Text></Group>
       <WorkbookOrderingControl selection={selection} disabled={controlsDisabled} onChange={onChange} />
     </section> : null}
     </div>

@@ -236,7 +236,7 @@ export function PlacementEditDrawer({
         )
       }
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
@@ -318,7 +318,7 @@ export function PlacementEditDrawer({
         )}
 
         {draft && (
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text fw={600}>{t('Оприходування')}</Text>
             <TextInput w={220} maw="100%" readOnly label={t('Код Виробника')} value={product?.VendorCode || ''} />
 
@@ -331,7 +331,7 @@ export function PlacementEditDrawer({
             )}
 
             {draft.useNewAddress ? (
-              <Group align="end" gap={10}>
+              <Group align="end" gap={8}>
                 <TextInput
                   w={140} maw="100%"
                   label={t('Склад')}

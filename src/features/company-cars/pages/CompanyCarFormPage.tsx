@@ -265,7 +265,7 @@ function CompanyCarFormPageContent() {
       onClose={handleCancel}
     >
       <form id="company-car-form" onSubmit={handleSubmit}>
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -294,7 +294,7 @@ function CompanyCarFormPageContent() {
             }
           >
             <DocumentDetailSection title={t('Автомобіль та організація')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <div className="company-car-form-organization"><Select
             clearable
             searchable
@@ -320,7 +320,7 @@ function CompanyCarFormPageContent() {
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Пальне та пробіг')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <TextInput
               disabled={isLoading || isSaving}
               label={t('Вмістимість баку')}
@@ -342,7 +342,7 @@ function CompanyCarFormPageContent() {
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Витрати пального')} stacked>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <TextInput
               disabled={isLoading || isSaving}
               label={t('Розхід по місту на 100 км')}
@@ -401,7 +401,7 @@ function CompanyCarFormPageContent() {
         title={t('Видалити автомобіль компанії')}
         onClose={() => setDeleteModalOpened(false)}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити автомобіль')} <Text span fw={600}>{form.carBrand || form.licensePlate || t('Без назви')}</Text>?
           </Text>

@@ -764,7 +764,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       }
       onClose={() => navigate('/orders/ukraine/all')}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -776,7 +776,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           <Loader />
         </Group>
       ) : order ? (
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Group gap="xs" wrap="wrap">
             {statusPill(t('Погоджено'), t, order.IsApproved)}
             {statusPill(t('Відправлено'), t, order.IsOrderShipped)}
@@ -789,7 +789,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
 
           {/* Block 1 — Вибір постачальника */}
           <Card className="supply-detail-card" withBorder radius="md" padding={12}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Вибір постачальника')}
               </Text>
@@ -815,7 +815,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
 
           {/* Block 2 — Замовлення */}
           <Card className="supply-detail-card" withBorder radius="md" padding={12}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Group gap="xs">
                 <Text className="app-section-title" fw={600} size="sm">
                   {t('Замовлення')}
@@ -902,7 +902,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
 
           {/* Order metrics — kept below the three primary blocks */}
           <Card className="supply-detail-card" withBorder radius="md" padding={12}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Підсумок замовлення')}
               </Text>
@@ -945,7 +945,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
           </Card>
 
           <Card className="supply-detail-card" withBorder radius="md" padding={12}>
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Документи доставки')}
               </Text>
@@ -978,7 +978,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         zIndex={getDefaultZIndex('modal') + 1}
         onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Group className="supply-credit-notes-toolbar" justify="space-between" gap={8}>
             <Group gap={8}>
               <Text fw={600} size="sm">{t('Документи')}</Text>
@@ -1033,7 +1033,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         zIndex={getDefaultZIndex('modal') + 2}
         onClose={closeCreditNoteModal}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Card className="supply-credit-note-form" withBorder radius="md" padding="sm">
             <Stack gap={12}>
               <SimpleGrid cols={{ base: 1, xs: 3 }} spacing={12}>
@@ -1108,7 +1108,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Зміна статуса документа')}</span>}
         onClose={closeStatusModal}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Text fw={600} size="sm">
             {statusDocument?.Name || statusDocument?.FileName || t('Документ')}
           </Text>

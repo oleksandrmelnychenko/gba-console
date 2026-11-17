@@ -14,7 +14,7 @@
   justify-content: safe center;
   overflow-x: auto;
   scrollbar-width: thin;
-  padding: 6px;
+  padding: 8px;
 }
 
 .app-screen-tabs > .app-screen-tab {
@@ -32,11 +32,11 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  gap: 6px;
+  gap: 8px;
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: 36px;
-  padding: 8px 10px;
+  min-height: var(--app-control-height);
+  padding: 8px 8px;
   white-space: nowrap;
   transition: background-color 140ms var(--tx-ease-smooth), color 140ms var(--tx-ease-smooth);
 }
@@ -63,4 +63,13 @@
   background: rgb(255 255 255 / 18%);
   border-color: rgb(255 255 255 / 28%);
   color: white;
+}
+
+/* As the top strip of a card the tabs are a flush band like the filter bar:
+   no second border or radius of their own (that drew a double border with
+   non-concentric corners), only the divider to the content below. The card
+   clips the corners. */
+:is(.mantine-Card-root, .app-data-card, .console-table-shell, .sales-ukraine-card) > .app-screen-tabs.app-screen-tabs:first-child {
+  border-width: 0 0 1px;
+  border-radius: 0;
 }

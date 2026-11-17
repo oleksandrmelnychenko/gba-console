@@ -167,7 +167,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
 
   if (showDirectory) {
     return (
-      <Stack className="role-dashboard-ai-analytics" gap={6}>
+      <Stack className="role-dashboard-ai-analytics" gap={8}>
         <SyncSourceStatus />
         {error && (
           <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
@@ -253,7 +253,7 @@ export function SystemWorkspace({ showDirectory = false }: SystemWorkspaceProps)
           <article className={`role-dashboard-fleet is-${fleetState}`} aria-busy={isInitialLoad}>
             <Text className="role-dashboard-fleet-eyebrow">{t('Готовність флоту')}</Text>
             {isInitialLoad ? (
-              <Stack gap={10} mt={10}>
+              <Stack gap={8} mt={8}>
                 <Skeleton height={34} radius="sm" width="46%" />
                 <Skeleton height={12} radius="xl" />
                 <Skeleton height={10} radius="sm" width="80%" />

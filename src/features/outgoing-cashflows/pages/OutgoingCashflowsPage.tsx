@@ -676,14 +676,14 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
   }
 
   return (
-    <Stack className="outgoing-cashflows-page console-table-page" gap={6}>
+    <Stack className="outgoing-cashflows-page console-table-page" gap={8}>
       <div className="console-table-shell outgoing-cashflows-card">
         <div className="app-filter-bar outgoing-cashflows-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields outgoing-cashflows-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields outgoing-cashflows-filter-row">
             <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { onSetFromDate(range.from); onSetToDate(range.to) }} />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, отримувач, рахунок або коментар')}
               value={searchValue}
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}
@@ -904,7 +904,7 @@ function useOutgoingCashflowColumns({
         minWidth: 115,
         accessor: (row) => row.number,
         cell: (row) => (
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <TableChip tone="document" value={displayValue(row.number)} />
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
@@ -1068,7 +1068,7 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
   const { t } = useI18n()
 
   return (
-    <Group gap={6} wrap="nowrap">
+    <Group gap={8} wrap="nowrap">
       <Text size="sm">{displayValue(row.payedTo)}</Text>
       {row.isUnderReport && (
         <Badge className="app-role-pill" size="xs" variant="light">
@@ -1341,7 +1341,7 @@ function AdvanceReportStructureSummary({
   const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8}>
       <DetailItem tone="document" label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
       <DetailItem label={t('Сума авансового звіту')} mono value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
@@ -1354,7 +1354,7 @@ function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8}>
       <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
       <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number || order.CustomNumber)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
@@ -1369,7 +1369,7 @@ function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder 
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing={8}>
       <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
       <DetailItem tone="document" label={t('Номер')} value={displayValue(order.Number)} />
       <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
@@ -1404,7 +1404,7 @@ function CancelOutgoingCashflowModal({
         }
       }}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text>{row ? t('Ордер "{number}" буде позначено як скасований.', { number: displayValue(row.number) }) : ''}</Text>
         <AppModalFooter>
           <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>

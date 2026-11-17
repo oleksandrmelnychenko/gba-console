@@ -1,9 +1,9 @@
 .product-history-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 4px 4px 0;
 }
 
 .product-history-card {
@@ -42,7 +42,7 @@
 
 .product-history-placement-popover {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
   overflow: hidden;
   padding: 0;
@@ -55,7 +55,7 @@
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .product-history-placement-popover__title {
@@ -85,8 +85,8 @@
   background: var(--mantine-color-teal-0);
   border: 1px solid var(--mantine-color-teal-2);
   border-radius: 8px;
-  min-width: 86px;
-  padding: 5px 8px;
+  min-width: 84px;
+  padding: 4px 8px;
   text-align: right;
 }
 
@@ -121,7 +121,7 @@
 .product-history-placement-empty {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
-  padding: 18px 8px;
+  padding: 16px 8px;
   text-align: center;
 }
 
@@ -145,7 +145,7 @@
   display: grid;
   gap: 2px;
   min-width: 0;
-  padding: 7px 9px;
+  padding: 8px 8px;
 }
 
 .product-history-placement-address + .product-history-placement-address,
@@ -188,7 +188,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 76px;
   min-height: 32px;
-  padding: 0 9px;
+  padding: 0 8px;
 }
 
 .product-history-placement-row:nth-child(even):not(.is-header) {
@@ -218,7 +218,7 @@
 }
 
 .product-history-placement-row.is-header {
-  min-height: 26px;
+  min-height: 24px;
 }
 
 .product-history-placement-row.is-header span {
@@ -287,9 +287,9 @@
 }
 
 .product-history-storage-dropdown .mantine-Combobox-option {
-  min-height: 30px;
-  padding: 7px 8px;
-  border-radius: 6px;
+  min-height: 28px;
+  padding: 8px 8px;
+  border-radius: 8px;
 }
 
 .product-history-storage-dropdown .mantine-Combobox-option:is(:hover, [data-combobox-selected], [data-combobox-active]) {
@@ -298,8 +298,8 @@
 
 @container product-history (max-width: 1400px) {
   .product-history-filter-row .data-table-layout-control {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-history-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
@@ -312,8 +312,8 @@
     width: 180px;
   }
   .product-history-filter-row .product-history-export-action {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-history-export-action .mantine-Button-label { display: none; }
@@ -322,8 +322,8 @@
 
 @container product-history (max-width: 1000px) {
   .product-history-filter-row .product-history-reset-action {
-    width: 36px;
-    min-width: 36px;
+    width: var(--app-control-height);
+    min-width: var(--app-control-height);
     padding-inline: 0;
   }
   .product-history-reset-action .mantine-Button-label { display: none; }

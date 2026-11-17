@@ -7,18 +7,18 @@
 /* Row geometry belongs to the nearest DataTable root. Nested tables can use a
    different density without inheriting the outer table's body-row height. */
 .data-table-density-compact {
-  --data-table-row-height: 35px;
+  --data-table-row-height: var(--app-table-row-height);
 }
 
 .data-table-density-normal {
-  --data-table-row-height: 45px;
+  --data-table-row-height: var(--app-table-row-height-relaxed);
 }
 
 .data-table-toolbar {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -170,12 +170,10 @@
   text-align: left !important;
 }
 
-.data-table-density-compact .data-table-th {
-  padding: 3px 7px;
-}
-
-.data-table-density-normal .data-table-th {
-  padding: 5px 8px;
+.data-table .data-table-th {
+  height: var(--app-table-header-height);
+  line-height: var(--app-table-line-height);
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
 }
 
 .data-table-th.is-dragging {
@@ -342,16 +340,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+.data-table-density-compact .data-table-cell,
+.data-table-density-normal .data-table-cell {
+  line-height: var(--app-table-line-height);
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
+}
+
 .data-table-density-compact .data-table-cell {
   font-size: 12px;
-  line-height: 1.2;
-  padding: 3px 8px;
 }
 
 .data-table-density-normal .data-table-cell {
   font-size: 13px;
-  line-height: 1.3;
-  padding: 8px;
 }
 
 .data-table-actions-column {
@@ -361,10 +361,20 @@
 .data-table-row-actions {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   justify-content: center;
   min-width: 0;
   white-space: nowrap;
+}
+
+/* The actions column is fitted to the typical row (dataTableActions.tsx); a
+   rare row with more actions wraps its icons instead of widening the column.
+   Mantine Group writes --group-wrap inline, hence !important. */
+.data-table-actions-column .mantine-Group-root {
+  --group-wrap: wrap !important;
+  flex-wrap: wrap !important;
+  row-gap: 4px;
 }
 
 .data-table-row-action-slot {
@@ -376,12 +386,14 @@
 
 .data-table-cell .mantine-Text-root {
   font-size: inherit;
-  line-height: 1.25;
+  line-height: var(--app-table-line-height);
 }
 
+/* Chips sit exactly on the 16px table line, so a chip never makes its row
+   taller than a plain text row. */
 .data-table-cell .mantine-Badge-root {
-  height: 18px;
-  padding-inline: 6px;
+  height: var(--app-table-line-height);
+  padding-inline: 8px;
 }
 
 .data-table-cell .mantine-Badge-label {
@@ -514,7 +526,7 @@
 .data-table-empty {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
-  padding: 22px 14px;
+  padding: 20px 12px;
   text-align: center;
 }
 
@@ -574,13 +586,13 @@
 .data-table-toolbar .data-table-layout-control {
   height: var(--app-filter-control-height, 36px);
   min-height: var(--app-filter-control-height, 36px);
-  padding-inline: 9px;
+  padding-inline: 8px;
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 8px;
   background: var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   flex-shrink: 0;
 }

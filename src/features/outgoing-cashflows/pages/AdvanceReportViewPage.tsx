@@ -617,7 +617,7 @@ function AdvanceReportViewPageContent() {
             }
           }}
         >
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text>{t('Якщо вийти зі сторінки, додані рядки, видалення і прикріплені файли не будуть збережені.')}</Text>
             <AppModalFooter>
               <Button color="gray" disabled={model.isBusy} variant="default" onClick={() => model.setConfirmLeaveOpen(false)}>
@@ -720,7 +720,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
       {hasAnyRows(order) ? (
         <AdvanceReportDetailSection stacked title={t('Підсумки')}>
-          <Stack className="advance-report-detail-totals" gap={10}>
+          <Stack className="advance-report-detail-totals" gap={8}>
             <IncomeMessage model={model} />
             <DifferenceMessage model={model} />
             <div className="advance-report-detail-totals__metrics">

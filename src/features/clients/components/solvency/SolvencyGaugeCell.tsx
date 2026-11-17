@@ -62,9 +62,9 @@ export function SolvencyGaugeCell({ notApplicableLabel, score, unavailableLabel 
         style={{
           alignItems: 'center',
           display: 'inline-flex',
-          height: 36,
+          height: 28,
           justifyContent: 'center',
-          width: 36,
+          width: 28,
         }}
       >
         {hasScore && score ? (
@@ -76,7 +76,7 @@ export function SolvencyGaugeCell({ notApplicableLabel, score, unavailableLabel 
             }
             roundCaps
             sections={[{ color: solvencyScoreColor(score), value }]}
-            size={36}
+            size={28}
             thickness={3}
           />
         ) : (
@@ -89,7 +89,7 @@ export function SolvencyGaugeCell({ notApplicableLabel, score, unavailableLabel 
               </Text>
             }
             sections={[{ color: 'gray.4', value: 100 }]}
-            size={36}
+            size={28}
             thickness={3}
           />
         )}

@@ -957,10 +957,10 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
   } = model
 
   return (
-    <Stack className="product-storages-page" gap={6}>
+    <Stack className="product-storages-page" gap={8}>
       <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-storages-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-storages-filter-row">
             <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={updateDateRange} />
             <Select
               className="product-storages-storage-filter"
@@ -977,7 +977,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               className="product-storages-search-filter"
@@ -1041,7 +1041,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
           </Group>
         </div>
 
-        <Stack gap={10} className="product-storages-body">
+        <Stack gap={8} className="product-storages-body">
           {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
             <Alert color={filterError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
               {filterError ? t(filterError) : error || t('Складів не знайдено')}
@@ -1391,7 +1391,7 @@ function ProductStorageActionModal({
         }
       }}
     >
-      <Stack className="app-compact-form product-storages-action-content" gap={10}>
+      <Stack className="app-compact-form product-storages-action-content" gap={8}>
         <SegmentedControl
           className="product-storages-action-mode"
           data={modeOptions}
@@ -1413,7 +1413,7 @@ function ProductStorageActionModal({
         </div>
 
         <Card className="app-section-card" withBorder padding={12}>
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Group className="product-storages-action-date-row" align="end" gap={12}>
               <AppDateInput
                 disabled={isSubmitting}
@@ -1436,7 +1436,7 @@ function ProductStorageActionModal({
             </Group>
 
             {modal.mode === 'transfer' ? (
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
                 <TextInput disabled label={t('Зі складу')} value={fromStorage?.Name || ''} />
                 <Select
                   searchable
@@ -1452,7 +1452,7 @@ function ProductStorageActionModal({
             ) : null}
 
             {showPlacementFields ? (
-              <SimpleGrid className="product-storages-action-placement" cols={{ base: 1, xs: 3 }} spacing={10}>
+              <SimpleGrid className="product-storages-action-placement" cols={{ base: 1, xs: 3 }} spacing={8}>
                 <TextInput
                   disabled={isSubmitting}
                   label={t('Склад')}

@@ -268,7 +268,7 @@ function WizardCartProductCell({
   const name = displayValue(item.Product?.NameUA || item.Product?.Name)
 
   return (
-    <Group className="new-sale-cart__product-cell" gap={9} wrap="nowrap">
+    <Group className="new-sale-cart__product-cell" gap={8} wrap="nowrap">
       <Box className="new-sale-cart__product-icon">
         <Package size={15} />
       </Box>

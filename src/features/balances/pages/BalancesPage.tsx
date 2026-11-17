@@ -224,7 +224,7 @@ export function BalancesPage() {
   const model = useBalancesPageModel()
 
   return (
-    <Stack className="balances-page console-table-page" gap={6}>
+    <Stack className="balances-page console-table-page" gap={8}>
       <BalancesTableCard model={model} />
     </Stack>
   )
@@ -252,10 +252,10 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
   return (
     <div className="balances-card console-table-shell">
       <div className="app-filter-bar balances-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields balances-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields balances-filter-row">
           <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Назва')}
             value={filterDraft.name}

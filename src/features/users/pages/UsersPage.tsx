@@ -207,13 +207,13 @@ function UsersPageContent() {
   }
 
   return (
-    <Stack className="users-page console-table-page" gap={6}>
+    <Stack className="users-page console-table-page" gap={8}>
       <div className="console-table-shell users-shell">
         <div className="app-filter-bar users-filter-bar">
           <TextInput
             className="users-search-input"
             leftSection={<Search size={15} />}
-            label={t('Пошук користувача')}
+            aria-label={t('Пошук користувача')}
             placeholder={t('ПІБ, email, телефон')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}

@@ -1058,7 +1058,7 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
   const hasShipmentList = Boolean(model.shipmentList.NetUid)
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-auto-shipments">
             <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.setFilterDraft({ ...model.filterDraft, from, to })} />
@@ -1936,7 +1936,7 @@ function AllShipmentsPanel({ onCreate, permissions }: AllShipmentsPanelProps) {
         : null
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-all-shipments">
             <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={({ from, to }) => updateListFilter({ ...filterDraft, from, to })} />
@@ -2329,7 +2329,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
           }
 
           return (
-            <Group gap={6} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               <SquarePen size={14} />
               <TransporterIcon cssClass={transporterCssClass} imageUrl={transporterImageUrl} name={transporterName} size={18} />
               <Text size="sm" truncate>

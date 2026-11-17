@@ -282,7 +282,7 @@ function SupplyUkraineDirectOrderInvoicesPageContent() {
       closeOnClickOutside={false}
       opened
       size="full"
-      title={<Group gap={10} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}</Group>}
+      title={<Group gap={8} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}</Group>}
       onClose={() => navigate(-1)}
     >
       <SupplyUkraineDirectOrderInvoicesView embedded model={model} />
@@ -1329,7 +1329,7 @@ function InvoiceSelector({
   const { t } = useI18n()
 
   return (
-    <Group className="supply-invoice-selector-row" gap={6} wrap="wrap">
+    <Group className="supply-invoice-selector-row" gap={8} wrap="wrap">
       {model.invoices.map((invoice) => {
         const currencyCode = getInvoiceCurrencyCode(invoice, model.order)
 
@@ -1436,7 +1436,7 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
 
   return (
-    <Group className="supply-invoice-selector-row" gap={6} wrap="wrap">
+    <Group className="supply-invoice-selector-row" gap={8} wrap="wrap">
       {(model.selectedInvoice?.PackingLists || []).map((packList) => (
         <Group className="supply-invoice-selector-group" key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
           <Button
@@ -1558,7 +1558,7 @@ function InvoiceUploadModal({
       <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">{t('Документ')}</Text>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                 <TextInput
@@ -1586,7 +1586,7 @@ function InvoiceUploadModal({
             </Stack>
           </Card>
           <Card className="app-section-card" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
               <FileInput
                 leftSection={<ExcelIcon size={18} />}
@@ -1601,8 +1601,8 @@ function InvoiceUploadModal({
               <SegmentedControl
                 className="supply-invoice-upload-tabs"
                 data={[
-                  { label: <Group gap={6} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
-                  { label: <Group gap={6} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
+                  { label: <Group gap={8} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
+                  { label: <Group gap={8} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
                 ]}
                 disabled={isSaving}
                 value={form.withTotalAmount ? 'total' : 'unit'}
@@ -1649,7 +1649,7 @@ function PackListUploadModal({
       <Stack className="app-compact-form" gap={12}>
         <div className="supply-invoice-upload-scroll">
           <Card className="app-section-card" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">{t('Документ')}</Text>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                 <TextInput
@@ -1677,7 +1677,7 @@ function PackListUploadModal({
             </Stack>
           </Card>
           <Card className="app-section-card" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title" fw={600} size="sm">{t('Імпорт')}</Text>
               <FileInput
                 leftSection={<ExcelIcon size={18} />}
@@ -1961,7 +1961,7 @@ export function PackListMetadataModalBody({
     <Stack gap={12}>
       <div className="supply-invoice-upload-scroll">
         <Card className="app-section-card" withBorder radius="md" padding="sm">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">{t('Реквізити')}</Text>
             <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
               <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => updateTextField('invNo', event.currentTarget.value)} />
@@ -1982,7 +1982,7 @@ export function PackListMetadataModalBody({
           </Stack>
         </Card>
         <Card className="app-section-card" withBorder radius="md" padding="sm">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">{t('Документи')}</Text>
             <FileInput
               clearable
@@ -2357,9 +2357,9 @@ function SummaryLine({ items }: { items: Array<[string, string, string?]> }) {
   return (
     <Group className="supply-invoices-totals" gap={8} wrap="wrap">
       {items.map(([label, value, currency]) => (
-        <Stack className="supply-invoices-total" key={label} gap={3}>
+        <Stack className="supply-invoices-total" key={label} gap={4}>
           <Text className="app-section-title" fw={600} size="xs">{label}</Text>
-          <Group gap={6} wrap="wrap">
+          <Group gap={8} wrap="wrap">
             <Text fw={600} size="sm" style={{ fontFamily: 'var(--font-mono)', letterSpacing: 0 }}>{value}</Text>
             {currency && value && <TableChip tone="source" value={currency} />}
           </Group>

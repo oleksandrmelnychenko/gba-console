@@ -62,7 +62,7 @@ export function WorkspaceSummary({
       <div aria-busy="true" className="role-dashboard-kpi-grid" style={kpiColumns(4)}>
         {[0, 1, 2, 3].map((index) => (
           <div className="role-dashboard-kpi" key={index}>
-            <Skeleton className="role-dashboard-kpi-icon" height={28} radius={6} width={28} />
+            <Skeleton className="role-dashboard-kpi-icon" height={28} radius={8} width={28} />
             <span className="role-dashboard-kpi-body">
               <Skeleton height={10} radius="sm" width="62%" />
               <Skeleton height={22} mt={8} radius="sm" width="36%" />

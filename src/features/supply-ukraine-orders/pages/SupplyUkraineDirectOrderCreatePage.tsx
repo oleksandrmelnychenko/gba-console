@@ -653,7 +653,7 @@ function OrderDetailsSection({
               className="supply-order-create-tabs"
               data={SUPPLY_TRANSPORTATION_TYPES.map(({ label, value, icon: Icon }) => ({
                 value,
-                label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
+                label: <Group gap={8} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
               }))}
               disabled={isLoading || isSaving}
               value={form.transportationType}
@@ -708,8 +708,8 @@ function ImportConfigurationSection({
             <SegmentedControl
               className="supply-order-create-tabs"
               data={[
-                { label: <Group gap={6} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
-                { label: <Group gap={6} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
+                { label: <Group gap={8} wrap="nowrap"><Tag size={15} aria-hidden="true" /><span>{t('Ціна')}</span></Group>, value: 'unit' },
+                { label: <Group gap={8} wrap="nowrap"><Calculator size={15} aria-hidden="true" /><span>{t('Сума')}</span></Group>, value: 'total' },
               ]}
               disabled={isSaving}
               value={parseForm.withTotalAmount ? 'total' : 'unit'}
@@ -917,7 +917,7 @@ function UploadErrorsAlert({ response }: { response: UploadResponse }) {
           </Anchor>
         )}
         {missingVendorCodes.length > 0 && (
-          <Group gap={6} mah={220} style={{ overflowY: 'auto' }}>
+          <Group gap={8} mah={220} style={{ overflowY: 'auto' }}>
             {missingVendorCodes.map((vendorCode, index) => (
               <Badge key={`${vendorCode}-${index}`} color="red" variant="outline">{vendorCode}</Badge>
             ))}

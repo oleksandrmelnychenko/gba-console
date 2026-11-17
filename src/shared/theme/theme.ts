@@ -1,9 +1,11 @@
-import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Table, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
 import './comboboxes.css'
 import './segmented-controls.css'
+import './overlays.css'
+import './control-sizes.css'
 import { translate } from '../i18n/translate'
 import { IosLoader } from '../ui/IosLoader'
 
@@ -53,6 +55,8 @@ export const theme = createTheme({
   primaryColor: 'brand',
   primaryShade: 6,
   defaultRadius: 'md',
+  // 4px grid (docs/ui-spacing-grid.md): Mantine's xs step is 10px by default.
+  spacing: { xs: '0.5rem' },
   components: {
     Combobox: Combobox.extend({
       defaultProps: { position: 'bottom-start' },
@@ -114,6 +118,11 @@ export const theme = createTheme({
           blur: 2,
         },
       },
+    }),
+    // Plain Mantine tables follow the same compact rhythm as DataTable
+    // (--app-table-cell-py / --app-table-cell-px in index.css).
+    Table: Table.extend({
+      defaultProps: { verticalSpacing: 4, horizontalSpacing: 8 },
     }),
     Tooltip: Tooltip.extend({
       styles: {

@@ -111,7 +111,7 @@ export function TaxFreeDocumentsPanel({
       />
 
       {documents.length > 0 ? (
-        <Stack gap={6}>
+        <Stack gap={8}>
           {documents.map((document, index) => (
             <Group key={document.NetUid || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
               <Group gap="xs" wrap="nowrap">
