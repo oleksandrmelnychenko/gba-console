@@ -1,3 +1,5 @@
+import { notifications } from '@mantine/notifications'
+import { getIncomeCancelWarning } from '../incomeCashflowCancel'
 import { incomePaymentAllocationView } from '../incomePaymentAllocationSummary'
 import { normalizeGuid, sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -479,9 +481,14 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
     try {
       await cancelIncomeCashflow(cancelRow.income.NetUid)
       setCancelRow(null)
+      notifications.show({ color: 'green', message: `${t('Ордер скасовано')}: ${cancelRow.number || t('Без номера')}` })
       void loadIncomeOrders(page)
     } catch (cancelError) {
-      setError(cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати прибутковий ордер'))
+      const message = cancelError instanceof Error && cancelError.message ? cancelError.message : t('Не вдалося скасувати прибутковий ордер')
+      // The confirmation stays open; the reason (e.g. «спочатку анулюйте прибутковий …») is shown
+      // as a toast too, because the page alert is hidden behind the modal.
+      setError(message)
+      notifications.show({ color: 'red', message, title: t('Ордер не скасовано') })
     } finally {
       setCanceling(false)
     }
@@ -1476,6 +1483,7 @@ function CancelIncomeCashflowModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const cancelWarning = getIncomeCancelWarning(row?.income)
 
   return (
     <AppModal className="app-compact-form" centered opened={Boolean(row)} title={t('Скасувати прибутковий ордер')} onClose={onClose}>
@@ -1483,6 +1491,11 @@ function CancelIncomeCashflowModal({
         <Text>
           {t('Скасувати ордер')} <Text span fw={600}>{row?.number || t('Без номера')}</Text>?
         </Text>
+        {cancelWarning ? (
+          <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
+            {t(cancelWarning)}
+          </Alert>
+        ) : null}
         <AppModalFooter>
           <Button disabled={isSaving} variant="default" onClick={onClose}>
             {t('Ні')}

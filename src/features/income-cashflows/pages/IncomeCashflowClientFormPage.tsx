@@ -1,3 +1,4 @@
+import { buildIncomeConfirmLines, formatOrderDate, isFutureOrderDate } from '../incomeCashflowConfirm'
 import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
 import { ServerExchangeRateField } from '../components/ServerExchangeRateField'
 import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
@@ -1471,9 +1472,25 @@ function IncomeCashflowClientFormPageContent() {
       >
         <Stack gap="md">
           <Text size="sm">{t('Створити прибутковий ордер із вказаними даними?')}</Text>
-          <Text fw={600} size="sm">
-            {t('Сума')}: {formatMoney(form.amount)} {selectedCurrency?.Code || ''}
-          </Text>
+          <Stack gap={4}>
+            {buildIncomeConfirmLines({
+              amount: form.amount,
+              currencyCode: selectedCurrency?.Code,
+              date: form.date,
+              formatMoney,
+              payer: selectedClient ? getIncomeCashflowCounterpartyLabel(selectedClient) : form.counterpartySearch,
+              register: selectedRegister?.Name,
+            }).map((line) => (
+              <Text key={line.label} fw={line.label === 'Сума' ? 600 : undefined} size="sm">
+                {t(line.label)}: {line.value}
+              </Text>
+            ))}
+          </Stack>
+          {isFutureOrderDate(form.date) ? (
+            <Alert color="orange" icon={<CircleAlert size={16} />} variant="light">
+              {t('Дата ордера в майбутньому')} ({formatOrderDate(form.date)}). {t('Борг і каса зміняться одразу, а в реєстрі ордер буде видно лише за період, що включає цю дату.')}
+            </Alert>
+          ) : null}
           <AppModalFooter>
             <Button
               color="gray"
