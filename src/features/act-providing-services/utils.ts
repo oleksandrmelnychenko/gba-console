@@ -65,7 +65,8 @@ export function toActProvidingServiceDisplayModel(
       invNumber: source.value.InvoiceNumber,
       listInvDate: act.FromDate,
       name: source.value.ConsumableProduct?.Name,
-      number: source.value.InvoiceNumber || baseModel.number,
+      // The act has its own number (shown in the list); the service line number is a different one.
+      number: baseModel.number || source.value.InvoiceNumber,
       organization: getOrganizationDisplayName(source.value.SupplyOrderUkraine?.Organization) || undefined,
       percentVat: source.value.AccountingVatPercent,
       responsible: getEntityName(source.value.User),
@@ -85,7 +86,8 @@ export function toActProvidingServiceDisplayModel(
       invDate: source.value.FromDate,
       invNumber: source.value.Number,
       name: source.value.ConsumableProduct?.Name,
-      number: source.value.ServiceNumber || baseModel.number,
+      // The act has its own number (shown in the list); the service line number is a different one.
+      number: baseModel.number || source.value.ServiceNumber,
       organization: getOrganizationDisplayName(source.value.SupplyOrganizationAgreement?.Organization) || undefined,
       percentVat: source.isAccounting ? source.value.AccountingVatPercent : source.value.VatPercent,
       protocolNetId: source.value.DeliveryProductProtocol?.NetUid,
@@ -107,7 +109,8 @@ export function toActProvidingServiceDisplayModel(
       invDate: source.value.FromDate,
       invNumber: source.value.Number,
       name: source.value.TypeBillOfLadingService === TYPE_BILL_OF_LADING_CONTAINER ? t('Контейнер') : t('Авто'),
-      number: source.value.ServiceNumber || baseModel.number,
+      // The act has its own number (shown in the list); the service line number is a different one.
+      number: baseModel.number || source.value.ServiceNumber,
       organization: getOrganizationDisplayName(source.value.SupplyOrganizationAgreement?.Organization) || undefined,
       protocolNetId: source.value.DeliveryProductProtocol?.NetUid,
       responsible: getEntityName(source.value.User || act.User),

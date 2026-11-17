@@ -26,3 +26,14 @@ describe('act providing service display model', () => {
     expect(model.organization).toBe('ТОВ «АМГ «КОНКОРД»')
   })
 })
+
+describe('act number in the detail', () => {
+  it('shows the act number from the list, not the service line number', () => {
+    const model = toActProvidingServiceDisplayModel({
+      MergedService: { ServiceNumber: 'P0000000003' },
+      Number: 'P2026-0000000004',
+    }, translate)
+
+    expect(model.number).toBe('P2026-0000000004')
+  })
+})

@@ -18,6 +18,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
+/** ActProvidingService.Comment column size. */
+const ACT_COMMENT_MAX_LENGTH = 2000
+
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
@@ -89,6 +92,7 @@ export function ActProvidingServiceDetailBody({
                 autosize
                 disabled={!canEdit || isLoading || isSaving}
                 label={t('Коментар')}
+                maxLength={ACT_COMMENT_MAX_LENGTH}
                 minRows={1}
                 value={comment}
                 onChange={(event) => updateComment(event.currentTarget.value)}
