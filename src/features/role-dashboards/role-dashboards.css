@@ -1225,3 +1225,14 @@ button.role-dashboard-attention-item:focus-visible {
 .role-dashboard-ai-analytics .ai-fleet-dashboard__header {
   padding-inline: calc(var(--app-space-3) + 1px);
 }
+
+/* Top-level dashboard cards sit 4px inside the 16px console frame, like the
+   registry cards: concentric 12px corners (--app-radius-md). Inner tiles keep 8px.
+   Mantine Card reads --paper-radius (written inline), hence !important. */
+.role-dashboard-page > .role-dashboard-toolbar-card.mantine-Card-root {
+  --paper-radius: var(--app-radius-md) !important;
+}
+
+.role-dashboard-page :is(.role-dashboard-kpi, .role-dashboard-sync, .ai-fleet-dashboard__score-card, .ai-fleet-dashboard__card) {
+  border-radius: var(--app-radius-md);
+}
