@@ -1,4 +1,4 @@
-import { Badge, Checkbox, Group, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Checkbox, Group, SimpleGrid, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { ConsumablesOrder } from '../../consumable-orders/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -10,6 +10,8 @@ import {
 
 type SupplierUnpaidConsumableOrdersPickerProps = {
   disabled?: boolean
+  /** Lookup failure; shown instead of the empty state. */
+  error?: string | null
   isLoading?: boolean
   orders: ConsumablesOrder[]
   selectedAmount: number
@@ -20,6 +22,7 @@ type SupplierUnpaidConsumableOrdersPickerProps = {
 
 export function SupplierUnpaidConsumableOrdersPicker({
   disabled = false,
+  error = null,
   isLoading = false,
   orders,
   selectedAmount,
@@ -41,6 +44,10 @@ export function SupplierUnpaidConsumableOrdersPicker({
       </Group>
       {isLoading ? (
         <Text c="dimmed" size="sm">{t('Завантаження')}</Text>
+      ) : error ? (
+        <Alert color="red" variant="light">
+          {t('Не вдалося завантажити неоплачені накладні')}: {error}
+        </Alert>
       ) : checkboxes.length ? (
         <Checkbox.Group value={selectedValues} onChange={onChange}>
           <SimpleGrid cols={{ base: 1, md: 2 }}>

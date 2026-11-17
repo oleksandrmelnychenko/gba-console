@@ -175,6 +175,7 @@ export function OutgoingPaymentGroupForm({
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)
+  const [unpaidOrdersError, setUnpaidOrdersError] = useValueState<string | null>(null)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [counterpartySelectionRequestGuard] = useState(
@@ -379,6 +380,7 @@ export function OutgoingPaymentGroupForm({
     const organizationNetId = selectedSupplyOrganization?.NetUid || ''
 
     setSelectedUnpaidOrderValues([])
+    setUnpaidOrdersError(null)
 
     if (!isSupplierSearch || !organizationNetId) {
       setUnpaidConsumableOrders([])
@@ -394,9 +396,15 @@ export function OutgoingPaymentGroupForm({
           setUnpaidConsumableOrders(orders)
         }
       })
-      .catch(() => {
+      .catch((loadError: unknown) => {
         if (!cancelled) {
           setUnpaidConsumableOrders([])
+          // A failed lookup is not «no unpaid invoices»: say it failed.
+          setUnpaidOrdersError(
+            loadError instanceof Error && loadError.message
+              ? loadError.message
+              : t('Не вдалося завантажити неоплачені накладні'),
+          )
         }
       })
       .finally(() => {
@@ -413,6 +421,8 @@ export function OutgoingPaymentGroupForm({
     selectedSupplyOrganization?.NetUid,
     setLoadingUnpaidOrders,
     setSelectedUnpaidOrderValues,
+    setUnpaidOrdersError,
+    t,
     setUnpaidConsumableOrders,
   ])
 
@@ -1094,6 +1104,7 @@ export function OutgoingPaymentGroupForm({
           {isSupplierSearch && selectedSupplyOrganization && (
             <SupplierUnpaidConsumableOrdersPicker
               disabled={isLoading || isSaving}
+              error={unpaidOrdersError}
               isLoading={isLoadingUnpaidOrders}
               orders={unpaidConsumableOrders}
               selectedAmount={selectedUnpaidOrdersAmount}

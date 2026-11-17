@@ -527,23 +527,31 @@ function IncomeCashflowClientFormPageContent() {
       return
     }
 
-    let cancelled = false
+    // Same currency: nothing to convert, no request per keystroke.
+    if (fromCurrencyId === toCurrencyId) {
+      setForm((current) => ({ ...current, calculatedValue: amount }))
+      return
+    }
 
-    void calculateIncomeCashflowExchange({
-      amount,
-      exchangeRate: form.exchangeRate || undefined,
-      fromCurrencyId,
-      toCurrencyId,
-    }, 'income-form')
-      .then((calculation) => {
-        if (!cancelled) {
-          setForm((current) => ({ ...current, calculatedValue: calculation?.ConvertedAmount || 0 }))
-        }
-      })
-      .catch(() => undefined)
+    let cancelled = false
+    const timeoutId = window.setTimeout(() => {
+      void calculateIncomeCashflowExchange({
+        amount,
+        exchangeRate: form.exchangeRate || undefined,
+        fromCurrencyId,
+        toCurrencyId,
+      }, 'income-form')
+        .then((calculation) => {
+          if (!cancelled) {
+            setForm((current) => ({ ...current, calculatedValue: calculation?.ConvertedAmount || 0 }))
+          }
+        })
+        .catch(() => undefined)
+    }, 300)
 
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
     }
   }, [agreementCurrency?.Id, form.amount, form.exchangeRate, selectedCurrency?.Id, setForm])
 
