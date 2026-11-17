@@ -9,6 +9,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import type { CreateProtocolPayload, ProtocolOrganization } from '../types'
 import { SupplyTransportationType } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './new-product-delivery-protocol-modal.css'
 
 export type NewProductDeliveryProtocolModalProps = {
@@ -91,9 +92,12 @@ function NewProductDeliveryProtocolForm({
   const organizationOptions = useMemo(
     () =>
       organizations.filter(isBusinessOrganizationVisible).reduce<{ label: string; value: string }[]>((options, organization) => {
-        if (organization.NetUid || organization.Id) {
+        // An organization without any name (DEV-snapshot rows) used to be listed by its raw GUID.
+        const label = getOrganizationDisplayName(organization)
+
+        if (label && (organization.NetUid || organization.Id)) {
           options.push({
-            label: organization.Name || organization.FullName || String(organization.NetUid || organization.Id),
+            label,
             value: String(organization.NetUid || organization.Id),
           })
         }

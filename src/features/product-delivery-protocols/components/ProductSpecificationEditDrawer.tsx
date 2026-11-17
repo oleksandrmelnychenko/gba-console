@@ -13,6 +13,7 @@ import type {
 } from '../specificationTypes'
 import { getLatestProductSpecification, getProductSpecificationDateTime } from '../productSpecificationLatest'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CUSTOMS_CODE_MAX_LENGTH, normalizeCustomsCode, validateCustomsCode } from '../customsCode'
 import './product-specification-edit-modal.css'
 
 export type ProductSpecificationDraft = {
@@ -67,10 +68,11 @@ function ProductSpecificationEditDrawerContent({
         return
       }
 
-      const specificationCode = draft.specificationCode.trim()
+      const specificationCode = normalizeCustomsCode(draft.specificationCode)
+      const codeError = validateCustomsCode(specificationCode, t)
 
-      if (!specificationCode) {
-        setError(`${t('Заповніть поле')} - ${t('Митний код')}`)
+      if (codeError) {
+        setError(codeError)
         return
       }
 
@@ -135,7 +137,9 @@ function ProductSpecificationEditDrawerContent({
               <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing={12}>
                 <TextInput
                   disabled={isSaving || !canSave}
+                  inputMode="numeric"
                   label={t('Митний код')}
+                  maxLength={CUSTOMS_CODE_MAX_LENGTH + 3}
                   required
                   value={draft.specificationCode}
                   onChange={(event) => {

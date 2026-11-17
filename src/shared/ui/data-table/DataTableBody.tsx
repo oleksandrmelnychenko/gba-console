@@ -99,6 +99,17 @@ function DataTableBodyRowInner<TData>({
               }
             }
           : undefined}
+        // Rows that open something on click were mouse-only: make them reachable with Tab and
+        // open them with Enter / Space (only when the row itself has focus, not a control in it).
+        tabIndex={onRowClick ? 0 : undefined}
+        onKeyDown={onRowClick
+          ? (event) => {
+              if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                onRowClick(row.original)
+              }
+            }
+          : undefined}
       >
         {expand ? (
           <Table.Td

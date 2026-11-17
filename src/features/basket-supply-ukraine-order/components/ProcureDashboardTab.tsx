@@ -1,6 +1,6 @@
 import { deskPlural } from '../../../features/reports/data/reportCountPresentation'
 import { formatMonthLabel } from '../../../shared/date/monthLabel'
-import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice } from '../procurementLoadError'
+import { loadProcurementWithRetry, procurementLoadError, procurementRetryNotice, PROCUREMENT_NOT_CONFIGURED_TEXT } from '../procurementLoadError'
 import {
   Alert,
   Button,
@@ -101,6 +101,16 @@ const URGENCY_TO_LEVEL: Record<string, UrgencyLevel> = {
 const countFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
 })
+
+function getDashboardErrorDescription(isNotConfigured: boolean, hasCharts: boolean, t: (key: string) => string): string {
+  if (isNotConfigured) {
+    return t('Повторне завантаження не допоможе, доки сервіс не налаштовано.')
+  }
+
+  return hasCharts
+    ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.')
+    : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')
+}
 
 export function ProcureDashboardTab() {
   const { t } = useI18n()
@@ -324,6 +334,8 @@ function ProcureDashboardTabContent() {
     },
   ], [hasProducerData, t])
 
+  const isNotConfigured = error === t(PROCUREMENT_NOT_CONFIGURED_TEXT)
+
   return (
     <Stack className="procurement-dashboard app-table-chips" gap={12}>
       <form className="app-filter-bar procurement-dashboard__toolbar" onSubmit={(event) => { event.preventDefault(); applyFilters() }}>
@@ -339,8 +351,10 @@ function ProcureDashboardTabContent() {
         <div className="procurement-dashboard__snapshot"><span>{snapshotLabel}</span><TableChip tone="document" value={activeScopeLabel} /></div>
       </form>
       <Text component="h1" className="app-section-title" fw={600} size="sm">{t('Дашборд постачання')}</Text>
-      {error && <ProcurementWorkspaceState action={{ label: t('Повторити'), onClick: reload }}
-        description={charts ? t('Показано попередній зріз. Не вдалося отримати актуальні дані.') : t('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')}
+      {error && <ProcurementWorkspaceState
+        // "Not configured" is not temporary: no «Повторити» and no "temporarily unavailable" under it.
+        action={isNotConfigured ? undefined : { label: t('Повторити'), onClick: reload }}
+        description={getDashboardErrorDescription(isNotConfigured, Boolean(charts), t)}
         surface title={error} tone="error" />}
       {suppliersError && <Text c="orange" size="sm">{t('Довідник постачальників недоступний. Це не означає, що постачальників немає.')}</Text>}
       {isLoading && !charts && <ProcurementWorkspaceState isLoading surface description="" title={t('Завантаження дашборда')} />}

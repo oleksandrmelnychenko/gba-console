@@ -120,7 +120,7 @@ export function ShiftForm({
         onChange={(value) => setToStorageNetId(value || '')}
       />
       <TextInput label={t('Причина')} value={reason} onChange={(event) => setReason(event.currentTarget.value)} />
-      <TextInput label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
+      <TextInput description={`${comment.length}/500`} label={t('Коментар')} maxLength={500} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
       {displayQtyField && (
         <>
           <TextInput maw={160}

@@ -99,18 +99,8 @@ function useLogisticPathModel(netId: string | undefined) {
             protocol: loadedProtocol,
           })
 
-          const uncalculated = loadedProtocol.MergedServices?.filter(
-            (service) => service.IsCalculatedValue === false,
-          )
-
-          if (uncalculated && uncalculated.length > 0) {
-            notifications.show({
-              color: 'yellow',
-              message: `${t('Сервіс необхідно розрахувати')}: ${uncalculated
-                .map((service) => service.ServiceNumber)
-                .join(', ')}`,
-            })
-          }
+          // Each uncalculated service already shows «Сервіс необхідно розрахувати» on its card;
+          // a toast on every load repeated it.
         } else {
           setLoadState({
             ...INITIAL_LOGISTIC_PATH_LOAD_STATE,

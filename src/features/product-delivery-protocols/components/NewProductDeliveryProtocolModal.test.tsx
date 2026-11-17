@@ -26,6 +26,7 @@ describe('NewProductDeliveryProtocolModal', () => {
             { NetUid: 'fenix', Name: 'Фенікс' },
             { NetUid: 'pack', Name: 'ТОВ "ПАК "Конкорд"' },
             { NetUid: 'factory', Name: 'ТОВ "Хмельницький агрегатний завод"' },
+            { NetUid: '55d561d0-a9a9-4c6e-9d5f-000000000001' },
           ]}
           organizationsError={null}
           onClose={vi.fn()}
@@ -40,6 +41,9 @@ describe('NewProductDeliveryProtocolModal', () => {
     expect(screen.getByRole('option', { name: 'Фенікс' })).toBeTruthy()
     expect(screen.queryByRole('option', { name: 'ТОВ "ПАК "Конкорд"' })).toBeNull()
     expect(screen.queryByRole('option', { name: 'ТОВ "Хмельницький агрегатний завод"' })).toBeNull()
+    // An organization without a name is not listed by its GUID.
+    expect(screen.queryByRole('option', { name: /55d561d0/ })).toBeNull()
+    expect(screen.getAllByRole('option')).toHaveLength(2)
   })
 
   it('limits the comment to the 500 characters the server stores and shows the count', () => {

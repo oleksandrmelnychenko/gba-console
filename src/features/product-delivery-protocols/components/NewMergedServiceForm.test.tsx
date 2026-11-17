@@ -182,7 +182,7 @@ describe('product-delivery NewMergedServiceForm validation', () => {
 
     expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.getByText('Перевірте суми, ПДВ і курси')).toBeTruthy()
-    expect(screen.getByText('Вартість має бути від 0 до 922 337 203 685 477')).toBeTruthy()
+    expect(screen.getByText('Вартість має бути від 0 до 900 трлн')).toBeTruthy()
     expect(screen.getByText('ПДВ має бути від 0 до 100%')).toBeTruthy()
     expect(screen.getByText('Курс має бути більшим за 0 або порожнім')).toBeTruthy()
 

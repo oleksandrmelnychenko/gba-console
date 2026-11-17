@@ -3,7 +3,16 @@
   border: 0;
   padding: 8px;
 }
-.supply-invoices-sheet .supply-detail-header-actions { flex-wrap: wrap; }
+/*
+ * At phone width the actions could not shrink (flex: 0 0 auto) in a right-aligned header, so
+ * «Оновити» was pushed off the left edge and clipped. Let them shrink and wrap instead.
+ */
+.supply-invoices-sheet .supply-detail-header-actions {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
 .supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list {
   align-self: center;
   background: transparent;
@@ -15,6 +24,8 @@
   max-width: 100%;
 }
 .supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list::before { border: 0; }
+/* «Пак листи» was cut at the right edge on phones: scroll the tab row instead. */
+.supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list { flex-wrap: nowrap; overflow-x: auto; }
 .supply-invoices-workspace .supply-invoices-tabs > .mantine-Tabs-list > .mantine-Tabs-tab {
   border: 0;
   border-radius: 8px;

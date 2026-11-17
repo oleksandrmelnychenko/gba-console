@@ -56,6 +56,10 @@ import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderPro
 import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
 import { createInvoiceDiscountPayload } from '../invoiceMetadataPayload'
 import { getDirectOrderAmountBreakdown, getDirectOrderQuantity, getInvoiceDiscountLimit } from '../orderAmountBreakdown'
+import { AmountInput } from '../../../shared/ui/AmountInput'
+import { getDeliveryDocumentName } from '../deliveryDocumentName'
+import { expectOwnSupplyOrderEcho } from '../../../shared/realtime/ownSupplyOrderEcho'
+import { useBrowserBackGuard } from '../../../shared/router/useBrowserBackGuard'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
@@ -254,6 +258,9 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [error, setError] = useState<string | null>(null)
+  const [amountError, setAmountError] = useState<string | null>(null)
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false)
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const [amountEditState, dispatchAmountEdit] = useReducer(amountEditReducer, INITIAL_AMOUNT_EDIT_STATE)
   const [statusModalState, dispatchStatusModal] = useReducer(statusModalReducer, CLOSED_STATUS_MODAL_STATE)
   const [creditNoteState, dispatchCreditNote] = useReducer(creditNoteReducer, undefined, createInitialCreditNoteState)
@@ -424,6 +431,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
     setError(null)
 
     try {
+      expectOwnSupplyOrderEcho()
       const updated = await update({ ...order, ...patch })
       setOrder(updated)
       if (updated) {
@@ -439,12 +447,16 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   }
 
   function saveAmount() {
+    // AmountInput reports text, a minus sign or «1.234,56» under the field and emits 0 for it,
+    // so nothing but a positive number gets past this check.
     const amount = Number(amountValue)
 
-    if (!amount || amount <= 0) {
-      setError(t('Введіть суму замовлення'))
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setAmountError(t('Введіть суму замовлення'))
       return
     }
+
+    setAmountError(null)
 
     const isoDate = dateValue ? new Date(dateValue).toISOString() : undefined
 
@@ -461,7 +473,23 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   }
 
   function cancelAmountEdit() {
+    setAmountError(null)
     syncAmountInputs(order)
+  }
+
+  const isAmountDirty = Boolean(order) && isEditingAmount && (
+    String(amountValue) !== String(order?.NetPrice ?? '')
+    || dateValue !== toDateTimeInput(order?.DateFrom)
+    || transportationType !== String(order?.TransportationType ?? 0)
+  )
+
+  // Browser Back used to drop an unsaved amount edit silently.
+  useBrowserBackGuard(isAmountDirty, () => setLeaveConfirmOpen(true))
+
+  function leaveWithoutSaving() {
+    setLeaveConfirmOpen(false)
+    cancelAmountEdit()
+    navigate('/orders/ukraine/all')
   }
 
   async function uploadDocumentFile(document: SupplyOrderDeliveryDocument, file: File | null) {
@@ -622,6 +650,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   }
 
   function approveOrder() {
+    setApproveConfirmOpen(false)
     void savePatch(
       { IsApproved: true },
       PERMISSION_APPROVE_ORDER,
@@ -635,10 +664,10 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       id: 'name',
       header: t('Документ'),
       minWidth: 220,
-      accessor: (document) => document.Name || document.FileName,
+      accessor: (document) => getDeliveryDocumentName(document, t),
       cell: (document) => document.DocumentUrl
-        ? <a className="document-link" href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
-        : document.Name || document.FileName || '',
+        ? <a className="document-link" href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">{getDeliveryDocumentName(document, t)}</a>
+        : getDeliveryDocumentName(document, t),
     },
     {
       id: 'fileName',
@@ -737,7 +766,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
     </Button>
   ) : null
   const approveButton = order && !order.IsApproved && canApproveOrder ? (
-    <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={approveOrder}>
+    <Button color={CREATE_ACTION_COLOR} leftSection={<Check size={16} />} loading={isSaving} onClick={() => setApproveConfirmOpen(true)}>
       {t('Затвердити замовлення')}
     </Button>
   ) : null
@@ -826,15 +855,15 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                 )}
               </Group>
               <Group className="supply-logistics-order-controls" align="flex-end" gap={8} wrap="wrap">
-                <NumberInput
-                  hideControls
-                  allowNegative={false}
-                  decimalScale={2}
+                <AmountInput
                   disabled={!isEditingAmount || isSaving}
+                  error={amountError}
                   label={t('Сума замовлення')}
-                  min={0}
                   value={amountValue}
-                  onChange={(value) => dispatchAmountEdit({ type: 'setAmountValue', value })}
+                  onChange={(value) => {
+                    setAmountError(null)
+                    dispatchAmountEdit({ type: 'setAmountValue', value })
+                  }}
                 />
                 <AppDateInput
                   disabled={!isEditingAmount || isSaving}
@@ -1111,7 +1140,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
       >
         <Stack className="app-compact-form" gap={10}>
           <Text fw={600} size="sm">
-            {statusDocument?.Name || statusDocument?.FileName || t('Документ')}
+            {statusDocument ? getDeliveryDocumentName(statusDocument, t) : t('Документ')}
           </Text>
           <Checkbox
             checked={statusReceived}
@@ -1134,6 +1163,30 @@ function SupplyUkraineDirectOrderDetailPageContent() {
             </Button>
           </AppModalFooter>
         </Stack>
+      </AppModal>
+      <AppModal
+        centered
+        opened={approveConfirmOpen}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Затвердити замовлення')}</span>}
+        onClose={() => setApproveConfirmOpen(false)}
+      >
+        <Text size="sm">{t('Затвердити замовлення? Скасувати затвердження в консолі не можна.')}</Text>
+        <AppModalFooter>
+          <Button disabled={isSaving} variant="default" onClick={() => setApproveConfirmOpen(false)}>{t('Скасувати')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={approveOrder}>{t('Затвердити')}</Button>
+        </AppModalFooter>
+      </AppModal>
+      <AppModal
+        centered
+        opened={leaveConfirmOpen}
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Незбережені зміни')}</span>}
+        onClose={() => setLeaveConfirmOpen(false)}
+      >
+        <Text size="sm">{t('Сума замовлення змінена, але не збережена. Вийти без збереження?')}</Text>
+        <AppModalFooter>
+          <Button variant="default" onClick={() => setLeaveConfirmOpen(false)}>{t('Залишитися')}</Button>
+          <Button color="red" onClick={leaveWithoutSaving}>{t('Вийти без збереження')}</Button>
+        </AppModalFooter>
       </AppModal>
     </AppDrawer>
   )

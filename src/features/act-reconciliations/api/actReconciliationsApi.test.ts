@@ -71,12 +71,11 @@ describe('actReconciliationsApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/orders/depreciated/reconciliation-acts/create/many', {
       method: 'POST',
       query: {
-        comment: 'bulk',
         fromDate: '2026-06-02T10:00',
         organizationNetId: 'org-1',
         storageNetId: 'storage-1',
       },
-      body: items,
+      body: { Comment: 'bulk', Items: items },
     })
   })
 
@@ -222,5 +221,11 @@ describe('actReconciliationsApi', () => {
       '/products/transfers/reconciliation-acts/create',
       '/products/transfers/reconciliation-acts/create/many',
     ])
+    // Comments travel in the body, never in the URL.
+    expect(apiRequestMock.mock.calls[3]?.[1]).toMatchObject({
+      body: { Comment: 'income-many', Items: [item] },
+      query: { fromDate: '2026-08-18', storageNetId: 'storage-1' },
+    })
+    expect(apiRequestMock.mock.calls[3]?.[1]?.query).not.toHaveProperty('comment')
   })
 })

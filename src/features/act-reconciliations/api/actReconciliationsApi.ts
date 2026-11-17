@@ -113,10 +113,12 @@ export async function createProductIncomeFromItems(
   queryParams: ProductIncomeFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
+  // The comment travels in the body: long comments in the query string ended up in URLs and logs.
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/products/incomes/reconciliation-acts/create/many', {
     method: 'POST',
-    query: { ...queryParams },
-    body: items,
+    query,
+    body: { Comment: comment, Items: items },
   })
 }
 
@@ -133,10 +135,12 @@ export async function createProductTransferFromItems(
   queryParams: ProductTransferFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
+  // The comment travels in the body: long comments in the query string ended up in URLs and logs.
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/products/transfers/reconciliation-acts/create/many', {
     method: 'POST',
-    query: { ...queryParams },
-    body: items,
+    query,
+    body: { Comment: comment, Items: items },
   })
 }
 
@@ -153,10 +157,12 @@ export async function createDepreciatedOrderFromItems(
   queryParams: DepreciatedOrderFromItemsQueryParams,
   items: ActReconciliationItem[],
 ): Promise<void> {
+  // The comment travels in the body: long comments in the query string ended up in URLs and logs.
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/orders/depreciated/reconciliation-acts/create/many', {
     method: 'POST',
-    query: { ...queryParams },
-    body: items,
+    query,
+    body: { Comment: comment, Items: items },
   })
 }
 

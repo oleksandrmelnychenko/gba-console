@@ -250,6 +250,9 @@ const PERMISSION_REMOVE_INVOICE = PermissionKeys.OrdersUkraine.Invoice.Delete
 const PERMISSION_REMOVE_PACK_LIST = PermissionKeys.OrdersUkraine.PackList.Delete
 const PERMISSION_OPEN_INVOICES = PermissionKeys.OrdersUkraine.Order.OpenProducts
 
+/** SupplyInvoice.Comment and PackingList.Comment are nvarchar(500); longer ones came back as raw SQL errors. */
+const SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH = 500
+
 function pageStateReducer(state: PageState, action: PageStateAction): PageState {
   const patch = typeof action === 'function' ? action(state) : action
 
@@ -1580,7 +1583,9 @@ function InvoiceUploadModal({
               <Textarea
                 autosize
                 disabled={isSaving}
+                description={`${form.comment.length}/${SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}`}
                 label={t('Коментар')}
+                maxLength={SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}
                 minRows={2}
                 value={form.comment}
                 onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
@@ -1671,7 +1676,9 @@ function PackListUploadModal({
               <Textarea
                 autosize
                 disabled={isSaving}
+                description={`${form.comment.length}/${SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}`}
                 label={t('Коментар')}
+                maxLength={SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}
                 minRows={2}
                 value={form.comment}
                 onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
@@ -1976,7 +1983,9 @@ export function PackListMetadataModalBody({
             <Textarea
               autosize
               disabled={isSaving}
+              description={`${form.comment.length}/${SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}`}
               label={t('Коментар')}
+              maxLength={SUPPLY_DOCUMENT_COMMENT_MAX_LENGTH}
               minRows={2}
               value={form.comment}
               onChange={(event) => updateTextField('comment', event.currentTarget.value)}

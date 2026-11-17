@@ -65,6 +65,14 @@
   text-align: center;
 }
 
+/*
+ * The overlay lets clicks through to the table (pointer-events: none), but that is inherited:
+ * a «Повторити» button in an empty/error state could not be clicked at all.
+ */
+.data-table-empty-content :is(a, button, input, select, textarea, [role='button']) {
+  pointer-events: auto;
+}
+
 .data-table-footer {
   background: var(--mantine-color-white);
   border-top: 1px solid var(--mantine-color-gray-2);
@@ -586,3 +594,9 @@
 }
 
 .data-table-toolbar-left { flex-wrap: wrap; }
+
+/* Clickable rows are focusable (Tab, then Enter / Space): show where the focus is. */
+.data-table-row.data-table-row-clickable:focus-visible {
+  outline: 2px solid var(--mantine-color-orange-5);
+  outline-offset: -2px;
+}

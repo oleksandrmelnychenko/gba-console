@@ -77,4 +77,21 @@ describe('DataTable row text selection', () => {
     expect(onRowClick).toHaveBeenCalledOnce()
     expect(onRowClick).toHaveBeenCalledWith({ code: '0103002797-MG' })
   })
+
+  it('opens a clickable row from the keyboard (Tab, then Enter or Space)', () => {
+    const onRowClick = vi.fn()
+    renderTable(onRowClick)
+    const row = screen.getByText('0103002797-MG').closest('tr') as HTMLTableRowElement
+
+    expect(row.tabIndex).toBe(0)
+    fireEvent.keyDown(row, { key: 'Enter' })
+    fireEvent.keyDown(row, { key: ' ' })
+    expect(onRowClick).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps non-clickable rows out of the tab order', () => {
+    renderTable()
+
+    expect((screen.getByText('0103002797-MG').closest('tr') as HTMLTableRowElement).hasAttribute('tabindex')).toBe(false)
+  })
 })

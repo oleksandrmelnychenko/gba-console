@@ -16,3 +16,23 @@ describe('toast placement', () => {
     expect(rule).toMatch(/top: calc\(12px/)
   })
 })
+
+describe('data table empty state', () => {
+  it('keeps actions in the empty/error state clickable', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/shared/ui/data-table/data-table.css'), 'utf8')
+    const start = css.indexOf('.data-table-empty-content :is(a, button')
+
+    expect(start).toBeGreaterThan(-1)
+    expect(css.slice(start, css.indexOf('}', start))).toContain('pointer-events: auto;')
+  })
+})
+
+describe('invoices sheet at phone width', () => {
+  it('lets the header actions shrink and wrap, and the tab row scroll', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/features/supply-ukraine-orders/pages/supply-order-invoices.css'), 'utf8')
+    const actions = css.slice(css.indexOf('.supply-invoices-sheet .supply-detail-header-actions {'))
+
+    expect(actions.slice(0, actions.indexOf('}'))).toMatch(/flex: 0 1 auto;[\s\S]*flex-wrap: wrap;[\s\S]*min-width: 0;/)
+    expect(css).toContain('.supply-invoices-tabs > .mantine-Tabs-list { flex-wrap: nowrap; overflow-x: auto; }')
+  })
+})

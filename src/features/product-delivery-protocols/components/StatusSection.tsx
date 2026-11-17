@@ -58,7 +58,10 @@ export function StatusSection({
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Підтвердити зміну статусу')}</span>}
         onClose={() => setConfirmOpen(false)}
       >
-        <Text size="sm">{t('Змінити статус протоколу?')}</Text>
+        <Text size="sm">
+          {t('Змінити статус протоколу на')} «{actionLabel}»?{' '}
+          {t('Цю зміну не можна скасувати.')}
+        </Text>
         <AppModalFooter>
           <Button disabled={isUpdating} variant="default" onClick={() => setConfirmOpen(false)}>
             {t('Скасувати')}

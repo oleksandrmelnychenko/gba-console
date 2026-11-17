@@ -4,8 +4,9 @@ export function getProtocolStatusLabel(
   protocol: Pick<ProtocolDetail, 'IsCompleted' | 'IsShipped'>,
   t: (value: string) => string,
 ): string {
+  // IsCompleted is the arrival state: income becomes available «після статусу «Прибув»».
   if (protocol.IsCompleted) {
-    return t('Завершено')
+    return t('Прибув')
   }
 
   if (protocol.IsShipped) {

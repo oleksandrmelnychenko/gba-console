@@ -52,6 +52,7 @@ import {
   uploadPreviewUkraineCartItemsFromFile,
   uploadUkraineCartItemsFromFile,
 } from '../api/basketSupplyUkraineOrderApi'
+import { getReserveLimit, validateReserveQty } from '../reserveQty'
 import { BasketSupplyUploadModal } from '../components/BasketSupplyUploadModal'
 import { DocumentTargetControls } from '../components/DocumentTargetControls'
 import { PreviewCartItemsModal } from '../components/PreviewCartItemsModal'
@@ -254,6 +255,7 @@ function BasketCartWorkflow() {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false)
   const [reserveItem, setReserveItem] = useState<SupplyOrderUkraineCartItem | null>(null)
   const [reserveQty, setReserveQty] = useState<number | ''>('')
+  const [reserveError, setReserveError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [referenceError, setReferenceError] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -592,19 +594,22 @@ function BasketCartWorkflow() {
 
     setReserveItem(item)
     setReserveQty(toNumber(item.ReservedQty))
+    setReserveError(null)
   }
 
   async function saveReserveQty() {
-    if (
-      !canEditReservation
-      ||
-      !reserveItem
-      || reserveQty === ''
-      || !Number.isFinite(reserveQty)
-      || reserveQty < 0
-    ) {
+    if (!canEditReservation || !reserveItem) {
       return
     }
+
+    const validation = validateReserveQty(reserveQty, getReserveLimit(reserveItem), t)
+
+    if (validation || reserveQty === '') {
+      setReserveError(validation ?? t('Вкажіть кількість — ціле число від 0'))
+      return
+    }
+
+    setReserveError(null)
 
     if (!tryStartUpdatingReserve()) {
       return
@@ -975,10 +980,19 @@ function BasketCartWorkflow() {
           <Group gap={6}><TableChip tone="product" value={reserveItem?.Product?.VendorCode} /><Text size="sm">{reserveItem?.Product?.Name}</Text></Group>
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
+            clampBehavior="none"
+            description={reserveItem ? `${t('Можна зарезервувати не більше')} ${formatQty(getReserveLimit(reserveItem))}` : undefined}
+            error={reserveError}
             label={t('Зарезервована К-сть')}
+            max={reserveItem ? getReserveLimit(reserveItem) : undefined}
             min={0}
             value={reserveQty}
-            onChange={(value) => setReserveQty(toPositiveNumberOrZero(value))}
+            onChange={(value) => {
+              // An emptied field stays empty (Number("") would be 0 and "save" a zero reserve).
+              setReserveQty(value === '' ? '' : toPositiveNumberOrZero(value))
+              setReserveError(null)
+            }}
           />
           <AppModalFooter>
             <Button disabled={isUpdatingReserve} variant="default" onClick={() => setReserveItem(null)}>

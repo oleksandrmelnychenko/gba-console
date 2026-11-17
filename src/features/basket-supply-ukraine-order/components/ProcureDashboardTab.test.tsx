@@ -156,6 +156,17 @@ describe('ProcureDashboardTab', () => {
     expect(screen.queryByText('Не вдалося завантажити дашборд постачання')).toBeNull()
   })
 
+  it('says only "not configured" when the procurement service is not configured', async () => {
+    vi.mocked(getSupplyDashboardCharts).mockRejectedValue(
+      Object.assign(new Error('ProcurementApi: ai_service_not_configured (ProcurementApi:Url is not configured).'), { status: 503 }),
+    )
+    render(<MemoryRouter><I18nProvider><MantineProvider theme={theme}><ProcureDashboardTab /></MantineProvider></I18nProvider></MemoryRouter>)
+
+    expect(await screen.findByText('Сервіс планування закупівель не налаштований. Зверніться до адміністратора.')).not.toBeNull()
+    expect(screen.queryByText('Сервіс закупівель тимчасово недоступний. Повторіть завантаження.')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Повторити' })).toBeNull()
+  })
+
   it('replaces empty charts with one meaningful operational state', async () => {
     vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
       as_of_date: '2026-07-25',

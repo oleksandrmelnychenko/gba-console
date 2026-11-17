@@ -241,4 +241,16 @@ describe('Product delivery protocol logistic-path permission guards', () => {
       message: 'Статус протоколу змінено',
     }))
   })
+
+  it('does not toast «Сервіс необхідно розрахувати» on load; the service card says it', async () => {
+    vi.mocked(getProtocolForLogisticPath).mockResolvedValue({
+      ...PROTOCOL,
+      MergedServices: [{ IsCalculatedValue: false, NetUid: 'service-1', ServiceNumber: 'P0000000002' }],
+    } as never)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open)
+    renderPage()
+
+    await screen.findByRole('button', { name: 'status-final' })
+    expect(notificationMocks.show).not.toHaveBeenCalled()
+  })
 })

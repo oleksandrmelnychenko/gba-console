@@ -799,8 +799,11 @@ function validateNewMergedService(
   return { fieldErrors, summary: null }
 }
 
-/** The largest amount SQL money stores; bigger values were silently rounded and refused by the server. */
-const MAX_MONEY_AMOUNT = 922_337_203_685_477
+/**
+ * Below the largest amount SQL money stores (922 337 203 685 477); bigger values were silently rounded
+ * and refused by the server. A round limit reads better than the technical maximum.
+ */
+const MAX_MONEY_AMOUNT = 900_000_000_000_000
 
 function validateMergedServiceAmounts(
   values: NewMergedServiceFormValues,
@@ -812,7 +815,7 @@ function validateMergedServiceAmounts(
     const value = number(values[key])
 
     if (value !== null && (!Number.isFinite(value) || value < 0 || value > MAX_MONEY_AMOUNT)) {
-      errors[key] = t('Вартість має бути від 0 до 922 337 203 685 477')
+      errors[key] = t('Вартість має бути від 0 до 900 трлн')
     }
   }
   const percent = (key: 'percent' | 'percentAccounting') => {

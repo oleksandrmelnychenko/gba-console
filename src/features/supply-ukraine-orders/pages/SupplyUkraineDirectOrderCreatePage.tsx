@@ -57,6 +57,7 @@ import type {
   UkraineOrderFromSupplierParseConfiguration,
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { describeImportColumnsProblem } from '../importColumnsValidation'
 
 type NumberFieldValue = number | ''
 type CreateMode = SupplyUkraineOrderCreateMode
@@ -416,7 +417,10 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       const toUkraineParseConfiguration = isToUkraineMode ? toUkraineParseConfigurationFromForm(parseForm) : null
 
       if ((isToUkraineMode && !toUkraineParseConfiguration) || (!isToUkraineMode && !directParseConfiguration)) {
-        dispatchPage({ type: 'setError', error: t('Заповніть колонки імпорту') })
+        dispatchPage({
+          type: 'setError',
+          error: describeImportColumnsProblem(parseForm, isToUkraineMode, t) ?? t('Заповніть колонки імпорту'),
+        })
         return
       }
 

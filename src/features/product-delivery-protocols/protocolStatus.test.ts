@@ -16,12 +16,12 @@ describe('protocol status labels', () => {
     expect(getProtocolStatusLabel({ IsCompleted: false, IsShipped: true }, t)).toBe('В дорозі')
   })
 
-  it('shows final state for completed protocols', () => {
-    expect(getProtocolStatusLabel({ IsCompleted: true, IsShipped: true }, t)).toBe('Завершено')
+  it('shows arrival (the state income waits for) for completed protocols', () => {
+    expect(getProtocolStatusLabel({ IsCompleted: true, IsShipped: true }, t)).toBe('Прибув')
   })
 
   it('prioritizes completed state even when shipped flag is absent', () => {
-    expect(getProtocolStatusLabel({ IsCompleted: true }, t)).toBe('Завершено')
+    expect(getProtocolStatusLabel({ IsCompleted: true }, t)).toBe('Прибув')
   })
 
   it('shows arrival as the next action after transit starts', () => {

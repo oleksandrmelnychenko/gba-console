@@ -3,7 +3,7 @@ import { isUserReadableText, technicalErrorText } from '../../shared/api/userErr
 export const PROCUREMENT_RETRY_DELAY_MS = 20_000
 const PREPARING_TEXT = 'План закупівлі ще готується. Повторіть запит за хвилину.'
 
-const NOT_CONFIGURED_TEXT = 'Сервіс планування закупівель не налаштований. Зверніться до адміністратора.'
+export const PROCUREMENT_NOT_CONFIGURED_TEXT = 'Сервіс планування закупівель не налаштований. Зверніться до адміністратора.'
 const NOT_CONFIGURED_CODES = /ai_service_not_configured|ai_source_environment_misconfigured/
 
 function isServiceUnavailable(error: unknown): boolean {
@@ -23,7 +23,7 @@ export function isProcurementPreparing(error: unknown): boolean {
 export function procurementLoadError(error: unknown, fallback: string, t: (value: string) => string): string {
   if (isProcurementNotConfigured(error)) {
     console.warn('[gba] procurement service is not configured:', technicalErrorText(error))
-    return t(NOT_CONFIGURED_TEXT)
+    return t(PROCUREMENT_NOT_CONFIGURED_TEXT)
   }
   if (isProcurementPreparing(error)) {
     const message = technicalErrorText(error)

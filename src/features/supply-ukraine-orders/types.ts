@@ -273,6 +273,8 @@ export type SupplyOrderDeliveryDocument = EntityFields & {
   IsReceived?: boolean
   Name?: string
   ProcessedDate?: Date | string
+  /** The document type («Інвойс», «CMR» …); its name is what the table should show. */
+  SupplyDeliveryDocument?: { Id?: number; Name?: string | null } | null
 }
 
 export type CreditNoteDocument = SupplyOrderUkraineDocument & {
