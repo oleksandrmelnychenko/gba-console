@@ -171,7 +171,7 @@ describe('BUG-1485 offer product addition', () => {
       query: { netId: screenshotProduct.NetUid, clientAgreementNetId: agreementNetId },
     })
     expect(apiMock.mock.calls.some(([path]) => path.includes('/reservations/'))).toBe(false)
-    fireEvent.change(within(table).getByRole('textbox', { name: 'Кількість' }), { target: { value: '2' } })
+    fireEvent.change(within(table).getByRole('textbox', { name: /^Кількість/ }), { target: { value: '2' } })
     fireEvent.change(within(table).getByRole('textbox', { name: 'Коментар' }), { target: { value: 'Для клієнта' } })
     const createButton = screen.getByRole('button', { name: 'Створити' })
     expect(createButton.hasAttribute('disabled')).toBe(false)
@@ -182,6 +182,17 @@ describe('BUG-1485 offer product addition', () => {
         OrderItems: [{ Product: screenshotProduct, Qty: 2, Comment: 'Для клієнта' }],
       },
     })))
+  })
+
+  it.each([['0'], ['99999']])('refuses to create an offer with quantity %s instead of silently using 1', async (qty) => {
+    const [option] = await searchProducts('02235030FSS')
+    fireEvent.click(option)
+    const table = await screen.findByRole('table')
+    fireEvent.change(within(table).getByRole('textbox', { name: /^Кількість/ }), { target: { value: qty } })
+    fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
+
+    await waitFor(() => expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' })))
+    expect(apiMock).not.toHaveBeenCalledWith('/sales/offers/new', expect.anything())
   })
 
   it('adds eligible resale stock for a non-VAT agreement and does not duplicate the line', async () => {

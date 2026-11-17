@@ -66,9 +66,13 @@ export function getDaysToEnd(validUntil: Date | string | null | undefined): numb
     return 0
   }
 
-  const diff = date.getTime() - Date.now()
+  // Calendar days, like the date shown next to it: valid until 19.11 seen on 17.11 is 2 days, not the
+  // truncated hour count (1 day and some hours -> 1).
+  const today = new Date()
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const startOfEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
 
-  return Math.trunc(diff / (1000 * 60 * 60 * 24))
+  return Math.round((startOfEnd - startOfToday) / (1000 * 60 * 60 * 24))
 }
 
 export function getReasonStatus(offer: ClientShoppingCart): OfferReasonStatus {

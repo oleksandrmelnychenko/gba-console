@@ -1,6 +1,6 @@
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Group, Loader, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Copy, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -31,6 +31,7 @@ import type {
   OffersProduct,
 } from '../types'
 import './offers-modal.css'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 
 const OFFER_SELECT_PROPS = {
   classNames: {
@@ -41,6 +42,10 @@ const OFFER_SELECT_PROPS = {
   maxDropdownHeight: 220,
   size: 'xs' as const,
 }
+
+const OFFER_MIN_QTY = 0.001
+const OFFER_MAX_QTY = 10_000
+const OFFER_COMMENT_MAX_LENGTH = 450
 
 export function NewOfferModal({
   onClose,
@@ -361,6 +366,13 @@ function NewOfferForm({
       return
     }
 
+    // The server takes 0 < qty <= 10 000; never round a wrong quantity to 1 silently.
+    if (lines.some((line) => !(line.qty >= OFFER_MIN_QTY && line.qty <= OFFER_MAX_QTY))) {
+      notifications.show({ color: 'red', message: t('Вкажіть кількість від 0,001 до 10 000 для кожного товару') })
+
+      return
+    }
+
     if (!tryStartCreating()) {
       return
     }
@@ -505,17 +517,20 @@ function NewOfferForm({
                   )}
                 </Table.Td>
                 <Table.Td className="app-table-number">
-                  <NumberInput
-                    aria-label={t('Кількість')}
-                    hideControls
-                    min={1}
+                  <AmountInput
+                    aria-label={`${t('Кількість')} · ${line.product.VendorCode ?? ''}`}
+                    decimalScale={3}
+                    max={OFFER_MAX_QTY}
+                    maxMessage={t('Не більше 10 000')}
+                    min={OFFER_MIN_QTY}
                     value={line.qty}
-                    onChange={(value) => updateLineQty(line.key, typeof value === 'number' ? value : 1)}
+                    onChange={(value) => updateLineQty(line.key, value)}
                   />
                 </Table.Td>
                 <Table.Td>
                   <TextInput
                     aria-label={t('Коментар')}
+                    maxLength={OFFER_COMMENT_MAX_LENGTH}
                     placeholder={t('Коментар')}
                     value={line.comment}
                     onChange={(event) => updateLineComment(line.key, event.currentTarget.value)}
