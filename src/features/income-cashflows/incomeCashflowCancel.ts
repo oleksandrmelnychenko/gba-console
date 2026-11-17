@@ -23,7 +23,9 @@ export function getIncomeCancelWarning(income: IncomePaymentOrder | null | undef
   const { isClientPayment, saleNumbers } = getIncomeCancelEffect(income)
 
   if (saleNumbers.length > 0) {
-    return `Оплату зараховано в ${saleNumbers.length === 1 ? 'продаж' : 'продажі'} ${saleNumbers.join(', ')}: після скасування їх борг відновиться.`
+    return saleNumbers.length === 1
+      ? `Оплату зараховано в продаж ${saleNumbers[0]}: після скасування його борг відновиться.`
+      : `Оплату зараховано в продажі ${saleNumbers.join(', ')}: після скасування їх борг відновиться.`
   }
 
   if (isClientPayment) {

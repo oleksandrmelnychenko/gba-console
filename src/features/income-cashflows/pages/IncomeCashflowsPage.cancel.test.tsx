@@ -122,7 +122,7 @@ describe("Income order cancel feedback", () => {
     }])
     const dialog = await openCancelDialog()
 
-    expect(within(dialog).getByText(/QAUНо00000017: після скасування їх борг відновиться/)).toBeTruthy()
+    expect(within(dialog).getByText(/QAUНо00000017: після скасування його борг відновиться/)).toBeTruthy()
   })
 
   it('confirms a successful cancel with a toast', async () => {
