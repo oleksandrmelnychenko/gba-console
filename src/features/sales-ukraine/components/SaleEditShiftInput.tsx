@@ -22,7 +22,8 @@ export const SaleEditShiftInput = memo(function SaleEditShiftInput({
       <NumberInput
         allowDecimal={false}
         allowNegative={false}
-        clampBehavior="strict"
+        // Too large values are clamped to the remaining quantity on blur instead of being silently dropped.
+        clampBehavior="blur"
         hideControls
         max={max}
         min={0}

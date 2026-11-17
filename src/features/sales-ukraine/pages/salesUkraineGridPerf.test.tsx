@@ -120,6 +120,8 @@ describe('sales grid performance', () => {
     totalDuration = 0
 
     const input = screen.getByPlaceholderText(/Товар або номер продажу/)
+    // the server rejects longer search values (200), so the field never sends them
+    expect(input.getAttribute('maxlength')).toBe('200')
     orderReads = 0
     const started = performance.now()
 

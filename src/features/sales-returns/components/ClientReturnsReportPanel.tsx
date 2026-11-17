@@ -10,6 +10,7 @@ import { exportSaleReturnsReport, searchSalesReturnReportClients } from '../api/
 import type { SalesReturnClient, SalesReturnDocument } from '../types'
 import { getEntityName } from '../utils'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { isReportDateRangeReversed } from './returnsReportDates'
 import './client-returns-report.css'
 
 type ClientReturnsReportPanelProps = {
@@ -25,6 +26,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   const { t } = useI18n()
   const [fromDate, setFromDate] = useState(today)
   const [toDate, setToDate] = useState(today)
+  const dateRangeError = isReportDateRangeReversed(fromDate, toDate) ? t('Дата «Від» не може бути пізнішою за «До»') : null
   const [onlyMy, setOnlyMy] = useState(false)
   const [reportType, setReportType] = useState<'0' | '1'>('0')
   const [clientSearch, setClientSearch] = useState('')
@@ -93,7 +95,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
   }
 
   async function handleGenerate() {
-    if (!tryStartIsGenerating()) {
+    if (dateRangeError || !tryStartIsGenerating()) {
       return
     }
     setError(null)
@@ -131,11 +133,19 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
             <Group className="client-returns-report-dates" gap={10}>
               <AppDateInput
                 label={t('Від')}
+                max={toDate || undefined}
                 type="date"
                 value={fromDate}
                 onChange={(event) => setFromDate(event.currentTarget.value)}
               />
-              <AppDateInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+              <AppDateInput
+                error={dateRangeError}
+                label={t('До')}
+                min={fromDate || undefined}
+                type="date"
+                value={toDate}
+                onChange={(event) => setToDate(event.currentTarget.value)}
+              />
             </Group>
 
             <Select
@@ -212,7 +222,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
       </Stack>
       <AppModalFooter>
         <Button variant="default" onClick={handleClose}>{t('Скасувати')}</Button>
-        <Button leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
+        <Button disabled={Boolean(dateRangeError)} leftSection={<FileChartColumn size={16} />} loading={isGenerating} onClick={handleGenerate}>
           {t('Сформувати звіт')}
         </Button>
       </AppModalFooter>

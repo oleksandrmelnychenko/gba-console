@@ -100,6 +100,28 @@ afterEach(() => {
 })
 
 describe('SaleEditDrawer repeated edits', () => {
+  it('keeps the shift button disabled until a quantity is entered and clamps too large values', async () => {
+    render(<Harness />)
+
+    const input = await waitFor(() => {
+      const element = document.querySelector<HTMLInputElement>('.sale-edit-shift-input input')
+      expect(element?.disabled).toBe(false)
+      return element as HTMLInputElement
+    })
+    const shift = screen.getByRole('button', { name: 'Зробити зсув' }) as HTMLButtonElement
+
+    expect(shift.disabled).toBe(true)
+    fireEvent.submit(document.getElementById(shift.getAttribute('form') ?? '')!)
+    expect(mocks.shiftOrderItemsCurrent).not.toHaveBeenCalled()
+
+    fireEvent.change(input, { target: { value: '999' } })
+    fireEvent.blur(input)
+
+    await waitFor(() => expect(Number(input.value)).toBeLessThan(999))
+    expect(Number(input.value)).toBeGreaterThan(0)
+    await waitFor(() => expect(shift.disabled).toBe(false))
+  })
+
   it('keeps shift inputs editable after a successful edit and reopening the same invoice', async () => {
     render(<Harness />)
 

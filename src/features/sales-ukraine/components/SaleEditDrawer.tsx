@@ -69,6 +69,7 @@ type SaleEditState = {
 }
 type SaleEditFooterState = {
   hasPending: boolean
+  hasQuantity: boolean
   isSaving: boolean
   saleKey: string
   visible: boolean
@@ -81,6 +82,7 @@ type SaleEditAction =
 
 const HIDDEN_SALE_EDIT_FOOTER: SaleEditFooterState = {
   hasPending: false,
+  hasQuantity: false,
   isSaving: false,
   saleKey: '',
   visible: false,
@@ -115,8 +117,9 @@ export function SaleEditDrawer({
             </Button>
             <Button
               color={CREATE_ACTION_COLOR}
-              disabled={activeFooterState.hasPending}
+              disabled={activeFooterState.hasPending || !activeFooterState.hasQuantity}
               form={SALE_EDIT_FORM_ID}
+              title={activeFooterState.hasQuantity ? undefined : t('Вкажіть кількість хоча б в одному рядку')}
               leftSection={<ArrowLeftRight size={16} />}
               loading={activeFooterState.isSaving}
               type="submit"
@@ -264,11 +267,12 @@ function SaleEditContent({
   useEffect(() => {
     onFooterStateChange({
       hasPending: shiftMutation.hasPending,
+      hasQuantity: billShiftTotal + storeShiftTotal > 0,
       isSaving,
       saleKey,
       visible: showFooter,
     })
-  }, [isSaving, onFooterStateChange, saleKey, shiftMutation.hasPending, showFooter])
+  }, [billShiftTotal, isSaving, onFooterStateChange, saleKey, shiftMutation.hasPending, showFooter, storeShiftTotal])
 
   if (isLoading) {
     return <SaleEditSkeleton />
@@ -299,7 +303,7 @@ function SaleEditContent({
       onSubmit={(event) => {
         event.preventDefault()
 
-        if (!isMutationLocked) {
+        if (!isMutationLocked && billShiftTotal + storeShiftTotal > 0) {
           void doShift()
         }
       }}

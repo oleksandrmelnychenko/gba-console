@@ -1150,6 +1150,7 @@ function SalesUkrainePageContent() {
                 label={t('Пошук')}
                 leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
+                maxLength={200}
                 size="sm"
                 value={filterDraft.value}
                 onChange={(event) => applySearchValue(event.currentTarget.value)}
