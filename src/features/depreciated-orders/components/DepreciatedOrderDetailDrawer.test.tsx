@@ -49,7 +49,7 @@ describe('DepreciatedOrderDetailDrawer', () => {
 
     expect(screen.getByText('Позиція 1-2-3. К-сть 6; Позиція 1-2-4. К-сть 1')).toBeTruthy()
     expect(screen.getByText(/31\.12\.2099/)).toBeTruthy()
-    expect(screen.queryByText('Ціна')).toBeNull()
+    expect(screen.queryByText('Ціна, EUR')).toBeNull()
   })
 
   it('adds price, line sum and the document total when the payload has prices', () => {
@@ -59,7 +59,18 @@ describe('DepreciatedOrderDetailDrawer', () => {
       Number: 'QAU0000000052',
     })
 
-    expect(screen.getByText('Ціна')).toBeTruthy()
+    expect(screen.getByText('Ціна, EUR')).toBeTruthy()
     expect(screen.getAllByText(/25,00/).length).toBeGreaterThan(0)
+  })
+
+  it('uses the document total sent by the server', () => {
+    renderOrder({
+      Amount: 1234.5,
+      DepreciatedOrderItems: [{ Id: 1, PerUnitPrice: 12.5, Product: { Name: 'Фільтр' }, Qty: 2 }],
+      NetUid: 'order-3',
+      Number: 'QAU0000000053',
+    })
+
+    expect(screen.getAllByText(/1.234,50/).length).toBeGreaterThan(0)
   })
 })

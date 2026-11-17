@@ -23,6 +23,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
+import { formatWriteOffMoney, WRITE_OFF_CURRENCY } from '../depreciatedOrderAmounts'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type {
   DepreciatedOrder,
@@ -78,7 +79,12 @@ export function DepreciatedOrderDetailDrawer({
   const items = useMemo(() => order?.DepreciatedOrderItems || [], [order?.DepreciatedOrderItems])
   const itemColumns = useDepreciatedOrderItemColumns(items)
   const totalQty = useMemo(() => items.reduce((sum, item) => sum + (Number(item.Qty) || 0), 0), [items])
-  const totalAmount = useMemo(() => getWriteOffTotalAmount(items), [items])
+  /* The server sends the document total (Amount, EUR); the line sum is the fallback. */
+  const documentAmount = order?.Amount
+  const totalAmount = useMemo(
+    () => (typeof documentAmount === 'number' && documentAmount > 0 ? documentAmount : getWriteOffTotalAmount(items)),
+    [documentAmount, items],
+  )
 
   return (
     <AppModal
@@ -99,7 +105,7 @@ export function DepreciatedOrderDetailDrawer({
                 <>
                   <DocumentDetailMetric label={t('Позицій')} value={String(items.length)} />
                   <DocumentDetailMetric label={t('К-сть')} value={String(totalQty)} />
-                  {totalAmount !== null ? <DocumentDetailMetric label={t('Сума')} value={moneyFormat.format(totalAmount)} /> : null}
+                  {totalAmount !== null ? <DocumentDetailMetric label={`${t('Сума')}, ${WRITE_OFF_CURRENCY}`} value={formatWriteOffMoney(totalAmount)} /> : null}
                 </>
               }
             />
@@ -216,7 +222,7 @@ function useDepreciatedOrderItemColumns(items: DepreciatedOrderItem[]): DataTabl
       ...(getWriteOffTotalAmount(items) !== null ? [
         {
           id: 'price',
-          header: t('Ціна'),
+          header: `${t('Ціна')}, ${WRITE_OFF_CURRENCY}`,
           width: 110,
           minWidth: 90,
           align: 'right' as const,
@@ -225,7 +231,7 @@ function useDepreciatedOrderItemColumns(items: DepreciatedOrderItem[]): DataTabl
         },
         {
           id: 'amount',
-          header: t('Сума'),
+          header: `${t('Сума')}, ${WRITE_OFF_CURRENCY}`,
           width: 120,
           minWidth: 100,
           align: 'right' as const,
@@ -276,10 +282,8 @@ function getResponsibleName(order: DepreciatedOrder): string {
 
 const placementQtyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
-const moneyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
-
 function formatMoney(value?: number | null): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormat.format(value) : '-'
+  return formatWriteOffMoney(value)
 }
 
 function getLineAmount(item: DepreciatedOrderItem): number | null {

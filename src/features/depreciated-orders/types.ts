@@ -79,6 +79,8 @@ export type DepreciatedOrderItem = EntityFields & {
 }
 
 export type DepreciatedOrder = EntityFields & {
+  /** Document total in EUR (registry and details). */
+  Amount?: number
   Comment?: string
   DepreciatedOrderItems?: DepreciatedOrderItem[]
   FromDate?: Date | string

@@ -44,6 +44,7 @@ import type {
   DepreciatedOrderStorage,
 } from '../types'
 import './depreciated-orders-page.css'
+import { formatWriteOffMoney, sumWriteOffAmounts, WRITE_OFF_CURRENCY } from '../depreciatedOrderAmounts'
 
 type FilterDraft = {
   from: string
@@ -537,6 +538,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
     columns, error, filterDraft, filterError, isLoading, isLoadingStorages, openDetail, orders, page, pageSize,
     reload, resetFilters, applyFilters, setPage, setPageSize, storageError, totalPages,
   } = model
+  const pageAmount = useMemo(() => sumWriteOffAmounts(orders), [orders])
 
   return (
     <Card className="app-data-card depreciated-orders-card" withBorder radius="md" padding={0}>
@@ -586,6 +588,11 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           data={orders}
           defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Актів списання не знайдено')}
+          footer={pageAmount !== null ? (
+            <Text c="dimmed" size="sm">
+              {t('Сума на сторінці')}: {formatWriteOffMoney(pageAmount)} {WRITE_OFF_CURRENCY}
+            </Text>
+          ) : undefined}
           getRowId={(order, index) => String(order.NetUid || order.Id || index)}
           height="100%"
           isLoading={isLoading}
@@ -684,6 +691,15 @@ function useDepreciatedOrderColumns(
         enableSorting: false,
         accessor: getResponsibleName,
         cell: (order) => <TableChip tone="warning" value={displayValue(getResponsibleName(order))} />,
+      },
+      {
+        id: 'amount',
+        header: `${t('Сума')}, ${WRITE_OFF_CURRENCY}`,
+        width: 140,
+        minWidth: 110,
+        align: 'right',
+        accessor: (order) => order.Amount,
+        cell: (order) => formatWriteOffMoney(order.Amount),
       },
       {
         id: 'comment',
