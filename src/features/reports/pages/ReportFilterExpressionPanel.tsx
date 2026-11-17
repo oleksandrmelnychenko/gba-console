@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import type { ReportDataset, ReportFilterExpression, ReportFilterExpressionCapabilities, ReportFilterNode, ReportRequestBody, ReportSelection } from '../types'
 import { createFilterExpression, editFilterExpression, filterPathContains, filterPathId, filterTreeEntries, readFilterExpressionCapabilities, readReportFilterExpression, reportFilterExpressionError, requestFilterExpression, type FilterNodePath, type FilterTreeEdit } from '../data/reportFilterExpression'
 import { constructorConditionLabel } from '../data/constructorDesk'
+import { savedValueCaptions } from '../data/distinctCaptions'
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; notice: string | null; onChange: (value: unknown) => void }
 const operators = [{ value: '1', label: 'І — усі умови' }, { value: '2', label: 'АБО — будь-яка умова' }]
@@ -13,7 +14,7 @@ function selectionLabel(selection: ReportSelection | undefined, index: number, d
   const field = dataset?.Filters.find(item => item.Type === selection.SelectedField.Type)?.Name ?? selection.SelectedField.Name
   if (selection.IsChecked !== false && !selection.Values.some(value => (value.Name ?? '').trim())) return `№${index + 1}: ${field} — значення не задано`
   const condition = dataset?.DataSource === undefined ? selection.FilterCondition.Name : constructorConditionLabel(selection.FilterCondition.Type, selection.FilterCondition.Name)
-  const values = selection.Values.map(value => value.Name).join('; ')
+  const values = savedValueCaptions(selection.Values).join('; ')
   return `№${index + 1}: ${field} ${condition} ${values}${selection.IsChecked === false ? ' (вимкнено)' : ''}`
 }
 

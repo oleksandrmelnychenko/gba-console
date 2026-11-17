@@ -201,6 +201,14 @@ describe('І/АБО in the entry summary', () => {
     expect(summary.filters.split(' або ')).toHaveLength(2)
   })
 
+  it('prints old saved names without stored ids unless two values print identically', () => {
+    const source = request()
+    source.selections = [selection(netDataset.Filters[2].Type, 'Warehouse', [[9, 'СКЛАД -3 [9]'], [10, 'Склад Б [10]'], [11, 'Склад Б [11]']])]
+    const summary = historySummary(source, netDataset)
+    expect(summary.filters).toContain('СКЛАД -3, Склад Б [10] та ще 1')
+    expect(summary.filters).not.toContain('[9]')
+  })
+
   it('names reports with the menu wording so no ids are needed', () => {
     const launches = [{ fileName: 'ВП.xls', label: 'Валовий прибуток за днем', notice: '', dataset: { ...netDataset, DataSource: 35 } }]
     expect(historyReportName(null, 35, [], launches)).toBe('ВП')

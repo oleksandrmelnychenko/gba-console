@@ -13,7 +13,7 @@ export function CustomerGroupChoiceControl({ selection, label, disabled, error, 
  const model=customerGroupChoiceValues(selection.Values,choices.options,field)
  const emptyMessage=field!==8 && field!==4 && field!==21 && !choices.search.trim()?'Почніть вводити назву':'Нічого не знайдено'
  return <ReportValuePicker mode={isMultiValueReportCondition(selection.FilterCondition.Type)?'multi':'single'} label={label}
-   search={choices.search} onSearchChange={choices.setSearch} data={choices.loading?[]:model.data} selected={model.selected}
+   search={choices.search} onSearchChange={choices.setSearch} data={choices.loading?[]:model.data} selected={model.selected} ownSelectedLabels
    onChange={keys=>onChange(model.change(keys))} loading={choices.loading} disabled={disabled} error={error || choices.queryError || undefined}
    placeholder={EXACT_ID_FIELDS.has(field)?REPORT_VALUE_EXACT_ID_PLACEHOLDER:undefined} emptyMessage={emptyMessage}
    lookupError={choices.failure?CUSTOMER_GROUP_CHOICE_FAILURE:undefined} onRetry={()=>void choices.retry()}

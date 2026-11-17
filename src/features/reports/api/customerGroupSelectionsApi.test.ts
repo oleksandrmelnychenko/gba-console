@@ -8,7 +8,7 @@ const api = vi.mocked(apiRequest)
 beforeEach(() => api.mockReset())
 it('reads actual child codes, keeps parent context and does not substitute parent Id/NetUid', async () => {
   api.mockResolvedValue(actualDirectory)
-  expect(await getCustomerGroupRegionCodes()).toEqual(actualDirectory[0].RegionCodes.map(code => ({ Id: code.Id, Name: `${code.Value} — ${actualDirectory[0].Name} [${code.Id}]` })))
+  expect(await getCustomerGroupRegionCodes()).toEqual(actualDirectory[0].RegionCodes.map(code => ({ Id: code.Id, Name: `${code.Value} — ${actualDirectory[0].Name}` })))
 })
 it.each([
   [{ Id: 10, Name: 'A', RegionCodes: [{ Id: 20, RegionId: 11, Value: 'C' }] }],
@@ -19,7 +19,7 @@ it.each([
 })
 it('keeps child IDs distinct for same code across different parents', async () => {
   api.mockResolvedValue([{Id:10,Name:'A',RegionCodes:[{Id:20,RegionId:10,Value:'CODE'}]}, {Id:11,Name:'B',RegionCodes:[{Id:21,RegionId:11,Value:'CODE'}]}])
-  expect(await getCustomerGroupRegionCodes()).toEqual([{Id:20,Name:'CODE — A [20]'},{Id:21,Name:'CODE — B [21]'}])
+  expect(await getCustomerGroupRegionCodes()).toEqual([{Id:20,Name:'CODE — A'},{Id:21,Name:'CODE — B'}])
 })
 it('uses exact Product1 namespace and leaves plain numeric query untouched with bounded paging', async () => {
   api.mockResolvedValue([{ Id: 38242326, Name: 'Товар [38242326]' }])
@@ -39,7 +39,7 @@ it('does not page exact IDs, exceed max offset or load users with empty query', 
 })
 it('maps actual manager DTO User.Id/name only, never details identity or role/active filters', async () => {
   api.mockResolvedValue([{Id:20,FirstName:'Іван',LastName:'Петренко',MiddleName:'Іванович',UserDetailsId:999,NetUid:'uuid',IsActive:false,UserRoleId:42}])
-  expect(await searchCustomerGroupChoices(10,'Петренко',30)).toEqual([{Id:20,Name:'Петренко Іван Іванович [20]'}])
+  expect(await searchCustomerGroupChoices(10,'Петренко',30)).toEqual([{Id:20,Name:'Петренко Іван Іванович'}])
   expect(api).toHaveBeenCalledWith('/usermanagement/profiles/search/lookup',{query:{value:'Петренко',offset:30,limit:30},signal:undefined})
 })
 it.each([{Id:9007199254740992,Name:'X'}, {Id:'20',Name:'X'}, {UserDetailsId:20,Name:'X'}])('refuses unsafe/nonexact response identities %j',async item=>{
@@ -52,5 +52,5 @@ it('does not accept an old-server name match as an exact Product ID proof',async
 
 it('accepts the redacted actual normal lookup DTO and strips unrelated profile fields',async()=>{
  api.mockResolvedValue(actualManagers)
- expect(await searchCustomerGroupChoices(10,'Приклад',0)).toEqual([{Id:20,Name:'Приклад Тест Довідниковий [20]'}])
+ expect(await searchCustomerGroupChoices(10,'Приклад',0)).toEqual([{Id:20,Name:'Приклад Тест Довідниковий'}])
 })

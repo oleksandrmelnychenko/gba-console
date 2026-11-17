@@ -42,7 +42,7 @@ it.each([{ Id: 9007199254740992, Name: 'Небезпечний ID' }, { Id: '10'
 it('keeps two different exact IDs selectable despite equal captions', async () => {
   api.mockResolvedValue([{ Id: 10, Name: 'Одна назва' }, { Id: 20, Name: 'Одна назва' }]); render(<Form values={[]} />)
   fireEvent.click(screen.getByRole('combobox', { name: 'Регіон клієнта' }))
-  const options = await screen.findAllByRole('option', { name: 'Одна назва' }); fireEvent.click(options[0]); fireEvent.click(options[1])
+  fireEvent.click(await screen.findByRole('option', { name: 'Одна назва [10]' })); fireEvent.click(screen.getByRole('option', { name: 'Одна назва [20]' }))
   expect(JSON.parse(screen.getByTestId('selected').textContent!).map((value: ReportSelectedValue) => value.Data.Id)).toEqual([10, 20])
 })
 

@@ -1,7 +1,6 @@
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from './salesConstructorProfiles'
 import type { ReportDataset, ReportRequestBody, ReportSelection } from '../types'
 import { bug1274DatasetTitle, bug1274WorkbookGuide } from './bug1274WorkbookGuide'
-import { workbookCaption } from './bug1274WorkbookFilters'
 import { productClassification, productServiceFilter, requestProductClassification, requestProductServiceFilter,
   requestSourceBuyerSubtree, requestSourceOrganizations, sourceBuyerSubtree, sourceOrganizations } from './nativeExactFilters'
 import { DAY_ORGANIZATION_GOODS_KIND_ID, DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS,
@@ -12,6 +11,7 @@ import { hasFixedReportAxes } from './nativeReportProfiles'
 import { readReportFilterExpression, requestFilterExpression } from './reportFilterExpression'
 import type { ReportFilterNode } from '../types'
 import { SALES_BY_RESPONSIBLES_TITLE, SALES_BY_RESPONSIBLES_WORKBOOK_FILE } from './salesByResponsibles'
+import { savedValueCaptions } from './distinctCaptions'
 
 type WorkbookDeskEntry = {
   fileName: string
@@ -100,7 +100,7 @@ function chipValuesText(names: readonly string[]): string {
 }
 
 function selectionNames(selection: ReportSelection): string[] {
-  return selection.Values.map(value => workbookCaption(String(value.Name ?? '')) || String(value.Name ?? ''))
+  return savedValueCaptions(selection.Values)
 }
 const FLAT_EXCLUDING_CONDITIONS = new Set([1, 4])
 const PLAIN_CONDITIONS = new Set([0, 2])

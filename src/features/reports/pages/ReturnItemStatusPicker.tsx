@@ -4,6 +4,7 @@ import type { ReportDataset, ReportSelectedValue, ReportSelection } from '../typ
 import { returnItemStatus, returnItemStatusesCapability } from '../data/returnItemStatuses'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import { ReportValuePicker } from './ReportValuePicker'
+import { plainCaption, savedValueCaptions } from '../data/distinctCaptions'
 
 export function ReturnItemStatusPicker({ dataset, selection, onChange }: {
   dataset?: ReportDataset; selection: ReportSelection; onChange: (values: ReportSelectedValue[]) => void
@@ -25,8 +26,8 @@ export function ReturnItemStatusPicker({ dataset, selection, onChange }: {
   }
   return <Stack gap="xs">
     {!legacy && selection.Values.length > 0 && (!statuses || !isMultiValueReportCondition(selection.FilterCondition.Type) && selection.Values.length > 1)
-      ? <Text size="sm">Збережені причини: {selection.Values.map(value => statuses?.find(status => status.value === returnItemStatus(value.Data))?.name ?? value.Name).join(', ')}</Text> : null}
-    {legacy ? <Text size="sm">Збережені значення: {selection.Values.map(value => value.Name).join(', ')}. Щоб вибрати нові причини, спочатку очистіть ці значення.</Text>
+      ? <Text size="sm">Збережені причини: {selection.Values.map(value => statuses?.find(status => status.value === returnItemStatus(value.Data))?.name ?? plainCaption(value.Name)).join(', ')}</Text> : null}
+    {legacy ? <Text size="sm">Збережені значення: {savedValueCaptions(selection.Values).join(', ')}. Щоб вибрати нові причини, спочатку очистіть ці значення.</Text>
       : <ReportValuePicker mode={multiple ? 'multi' : 'single'} label={multiple ? 'Причини повернення' : 'Причина повернення'} remote={false}
           data={options} selected={(multiple ? selected : selected.slice(0, 1)).flatMap(key => options.filter(option => option.value === key))}
           search={search} onSearchChange={setSearch} onChange={change} disabled={!statuses} emptyMessage="Причину не знайдено" />}

@@ -195,7 +195,7 @@ import { requestFilterExpression } from '../data/reportFilterExpression'
 import { FULL_REPORT_MAX_DATE, FULL_REPORT_MIN_DATE, isFullRangeReportDate } from '../data/reportDateRange'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
-import { previewCaptionText, previewSharedNames, type NativeReportPreview } from '../data/nativeReportPreview'
+import { type NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { requestThreshold } from '../data/reportThreshold'
@@ -219,6 +219,7 @@ import { requestDayOrganizationBasis } from '../data/dayOrganizationBasis'
 import { supplierWarehouseAfterRowEdit, requestSupplierBasis, supplierBasisFormDataset } from '../data/supplierBasis'
 import { productClassificationReviewError, requestProductClassification, requestProductServiceFilter, requestSourceOrganizations, requestSourceBuyerSubtree } from '../data/nativeExactFilters'
 import { isSupplierSourceWorldCapability } from '../data/supplierBatchGrossProfit'
+import { savedValueCaptions } from '../data/distinctCaptions'
 const LOOKUP_SEARCH_LIMIT = 30
 const DATE_INPUT_DEBOUNCE_MS = 400
 // A native <input type="date"> carries no bounds of its own and reports every intermediate value while the
@@ -2001,8 +2002,7 @@ function getSelectionValuesSummary(selection: ReportSelection, t: TranslateFunct
     return t('Значення не вибрано')
   }
 
-  const shared = previewSharedNames(selection.Values.map((value) => value.Name))
-  const visibleValues = selection.Values.slice(0, 2).map((value) => previewCaptionText(value.Name, shared)).join(', ')
+  const visibleValues = savedValueCaptions(selection.Values).slice(0, 2).join(', ')
   const hiddenCount = selection.Values.length - 2
 
   return hiddenCount > 0 ? `${visibleValues} · +${hiddenCount}` : visibleValues

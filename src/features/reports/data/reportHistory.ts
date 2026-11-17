@@ -15,6 +15,7 @@ import { ALL_NAVIGATION_ENTRIES } from './reportNavigationEntries'
 import { readReportProfile, requestReportProfile, salesConstructorTitle } from './salesConstructorProfiles'
 import { workbookFilterLogic, workbookRequestSummary } from './workbookDesk'
 import { previousKyivDay } from './cashPeriod'
+import { distinctCaptions, plainCaption } from './distinctCaptions'
 
 export const REPORT_HISTORY_RUN_KEY = 'gba.reports.history-run'
 export type ReportHistoryAction = 'open' | 'excel'
@@ -200,7 +201,7 @@ export async function verifyHistoryValues(source: ReportRequestBody, search: His
         if (items.some(item => identities([item.Id, item.id, item.NetUid, item.Value]).some(id => wanted.has(id)))) return true
         if (items.length >= limit) uncertain = true
       }
-      if (!uncertain) dropped.push(`${label(selection)}: ${value.Name}`)
+      if (!uncertain) dropped.push(`${label(selection)}: ${plainCaption(String(value.Name ?? ''))}`)
       return uncertain
     }))
     const survivors = selection.Values.filter((_, index) => values[index])
@@ -369,7 +370,8 @@ export function movementDraftFromHistory(request: StockMovementRequest, capabili
 }
 
 function namedValues(ids: readonly number[], names: Record<string, string> | undefined): string {
-  const known = ids.flatMap(id => names?.[String(id)] ? [names[String(id)]] : [])
+  const named = ids.flatMap(id => names?.[String(id)] ? [{ id: String(id), caption: plainCaption(names[String(id)]) }] : [])
+  const known = distinctCaptions(named)
   const unknown = ids.length - known.length
   return [...known, ...(unknown ? [known.length ? `ще ${valueCount(unknown)}` : valueCount(unknown)] : [])].join(', ')
 }

@@ -32,7 +32,7 @@ export async function getCustomerGroupRegionCodes(signal?: AbortSignal): Promise
       if (!record(child) || !positiveId(child.Id) || seen.has(child.Id) || child.RegionId !== parent.Id || typeof child.Value !== 'string' || !child.Value.trim())
         throw new Error('Ідентифікатор коду регіону не підтверджено.')
       seen.add(child.Id)
-      options.push({ Id: child.Id, Name: `${child.Value} — ${parent.Name} [${child.Id}]` })
+      options.push({ Id: child.Id, Name: `${child.Value} — ${parent.Name}` })
     }
   }
   return options
@@ -47,7 +47,7 @@ export async function searchCustomerGroupChoices(field: 1 | 4 | 9 | 10 | 15 | 16
     query: { ...(field === 1 ? { dataSource: 44, field: 1 } : {}), value: query, offset, limit: 30 }, signal,
   })
   const result = choices(response, item => field === 1 ? typeof item.Name === 'string' ? item.Name : ''
-    : `${[item.LastName, item.FirstName, item.MiddleName].filter((part): part is string => typeof part === 'string' && !!part.trim()).join(' ') || 'Без імені'} [${item.Id}]`)
+    : `${[item.LastName, item.FirstName, item.MiddleName].filter((part): part is string => typeof part === 'string' && !!part.trim()).join(' ') || 'Без імені'}`)
   if (field === 1 && query.startsWith('id:') && (result.length > 1 || result.some(item => item.Id !== Number(query.slice(3)))))
     throw new Error('Сервер не підтвердив точний ID товару.')
   return result

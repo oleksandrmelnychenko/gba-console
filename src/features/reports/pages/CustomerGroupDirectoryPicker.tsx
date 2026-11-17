@@ -3,6 +3,7 @@ import { customerGroupDirectoryId } from '../data/customerGroupDirectory'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportSelectedValue, ReportSelection } from '../types'
 import { ReportValuePicker } from './ReportValuePicker'
+import { distinctOptions } from '../data/distinctCaptions'
 
 export type CustomerGroupDirectoryPickerProps = {
   selection: ReportSelection; label?: string; disabled?: boolean; error?: string
@@ -35,19 +36,20 @@ export function CustomerGroupDirectoryPicker({ selection, label, disabled, error
     value: customerGroupDirectoryId(value.Data)?.toString() ?? `invalid:${index}`,
     label: value.Name || directory.missing,
   }))
-  const selected = [...new Map(entries.map(item => [item.value, item])).values()]
+  const unique = [...new Map(entries.map(item => [item.value, item])).values()]
+  const selected = distinctOptions(unique)
   // Saved captions win until an explicit user choice; equal IDs never become duplicate options after a rename.
-  const data = [...new Map([...options.map(item => ({ value: String(item.Id), label: item.Name })), ...selected]
-    .map(item => [item.value, item])).values()]
+  const data = distinctOptions([...new Map([...options.map(item => ({ value: String(item.Id), label: item.Name })), ...unique]
+    .map(item => [item.value, item])).values()])
   function change(keys: string[]) {
-    const desired = new Set(keys), previous = new Set(selected.map(item => item.value))
+    const desired = new Set(keys), previous = new Set(unique.map(item => item.value))
     const retained = selection.Values.filter((_, index) => desired.has(entries[index].value))
     const added = options.filter(item => desired.has(String(item.Id)) && !previous.has(String(item.Id)))
       .map(item => ({ Data: { Id: item.Id }, Name: item.Name, Value: 0 }))
     onChange([...retained, ...added])
   }
   return <ReportValuePicker mode={isMultiValueReportCondition(selection.FilterCondition.Type) ? 'multi' : 'single'} label={label}
-    placeholder={directory.search} data={data} selected={selected} search={search} onSearchChange={setSearch} onChange={change}
+    placeholder={directory.search} data={data} selected={selected} ownSelectedLabels search={search} onSearchChange={setSearch} onChange={change}
     loading={loading} disabled={disabled} remote={false} error={error}
     lookupError={failed ? directory.failure : undefined} onRetry={() => setAttempt(value => value + 1)} />
 }

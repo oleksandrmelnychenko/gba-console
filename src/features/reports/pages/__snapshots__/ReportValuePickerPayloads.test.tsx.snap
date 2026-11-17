@@ -268,15 +268,15 @@ exports[`sends the same selection for 44/7 customer group c2 1`] = `
 
 exports[`sends the same selection for 44/8 customer group c0 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0}]}]}",
-  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":202},"Name":"BETA-2 — ALFA [202]","Value":0}]}]}",
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":202},"Name":"BETA-2 — ALFA","Value":0}]}]}",
 }
 `;
 
 exports[`sends the same selection for 44/8 customer group c2 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0}]}]}",
-  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA [201]","Value":0},{"Data":{"Id":202},"Name":"BETA-2 — ALFA [202]","Value":0}]}]}",
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":8,"Name":"Поле 8"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":201},"Name":"ALFA-1 — ALFA","Value":0},{"Data":{"Id":202},"Name":"BETA-2 — ALFA","Value":0}]}]}",
 }
 `;
 
@@ -296,15 +296,15 @@ exports[`sends the same selection for 44/9 customer group c2 1`] = `
 
 exports[`sends the same selection for 44/10 customer group c0 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0}]}]}",
-  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA [102]","Value":0}]}]}",
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":0,"Name":"Умова 0"},"Values":[{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
 }
 `;
 
 exports[`sends the same selection for 44/10 customer group c2 1`] = `
 {
-  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0}]}]}",
-  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA [101]","Value":0},{"Data":{"Id":102},"Name":"BETA [102]","Value":0}]}]}",
+  "afterFirstChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0}]}]}",
+  "afterSecondChoice": "{"dataSource":44,"selections":[{"IsChecked":true,"SelectedField":{"Type":10,"Name":"Поле 10"},"FilterCondition":{"Type":2,"Name":"Умова 2"},"Values":[{"Data":{"Id":101},"Name":"ALFA","Value":0},{"Data":{"Id":102},"Name":"BETA","Value":0}]}]}",
 }
 `;
 

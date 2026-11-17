@@ -21,7 +21,7 @@ afterEach(cleanup)
 it('chooses actual maxInt64 agreement without Client filter, current-region note or numeric conversion',async()=>{
  api.mockResolvedValue([{Id:max,Name:'Клієнт — Договір №1 ['+max+']'}]);render(<Form values={[]} condition={0}/>);expect(api).not.toHaveBeenCalled()
  expect(screen.getByText(/до договору в документі/)).toBeTruthy();expect(screen.queryByText(/Регіон, код регіону/)).toBeNull()
- search('id:'+max);await userEvent.click(await screen.findByRole('option',{name:'Клієнт — Договір №1 ['+max+']'}))
+ search('id:'+max);await userEvent.click(await screen.findByRole('option',{name:'Клієнт — Договір №1'}))
  expect(selected()).toEqual([{Data:{Id:max},Name:'Клієнт — Договір №1 ['+max+']',Value:0}]);expect(api.mock.calls[0][1]?.query).toEqual({dataSource:44,field:9,value:'id:'+max,offset:0,limit:30})
  expect(screen.queryByRole('option',{name:'Ще значення'})).toBeNull()
 })
@@ -29,7 +29,7 @@ it('pages ID-keyed same-caption contracts and retains raw saved labels, missing 
  api.mockImplementation(async(_path,options)=>options?.query?.offset===30?[{Id:'9007199254741999',Name:'Однакова назва'}]:Array.from({length:30},(_,i)=>({Id:(9007199254740993n+BigInt(i)).toString(),Name:i===0?'Нова назва':'Однакова назва'})))
  const view=render(<Form/>);search('договір');await screen.findByRole('option',{name:'Старий договір'});expect(screen.getAllByRole('option')).toHaveLength(31)
  await userEvent.click(screen.getByRole('option',{name:'Ще значення'}));await waitFor(()=>expect(api).toHaveBeenCalledTimes(2));await userEvent.click(screen.getByRole('combobox',{name:'Значення'}));await waitFor(()=>expect(screen.getAllByRole('option')).toHaveLength(31))
- await userEvent.click(screen.getAllByRole('option',{name:'Однакова назва'}).at(-1)!)
+ await userEvent.click(screen.getByRole('option',{name:'Однакова назва [9007199254741999]'}))
  const expected=[...saved,{Data:{Id:'9007199254741999'},Name:'Однакова назва',Value:0}];expect(selected()).toEqual(expected)
  view.rerender(<Form from="2026-09-01"/>);expect(selected()).toEqual(expected);expect(api.mock.calls.map(call=>call[1]?.query?.offset)).toEqual([0,30])
 })
@@ -40,7 +40,7 @@ it('explicit equality replacement clears old invalid multi-set only on user sele
 it('ignores late contract page after changing field to manager, never interpreting stringId as UserId',async()=>{
  let finish!:(value:unknown)=>void;api.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve})).mockResolvedValueOnce([{Id:20,LastName:'Менеджер'}])
  const view=render(<Form values={[]}/>);search('договір');await waitFor(()=>expect(api).toHaveBeenCalledOnce());const signal=api.mock.calls[0][1]?.signal
- view.rerender(<Form field={10} values={[]}/>);expect(signal?.aborted).toBe(true);search('менеджер');await screen.findByRole('option',{name:'Менеджер [20]'})
+ view.rerender(<Form field={10} values={[]}/>);expect(signal?.aborted).toBe(true);search('менеджер');await screen.findByRole('option',{name:'Менеджер'})
  finish([{Id:max,Name:'Запізнілий договір'}]);await waitFor(()=>expect(screen.queryByRole('option',{name:'Запізнілий договір'})).toBeNull());expect(selected()).toEqual([])
 })
 it('preserves raw values and disallows mutating a selected-only list disabled after opening',async()=>{

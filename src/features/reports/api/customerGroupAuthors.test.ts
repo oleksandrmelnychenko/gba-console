@@ -22,6 +22,6 @@ it.each([15, 16] as const)('refuses malformed/ambiguous author%d IDs without rou
 })
 it('leaves client manager10 on its existing User.Id lookup rather than either author namespace', async () => {
   api.mockResolvedValue([{ Id: 10, FirstName: 'Основний', LastName: 'Менеджер', UserDetailsId: 999 }])
-  expect(await searchCustomerGroupChoices(10, 'id:literal', 30)).toEqual([{ Id: 10, Name: 'Менеджер Основний [10]' }])
+  expect(await searchCustomerGroupChoices(10, 'id:literal', 30)).toEqual([{ Id: 10, Name: 'Менеджер Основний' }])
   expect(api).toHaveBeenCalledWith('/usermanagement/profiles/search/lookup', { query: { value: 'id:literal', offset: 30, limit: 30 }, signal: undefined })
 })
