@@ -35,7 +35,7 @@
   gap: 8px;
   letter-spacing: 0;
   line-height: 1.2;
-  min-height: 36px;
+  min-height: var(--app-control-height);
   padding: 8px 8px;
   white-space: nowrap;
   transition: background-color 140ms var(--tx-ease-smooth), color 140ms var(--tx-ease-smooth);

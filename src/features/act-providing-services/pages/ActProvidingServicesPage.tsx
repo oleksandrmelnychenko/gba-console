@@ -281,7 +281,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
         fill: true,
         accessor: (row) => `${row.serviceOrganization || ''} ${row.organization || ''}`,
         cell: (row) => (
-          <Stack gap={4}>
+          <Stack gap={0}>
             <Text size="sm">{displayValue(row.serviceOrganization)}</Text>
             <TableChip tone="product" value={displayValue(row.organization)} />
           </Stack>

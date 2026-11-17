@@ -98,8 +98,8 @@
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
   font-size: 12.5px;
-  height: 36px;
-  min-height: 36px;
+  height: var(--app-control-height);
+  min-height: var(--app-control-height);
   padding-left: 36px;
 }
 
@@ -119,7 +119,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: 36px;
+  height: var(--app-control-height);
   min-width: 140px;
   padding-inline: 12px;
 }

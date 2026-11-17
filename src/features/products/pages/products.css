@@ -1369,7 +1369,7 @@
   padding-block: 8px;
 }
 .product-inline-title-actions .mantine-Button-root {
-  height: 36px;
+  height: var(--app-control-height);
 }
 
 /* Keep screen switches centered at their natural width, as in Warehouse Ukraine. */
@@ -1545,7 +1545,7 @@
   justify-content: flex-end;
 }
 .products-page .product-assortment-primary-actions .mantine-Button-root {
-  height: 36px;
+  height: var(--app-control-height);
 }
 
 /* Product history, batches and movement share the approved document surface. */

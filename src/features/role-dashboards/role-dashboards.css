@@ -66,8 +66,8 @@
 }
 
 .role-dashboard-selector .mantine-Select-input {
-  height: 36px;
-  min-height: 36px;
+  height: var(--app-control-height);
+  min-height: var(--app-control-height);
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   font-family: var(--font-mono);
