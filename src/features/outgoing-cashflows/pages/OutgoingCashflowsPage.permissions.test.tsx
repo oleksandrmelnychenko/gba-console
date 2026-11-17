@@ -56,6 +56,7 @@ vi.mock('../../../shared/ui/data-table/DataTable', () => ({
     onRowClick: (row: OutgoingCashflowRow) => void
   }) => (
     <div>
+      <span data-testid="column-ids">{columns.map((column) => column.id).join(',')}</span>
       {data.map((row) => (
         <div key={row.id}>
           <button type="button" onClick={() => onRowClick(row)}>{`outgoing-row-${row.id}`}</button>
@@ -171,6 +172,14 @@ describe('outgoing cashflows permissions', () => {
       expect(searchOutgoingCashflowRegistryPaymentRegisters).toHaveBeenCalledWith('')
     })
     expect(screen.queryByText('Недостатньо прав для цієї дії.')).toBeNull()
+  })
+
+  it('has no «Рядків» column (the server sends the registry total, not the order lines)', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'outgoing-row-order-1' })).toBeTruthy()
+    expect(screen.getByTestId('column-ids').textContent).not.toContain('totalRowsQty')
   })
 
   it('still surfaces a genuine forbidden response from the outgoing registry', async () => {

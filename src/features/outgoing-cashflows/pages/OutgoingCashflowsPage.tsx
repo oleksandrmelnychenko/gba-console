@@ -818,7 +818,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
             emptyText={t('Видаткових ордерів не знайдено')}
             getRowId={(row) => row.id}
             isLoading={isTableBusy}
-            layoutVersion="outgoing-cashflows-actions-1"
+            layoutVersion="outgoing-cashflows-actions-2"
             minWidth={1860}
             showLayoutControls
             tableId="outgoing-cashflows"
@@ -982,19 +982,6 @@ function useOutgoingCashflowColumns({
         minWidth: 130,
         accessor: (row) => row.responsible,
         cell: (row) => displayValue(row.responsible),
-      },
-      {
-        id: 'totalRowsQty',
-        header: t('Рядків'),
-        width: 100,
-        minWidth: 90,
-        align: 'right',
-        accessor: (row) => row.totalRowsQty,
-        cell: (row) => (
-          <Text className="app-money" size="sm" ta="right">
-            {formatOptionalNumber(row.totalRowsQty)}
-          </Text>
-        ),
       },
       {
         id: 'comment',
@@ -1669,10 +1656,6 @@ function formatMoneyWithCurrency(value?: number, currency?: string): string {
   const formatted = formatMoney(value)
 
   return currency ? `${formatted} ${currency}` : formatted
-}
-
-function formatOptionalNumber(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 }
 
 function hasNumber(value?: number): value is number {

@@ -69,6 +69,7 @@ import {
   setAvailablePaymentTaskToActive,
 } from '../api/availablePaymentsApi'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { getTaskPaymentState } from '../models/taskPaymentState'
 import {
   TaskStatusValue,
   type AccountingTypeValue,
@@ -1972,12 +1973,13 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
 
 function InvoicePaymentSummary({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
-  const isDone = model.task.TaskStatus === TaskStatusValue.Done
+  const paymentState = getTaskPaymentState(model.task)
+  const isDone = paymentState === 'paid'
 
   return (
     <Group justify="flex-end" gap="xs">
       <Text c="dimmed" size="sm">
-        {isDone ? t('Оплачено') : t('До оплати')}
+        {isDone ? t('Оплачено') : paymentState === 'closed-without-payment' ? t('Не оплачено') : t('До оплати')}
       </Text>
       {!isDone && (
         <Text className="available-payment-invoice-total-value" fw={700} size="sm">
@@ -2637,6 +2639,15 @@ function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymen
 
 function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
   const { t } = useI18n()
+  const paymentState = getTaskPaymentState(task)
+
+  if (paymentState === 'closed-without-payment') {
+    return (
+      <Badge className="app-role-pill is-gray" size="xs" title={t('Задачу закрито без оплат: накладна не оплачена')} variant="light">
+        {t('Закрито без оплати')}
+      </Badge>
+    )
+  }
 
   if (task.TaskStatus === TaskStatusValue.Done) {
     return (
