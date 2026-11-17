@@ -2408,7 +2408,8 @@ function getExchangeColumns(
     { key: 'to', header: t('На рахунок'), cell: (exchange) => displayValue(exchange.ToPaymentCurrencyRegister?.PaymentRegister?.Name) },
     { key: 'amount', header: t('Сума'), align: 'right', cell: (exchange) => formatMoney(exchangeDisplayAmount(exchange)) },
     { key: 'currency', header: t('Валюта'), cell: (exchange) => renderCurrencyValue(exchangeCurrencyCode(exchange)) },
-    { key: 'rate', header: t('Курс'), align: 'right', cell: (exchange) => displayValue(exchange.ExchangeRate) },
+    // «51,25» with a comma like every other number (it read «51.25»).
+    { key: 'rate', header: t('Курс'), align: 'right', cell: (exchange) => typeof exchange.ExchangeRate === 'number' ? formatExchangeRate(exchange.ExchangeRate) : displayValue(exchange.ExchangeRate) },
     { key: 'user', header: t('Відповідальний'), cell: (exchange) => displayValue(getPersonName(exchange.User)) },
     { key: 'comment', header: t('Коментар'), cell: (exchange) => displayValue(exchange.Comment) },
   ]
