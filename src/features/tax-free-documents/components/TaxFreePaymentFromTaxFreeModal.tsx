@@ -1,6 +1,7 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Card, Group, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
+import { Alert, Button, Card, Group, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -366,12 +367,10 @@ export function TaxFreePaymentFromTaxFreeModal({
               />
             </Group>
             <Group align="end" gap={10}>
-              <NumberInput w={160} maw="100%"
-                allowNegative={false}
+              <AmountInput w={160} maw="100%"
                 decimalScale={2}
                 disabled={isLoading || isSaving}
                 label={t('Сума')}
-                min={0}
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}
               />

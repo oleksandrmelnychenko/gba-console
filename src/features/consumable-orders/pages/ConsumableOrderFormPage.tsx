@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
@@ -8,7 +9,6 @@ import {
   Button,
   Checkbox,
   FileInput,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -1095,13 +1095,11 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
                 }))
               }}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               className="consumable-order-item-quantity-input"
               decimalScale={3}
               disabled={isMutationLocked}
               label={t('Кількість')}
-              min={0}
               rightSection={
                 itemEditor.item.ConsumableProduct?.MeasureUnit?.Name ? (
                   <span className="consumable-order-item-unit-suffix">{itemEditor.item.ConsumableProduct.MeasureUnit.Name}</span>
@@ -1112,39 +1110,32 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
               value={itemEditor.item.Qty || 0}
               onChange={(value) => updateEditorItem({ Qty: toNumber(value) })}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               decimalScale={3}
               disabled={isMutationLocked}
               label={t('Ціна за одиницю')}
-              min={0}
               value={itemEditor.item.PricePerItem || 0}
               onChange={(value) => updateEditorItem({ PricePerItem: toNumber(value), TotalPriceWithVAT: undefined })}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               decimalScale={2}
               disabled={isMutationLocked}
               label={`${t('ПДВ')} %`}
-              min={0}
+              max={100}
               value={itemEditor.item.VatPercent || 0}
               onChange={(value) => updateEditorItem({ VatPercent: toNumber(value) })}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               decimalScale={2}
               disabled={isMutationLocked}
               label={t('Сума ПДВ')}
-              min={0}
               value={itemEditor.item.VAT || 0}
               onChange={(value) => overrideEditorVat(toNumber(value))}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               decimalScale={2}
               disabled={isMutationLocked}
               label={t('Разом з ПДВ')}
-              min={0}
               value={itemEditor.item.TotalPriceWithVAT || 0}
               onChange={(value) => updateEditorItem({ PricePerItem: 0, TotalPriceWithVAT: toNumber(value) })}
             />

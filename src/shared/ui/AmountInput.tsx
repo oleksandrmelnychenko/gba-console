@@ -10,7 +10,7 @@ import {
 
 export interface AmountInputProps extends Omit<TextInputProps, 'value' | 'defaultValue' | 'onChange' | 'type' | 'error'> {
   value: number | string | null | undefined
-  onChange: (value: number) => void
+  onChange?: (value: number) => void
   /** Digits allowed after the decimal separator. */
   decimalScale?: number
   /** Inclusive upper bound; a larger value is reported as an error and blocks the form. */
@@ -68,7 +68,7 @@ export function AmountInput({
     const next = parseAmountText(nextText)
 
     setText(nextText)
-    onChange(toEmittedAmount(next))
+    onChange?.(toEmittedAmount(next))
   }
 
   return (

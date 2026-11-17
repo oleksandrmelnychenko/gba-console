@@ -102,6 +102,33 @@ describe('AmountInput', () => {
   })
 })
 
+describe('AmountInput as a quantity', () => {
+  it('cleared quantity 1 then typed 3 is 3 (not 30)', async () => {
+    const user = userEvent.setup()
+
+    function Quantity() {
+      const [qty, setQty] = useState(1)
+
+      return (
+        <>
+          <AmountInput decimalScale={3} label="Кількість" value={qty} onChange={setQty} />
+          <output data-testid="qty">{qty}</output>
+        </>
+      )
+    }
+
+    render(<MantineProvider><Quantity /></MantineProvider>)
+    const input = screen.getByRole('textbox', { name: 'Кількість' }) as HTMLInputElement
+
+    await user.click(input)
+    await user.keyboard('{Control>}a{/Control}{Backspace}')
+    await user.type(input, '3')
+
+    expect(input.value).toBe('3')
+    expect(screen.getByTestId('qty').textContent).toBe('3')
+  })
+})
+
 describe('parseAmountText', () => {
   it.each([
     ['1234,56', 1234.56],

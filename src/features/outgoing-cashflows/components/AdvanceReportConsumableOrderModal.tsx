@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import './advance-report-entry.css'
@@ -894,13 +895,11 @@ export function AdvanceReportConsumableOrderModal({
                 />
               </div>
               <div className="advance-report-entry-numbers">
-                <NumberInput
+                <AmountInput
                   maw={180}
-                  allowNegative={false}
                   decimalScale={3}
                   disabled={isBusy}
                   label={t('Кількість')}
-                  min={0}
                   rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
                   value={itemEditor.item.Qty || 0}
                   onChange={(value) => updateEditorItem({ Qty: toNumber(value) })}

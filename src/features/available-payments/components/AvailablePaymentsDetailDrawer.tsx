@@ -1,4 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { DocumentDetailLayout, DocumentDetailSection, DocumentDetailRow } from '../../../shared/ui/document-detail/DocumentDetail'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -12,7 +13,6 @@ import {
   FileButton,
   Group,
   Loader,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -1810,34 +1810,28 @@ function AvailablePaymentOutcomeForm({
             </div>
 
             <div className="available-payment-outcome-row">
-              <NumberInput className="available-payment-outcome-number"
-                allowNegative={false}
+              <AmountInput className="available-payment-outcome-number"
                 decimalScale={2}
                 disabled={isSaving}
                 label={t('Сума')}
-                min={0}
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}
               />
-              <NumberInput className="available-payment-outcome-number"
-                allowNegative={false}
+              <AmountInput className="available-payment-outcome-number"
                 decimalScale={4}
                 disabled={isSaving}
                 label={t('Курс обміну')}
-                min={0}
                 value={form.exchangeRate}
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
-              <NumberInput className="available-payment-outcome-number"
-                allowNegative={false}
+              <AmountInput className="available-payment-outcome-number"
                 decimalScale={2}
                 disabled={isSaving}
                 label={t('Ставка ПДВ')}
-                min={0}
                 value={form.vatRate}
                 onChange={(value) => updateForm({ vatRate: toNumber(value) })}
               />
-              <NumberInput className="available-payment-outcome-number"
+              <AmountInput className="available-payment-outcome-number"
                 decimalScale={2}
                 label={t('Сума ПДВ')}
                 readOnly

@@ -1,7 +1,8 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
-import { Alert, Button, Grid, NumberInput, Select, Stack, Text, Textarea } from '@mantine/core'
+import { Alert, Button, Grid, Select, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -399,12 +400,10 @@ export function DocumentOutcomePaymentModal({
             <div><Text c="gray.9" size="xs" fw={500} mb={4}>{t('Валюта')}</Text><TableChip tone="source" value={currencyLabel} /></div>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
-            <NumberInput maw={160}
-              allowNegative={false}
+            <AmountInput maw={160}
               decimalScale={2}
               disabled={isLoading || isSaving}
               label={t('Сума')}
-              min={0}
               readOnly
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}

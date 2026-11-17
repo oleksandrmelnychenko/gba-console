@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import {
@@ -7,7 +8,6 @@ import {
   Button,
   FileInput,
   Group,
-  NumberInput,
   Select,
   Stack,
   Text,
@@ -187,12 +187,11 @@ export function PaymentShopDetailDrawer({
               )}
 
               <Group align="end" gap={10}>
-              <NumberInput
+              <AmountInput
                 w={180}
                 maw="100%"
                 decimalScale={2}
                 label={t('Сума')}
-                min={0}
                 value={draft.amount}
                 onChange={(value) => setDraft((current) => ({ ...current, amount: value }))}
               />

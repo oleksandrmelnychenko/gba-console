@@ -171,7 +171,7 @@ describe('PaymentShopDetailDrawer', () => {
 
     expect(screen.getByText('Статус оновлено; повторіть збереження')).toBeTruthy()
     expect((screen.getByLabelText('Сума') as HTMLInputElement).value).toBe(
-      '125.5',
+      '125.50',
     )
     expect(
       (screen.getByLabelText('Коментар') as HTMLTextAreaElement).value,

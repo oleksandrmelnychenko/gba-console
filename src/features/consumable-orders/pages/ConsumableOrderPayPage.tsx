@@ -1,4 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import {
@@ -6,7 +7,6 @@ import {
   Badge,
   Button,
   Card,
-  NumberInput,
   Select,
   Stack,
   Text,
@@ -525,14 +525,12 @@ function ConsumableOrderPayPageContent({
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
             />
-            <NumberInput
-              allowNegative={false}
+            <AmountInput
               className="consumable-order-pay-control is-amount"
               decimalScale={2}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Сума')}
               leftSection={<Coins size={15} />}
-              min={0}
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}
             />
