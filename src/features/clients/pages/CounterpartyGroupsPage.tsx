@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -81,7 +82,7 @@ function CounterpartyGroupsPageContent() {
   const [checked, setChecked] = useValueState<ReadonlySet<string>>(new Set())
   const [form, setForm] = useValueState<FormState>(null)
   const [moveOpened, setMoveOpened] = useValueState(false)
-  const [saving, setSaving] = useValueState(false)
+  const [saving, setSaving, tryStartSaving] = useBusyState()
   const [actionError, setActionError] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
@@ -163,8 +164,8 @@ function CounterpartyGroupsPageContent() {
   }
 
   const submitForm = async (draft: CounterpartyGroupDraft) => {
-    if (!form) return
-    setSaving(true)
+    // A second click or Enter while the first save runs must not create a duplicate group.
+    if (!form || !tryStartSaving()) return
     setActionError(null)
     try {
       const saved = form.mode === 'create' ? await createCounterpartyGroup(draft) : await updateCounterpartyGroup(form.group.NetUid, draft)

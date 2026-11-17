@@ -667,7 +667,7 @@ function useClientsPageModel() {
   async function handleReserveSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canEditReservationDays || !reserveClient?.NetUid) {
+    if (!canEditReservationDays || !reserveClient?.NetUid || clientAction === 'reserve') {
       return
     }
 

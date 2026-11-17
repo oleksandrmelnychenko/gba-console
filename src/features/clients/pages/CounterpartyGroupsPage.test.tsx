@@ -95,6 +95,22 @@ describe('CounterpartyGroupsPage', () => {
     await waitFor(() => expect(mocks.move).toHaveBeenCalledWith([client], kyiv))
   })
 
+  it('creates one group even when Зберегти is clicked twice', async () => {
+    mocks.can.mockReturnValue(true)
+    let resolveCreate: (value: unknown) => void = () => {}
+    mocks.create.mockImplementation(() => new Promise((resolve) => { resolveCreate = resolve }))
+    renderPage()
+    fireEvent.click(await screen.findByText('Харків'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Підгрупа' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: /Назва/ }), { target: { value: 'Нова' } })
+    const save = screen.getByRole('button', { name: 'Зберегти' })
+    fireEvent.click(save)
+    fireEvent.click(save)
+    expect(mocks.create).toHaveBeenCalledTimes(1)
+    resolveCreate(null)
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull())
+  })
+
   it('hides editing for a reader without the client edit permission', async () => {
     mocks.can.mockImplementation((permissionKey) => permissionKey === PermissionKeys.Clients.Page.View)
     renderPage()
