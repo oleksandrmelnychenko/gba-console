@@ -3,7 +3,7 @@
    pagination; the shell still uses the canonical full-height flex chain. */
 .payment-accounts-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   overflow: hidden;
   padding: 8px 4px 0;

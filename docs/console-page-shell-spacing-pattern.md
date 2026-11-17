@@ -34,7 +34,7 @@
 - `.console-frame` (`src/app/layout/layout.css`) має `margin: 8px 4px 0` — 8px
   зверху й **0px знизу**.
 - Кожна сторінка сама рахує свою висоту через
-  `height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - Npx)`
+  `height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - Npx)`
   і **не** підлаштовується під фактичну висоту фрейма — це паралельний, незалежний
   розрахунок. Якщо константа `N` підібрана «на око» (типово 20 або 24), картка або
   впритул до фрейма зверху (0 паддінга), або лишає «мертвий» запас знизу білого
@@ -47,7 +47,7 @@
 ```css
 .<page>-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   overflow: hidden;
   padding: 8px 4px 0; /* 8px зверху, 4px по боках, 0 знизу — низ дає висота-калк */
@@ -210,7 +210,7 @@ className="app-data-card <page>-card" withBorder ...>` (перевір JSX — �
 /* 1. Кореневий Stack сторінки — фіксована висота (розділ 1 цього файлу) */
 .<page>-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   overflow: hidden;
   padding: 8px 4px 0;

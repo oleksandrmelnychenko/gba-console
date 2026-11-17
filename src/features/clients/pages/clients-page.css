@@ -1,6 +1,6 @@
 .clients-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   overflow: hidden;
   padding: 8px 4px 0;
@@ -144,7 +144,7 @@
 .clients-role-filter-label, .clients-role-filter-dropdown :is(.mantine-Checkbox-label, .mantine-Text-root) { font-family: var(--font-mono); font-size: 12px; line-height: 16px; }
 .clients-role-filter-dropdown .mantine-Checkbox-body { min-height: 28px; align-items: center; }
 @container registry (max-width: 1450px) {
- .app-filter-bar.clients-filter-bar { --app-multi-select-width: 110px; }
+ .app-filter-bar.clients-filter-bar { --app-multi-select-width: 108px; }
  .app-filter-bar.clients-filter-bar .clients-filter-search { flex-basis: 124px; width: 124px; }
  .app-filter-bar.clients-filter-bar .clients-filter-field { flex-basis: 120px; width: 120px; }
  .app-filter-bar.clients-filter-bar .clients-filter-status { flex-basis: 100px; width: 100px; }

@@ -2,7 +2,7 @@
   background: #f1f3f5;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 108px - 36px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - 36px);
   min-height: 0;
   overflow: hidden;
 }
@@ -130,7 +130,7 @@
 
 .console-content-header-panel-actions .mantine-ActionIcon-root,
 .console-content-header-actions .mantine-ActionIcon-root {
-  --ai-size: 30px !important;
+  --ai-size: 28px !important;
 }
 
 /* Hide the default content header when a page supplies a fully custom one */
@@ -203,10 +203,10 @@
     minmax(max-content, 1fr)
     minmax(0, max-content)
     minmax(max-content, 1fr);
-  grid-template-rows: 64px 44px; /* header 64 + subnav 44 = --app-shell-header-offset 108px */
+  grid-template-rows: 52px 44px; /* modules 52 + subnav 44 = AppShell header 96px (ConsoleLayout.tsx) */
   column-gap: 16px;
-  height: 108px;
-  min-height: 108px;
+  height: 96px;
+  min-height: 96px;
   align-items: center;
   padding: 0 20px;
   position: relative;
@@ -221,7 +221,7 @@
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: 64px; /* divider under the 64px header row */
+  top: 52px; /* divider under the 52px modules row */
   z-index: 3;
 }
 
@@ -234,7 +234,7 @@
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  height: 64px;
+  height: 52px;
   gap: var(--mantine-spacing-xs);
 }
 
@@ -809,7 +809,7 @@
   flex: 0 0 auto;
   align-self: center;
   justify-self: end;
-  height: 64px;
+  height: 52px;
   align-items: center;
   overflow: visible;
   position: relative;
@@ -1854,7 +1854,7 @@ html[data-gba-env='qa'] .console-header {
 
   .console-header-top-nav .console-subnav-pill,
   .console-header-bottom-nav .console-subnav-pill {
-    --console-subnav-pill-inline: 9px;
+    --console-subnav-pill-inline: 8px;
     font-size: 13px;
   }
 }

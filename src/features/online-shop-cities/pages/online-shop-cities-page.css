@@ -1,6 +1,6 @@
 .online-shop-cities-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
