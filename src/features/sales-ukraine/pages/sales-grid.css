@@ -1574,7 +1574,18 @@
   .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 110px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 120px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 140px; }
-  /* visually hidden, but the checkbox keeps its accessible name «Інтернет-магазин» */
+  .sales-ukraine-page .sales-filter-create {
+    width: 36px;
+    min-width: 36px;
+    padding-inline: 0;
+  }
+  .sales-ukraine-page .sales-filter-create .mantine-Button-label { display: none; }
+  .sales-ukraine-page .sales-filter-create .mantine-Button-section { margin: 0; }
+}
+
+/* Crowded desktop toolbar only: the label is visually hidden but keeps its accessible name. On a phone the
+   filters wrap onto their own lines, so «Інтернет-магазин» stays visible there. */
+@container registry (min-width: 700px) and (max-width: 1360px) {
   .sales-ukraine-page .sales-filter-ecommerce .mantine-Checkbox-label {
     position: absolute;
     width: 1px;
@@ -1583,11 +1594,4 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .sales-ukraine-page .sales-filter-create {
-    width: 36px;
-    min-width: 36px;
-    padding-inline: 0;
-  }
-  .sales-ukraine-page .sales-filter-create .mantine-Button-label { display: none; }
-  .sales-ukraine-page .sales-filter-create .mantine-Button-section { margin: 0; }
 }
