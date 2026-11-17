@@ -58,7 +58,7 @@ function ProtocolRow({
           <Text className="supply-payment-protocol-title">{protocol.SupplyOrderUkrainePaymentDeliveryProtocolKey?.Key || t('Платіжні задачі')}</Text>
           {canRemove && (
             <Tooltip label={t('Видалити')}>
-              <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
+              <ActionIcon aria-label={t('Видалити')} className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
                 <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>
@@ -293,7 +293,7 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   return (
-    <Stack className="supply-payment-section supply-delivery-protocols" gap={10}>
+    <Stack className="supply-payment-section supply-delivery-protocols" gap={8}>
       <Group justify="space-between" align="center" gap={8}>
         <Group gap={8} className="supply-delivery-protocols-heading">
           <Text className="app-section-title" fw={600} size="sm">
@@ -333,7 +333,7 @@ export function PaymentDeliveryProtocolsSection({
         onClose={() => setFormOpen(false)}
       >
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             {validationError && (
               <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                 {validationError}
@@ -347,7 +347,7 @@ export function PaymentDeliveryProtocolsSection({
               value={protocolKey?.NetUid || null}
               onChange={(netUid) => setProtocolKey(findByNetUid(protocolKeys, netUid))}
             />
-            <Group align="end" gap={10}>
+            <Group align="end" gap={8}>
               <TextInput w={160} maw="100%"
                 label={t('Вартість Брутто')}
                 type="number"
@@ -369,7 +369,7 @@ export function PaymentDeliveryProtocolsSection({
               onChange={(event) => updateAccounting(event.currentTarget.checked)}
             />
 
-            <Group align="end" gap={10}>
+            <Group align="end" gap={8}>
               <AppDateInput w={170} maw="100%"
                 label={t('Сплатити до')}
                 type="date"

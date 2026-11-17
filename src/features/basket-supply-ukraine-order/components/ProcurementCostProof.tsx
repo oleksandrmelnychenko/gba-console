@@ -24,7 +24,7 @@ export function ProcurementCostBadge({ proof }: { proof: ProcurementCostProvenan
 
 export function ProcurementCostProof({ item, compact = false }: { item: ReorderSuggestion; compact?: boolean }) {
   const proof = item.cost_provenance
-  if (compact) return <Stack component="section" aria-label="Джерело оцінки закупівлі" gap={6}>
+  if (compact) return <Stack component="section" aria-label="Джерело оцінки закупівлі" gap={8}>
     <div><TableChip value={coverageLabels[proof.coverage]} tone={proof.budget_eligible ? 'success' : 'warning'} /></div>
     <Text size="xs">{proof.source === 'buyer_supplied'
       ? 'Ручна оцінка закупівельника; склад податків не підтверджено.'
@@ -87,7 +87,7 @@ export function ProcurementCostProof({ item, compact = false }: { item: ReorderS
 }
 
 export function ProcurementCostSnapshot({ context, compact = false }: { context: ProcurementCostContext; compact?: boolean }) {
-  if (compact) return <Stack component="section" className="procurement-cost-notice" aria-label="Стан джерела вартості" gap={6}>
+  if (compact) return <Stack component="section" className="procurement-cost-notice" aria-label="Стан джерела вартості" gap={8}>
     <div><TableChip value={context.cost_totals_certified ? 'Вартість підтверджена' : 'Оцінка неповна'} tone={context.cost_totals_certified ? 'success' : 'warning'} /></div>
     <Text size="xs">{context.cost_totals_certified
       ? 'Історична вартість товарів без ПДВ, доставки та мита.'

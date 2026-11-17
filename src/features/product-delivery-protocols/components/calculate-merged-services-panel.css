@@ -7,7 +7,7 @@
 .calculate-service-invoice-card {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px;
   min-width: 0;
 }
@@ -25,7 +25,7 @@
   font: 500 12px/1.4 var(--font-sans);
 }
 .calculate-merged-services-summary dd {
-  margin: 5px 0 0;
+  margin: 4px 0 0;
   color: var(--mantine-color-gray-9);
   font: 500 13px/1.4 var(--font-mono);
 }
@@ -40,7 +40,7 @@
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 12px;
   align-items: end;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .calculate-merged-services-dialog :is(.mantine-InputWrapper-label, .mantine-InputBase-label, .mantine-Checkbox-label) {
   font: 500 12px/1.4 var(--font-sans);
@@ -54,7 +54,7 @@
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 3px;
+  padding: 4px;
   min-width: 0;
 }
 .calculate-merged-services-mode .mantine-SegmentedControl-label {
@@ -67,16 +67,16 @@
 }
 .calculate-merged-services-mode .mantine-SegmentedControl-label[data-active] { color: white; }
 .calculate-service-invoice-head { min-width: 0; }
-.calculate-service-invoice-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.calculate-service-invoice-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .calculate-service-invoice-rates,
-.calculate-service-invoice-rates > span { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.calculate-service-invoice-rates > span { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .calculate-service-invoice-rates { gap: 16px; font: 500 13px/1.4 var(--font-mono); }
 .calculate-service-invoice-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
+  gap: 8px 12px;
   align-items: end;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 .calculate-service-invoice-check { grid-column: 1 / -1; }
 .calculate-service-invoice-control { min-width: 0; }

@@ -482,7 +482,7 @@ function DepreciatedOrdersPageContent() {
 
 function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   return (
-    <Stack className="depreciated-orders-page" gap={6}>
+    <Stack className="depreciated-orders-page" gap={8}>
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
         canExport={model.canExport}

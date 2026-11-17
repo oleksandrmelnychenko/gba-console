@@ -274,7 +274,7 @@ export function NewMergedServiceForm({
 
   return (
     <AppModal className="app-compact-form payment-service-form" opened={opened} size={960} title={t('Додати')} onClose={onClose}>
-      <Stack className="app-compact-form" gap={10}>
+      <Stack className="app-compact-form" gap={8}>
         {loadError && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {loadError}

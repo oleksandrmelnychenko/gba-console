@@ -386,10 +386,10 @@ export function AllSadsPage() {
   }
 
   return (
-    <Stack className="sad-list-page console-table-page" gap={6}>
+    <Stack className="sad-list-page console-table-page" gap={8}>
       <div className="console-table-shell sad-list-page__shell">
         <div className="app-filter-bar sad-list-page__toolbar">
-          <Group align="flex-end" className="app-filter-fields sad-list-page__filters" gap={10} wrap="nowrap">
+          <Group align="flex-end" className="app-filter-fields sad-list-page__filters" gap={8} wrap="nowrap">
             <ToolbarDateRangeFilter from={filters.from} to={filters.to} onChange={(range) => { setPage(1); setFilters((current) => ({ ...current, ...range })) }} />
             <div className="app-filter-actions sad-list-page__actions">
               <Tooltip label={t('Скинути')}>
@@ -1635,7 +1635,7 @@ function SadPalletsTable({
         header: t('Палета'),
         accessor: (item) => item.__pallet.Number,
         cell: (item) => (
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <Package size={14} />
             <Text size="sm">{item.__pallet.Number || t('Без номера')}</Text>
           </Group>
@@ -2190,7 +2190,7 @@ function SadDocumentsModal({
           onChange={(value) => setFiles(value || [])}
         />}
         <Divider />
-        <Stack gap={6}>
+        <Stack gap={8}>
           {(sad.SadDocuments || []).length === 0 && (
             <Text c="dimmed" size="sm">{t('Документів немає')}</Text>
           )}

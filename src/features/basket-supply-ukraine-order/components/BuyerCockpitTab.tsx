@@ -809,7 +809,7 @@ function BuyerCockpitTabContent() {
   const hasItems = sortedItems.length > 0
 
   return (
-    <Stack gap={6}>
+    <Stack gap={8}>
       <Card className="app-data-card" padding={0} radius="md" withBorder>
       <div className="app-filter-bar basket-supply-command-bar">
         <Select
@@ -902,7 +902,7 @@ function BuyerCockpitTabContent() {
                   <Text c="dimmed" size="xs">
                     {t('Чернетка замовлення, EUR без ПДВ')}
                   </Text>
-                  <Group gap={5} justify="flex-end" wrap="nowrap">
+                  <Group gap={4} justify="flex-end" wrap="nowrap">
                     <Text className="app-money" fw={600} size="lg">
                       {eurFormatter.format(draftCost.pricedCost)}
                     </Text>
@@ -1118,7 +1118,7 @@ function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFu
 
   return (
     <Stack align="flex-end" gap={2}>
-      <Group gap={6} justify="flex-end" wrap="nowrap">
+      <Group gap={8} justify="flex-end" wrap="nowrap">
         <Text fw={700} size="sm">
           {formatProcurementQuantity(item.suggested_qty, item.measure_unit, qtyFormatter)}
         </Text>

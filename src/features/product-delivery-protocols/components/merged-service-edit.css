@@ -16,8 +16,8 @@
 .merged-service-edit-document-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 12px;
-  margin-top: 10px;
+  gap: 8px 12px;
+  margin-top: 8px;
 }
 
 .merged-service-edit-cost-grid {
@@ -30,7 +30,7 @@
 .merged-service-edit-domestic-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 12px;
+  gap: 8px 12px;
 }
 
 .merged-service-edit-domestic-grid > .mantine-Textarea-root { grid-column: 1 / -1; }

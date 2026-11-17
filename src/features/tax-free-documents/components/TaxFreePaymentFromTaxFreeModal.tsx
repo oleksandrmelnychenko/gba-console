@@ -318,13 +318,13 @@ export function TaxFreePaymentFromTaxFreeModal({
 
   return (
     <AppModal className="app-compact-form" centered opened={opened} size={760} title={t('Створити прибутковий касовий ордер')} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         {document ? (
           <Stack gap={2}>
             <Text size="sm">
               {t('Клієнт')}: {getTaxFreeClient(document)}
             </Text>
-            <Group gap={6}><Text size="xs" c="gray.9">{t('Tax Free')}</Text><TableChip tone="document" value={document.Number || document.NetUid} /></Group>
+            <Group gap={8}><Text size="xs" c="gray.9">{t('Tax Free')}</Text><TableChip tone="document" value={document.Number || document.NetUid} /></Group>
             <Text size="sm">
               {t('Сума')}: <span className="app-money">{formatTaxFreeAmountPl(document.VatAmountPl)}</span>
             </Text>
@@ -338,8 +338,8 @@ export function TaxFreePaymentFromTaxFreeModal({
         )}
 
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Stack gap={10}>
-            <Group align="end" gap={10}>
+          <Stack gap={8}>
+            <Group align="end" gap={8}>
               <Select w={220} maw="100%"
                 data={toEntityOptions(organizations)}
                 disabled={!organizations.length || isLoading || isSaving}
@@ -365,7 +365,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                 onChange={(value) => updateForm({ paymentRegisterValue: value || '' })}
               />
             </Group>
-            <Group align="end" gap={10}>
+            <Group align="end" gap={8}>
               <NumberInput w={160} maw="100%"
                 allowNegative={false}
                 decimalScale={2}
@@ -389,7 +389,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                 <TableChip tone="source" value={currencyLabel} />
               </div>
             </Group>
-            <Group align="end" gap={10}>
+            <Group align="end" gap={8}>
               <SearchableSelect w={360} maw="100%"
                 data={toUniqueLabels(paymentMovements)}
                 disabled={isLoading || isSaving}

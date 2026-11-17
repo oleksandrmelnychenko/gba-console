@@ -2,7 +2,7 @@
 .basket-upload-section {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px;
   min-width: 0;
 }

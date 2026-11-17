@@ -176,7 +176,7 @@ function InvoiceViewCard({
 
   return (
     <Card className="protocol-invoice-card" withBorder radius="md" padding={12}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         {actionsTarget ? createPortal(actions, actionsTarget) : actions}
         <div className="protocol-detail-grid">
           <LabelValueRow label={t('Номер документу')} mono><TableChip tone="document" value={invoice.ServiceNumber || '—'} /></LabelValueRow>
@@ -196,7 +196,7 @@ function InvoiceViewCard({
         </div>
         <LabelValueRow label={t('Документи доставки')}>
           {deliveryDocuments.length > 0 ? (
-            <Stack gap={6}>
+            <Stack gap={8}>
               {deliveryDocuments.map((document, index) => (
                 <Group
                   key={getDocumentKey(document, index)}
@@ -219,7 +219,7 @@ function InvoiceViewCard({
                       {document.FileName || ''}
                     </Text>
                   )}
-                  <Group gap={6} wrap="nowrap">
+                  <Group gap={8} wrap="nowrap">
                     {document.Deleted && (
                       <Badge color="red" size="sm" variant="light">
                         {t('Видалено')}
@@ -610,7 +610,7 @@ export function InvoicesSection({
   }
 
   return (
-    <Stack className="protocol-invoices-section" gap={10}>
+    <Stack className="protocol-invoices-section" gap={8}>
       <Group justify="space-between" align="center">
         <Text className="app-section-title" fw={600} size="sm">
           {t('Інвойси')}
@@ -626,7 +626,7 @@ export function InvoicesSection({
           {t('Інвойсів не знайдено')}
         </Text>
       ) : (
-        <Stack gap={10}>
+        <Stack gap={8}>
           {invoices.map((invoice) => (
             <InvoiceViewCard
               key={getInvoiceCardKey(invoice)}

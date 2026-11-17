@@ -458,7 +458,7 @@ function ProductDeliveryProtocolsPageContent() {
   const model = useProtocolsPageModel()
 
   return (
-    <Stack className="product-delivery-protocols-page console-table-page" gap={6}>
+    <Stack className="product-delivery-protocols-page console-table-page" gap={8}>
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}

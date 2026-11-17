@@ -124,7 +124,7 @@ export function DepreciatedOrderCreateModal({
   return (
     <AppModal className="app-compact-form" centered opened={opened} size={680} title={`${t('Додати')} ${t('Акт списання')}`} onClose={closeModal}>
       <form id="depreciated-order-create-form" onSubmit={submitForm}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           {(validationError || createError) && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {validationError || createError}
@@ -136,7 +136,7 @@ export function DepreciatedOrderCreateModal({
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10} verticalSpacing={10}>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8} verticalSpacing={8}>
             <Select
               searchable
               allowDeselect={false}
@@ -166,7 +166,7 @@ export function DepreciatedOrderCreateModal({
           )}
 
           <Card className="app-section-card" withBorder padding={12} radius="md">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text component="h3" className="app-section-title" size="sm" fw={500}>{t('Імпорт з Excel')}</Text>
               <FileInput
                 accept=".xls,.xlsx"
@@ -179,7 +179,7 @@ export function DepreciatedOrderCreateModal({
                 onChange={(file) => setForm((current) => ({ ...current, file }))}
               />
 
-              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10} verticalSpacing={10}>
+              <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={8} verticalSpacing={8}>
                 <NumberInput
                   allowDecimal={false}
                   allowNegative={false}

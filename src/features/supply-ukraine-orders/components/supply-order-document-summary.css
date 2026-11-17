@@ -1,5 +1,5 @@
 .supply-order-invoice-financials {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
   align-items: start;
@@ -8,7 +8,7 @@
 .supply-order-invoice-discount {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -19,14 +19,14 @@
 
 .supply-order-invoice-discount__save.mantine-Button-root {
   flex: 0 0 34px;
-  width: 34px;
-  height: 34px;
-  margin-top: 22px;
+  width: 32px;
+  height: 32px;
+  margin-top: 20px;
   padding: 0;
 }
 
 .supply-order-documents {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
 }

@@ -54,7 +54,7 @@
 }
 
 .supply-ukraine-orders-search-input { width: 220px; }
-.supply-ukraine-orders-currency-filter { width: 110px; }
+.supply-ukraine-orders-currency-filter { width: 108px; }
 .supply-ukraine-orders-type-filter { width: 140px; }
 
 .supply-ukraine-orders-filter-bar .supply-ukraine-orders-filter-actions {
@@ -72,21 +72,21 @@
   width: max-content !important;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: var(--app-radius-md);
   max-width: calc(100vw - 24px);
   min-width: var(--popover-anchor-width);
   padding: 4px;
 }
 
 .supply-ukraine-orders-filter-dropdown .supply-ukraine-orders-filter-option {
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
-  min-height: 30px;
-  padding: 7px 8px;
+  min-height: 28px;
+  padding: 8px 8px;
 }
 
 .supply-ukraine-orders-filter-dropdown .supply-ukraine-orders-filter-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
@@ -100,7 +100,7 @@
   min-width: 32px;
   height: var(--supply-orders-control-height);
   min-height: var(--supply-orders-control-height);
-  padding-inline: 10px;
+  padding-inline: 8px;
 }
 
 .supply-ukraine-orders-filter-bar :is(.registry-caption-action, .data-table-layout-control, .app-filter-primary-action) .mantine-Button-label {
@@ -109,7 +109,7 @@
 }
 
 .supply-ukraine-orders-filter-bar :is(.registry-caption-action, .data-table-layout-control, .app-filter-primary-action) .mantine-Button-section[data-position='left'] {
-  margin-inline-end: 6px;
+  margin-inline-end: 8px;
 }
 
 .supply-ukraine-orders-create-actions {
@@ -242,7 +242,7 @@
 }
 
 .supply-ukraine-orders-table-toolbar-slot .data-table-toolbar {
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   min-height: 0;
 }
@@ -308,7 +308,7 @@
   box-sizing: border-box;
   left: 0;
   max-width: 100%;
-  padding: 10px 12px 12px;
+  padding: 8px 12px 12px;
   position: sticky;
   width: 100cqw;
 }
@@ -336,7 +336,7 @@
 .supply-invoice-main-cell {
   align-items: flex-start;
   display: flex;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -358,14 +358,14 @@
 
 .supply-invoice-copy {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .supply-invoice-main-line {
   align-items: baseline;
   display: flex;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -406,7 +406,7 @@
 }
 
 :is(.supply-order-organization-cell, .supply-invoice-agreement-chip) .app-table-chip {
-  border-radius: 10px;
+  border-radius: 8px;
   white-space: normal;
 }
 
@@ -421,7 +421,7 @@
   flex-wrap: wrap;
   font-size: 11px;
   font-weight: 500;
-  gap: 4px 10px;
+  gap: 4px 8px;
   line-height: 1.2;
   min-width: 0;
 }
@@ -453,7 +453,7 @@
 
 .supply-order-main-body {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   width: 100%;
 }
@@ -481,7 +481,7 @@
   max-width: 160px;
   min-width: 0;
   overflow: hidden;
-  padding: 3px 8px;
+  padding: 4px 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -523,7 +523,7 @@
   font-weight: 500;
   gap: 4px;
   line-height: 1.2;
-  max-width: 210px;
+  max-width: 208px;
   min-width: 0;
 }
 
@@ -556,7 +556,7 @@
   border-radius: 999px;
   flex: 0 1 auto;
   line-height: 16px;
-  max-width: 150px;
+  max-width: 148px;
   padding: 0 8px;
 }
 
@@ -665,7 +665,7 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .supply-order-agreement-pill {
@@ -673,10 +673,10 @@
   border-radius: 999px;
   font-size: 10.5px;
   line-height: 16px;
-  margin-top: 3px;
+  margin-top: 4px;
   max-width: 100%;
   overflow: hidden;
-  padding: 0 6px;
+  padding: 0 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
   width: fit-content;
@@ -757,17 +757,17 @@
 
 .supply-orders-official-costs-header.mantine-Modal-header {
   min-height: 0;
-  padding: 18px 24px 8px;
+  padding: 16px 24px 8px;
 }
 
 .supply-orders-official-costs-body.mantine-Modal-body {
-  padding: 8px 24px 22px;
+  padding: 8px 24px 20px;
 }
 
 .supply-orders-official-costs-card.mantine-Card-root {
   border-color: var(--mantine-color-gray-2);
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .supply-orders-official-costs-grid {
@@ -785,7 +785,7 @@
   font-weight: 650;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .supply-orders-official-costs-field .mantine-Input-wrapper,

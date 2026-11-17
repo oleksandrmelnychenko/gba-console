@@ -166,7 +166,7 @@
 .consumable-orders-amount-primary {
   align-items: baseline;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
   max-width: 100%;
   min-width: 0;
@@ -232,7 +232,7 @@
 .consumable-orders-status-cell {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;

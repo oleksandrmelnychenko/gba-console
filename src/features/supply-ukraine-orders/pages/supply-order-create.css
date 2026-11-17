@@ -1,6 +1,6 @@
 .supply-order-create-sheet .supply-order-create-section {
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
 }
 
 .supply-order-create-sheet .supply-order-create-section .app-section-title {
@@ -51,7 +51,7 @@
   font-size: 12px;
   font-weight: 600;
   line-height: 20px;
-  padding: 7px 14px;
+  padding: 8px 12px;
 }
 
 .supply-order-create-sheet .supply-order-create-tabs .mantine-SegmentedControl-label[data-active] {

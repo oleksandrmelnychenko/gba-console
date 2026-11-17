@@ -738,7 +738,7 @@ function BasketCartWorkflow() {
       <Card className="app-data-card basket-supply-primary-card" padding={0} radius="md" withBorder>
         {!isCartEmpty && (
           <div className="app-filter-bar basket-supply-command-bar is-split">
-            <SimpleGrid className="app-filter-fields basket-supply-filters" cols={3} spacing={10}>
+            <SimpleGrid className="app-filter-fields basket-supply-filters" cols={3} spacing={8}>
               <TextInput
                 label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}
@@ -940,7 +940,7 @@ function BasketCartWorkflow() {
 
       <AppModal centered opened={canEditReservation && Boolean(reserveItem)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Резерв')}</span>} onClose={() => setReserveItem(null)}>
         <Stack className="app-compact-form" gap="md">
-          <Group gap={6}><TableChip tone="product" value={reserveItem?.Product?.VendorCode} /><Text size="sm">{reserveItem?.Product?.Name}</Text></Group>
+          <Group gap={8}><TableChip tone="product" value={reserveItem?.Product?.VendorCode} /><Text size="sm">{reserveItem?.Product?.Name}</Text></Group>
           <NumberInput
             allowDecimal={false}
             label={t('Зарезервована К-сть')}
@@ -1499,7 +1499,7 @@ function TotalItem({ currency, isLoading, label, value }: { currency?: string; i
       <Text c="dimmed" size="xs">
         {label}
       </Text>
-      <Group gap={6}><Text className="app-money" fw={500}>{isLoading ? '...' : value}</Text>{currency && <TableChip tone="source" value={currency} />}</Group>
+      <Group gap={8}><Text className="app-money" fw={500}>{isLoading ? '...' : value}</Text>{currency && <TableChip tone="source" value={currency} />}</Group>
     </Box>
   )
 }

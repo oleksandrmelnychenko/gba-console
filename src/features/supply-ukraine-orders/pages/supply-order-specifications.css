@@ -1,7 +1,7 @@
-.supply-order-specifications-sheet .supply-order-specifications-body { gap: 10px; }
+.supply-order-specifications-sheet .supply-order-specifications-body { gap: 8px; }
 .supply-order-specifications-sheet .supply-order-spec-actions.app-filter-bar {
   background: var(--mantine-color-white);
-  padding: 8px 10px;
+  padding: 8px 8px;
   border-radius: 12px;
 }
 .supply-order-specifications-sheet .supply-order-spec-tab-group {
@@ -9,38 +9,38 @@
   border: 0;
   padding: 0;
   gap: 4px;
-  height: 34px;
+  height: 32px;
 }
 .supply-order-specifications-sheet .supply-order-spec-tab { border-radius: 8px; }
 .supply-order-specifications-sheet .supply-order-spec-action-button[data-variant='default'] { background: white; }
-.supply-order-specifications-sheet .supply-order-spec-documents-card { padding: 10px 12px; }
+.supply-order-specifications-sheet .supply-order-spec-documents-card { padding: 8px 12px; }
 .supply-order-specifications-sheet .supply-order-spec-documents { gap: 8px 20px; }
-.supply-order-specifications-sheet .supply-order-spec-selector { gap: 6px 10px; }
+.supply-order-specifications-sheet .supply-order-spec-selector { gap: 8px 8px; }
 .supply-order-specifications-sheet .supply-order-spec-selector-title {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: var(--mantine-color-gray-8);
   font: 600 12px/1.3 var(--font-sans);
 }
 .supply-order-specifications-sheet .supply-order-spec-chip.mantine-Button-root {
-  min-height: 34px;
-  padding: 5px 8px 5px 11px;
+  min-height: 32px;
+  padding: 4px 8px 4px 12px;
   border-color: transparent;
 }
 .supply-order-specifications-sheet .supply-order-spec-chip .mantine-Button-label { gap: 8px; }
 .supply-order-specifications-sheet .supply-order-spec-document-date { font: 500 12px/20px var(--font-mono); color: var(--mantine-color-gray-8); }
 .supply-order-specifications-sheet .supply-order-spec-products-card { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 180px; overflow: hidden; }
 .supply-order-specifications-sheet .supply-order-spec-grid-block { flex: 1 1 auto; gap: 0; min-height: 0; }
-.supply-order-specifications-sheet .supply-order-spec-grid-toolbar { align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 10px; }
+.supply-order-specifications-sheet .supply-order-spec-grid-toolbar { align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
 .supply-order-specifications-sheet .supply-order-spec-search { flex: 0 1 240px; min-width: 160px; }
 .supply-order-specifications-sheet .supply-order-spec-table-toolbar { display: flex; flex-wrap: wrap; margin-left: auto; }
 .supply-order-specifications-sheet .supply-order-spec-table-toolbar .data-table-toolbar { margin: 0; padding: 0; }
 
 .supply-order-specifications-sheet .supply-order-spec-tabs { gap: 20px; align-items: end; }
-.supply-order-specifications-sheet .supply-order-spec-tab-set { display: flex; flex-direction: column; gap: 5px; }
+.supply-order-specifications-sheet .supply-order-spec-tab-set { display: flex; flex-direction: column; gap: 4px; }
 .supply-order-specifications-sheet .supply-order-spec-tab-label { color: var(--mantine-color-gray-8); font: 600 12px/1.3 var(--font-sans); }
-.supply-order-specifications-sheet .supply-order-spec-tab { min-height: 34px; gap: 6px; padding: 7px 10px; }
+.supply-order-specifications-sheet .supply-order-spec-tab { min-height: 32px; gap: 8px; padding: 8px 8px; }
 .supply-order-specifications-sheet .supply-order-spec-tab svg { flex-shrink: 0; }
 
 /* Carry the available sheet height through to the table's own scroll viewport. */

@@ -117,7 +117,7 @@ function ProductSpecificationEditDrawerContent({
       onClose={requestClose}
     >
       {product && (
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -130,7 +130,7 @@ function ProductSpecificationEditDrawerContent({
           </Group>
 
           <Card className="product-specification-form" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Text className="app-section-title">{t('Митні дані')}</Text>
               <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing={12}>
                 <TextInput
@@ -172,7 +172,7 @@ function ProductSpecificationEditDrawerContent({
           </Card>
 
           <Card className="product-specification-history" withBorder radius="md" padding="sm">
-            <Stack gap={10}>
+            <Stack gap={8}>
               <Group gap={8}>
                 <Text className="app-section-title">{t('Історія митних кодів')}</Text>
                 <TableChip value={history.length} />
@@ -228,7 +228,7 @@ function ProductSpecificationEditDrawerContent({
         title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Є незбережені зміни')}</span>}
         onClose={() => setConfirmCloseOpen(false)}
       >
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
           <AppModalFooter>
             <Button variant="default" onClick={() => setConfirmCloseOpen(false)}>

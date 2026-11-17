@@ -962,7 +962,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
       }
       onClose={() => navigate('/product-delivery-protocols')}
     >
-      <Stack className="product-specification-sheet" gap={10}>
+      <Stack className="product-specification-sheet" gap={8}>
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {model.error}
@@ -974,7 +974,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
             {t('Завантаження')}
           </Text>
         ) : model.protocol ? (
-          <Stack className="protocol-specification-content" gap={10}>
+          <Stack className="protocol-specification-content" gap={8}>
             {specificationUnavailableMessage && (
               <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
                 {specificationUnavailableMessage}
@@ -990,7 +990,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                     className="product-specification-sheet-segment"
                     data={SPECIFICATION_CURRENCY_OPTIONS.map(({ label, value, icon: Icon }) => ({
                       value,
-                      label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{label}</span></Group>,
+                      label: <Group gap={8} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{label}</span></Group>,
                     }))}
                     disabled={model.isActionBusy}
                     size="xs"
@@ -1005,7 +1005,7 @@ function ProductDeliveryProtocolSpecificationPageContent() {
                     className="product-specification-sheet-segment"
                     data={SERVICE_MODE_OPTIONS.map(({ label, value, icon: Icon }) => ({
                       value,
-                      label: <Group gap={6} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
+                      label: <Group gap={8} wrap="nowrap"><Icon size={15} aria-hidden="true" /><span>{t(label)}</span></Group>,
                     }))}
                     disabled={model.isActionBusy}
                     size="xs"

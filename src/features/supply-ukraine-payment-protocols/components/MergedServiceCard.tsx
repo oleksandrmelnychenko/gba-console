@@ -71,7 +71,7 @@ function LabelValueRow({ children, label, mono = false }: { children: ReactNode;
 
 function ServiceMoneyValue({ value, currencyCode }: { value?: number | null; currencyCode: string }) {
   return (
-    <Group component="span" gap={6} justify="flex-end" wrap="wrap">
+    <Group component="span" gap={8} justify="flex-end" wrap="wrap">
       <span className="app-money">{formatMoney(value)}</span>
       <TableChip tone="source" value={currencyCode} />
     </Group>
@@ -111,7 +111,7 @@ function PaymentTaskRow({
         </Stack>
         {canRemove && (
           <Tooltip label={t('Видалити')}>
-            <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
+            <ActionIcon aria-label={t('Видалити')} className="supply-payment-remove-action" color="red" variant="subtle" onClick={onRemove}>
               <Trash2 size={18} />
             </ActionIcon>
           </Tooltip>
@@ -147,7 +147,7 @@ function AddPaymentTaskForm({
 
   return (
     <Card className="supply-payment-inline-form" withBorder radius="sm" padding="sm">
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text className="supply-payment-inline-form-title">
           {t('Створити платіжну задачу')}
           {isAccounting ? ` (${t('Бух.')})` : ''}
@@ -233,7 +233,7 @@ export function MergedServiceCard({
           <Text className="supply-payment-service-title">{t('Об’єднаний сервіс')}</Text>
           {permissions.canRemoveService && (
             <Tooltip label={t('Видалити')}>
-              <ActionIcon className="supply-payment-remove-action" color="red" variant="subtle" onClick={() => onRemoveService(service)}>
+              <ActionIcon aria-label={t('Видалити')} className="supply-payment-remove-action" color="red" variant="subtle" onClick={() => onRemoveService(service)}>
                 <Trash2 size={18} />
               </ActionIcon>
             </Tooltip>

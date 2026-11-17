@@ -67,7 +67,7 @@ export function EditingTab({ canProcess, onCountChanged }: { canProcess: boolean
           aria-pressed={activeTab === ACT_TAB}
           onClick={() => setActiveTab(ACT_TAB)}
         >
-          <Group gap={6} wrap="nowrap" align="center">
+          <Group gap={8} wrap="nowrap" align="center">
             <FilePenLine size={16} strokeWidth={1.8} aria-hidden="true" />
             {t('Акт редагування накладної')}
             <TableChip value={actQty} />
@@ -79,7 +79,7 @@ export function EditingTab({ canProcess, onCountChanged }: { canProcess: boolean
           aria-pressed={activeTab === CARRIER_TAB}
           onClick={() => setActiveTab(CARRIER_TAB)}
         >
-          <Group gap={6} wrap="nowrap" align="center">
+          <Group gap={8} wrap="nowrap" align="center">
             <History size={16} strokeWidth={1.8} aria-hidden="true" />
             {t('Історія змін перевізника')}
             <TableChip value={carrierQty} />

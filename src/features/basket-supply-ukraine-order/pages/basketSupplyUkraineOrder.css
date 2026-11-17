@@ -56,7 +56,7 @@
 
 .buyer-workspace > .buyer-workspace__tabs {
   flex: 0 0 auto;
-  border-radius: 10px 10px 0 0;
+  border-radius: 8px 8px 0 0;
   overflow-y: hidden;
 }
 
@@ -96,8 +96,8 @@
 }
 
 .basket-supply-total-item {
-  min-height: 58px;
-  padding: 10px 12px;
+  min-height: 56px;
+  padding: 8px 12px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
@@ -140,15 +140,15 @@
 }
 
 .budget-cart-signals {
-  min-width: 210px;
-  max-width: 270px;
+  min-width: 208px;
+  max-width: 268px;
 }
 
 .procure-workspace-state {
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   justify-content: center;
   margin: auto;
   max-width: 680px;
@@ -163,12 +163,12 @@
   border-radius: 8px;
   margin: 0;
   max-width: none;
-  min-height: 190px;
+  min-height: 188px;
 }
 
 .procure-workspace-state__copy {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   max-width: 600px;
 }
 
@@ -188,8 +188,8 @@
 .procure-workspace-state__fact {
   display: grid;
   gap: 2px;
-  min-width: 150px;
-  padding: 0 18px;
+  min-width: 148px;
+  padding: 0 16px;
 }
 
 .procure-workspace-state__fact + .procure-workspace-state__fact {
@@ -243,12 +243,12 @@
 .buyer-cockpit-summary {
   border-bottom: 1px solid var(--mantine-color-gray-2);
   border-top: 1px solid var(--mantine-color-gray-2);
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 .buyer-cockpit-summary__item {
   min-width: 0;
-  padding: 2px 14px;
+  padding: 2px 12px;
 }
 
 .buyer-cockpit-summary__item + .buyer-cockpit-summary__item {
@@ -276,7 +276,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -334,7 +334,7 @@
   gap: 16px;
   justify-content: flex-start;
   min-height: 0;
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
 }
 
@@ -350,19 +350,19 @@
 
 .budget-cart-summary {
   box-shadow: none !important;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .budget-cart-summary__head {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 .budget-cart-summary__layout {
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(0, 1fr) 220px;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .budget-cart-summary__primary,
@@ -378,12 +378,12 @@
 .budget-cart-summary__secondary {
   border-top: 1px solid var(--mantine-color-gray-2);
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .budget-cart-summary__metric {
   min-width: 0;
-  padding: 2px 14px;
+  padding: 2px 12px;
 }
 
 .budget-cart-summary__metric:first-child {
@@ -448,17 +448,17 @@
 
 .procure-dashboard__content {
   background: var(--mantine-color-white);
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .procure-dashboard__intro {
   align-items: center;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: flex;
-  gap: 18px;
+  gap: 16px;
   justify-content: space-between;
   min-width: 0;
-  padding: 2px 2px 10px;
+  padding: 2px 2px 8px;
 }
 
 .procure-dashboard__intro-copy {
@@ -479,7 +479,7 @@
   flex: 0 0 auto;
   gap: 1px;
   min-width: 180px;
-  padding-left: 18px;
+  padding-left: 16px;
 }
 
 .procure-dashboard__snapshot > span,
@@ -535,7 +535,7 @@
   content: '';
   display: inline-block;
   height: 7px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 0;
   width: 7px;
 }
@@ -567,7 +567,7 @@
   font-weight: 650;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-top: 5px;
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -590,12 +590,12 @@
 .procure-dashboard__panel {
   box-shadow: none !important;
   min-width: 0;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .procure-dashboard__panel-heading {
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
 .procure-dashboard__panel-heading .mantine-Text-root:last-child {
@@ -607,7 +607,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: 150px minmax(150px, 1fr);
-  min-height: 190px;
+  min-height: 188px;
 }
 
 .procure-dashboard__urgency-legend {
@@ -622,7 +622,7 @@
   font-size: 11.5px;
   gap: 8px;
   grid-template-columns: 8px minmax(0, 1fr) auto;
-  min-height: 35px;
+  min-height: 36px;
 }
 
 .procure-dashboard__urgency-row:last-child {
@@ -772,7 +772,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -817,7 +817,7 @@
 
   .procure-dashboard__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 14px;
+    row-gap: 12px;
   }
 
   .procure-dashboard__metric:nth-child(3) {
@@ -836,7 +836,7 @@
 
   .budget-cart-summary__primary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 14px;
+    row-gap: 12px;
   }
 
   .procure-dashboard__forecast-list-cell {
@@ -901,7 +901,7 @@
     align-items: stretch;
     flex-direction: column;
     gap: 12px;
-    padding: 14px;
+    padding: 12px;
   }
 
   .budget-cart-empty-result .mantine-Button-root {
@@ -911,7 +911,7 @@
   .budget-cart-summary__primary,
   .budget-cart-summary__secondary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 14px;
+    row-gap: 12px;
   }
 
   .budget-cart-summary__metric:nth-child(odd) {
@@ -930,7 +930,7 @@
     border-top: 1px solid var(--mantine-color-gray-3);
     min-width: 0;
     padding-left: 0;
-    padding-top: 10px;
+    padding-top: 8px;
   }
 
   .procure-dashboard__metrics {
@@ -942,8 +942,8 @@
   .procure-dashboard__metric:first-child {
     border-left: 0;
     border-top: 1px solid var(--mantine-color-gray-2);
-    min-height: 66px;
-    padding: 10px 0;
+    min-height: 64px;
+    padding: 8px 0;
   }
 
   .procure-dashboard__metric:first-child {
@@ -969,7 +969,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1013,7 +1013,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 0 10px;
+  padding: 0 8px;
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
@@ -1045,7 +1045,7 @@
   flex-wrap: wrap;
   gap: 12px 28px;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 
 .procure-cockpit__metrics {
@@ -1075,7 +1075,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -1098,7 +1098,7 @@
 
 .procure-cockpit__charts {
   flex: 0 0 auto;
-  padding: 12px 14px 4px;
+  padding: 12px 12px 4px;
 }
 
 .procure-cockpit__workspace {
@@ -1106,13 +1106,13 @@
   flex: 1 1 auto;
   gap: 12px;
   min-height: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 /* Грід плану в рамці (§6.2): DataTable заповнює рамку, скрол всередині. */
 .procure-cockpit__table {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -1144,7 +1144,7 @@
   align-items: center;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--mantine-color-gray-5);
   display: inline-flex;
   flex: 0 0 28px;
@@ -1208,7 +1208,7 @@
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  max-width: 150px;
+  max-width: 148px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1227,7 +1227,7 @@
   line-height: 1;
   max-width: 100%;
   min-width: 0;
-  padding: 2px 5px;
+  padding: 2px 4px;
 }
 
 .procure-cockpit-product__oe-label {
@@ -1326,7 +1326,7 @@
 }
 
 .procure-cockpit__table .data-table-expanded-content {
-  padding: 10px 14px 12px 52px;
+  padding: 8px 12px 12px 52px;
 }
 
 .procure-proof {
@@ -1344,13 +1344,13 @@
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 12px 14px;
+  padding: 12px 12px;
 }
 
 .procure-proof__heading {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1361,9 +1361,9 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   flex: 0 0 34px;
-  height: 34px;
+  height: 32px;
   justify-content: center;
-  width: 34px;
+  width: 32px;
 }
 
 .procure-proof__heading-copy {
@@ -1399,21 +1399,21 @@
 .procure-proof__decision {
   align-items: center;
   display: flex;
-  gap: 18px;
+  gap: 16px;
 }
 
 .procure-proof__pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   justify-content: flex-end;
-  max-width: 250px;
+  max-width: 248px;
 }
 
 .procure-proof__order-qty {
   border-left: 1px solid var(--mantine-color-gray-2);
   display: grid;
-  min-width: 134px;
+  min-width: 132px;
   padding-left: 16px;
   text-align: right;
 }
@@ -1449,7 +1449,7 @@
 
 .procure-proof__metric {
   min-width: 0;
-  padding: 11px 14px;
+  padding: 12px 12px;
 }
 
 .procure-proof__metric + .procure-proof__metric {
@@ -1470,7 +1470,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -1482,7 +1482,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
   min-height: 22px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1512,7 +1512,7 @@
 
 .procure-proof__section {
   min-width: 0;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .procure-proof__section.is-risk,
@@ -1521,24 +1521,24 @@
 }
 
 .procure-proof__section > .app-section-title {
-  margin-bottom: 11px;
+  margin-bottom: 12px;
 }
 
 .procure-proof__equation {
   align-items: stretch;
   display: grid;
-  gap: 7px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
 .procure-proof__equation-term {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
+  border-radius: 8px;
   display: grid;
   gap: 2px;
   min-width: 0;
-  padding: 9px 10px;
+  padding: 8px 8px;
 }
 
 .procure-proof__equation-term.is-accent {
@@ -1575,15 +1575,15 @@
 .procure-proof__facts,
 .procure-proof__forecast-facts {
   display: grid;
-  gap: 9px 22px;
+  gap: 8px 20px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 13px;
+  margin-top: 12px;
 }
 
 .procure-proof__fact {
   align-items: baseline;
   display: flex;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -1664,7 +1664,7 @@
   color: var(--mantine-color-gray-6);
   display: flex;
   font-size: 11px;
-  gap: 7px;
+  gap: 8px;
   min-height: 80px;
 }
 
@@ -1712,7 +1712,7 @@
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
-  margin-left: 6px;
+  margin-left: 8px;
 }
 
 .procure-proof__forecast-facts {
@@ -1722,7 +1722,7 @@
 .procure-proof__demand {
   border-top: 1px solid var(--mantine-color-gray-2);
   margin-top: 12px;
-  padding-top: 9px;
+  padding-top: 8px;
 }
 
 .procure-proof__demand > span {
@@ -1731,14 +1731,14 @@
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .procure-proof__sparkline {
   align-items: flex-end;
   display: flex;
   gap: 2px;
-  height: 42px;
+  height: 40px;
 }
 
 .procure-proof__sparkline > span {
@@ -1763,7 +1763,7 @@
   .procure-proof__decision {
     align-items: flex-end;
     flex-direction: column-reverse;
-    gap: 7px;
+    gap: 8px;
   }
 
   .procure-proof__order-qty {
@@ -1774,7 +1774,7 @@
 
 @media (max-width: 900px) {
   .procure-cockpit__table .data-table-expanded-content {
-    padding-left: 14px;
+    padding-left: 12px;
   }
 
   .procure-proof__header,
@@ -1819,7 +1819,7 @@
 /* Рейка замовлення праворуч: шапка фіксована, список груп скролиться. */
 .procure-cockpit__basket {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex: 0 0 clamp(360px, 28vw, 410px);
   flex-direction: column;
@@ -1834,7 +1834,7 @@
   flex: 0 0 auto;
   gap: 8px;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit__basket-heading {
@@ -1847,7 +1847,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 10.5px;
   line-height: 1.2;
-  padding-left: 14px;
+  padding-left: 12px;
 }
 
 .procure-cockpit__basket-summary {
@@ -1862,7 +1862,7 @@
   display: grid;
   gap: 2px;
   min-width: 0;
-  padding: 9px 12px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit__basket-summary > div + div {
@@ -1913,7 +1913,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 10px;
+  padding: 8px;
   scrollbar-width: thin;
 }
 
@@ -1930,7 +1930,7 @@
   display: flex;
   gap: 8px;
   justify-content: space-between;
-  padding: 9px 10px;
+  padding: 8px 8px;
 }
 
 .procure-cockpit__basket-producer {
@@ -1950,13 +1950,13 @@
 }
 
 .procure-cockpit__basket-lines {
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .procure-cockpit__basket-line {
   display: grid;
-  gap: 7px;
-  padding: 9px 0;
+  gap: 8px;
+  padding: 8px 0;
 }
 
 .procure-cockpit__basket-line + .procure-cockpit__basket-line {
@@ -1970,7 +1970,7 @@
 .procure-cockpit__basket-line-controls {
   align-items: end;
   display: grid;
-  gap: 7px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) 68px 28px;
   padding-left: 36px;
 }
@@ -1978,7 +1978,7 @@
 .procure-cockpit__basket-line-total,
 .procure-cockpit__basket-qty {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -1993,9 +1993,9 @@
   background: var(--mantine-color-gray-0);
   border-top: 1px solid var(--mantine-color-gray-2);
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
-  padding: 9px 10px;
+  padding: 8px 8px;
 }
 
 .procure-cockpit__basket-group-total {
@@ -2033,7 +2033,7 @@
 
 .procure-dashboard__analysis {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -2044,7 +2044,7 @@
 
 .console-frame .procure-dashboard .procure-dashboard__panel {
   border: 1px solid var(--mantine-color-gray-2);
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .console-frame .procure-dashboard .procure-dashboard__summary {
@@ -2057,10 +2057,10 @@
 }
 
 .basket-sales-workspace { padding: 0 0 8px; }
-.basket-sales-section-heading { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--mantine-color-gray-2); }
+.basket-sales-section-heading { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--mantine-color-gray-0); border-bottom: 1px solid var(--mantine-color-gray-2); }
 .basket-sales-section-heading .app-section-title { font: 500 13px/1.4 var(--font-mono); }
 .basket-sales-selection { margin: 0 8px; }
-.basket-sales-workspace .basket-supply-total-item { min-height: 0; padding: 8px 10px; }
+.basket-sales-workspace .basket-supply-total-item { min-height: 0; padding: 8px 8px; }
 .basket-sales-workspace .mantine-Checkbox-label { font: 500 12px/1.4 var(--font-sans); }
 
 .basket-sales-section-heading { flex-wrap: wrap; padding: 8px; }
@@ -2085,7 +2085,7 @@
 .budget-cart-tab .budget-cart-filter-row > .mantine-InputWrapper-root { flex: 0 1 160px; min-width: 0; }
 .budget-cart-tab .budget-cart-filter-row > .app-filter-field { flex: 0 0 auto; }
 .budget-cart-tab .budget-cart-submit { margin-left: 0; }
-.budget-cart-tab .budget-cart-filter-note { align-self: auto; padding: 0 12px 10px; }
+.budget-cart-tab .budget-cart-filter-note { align-self: auto; padding: 0 12px 8px; }
 .budget-cart-tab .budget-cart-filter-note .mantine-Text-root { white-space: normal; font-size: 12px; }
 .procure-cockpit .procure-cockpit-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
 .procure-cockpit .procure-cockpit-bar__filters { display: contents; }
@@ -2105,7 +2105,7 @@
   .basket-supply-command-bar.is-split .data-table-layout-control .mantine-Button-section,
   .procure-cockpit-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
   .procure-cockpit .procure-cockpit-bar__search,
-  .procure-cockpit .procure-cockpit-bar__producer { flex-basis: 150px; width: 150px; }
+  .procure-cockpit .procure-cockpit-bar__producer { flex-basis: 150px; width: 148px; }
 }
 @media (max-width: 600px) {
   .procure-cockpit .procure-cockpit-bar > * { max-width: 100%; }

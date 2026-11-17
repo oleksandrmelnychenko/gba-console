@@ -190,7 +190,7 @@ function WarehouseUkrainePageContent() {
   }
 
   return (
-    <Stack className="warehouse-ukraine-page console-table-page" gap={6}>
+    <Stack className="warehouse-ukraine-page console-table-page" gap={8}>
       <div className="warehouse-ukraine-shell console-table-shell">
         <div className="warehouse-ukraine-tabs pill-tabs app-screen-tabs">
           {visibleTabs.map((tab) => {
@@ -205,7 +205,7 @@ function WarehouseUkrainePageContent() {
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.value)}
               >
-                <Group gap={6} wrap="nowrap" align="center">
+                <Group gap={8} wrap="nowrap" align="center">
                   <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
                   {tab.label}
                   {tab.showBadge && editingTotal > 0 && (

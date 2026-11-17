@@ -21,14 +21,14 @@
 .invoice-select-card__supplier .app-table-chip-label { overflow-wrap: anywhere; }
 .invoice-select-card__meta {
   display: grid;
-  gap: 10px 20px;
+  gap: 8px 20px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .invoice-select-card__meta > span {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 6px;
+  gap: 4px 8px;
   min-width: 0;
 }
 .invoice-select-card__meta .mantine-Text-root {
@@ -43,7 +43,7 @@
 .invoice-assignment-modal .mantine-Modal-body { background: var(--mantine-color-gray-0); }
 .invoice-assignment-modal__list {
   min-height: 0;
-  max-height: calc(100dvh - 230px);
+  max-height: calc(100dvh - 228px);
   overflow-y: auto;
 }
 @media (max-width: 480px) {

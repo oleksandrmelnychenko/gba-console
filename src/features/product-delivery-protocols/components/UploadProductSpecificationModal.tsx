@@ -101,8 +101,8 @@ export function UploadProductSpecificationModal({
       title={<span>{t('Завантаження митних кодів')}</span>}
       onClose={closeModal}
     >
-      <Stack className="app-compact-form customs-import-layout" gap={10}>
-        <Stack className="customs-import-fields" gap={10}>
+      <Stack className="app-compact-form customs-import-layout" gap={8}>
+        <Stack className="customs-import-fields" gap={8}>
           {validationError && (
             <Alert color="red" icon={<CircleAlert size={16} />} variant="light">
               {validationError}
@@ -111,7 +111,7 @@ export function UploadProductSpecificationModal({
 
           <section className="customs-import-section" aria-label={t('Файл та дата')}>
             <Text className="app-section-title">{t('Файл та дата')}</Text>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
               <AppDateInput
                 aria-required="true"
                 disabled={isLoading}
@@ -141,7 +141,7 @@ export function UploadProductSpecificationModal({
           <section className="customs-import-section" aria-label={t('Колонки імпорту')}>
             <Text className="app-section-title">{t('Колонки імпорту')}</Text>
             <Text className="customs-import-hint">{t('Номери колонок у файлі')}</Text>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={10}>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={8}>
               <NumberInput
                 hideControls
                 allowDecimal={false}
@@ -210,7 +210,7 @@ export function UploadProductSpecificationModal({
 
           <section className="customs-import-section" aria-label={t('Рядки імпорту')}>
             <Text className="app-section-title">{t('Рядки імпорту')}</Text>
-            <SimpleGrid cols={2} spacing={10}>
+            <SimpleGrid cols={2} spacing={8}>
               <NumberInput
                 hideControls
                 allowDecimal={false}

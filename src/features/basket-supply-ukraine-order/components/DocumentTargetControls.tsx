@@ -53,8 +53,8 @@ export function DocumentTargetControls({
 
   return (
     <Card className="app-section-card" withBorder padding={12}>
-      <Stack gap={10}>
-        <Group align="center" gap={10} wrap="wrap">
+      <Stack gap={8}>
+        <Group align="center" gap={8} wrap="wrap">
           <SegmentedControl
             data={documentTypeOptions}
             disabled={disabled}

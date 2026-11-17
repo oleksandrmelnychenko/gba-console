@@ -4,7 +4,7 @@
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: 8px 8px;
   padding: 8px 12px 0;
 }
 
@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
 }
 
@@ -51,7 +51,7 @@
 .procure-cockpit .procure-cockpit-bar :is(.registry-caption-action, .data-table-layout-control) {
   width: auto;
   min-width: 32px;
-  padding-inline: 10px;
+  padding-inline: 8px;
 }
 
 .procure-cockpit .procure-cockpit-bar :is(.registry-caption-action, .data-table-layout-control) .mantine-Button-label {
@@ -59,7 +59,7 @@
 }
 
 .procure-cockpit .procure-cockpit-bar :is(.registry-caption-action, .data-table-layout-control) .mantine-Button-section[data-position='left'] {
-  margin-inline-end: 6px;
+  margin-inline-end: 8px;
 }
 
 .procure-cockpit .procure-cockpit-bar :is(.data-table-toolbar, .data-table-toolbar-left) {
@@ -85,11 +85,11 @@
 
   .procure-cockpit .procure-cockpit-bar :is(.procure-cockpit-bar__search, .procure-cockpit-bar__producer) {
     flex-basis: 150px;
-    min-width: 150px;
+    min-width: 148px;
   }
 
   .procure-cockpit .procure-cockpit-bar .mantine-Button-root {
-    padding-inline: 10px;
+    padding-inline: 8px;
   }
 
   .procure-cockpit .procure-cockpit-bar :is(.registry-caption-action, .data-table-layout-control, .procure-cockpit-bar__sessions) {
@@ -144,17 +144,17 @@
 }
 
 .procure-cockpit .procure-cockpit__overview {
-  gap: 10px 20px;
-  padding: 10px 12px;
+  gap: 8px 20px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit .procure-cockpit__freshness {
-  padding: 6px 12px 0;
+  padding: 8px 12px 0;
 }
 
 .procure-cockpit .procure-cockpit__metrics {
   flex: 1 1 auto;
-  gap: 10px 24px;
+  gap: 8px 24px;
 }
 
 .procure-cockpit .procure-metric > span::before,
@@ -176,12 +176,12 @@
 }
 
 .procure-cockpit .procure-cockpit__charts {
-  padding: 10px 12px 0;
+  padding: 8px 12px 0;
 }
 
 .procure-cockpit .procure-cockpit__charts .mantine-Card-root {
   min-width: 0;
-  padding: 10px 12px;
+  padding: 8px 12px;
   box-shadow: none;
 }
 
@@ -194,8 +194,8 @@
 
 .procure-cockpit .procure-cockpit__workspace {
   min-width: 0;
-  gap: 10px;
-  padding: 10px 12px 12px;
+  gap: 8px;
+  padding: 8px 12px 12px;
 }
 
 .procure-cockpit .procure-cockpit__table {
@@ -213,23 +213,23 @@
   left: 0;
   width: 100cqw;
   max-width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit .procure-proof__header {
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit .procure-proof__decision {
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .procure-cockpit .procure-proof__metric,
 .procure-cockpit .procure-proof__section {
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit .procure-proof__section > .app-section-title {
@@ -239,7 +239,7 @@
 
 .procure-cockpit :is(.procure-proof__facts, .procure-proof__forecast-facts) {
   gap: 8px 12px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .procure-cockpit .procure-proof__fact {
@@ -259,7 +259,7 @@
 .procure-cockpit :is(.procure-proof__manual-note, .procure-proof__alternative) {
   border-left: 0;
   padding-left: 0;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .procure-cockpit .procure-cockpit__basket {
@@ -282,7 +282,7 @@
 
 .procure-cockpit .procure-cockpit__basket-summary > div {
   gap: 4px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .procure-cockpit .procure-cockpit__basket-summary > div > strong {
@@ -303,7 +303,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 12px;
+  gap: 8px 12px;
   padding-right: 40px;
 }
 
@@ -364,7 +364,7 @@
 .procure-cart-sheet .procure-cockpit__basket-body {
   flex: none;
   overflow: visible;
-  padding: 10px 0 0;
+  padding: 8px 0 0;
 }
 
 .procure-cart-sheet :is(.procure-cockpit__basket-group-head, .procure-cockpit__basket-group-footer) {
@@ -409,7 +409,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
   align-items: center;
   gap: 8px 20px;
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 .procure-cart-sheet .procure-cockpit__basket-line > .mantine-Text-root {
@@ -493,7 +493,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
-    gap: 10px;
+    gap: 8px;
   }
 
   .procure-cockpit .procure-metric > strong {

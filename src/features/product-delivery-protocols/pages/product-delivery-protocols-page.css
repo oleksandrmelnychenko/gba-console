@@ -47,21 +47,21 @@
 .product-delivery-protocols-filter-dropdown {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: var(--app-radius-md);
   max-width: calc(100vw - 24px);
   min-width: var(--popover-anchor-width);
   padding: 4px;
 }
 
 .product-delivery-protocols-filter-dropdown .product-delivery-protocols-filter-option {
-  border-radius: 6px;
+  border-radius: var(--app-radius-sm);
   color: var(--mantine-color-gray-9);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
-  min-height: 30px;
-  padding: 7px 8px;
+  min-height: 28px;
+  padding: 8px 8px;
 }
 
 .product-delivery-protocols-filter-dropdown .product-delivery-protocols-filter-option:is(:hover, [data-combobox-selected], [aria-selected='true'], [data-checked]) {
@@ -109,7 +109,7 @@
 .product-delivery-protocols-icon-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -176,7 +176,7 @@
   align-items: flex-start;
   display: inline-flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 

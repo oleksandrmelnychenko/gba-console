@@ -1,6 +1,6 @@
 .supply-payment-sheet-title {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -43,7 +43,7 @@
 .supply-payment-section-card.mantine-Card-root {
   border-color: var(--mantine-color-gray-2);
   box-shadow: none;
-  padding: 14px 16px;
+  padding: 12px 16px;
 }
 
 .supply-payment-section {
@@ -94,7 +94,7 @@
 
 .supply-payment-detail-row {
   align-items: baseline;
-  column-gap: 14px;
+  column-gap: 12px;
   display: grid;
   grid-template-columns: minmax(120px, 0.95fr) minmax(0, 1.25fr);
   min-width: 0;
@@ -183,7 +183,7 @@
 @media (max-width: 720px) {
   .supply-payment-detail-row {
     grid-template-columns: minmax(0, 1fr);
-    row-gap: 3px;
+    row-gap: 4px;
   }
 
   .supply-payment-detail-row > strong,

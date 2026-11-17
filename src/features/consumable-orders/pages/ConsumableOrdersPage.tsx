@@ -190,7 +190,7 @@ export function ConsumableOrdersPage() {
   }
 
   return (
-    <Stack className="consumable-orders-page console-table-page" gap={6}>
+    <Stack className="consumable-orders-page console-table-page" gap={8}>
       <div className="console-table-shell">
         <div className="app-filter-bar consumable-orders-command-bar">
           <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to); setPage(1); setOrders([]); setTotalOrders(undefined) }} />

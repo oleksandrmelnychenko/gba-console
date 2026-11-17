@@ -13,9 +13,9 @@
 
 .consumable-order-form-hero {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.72fr);
-  padding: 14px;
+  padding: 12px;
 }
 
 .consumable-order-form-hero__main {
@@ -36,8 +36,8 @@
 .consumable-order-form-title {
   align-items: center;
   display: flex;
-  gap: 10px;
-  margin-top: 7px;
+  gap: 8px;
+  margin-top: 8px;
   min-width: 0;
 }
 
@@ -92,8 +92,8 @@
 .consumable-order-form-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 9px;
-  margin-top: 9px;
+  gap: 8px 8px;
+  margin-top: 8px;
   min-width: 0;
 }
 
@@ -141,7 +141,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -161,7 +161,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 10px;
   font-weight: 500;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .consumable-order-form-section {
@@ -177,7 +177,7 @@
   display: flex;
   justify-content: space-between;
   min-width: 0;
-  padding: 11px 14px 12px;
+  padding: 12px 12px 12px;
   position: relative;
 }
 
@@ -186,14 +186,14 @@
 .consumable-order-form-section-header__main {
   align-items: center;
   display: flex;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
 .consumable-order-form-section-header__icon {
   border-radius: 999px;
-  height: 30px;
-  width: 30px;
+  height: 28px;
+  width: 28px;
 }
 
 .consumable-order-form-section-header strong {
@@ -215,7 +215,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  padding: 16px 14px 14px;
+  padding: 16px 12px 12px;
 }
 
 .consumable-order-form-control {
@@ -267,7 +267,7 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .consumable-order-form-control .mantine-Input-input,
@@ -301,26 +301,26 @@
 
 .consumable-order-form-add-button {
   height: 28px;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .consumable-order-form-muted-panel {
   color: var(--mantine-color-gray-5);
   font-size: 12px;
   font-weight: 560;
-  padding: 16px 14px;
+  padding: 16px 12px;
 }
 
 .consumable-order-form-items {
   display: grid;
   gap: 12px;
-  padding: 14px 14px 0;
+  padding: 12px 12px 0;
 }
 
 .consumable-order-form-items__body {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -332,7 +332,7 @@
   display: grid;
   gap: 12px;
   min-width: 0;
-  padding: 10px;
+  padding: 8px;
   transition:
     border-color 140ms ease,
     transform 140ms ease;
@@ -350,7 +350,7 @@
 .consumable-order-form-item-top {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
 }
@@ -358,14 +358,14 @@
 .consumable-order-form-product-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .consumable-order-form-product-icon {
   border-radius: 999px;
-  height: 30px;
-  width: 30px;
+  height: 28px;
+  width: 28px;
 }
 
 .consumable-order-form-product-copy {
@@ -397,7 +397,7 @@
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -406,7 +406,7 @@
 .consumable-order-form-item-details {
   align-items: center;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) minmax(330px, 0.92fr);
   min-width: 0;
 }
@@ -415,7 +415,7 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -505,7 +505,7 @@
   align-items: flex-end;
   display: grid;
   gap: 2px;
-  min-width: 74px;
+  min-width: 72px;
   text-align: right;
 }
 
@@ -541,13 +541,13 @@
   gap: 8px;
   grid-template-columns: repeat(3, minmax(0, 150px));
   justify-content: flex-end;
-  padding: 12px 14px 14px;
+  padding: 12px 12px 12px;
 }
 
 .consumable-order-form-documents {
   display: grid;
   gap: 12px;
-  padding: 16px 14px 14px;
+  padding: 16px 12px 12px;
 }
 
 .consumable-order-form-upload {
@@ -564,10 +564,10 @@
   align-items: center;
   border-bottom: 1px solid var(--mantine-color-gray-1);
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: 30px minmax(0, 1fr) 32px;
   min-height: 48px;
-  padding: 7px 0;
+  padding: 8px 0;
 }
 
 .consumable-order-form-document-row:last-child {
@@ -580,8 +580,8 @@
 
 .consumable-order-form-document-icon {
   border-radius: 999px;
-  height: 30px;
-  width: 30px;
+  height: 28px;
+  width: 28px;
 }
 
 .consumable-order-form-document-copy {
@@ -615,7 +615,7 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px;
 }
 
 .consumable-order-item-quantity-input .mantine-Input-input {
@@ -630,7 +630,7 @@
   font-weight: 500;
   justify-content: flex-end;
   line-height: 1;
-  max-width: 78px;
+  max-width: 76px;
   min-width: 0;
   overflow: hidden;
   padding-right: 12px;

@@ -614,7 +614,7 @@ export function NewMergedServiceForm({
         </NewMergedServiceSection>
 
         <NewMergedServiceSection title={t('Платіжні задачі')}>
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Checkbox
               checked={values.createTask}
               className="new-merged-service-checkbox"

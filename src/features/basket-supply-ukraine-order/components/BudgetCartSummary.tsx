@@ -68,7 +68,7 @@ export function BudgetCartSummary({
             <SummaryItem label={t('Відкладено')} money value={countFormatter.format(plan.deferred_count)} />
           </div>
 
-          <Stack className="budget-cart-summary__progress" gap={5}>
+          <Stack className="budget-cart-summary__progress" gap={4}>
             <Group justify="space-between">
               <Text c="gray.9" size="xs">
                 {t('Використання бюджету')}

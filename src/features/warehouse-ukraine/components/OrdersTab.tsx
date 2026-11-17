@@ -221,7 +221,7 @@ export function OrdersTab({ canOpenPlacement }: { canOpenPlacement: boolean }) {
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <Stack className="warehouse-ukraine-tab" gap={6}>
+    <Stack className="warehouse-ukraine-tab" gap={8}>
       <div className="warehouse-ukraine-tab-content">
         <div className="app-filter-bar warehouse-ukraine-filter-bar is-orders">
             <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />

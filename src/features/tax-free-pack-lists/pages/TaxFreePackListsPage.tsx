@@ -243,10 +243,10 @@ export function TaxFreePackListsPage() {
   }
 
   return (
-    <Stack className="tax-free-pack-lists-page" gap={6}>
+    <Stack className="tax-free-pack-lists-page" gap={8}>
       <Card className="app-data-card tax-free-pack-lists-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-pack-lists-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields tax-free-pack-lists-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields tax-free-pack-lists-filter-row">
             <ToolbarDateRangeFilter from={filters.from} to={filters.to} onChange={(range) => dispatchList({ type: 'filtersReset', filters: { ...filters, ...range } })} />
             <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>

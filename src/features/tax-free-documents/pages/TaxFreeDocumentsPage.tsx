@@ -632,10 +632,10 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
   } = model
 
   return (
-    <Stack className="tax-free-documents-page" gap={6}>
+    <Stack className="tax-free-documents-page" gap={8}>
       <Card className="app-data-card tax-free-documents-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar tax-free-documents-filter-bar">
-          <Group align="flex-end" gap={10} wrap="nowrap" className="app-filter-fields tax-free-documents-filter-row">
+          <Group align="flex-end" gap={8} wrap="nowrap" className="app-filter-fields tax-free-documents-filter-row">
             <ToolbarDateRangeFilter from={dateFrom} to={dateTo} onChange={(range) => { setPage(1); setDateFrom(range.from); setDateTo(range.to) }} />
             <Select
               classNames={{ dropdown: 'tax-free-documents-toolbar-dropdown' }}
@@ -1575,7 +1575,7 @@ function TaxFreeStatusPanel({
 
       <Stack gap="xs">
         {getStatusTimeline(document).map((item) => (
-          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'orange-0' : 'gray.0'} style={{ borderRadius: 6 }}>
+          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'orange-0' : 'gray.0'} style={{ borderRadius: 8 }}>
             <Text fw={item.active ? 700 : 500}>{getTaxFreeStatusLabel(item.status)}</Text>
             <Text size="sm" c="dimmed">
               {formatDateTime(item.date) || '---'}

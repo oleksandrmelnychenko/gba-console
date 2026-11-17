@@ -698,7 +698,7 @@ function SupplyUkraineOrdersPageContent() {
   } = useSupplyUkraineOrdersPageController()
 
   return (
-    <Stack className="supply-ukraine-orders-page" gap={6}>
+    <Stack className="supply-ukraine-orders-page" gap={8}>
       <OrdersListCard
         canPrint={createPermissions.canPrint}
         createPermissions={createPermissions}
