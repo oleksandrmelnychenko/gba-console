@@ -393,7 +393,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             <TextInput
               className="product-history-search-filter"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}

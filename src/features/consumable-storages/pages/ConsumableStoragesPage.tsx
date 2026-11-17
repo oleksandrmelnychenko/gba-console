@@ -241,7 +241,7 @@ function ConsumableStoragesPageContent() {
         <div className="app-filter-bar consumable-storages-filter-bar">
           <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields consumable-storages-filter-row">
             <TextInput
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={16} />}
               placeholder={t('Пошук')}
               value={searchValue}
@@ -577,7 +577,7 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
         <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields consumable-storage-detail-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
-        label={t('Пошук')}
+        aria-label={t('Пошук')}
         placeholder={t('Назва або артикул')}
         value={searchValue}
         className="consumable-storages-search"
@@ -865,7 +865,7 @@ function DeprecatedConsumableOrdersPanel({
           <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { setFromDate(from); setToDate(to) }} />
           <TextInput
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Номер, артикул, товар або отримувач')}
             value={searchValue}
             className="consumable-storages-search"

@@ -242,7 +242,7 @@ function AccountingBanksPageContent() {
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Назва, МФО, ЄДРПОУ, місто, телефон або адреса')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}

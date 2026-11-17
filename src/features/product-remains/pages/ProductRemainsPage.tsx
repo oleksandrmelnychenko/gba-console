@@ -805,7 +805,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             {activeTab === 'products' && (
               <TextInput
                 leftSection={<Search size={16} />}
-                label={t('Пошук товару')}
+                aria-label={t('Пошук товару')}
                 placeholder={t('Артикул')}
                 value={productSearchDraft}
                 className="product-remains-search-filter"

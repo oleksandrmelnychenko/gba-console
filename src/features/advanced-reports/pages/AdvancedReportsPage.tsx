@@ -450,7 +450,7 @@ function AdvancedReportsPageContent() {
               <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={({ from, to }) => { changeFromDate(from); changeToDate(to) }} />
               <TextInput
                 leftSection={<Search size={16} />}
-                label={t('Пошук')}
+                aria-label={t('Пошук')}
                 placeholder={t('Номер, організація, отримувач або коментар')}
                 value={searchValue}
                 className="advanced-reports-search"

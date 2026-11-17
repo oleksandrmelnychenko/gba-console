@@ -216,7 +216,7 @@ function OnlineShopClientsPageContent() {
           <TextInput
             className="online-shop-clients-search"
             leftSection={<Search size={16} />}
-            label={t('Пошук клієнта')}
+            aria-label={t('Пошук клієнта')}
             placeholder={t('Клієнт, телефон або email')}
             value={searchValue}
             onChange={(event) => {

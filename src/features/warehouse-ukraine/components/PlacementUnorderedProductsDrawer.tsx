@@ -237,7 +237,7 @@ function AddUnorderedProductForm({
     <Stack gap="sm">
       <TextInput
         autoFocus
-        label={t('Пошук по товару')}
+        aria-label={t('Пошук по товару')}
         leftSection={<Search size={16} />}
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}

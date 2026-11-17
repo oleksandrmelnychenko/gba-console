@@ -186,7 +186,7 @@ function CompanyCarsPageContent() {
             className="company-cars-search-input"
             size="sm"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Місце вводу для пошуку')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}

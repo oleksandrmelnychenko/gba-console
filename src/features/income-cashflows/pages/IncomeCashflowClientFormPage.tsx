@@ -1154,7 +1154,7 @@ function IncomeCashflowClientFormPageContent() {
                 data={payerOptions}
                 disabled={isLoading || isResolvingCounterparty || isSaving}
                 filter={({ options }) => options}
-                label={t('Пошук за платниками')}
+                aria-label={t('Пошук за платниками')}
                 placeholder={t('Почніть вводити платника')}
                 value={form.payerSearch}
                 onChange={handlePayerSearchChanged}

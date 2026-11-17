@@ -45,7 +45,7 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
     <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
       <TextInput
         leftSection={<Search size={16} />}
-        label={t('Пошук')}
+        aria-label={t('Пошук')}
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}

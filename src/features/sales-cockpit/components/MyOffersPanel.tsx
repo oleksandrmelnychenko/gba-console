@@ -302,7 +302,7 @@ export function MyOffersPanel() {
         </div>
         <div className="app-filter-field cockpit-offers-search">
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Номер або клієнт')}
             value={search}

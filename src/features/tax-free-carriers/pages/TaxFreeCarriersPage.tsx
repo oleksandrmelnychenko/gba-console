@@ -259,7 +259,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
         <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields tax-free-carriers-filter-row">
           <TextInput
             size="sm"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} />}
             placeholder={t('Прізвище')}
             value={searchDraft}

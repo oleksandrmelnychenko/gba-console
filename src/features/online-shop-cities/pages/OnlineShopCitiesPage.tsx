@@ -365,7 +365,7 @@ function OnlineShopCitiesRegistry({
         <TextInput
           className="online-shop-cities-search-input"
           leftSection={<Search size={15} />}
-          label={t('Пошук міста')}
+          aria-label={t('Пошук міста')}
           placeholder={t('Назва UA, RU або UID')}
           value={searchDraft}
           onChange={(event) => onSearchChange(event.currentTarget.value)}

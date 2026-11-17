@@ -258,7 +258,7 @@ export function AccountableExpensesPage() {
           <TextInput
             className="accountable-expenses-search-input"
             leftSection={<Search size={15} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Номер, товар, відповідальний')}
             value={searchValue}
             onChange={(event) => {

@@ -267,7 +267,7 @@ function SupplierOrganizationsPageContent() {
           <TextInput
             className="supplier-organizations-search-input"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Назва, код, телефон або email')}
             value={searchValue}
             onChange={(event) => updateSearchValue(event.currentTarget.value)}

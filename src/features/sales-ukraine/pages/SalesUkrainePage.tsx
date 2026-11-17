@@ -1147,7 +1147,7 @@ function SalesUkrainePageContent() {
               />
               <TextInput
                 className="sales-filter-search"
-                label={t('Пошук')}
+                aria-label={t('Пошук')}
                 leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 size="sm"

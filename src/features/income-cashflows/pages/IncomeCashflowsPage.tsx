@@ -716,7 +716,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
             <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { onSetFromDate(range.from); onSetToDate(range.to) }} />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, платник, рахунок або коментар')}
               value={searchValue}
               onChange={(event) => onSetSearchValue(event.currentTarget.value)}

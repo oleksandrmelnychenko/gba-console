@@ -243,7 +243,7 @@ function NewEcommerceClientsPageContent() {
         <div className="app-filter-bar new-ecommerce-clients-filter-bar">
           <TextInput
             className="new-ecommerce-clients-search"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} />}
             placeholder={t('ПІБ, телефон або email')}
             value={searchValue}

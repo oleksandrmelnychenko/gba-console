@@ -406,7 +406,7 @@ function CurrencyConvertorsPageContent() {
           <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields currency-convertors-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t("Ім'я, прізвище, по батькові або телефон")}
               size="sm"
               className="currency-convertors-search"

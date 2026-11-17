@@ -402,7 +402,7 @@ function TransportersPageContent({
           <div className="transporters-command-search">
             <TextInput
               className="transporters-search-input"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={15} />}
               placeholder={t('Пошук перевізника')}
               value={search}

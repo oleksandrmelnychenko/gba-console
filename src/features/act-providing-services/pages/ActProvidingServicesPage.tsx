@@ -322,7 +322,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             <TextInput
               className="act-services-search-input"
               leftSection={<Search size={15} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, акт, інвойс, постачальник')}
               value={searchValue}
               onChange={(event) => {

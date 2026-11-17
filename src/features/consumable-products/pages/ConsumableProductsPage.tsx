@@ -332,7 +332,7 @@ function ConsumableProductsPageContent() {
           <TextInput
             className="consumable-products-search-input"
             leftSection={<Search size={15} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Категорія або товар')}
             value={searchValue}
             onChange={(event) => {

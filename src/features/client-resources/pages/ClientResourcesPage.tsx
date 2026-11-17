@@ -4864,7 +4864,7 @@ function PanelToolbar({
         {onSearchChange ? (
           <TextInput
             className="client-resources-search"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} strokeWidth={1.8} />}
             onChange={(event) => {
               pagination?.onReset()

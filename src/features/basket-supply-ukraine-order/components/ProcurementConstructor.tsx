@@ -667,7 +667,6 @@ function ProcurementConstructorContent() {
             </div>
             <TextInput
               aria-label={t('Пошук у плані')}
-              label={t('Пошук у плані')}
               leftSection={<Search size={15} />}
               onChange={(event) => setSearchQuery(event.currentTarget.value)}
               placeholder={t('Товар, код або виробник')}

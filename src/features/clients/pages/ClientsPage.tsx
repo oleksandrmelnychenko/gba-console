@@ -1083,7 +1083,7 @@ function ClientsFilterToolbar({
         ref={searchInputRef}
         size="sm"
         leftSection={<Search size={16} />}
-        label={t('Пошук')}
+        aria-label={t('Пошук')}
         placeholder={t('Введіть значення')}
         rightSection={isTableBusy ? <Loader color="orange" size={14} /> : undefined}
         value={searchValue}

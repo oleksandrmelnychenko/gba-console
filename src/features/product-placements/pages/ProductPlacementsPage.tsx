@@ -608,7 +608,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               className="product-placements-search"

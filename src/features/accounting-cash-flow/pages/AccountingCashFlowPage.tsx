@@ -849,7 +849,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => updateFilterDraft({ ...filterDraft, ...range })} />
             <TextInput
               className="accounting-cash-flow-search"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={14} />}
               placeholder={t('Номер або документ')}
               value={itemSearch}

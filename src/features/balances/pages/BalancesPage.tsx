@@ -255,7 +255,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
         <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields balances-filter-row">
           <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Назва')}
             value={filterDraft.name}

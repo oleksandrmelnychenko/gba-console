@@ -268,7 +268,7 @@ function OrganizationClientsPageContent({ permissions }: { permissions: Organiza
           <TextInput
             className="organization-clients-search-input"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Назва організації')}
             value={searchDraft}
             onChange={(event) => updateSearch(event.currentTarget.value)}

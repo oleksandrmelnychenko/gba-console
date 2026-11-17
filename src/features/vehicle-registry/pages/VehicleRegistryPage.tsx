@@ -320,7 +320,7 @@ export function VehicleRegistryPage() {
           <div className="app-filter-bar vehicle-registry-filter-bar">
             <TextInput
               className="vehicle-registry-search"
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               leftSection={<Search size={15} />}
               placeholder={t('VIN, номер, власник, модель')}
               value={searchDraft}

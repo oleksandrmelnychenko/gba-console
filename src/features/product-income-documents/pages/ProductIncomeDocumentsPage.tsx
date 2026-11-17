@@ -696,7 +696,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Номер, постачальник або коментар')}
               value={searchDraft}
               className="product-income-documents-search-filter"

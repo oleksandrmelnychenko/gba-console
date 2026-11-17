@@ -818,7 +818,7 @@ function SalesOnlineShopOrdersPage() {
               <ToolbarDateRangeFilter from={filterDraft.from} to={filterDraft.to} onChange={(range) => applyFilters({ ...filterDraft, ...range })} />
               <TextInput
                 className="sales-filter-search"
-                label={t('Пошук')}
+                aria-label={t('Пошук')}
                 leftSection={<Search size={16} />}
                 placeholder={t('Товар або номер продажу')}
                 value={filterDraft.value}

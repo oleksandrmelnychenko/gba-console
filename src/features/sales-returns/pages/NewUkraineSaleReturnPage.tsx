@@ -788,7 +788,7 @@ export function NewUkraineSaleReturnPage() {
 
           <TextInput
             className="new-sale-return-search-input"
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={15} />}
             placeholder={t('Номер, клієнт, договір або продаж')}
             value={searchDraft}

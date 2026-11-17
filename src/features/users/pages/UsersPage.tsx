@@ -213,7 +213,7 @@ function UsersPageContent() {
           <TextInput
             className="users-search-input"
             leftSection={<Search size={15} />}
-            label={t('Пошук користувача')}
+            aria-label={t('Пошук користувача')}
             placeholder={t('ПІБ, email, телефон')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}

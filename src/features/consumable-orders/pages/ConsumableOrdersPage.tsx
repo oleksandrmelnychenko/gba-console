@@ -198,7 +198,7 @@ export function ConsumableOrdersPage() {
           <TextInput
             className="consumable-orders-search-input"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Номер, постачальник, склад або коментар')}
             value={searchValue}
             onChange={(event) => {

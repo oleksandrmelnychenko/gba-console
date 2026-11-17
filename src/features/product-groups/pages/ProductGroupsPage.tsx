@@ -253,7 +253,7 @@ function ProductGroupsPageContent() {
           <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-groups-filter-row">
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Назва або опис')}
               value={searchDraft}
               onChange={(event) => updateSearch(event.currentTarget.value)}

@@ -324,7 +324,7 @@ function CounterpartyGroupsPageContent() {
               <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
                 <TextInput
                   className="counterparty-groups-search"
-                  label={t('Пошук контрагента')}
+                  aria-label={t('Пошук контрагента')}
                   leftSection={<Search size={16} />}
                   placeholder={t('Назва, ЄДРПОУ або код')}
                   value={memberSearchDraft}

@@ -1845,7 +1845,7 @@ function ResaleDetailContent() {
         </Group>
         <div className="console-table-command-bar resale-detail-command-bar">
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             leftSection={<Search size={16} />}
             placeholder={t('Код, назва, специфікація або розміщення')}
             value={itemSearch}

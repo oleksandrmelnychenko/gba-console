@@ -169,7 +169,7 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
             className="console-table-search-input"
             size="sm"
             leftSection={<Search size={16} />}
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
             placeholder={t('Введіть назву статті')}
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}

@@ -977,7 +977,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             />
             <TextInput
               leftSection={<Search size={16} />}
-              label={t('Пошук')}
+              aria-label={t('Пошук')}
               placeholder={t('Код або назва товару')}
               value={searchDraft}
               className="product-storages-search-filter"

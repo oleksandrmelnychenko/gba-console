@@ -260,7 +260,7 @@ export function MyClientsPanel({ onContact, onTasks, revision = 0 }: { onContact
           onChange={(value) => { setSegment((value ?? 'all') as CockpitClientSegment); setPage(1) }}
         />
         <TextInput
-          label={t('Пошук клієнта')}
+          aria-label={t('Пошук клієнта')}
           leftSection={<Search size={15} />}
           placeholder={t('Назва, телефон або email')}
           value={search}

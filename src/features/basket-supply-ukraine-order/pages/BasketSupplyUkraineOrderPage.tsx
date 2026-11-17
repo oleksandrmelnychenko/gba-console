@@ -740,7 +740,7 @@ function BasketCartWorkflow() {
           <div className="app-filter-bar basket-supply-command-bar is-split">
             <SimpleGrid className="app-filter-fields basket-supply-filters" cols={3} spacing={8}>
               <TextInput
-                label={t('Пошук по товару')}
+                aria-label={t('Пошук по товару')}
                 leftSection={SEARCH_ICON}
                 placeholder={t('Код Виробника')}
                 value={filters.search}
