@@ -35,6 +35,12 @@ describe('measureActionColumnFitWidth', () => {
     expect(measureActionColumnFitWidth(renderCells([[100], [100, 128]]), 'actions')).toBe(68)
   })
 
+  it('fits the typical row, not one rare row with extra actions', () => {
+    // 39 rows with two icons, one row with four: the column stays at two icons.
+    const rows = [...Array.from({ length: 39 }, () => [100, 128]), [100, 128, 156, 184]]
+    expect(measureActionColumnFitWidth(renderCells(rows), 'actions')).toBe(68)
+  })
+
   it('never goes below one 40px action slot', () => {
     const root = renderCells([[100]])
     root.querySelector('button')!.getBoundingClientRect = () => rect(100, 16)

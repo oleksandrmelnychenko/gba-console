@@ -361,10 +361,20 @@
 .data-table-row-actions {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   justify-content: center;
   min-width: 0;
   white-space: nowrap;
+}
+
+/* The actions column is fitted to the typical row (dataTableActions.tsx); a
+   rare row with more actions wraps its icons instead of widening the column.
+   Mantine Group writes --group-wrap inline, hence !important. */
+.data-table-actions-column .mantine-Group-root {
+  --group-wrap: wrap !important;
+  flex-wrap: wrap !important;
+  row-gap: 4px;
 }
 
 .data-table-row-action-slot {
