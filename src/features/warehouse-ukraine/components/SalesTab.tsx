@@ -25,7 +25,7 @@ import {
   getWarehouseUkraineSales,
   updateWarehouseUkraineSale,
 } from '../api/salesApi'
-import { printAfterPersistingStatus } from '../invoicePrintFlow'
+import { printFailureMessage, printThenPersistStatus } from '../invoicePrintFlow'
 import { getInvoicePrintStatus, hasApprovedInvoiceEdits } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -202,7 +202,7 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
   }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
 
   const runPrintDocument = useCallback(
-    async (loader: () => Promise<WarehouseUkraineExportDocument>) => {
+    async (loader: () => Promise<WarehouseUkraineExportDocument>): Promise<boolean> => {
       const requestId = downloadRequestRef.current + 1
       downloadRequestRef.current = requestId
       setDownloadOpened(true)
@@ -217,12 +217,14 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
           setDownloadDocument(hasWarehouseDocumentUrl(document) ? document : null)
           setDownloadError(hasWarehouseDocumentUrl(document) ? null : t('Немає документів для завантаження'))
         }
+
+        return hasWarehouseDocumentUrl(document)
       } catch (exportError) {
         if (downloadRequestRef.current === requestId) {
-          setDownloadError(
-            exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'),
-          )
+          setDownloadError(printFailureMessage(exportError, t('Не вдалося сформувати документ')))
         }
+
+        return false
       } finally {
         if (downloadRequestRef.current === requestId) {
           setDownloading(false)
@@ -232,7 +234,7 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
     [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
   )
 
-  const markSaleBeforePrint = useCallback(
+  const markSalePrinted = useCallback(
     async (sale: Sale, patch: Pick<Sale, 'IsPrinted' | 'IsPrintedActProtocolEdit'>) => {
       const optimisticSale = {
         ...sale,
@@ -283,14 +285,14 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
       }
 
       if (sale.NetUid) {
-        void printAfterPersistingStatus({
+        void printThenPersistStatus({
           loadDocument: () => runPrintDocument(() => getSalePrintDocument(sale.NetUid as string)),
-          persistStatus: () => markSaleBeforePrint(sale, { IsPrinted: true }),
+          persistStatus: () => markSalePrinted(sale, { IsPrinted: true }),
           requiresStatusUpdate: canUpdatePrintStatus && (!sale.IsPrinted || hasApprovedInvoiceEdits(sale)),
         })
       }
     },
-    [canPrintInvoice, canUpdatePrintStatus, markSaleBeforePrint, runPrintDocument],
+    [canPrintInvoice, canUpdatePrintStatus, markSalePrinted, runPrintDocument],
   )
 
   const printActProtocolEdit = useCallback(
@@ -300,16 +302,16 @@ function useSalesTabModel(canPrintInvoice: boolean, canPrintEditAct: boolean, ca
       }
 
       if (sale.NetUid) {
-        void printAfterPersistingStatus({
+        void printThenPersistStatus({
           loadDocument: () => runPrintDocument(
             () => getSaleActProtocolEditDocument(sale.NetUid as string, true),
           ),
-          persistStatus: () => markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true }),
+          persistStatus: () => markSalePrinted(sale, { IsPrintedActProtocolEdit: true }),
           requiresStatusUpdate: canUpdatePrintStatus && !sale.IsPrintedActProtocolEdit,
         })
       }
     },
-    [canPrintEditAct, canUpdatePrintStatus, markSaleBeforePrint, runPrintDocument],
+    [canPrintEditAct, canUpdatePrintStatus, markSalePrinted, runPrintDocument],
   )
 
   const openCarrierSale = useCallback(
@@ -437,6 +439,7 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
           <TextInput
             className="warehouse-ukraine-filter-input"
             label={t('Пошук по товару')}
+            maxLength={200}
             value={model.filterDraft.value}
             onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
           />

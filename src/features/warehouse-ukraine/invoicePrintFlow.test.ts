@@ -1,46 +1,46 @@
 import { describe, expect, it, vi } from 'vitest'
-import { printAfterPersistingStatus } from './invoicePrintFlow'
+import { printFailureMessage, printThenPersistStatus } from './invoicePrintFlow'
 
 describe('warehouse invoice print flow', () => {
-  it('waits for the print status update before loading the document', async () => {
-    let finishStatusUpdate!: (saved: boolean) => void
-    const persistStatus = vi.fn(() => new Promise<boolean>((resolve) => {
-      finishStatusUpdate = resolve
+  it('marks the invoice printed only after the document was generated', async () => {
+    let finishPrint!: (printed: boolean) => void
+    const loadDocument = vi.fn(() => new Promise<boolean>((resolve) => {
+      finishPrint = resolve
     }))
-    const loadDocument = vi.fn(async () => undefined)
+    const persistStatus = vi.fn(async () => true)
 
-    const print = printAfterPersistingStatus({
+    const print = printThenPersistStatus({
       loadDocument,
       persistStatus,
       requiresStatusUpdate: true,
     })
 
-    expect(persistStatus).toHaveBeenCalledOnce()
-    expect(loadDocument).not.toHaveBeenCalled()
+    expect(loadDocument).toHaveBeenCalledOnce()
+    expect(persistStatus).not.toHaveBeenCalled()
 
-    finishStatusUpdate(true)
+    finishPrint(true)
     await print
 
-    expect(loadDocument).toHaveBeenCalledOnce()
+    expect(persistStatus).toHaveBeenCalledOnce()
   })
 
-  it('does not load the document when the required status update is not confirmed', async () => {
-    const loadDocument = vi.fn(async () => undefined)
+  it('does not mark the invoice printed when the print failed', async () => {
+    const persistStatus = vi.fn(async () => true)
 
-    await printAfterPersistingStatus({
-      loadDocument,
-      persistStatus: vi.fn(async () => false),
+    await printThenPersistStatus({
+      loadDocument: vi.fn(async () => false),
+      persistStatus,
       requiresStatusUpdate: true,
     })
 
-    expect(loadDocument).not.toHaveBeenCalled()
+    expect(persistStatus).not.toHaveBeenCalled()
   })
 
-  it('loads an already-marked document without another status update', async () => {
-    const loadDocument = vi.fn(async () => undefined)
+  it('prints an already-marked document without another status update', async () => {
+    const loadDocument = vi.fn(async () => true)
     const persistStatus = vi.fn(async () => true)
 
-    await printAfterPersistingStatus({
+    await printThenPersistStatus({
       loadDocument,
       persistStatus,
       requiresStatusUpdate: false,
@@ -48,5 +48,16 @@ describe('warehouse invoice print flow', () => {
 
     expect(persistStatus).not.toHaveBeenCalled()
     expect(loadDocument).toHaveBeenCalledOnce()
+  })
+})
+
+describe('print failure message', () => {
+  it('replaces a raw English server text with the Ukrainian fallback', () => {
+    expect(printFailureMessage(new Error('The document could not be generated.'), 'Не вдалося сформувати документ'))
+      .toBe('Не вдалося сформувати документ')
+  })
+
+  it('keeps a Ukrainian server message', () => {
+    expect(printFailureMessage(new Error('Продаж не знайдено'), 'x')).toBe('Продаж не знайдено')
   })
 })
