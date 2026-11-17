@@ -22,7 +22,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { formatPlacementAddress } from '../../../shared/placements/placementAddress'
+import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type {
   DepreciatedOrder,
@@ -248,26 +248,19 @@ function getResponsibleName(order: DepreciatedOrder): string {
   )
 }
 
+const placementQtyFormat = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
+
+/** One entry per address (N-N-N → «Без розміщення»), quantities added up with a decimal comma. */
 function formatPlacements(locations: DepreciatedOrderLocation[]): string {
-  return locations
-    .reduce<string[]>((values, location) => {
-      const placement = location.ProductPlacement
-
-      if (!placement) {
-        return values
-      }
-
-      const address = formatPlacementAddress(placement)
-      const qty = placement.Qty !== undefined ? `${translate('К-сть')} ${placement.Qty}` : ''
-      const position = address === translate('Без розміщення') ? address : `${translate('Позиція')} ${address}`.trim()
-      const formatted = [position, qty].filter(Boolean).join('. ')
-
-      if (formatted) {
-        values.push(formatted)
-      }
-
-      return values
-    }, [])
+  return mergePlacementQuantities(
+    locations.filter((location) => location.ProductPlacement),
+    (location) => location.ProductPlacement,
+    (location) => location.ProductPlacement?.Qty,
+  )
+    .map(({ address, qty }) => {
+      const position = !address || address === translate('Без розміщення') ? address : `${translate('Позиція')} ${address}`
+      return [position, `${translate('К-сть')} ${placementQtyFormat.format(qty)}`].filter(Boolean).join('. ')
+    })
     .join('; ')
 }
 

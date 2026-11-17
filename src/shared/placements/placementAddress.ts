@@ -31,3 +31,32 @@ export function formatPlacementAddress(placement: PlacementParts | null | undefi
 
   return parts.join('-')
 }
+
+type PlacementQty = {
+  address: string
+  qty: number
+}
+
+/**
+ * One entry per address with the quantities added up: a lot split over two
+ * «N-N-N» rows reads «Без розміщення: 1», not «Без розміщення: 0,5, Без
+ * розміщення: 0,5». Entries keep their first-seen order.
+ */
+export function mergePlacementQuantities<T>(
+  entries: readonly T[],
+  getPlacement: (entry: T) => PlacementParts | null | undefined,
+  getQty: (entry: T) => number | null | undefined,
+): PlacementQty[] {
+  const merged = new Map<string, PlacementQty>()
+
+  for (const entry of entries) {
+    const address = formatPlacementAddress(getPlacement(entry))
+    const qty = getQty(entry)
+    const current = merged.get(address) || { address, qty: 0 }
+
+    current.qty = Math.round((current.qty + (typeof qty === 'number' && Number.isFinite(qty) ? qty : 0)) * 1000) / 1000
+    merged.set(address, current)
+  }
+
+  return Array.from(merged.values())
+}

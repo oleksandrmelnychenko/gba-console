@@ -64,6 +64,7 @@ import type {
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { parseQuantityInput } from '../../../shared/units/quantityInput'
+import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
@@ -2257,33 +2258,19 @@ function getPlacements(availability: ProductStorageAvailability): ProductStorage
     : availability.Placements || []
 }
 
+/** One entry per address (N-N-N → «Без розміщення»), quantities added up with a decimal comma. */
 function formatPlacements(placements: ProductStoragePlacement[]): string {
-  const formattedPlacements = placements.reduce<string[]>((values, placement) => {
-    const value = formatPlacement(placement)
+  return mergePlacementQuantities(placements, (placement) => placement, (placement) => placement.Qty)
+    .map(({ address, qty }) => {
+      if (!address) {
+        return `${translate('Кількість')} ${formatAmount(qty)}`
+      }
 
-    if (value) {
-      values.push(value)
-    }
-
-    return values
-  }, [])
-
-  return formattedPlacements.join(', ')
-}
-
-function formatPlacement(placement: ProductStoragePlacement): string {
-  const address = [placement.StorageNumber, placement.RowNumber, placement.CellNumber].filter(Boolean).join('-')
-  const qty = formatAmount(placement.Qty)
-
-  if (!address && qty === '-') {
-    return ''
-  }
-
-  if (!address) {
-    return `${translate('Кількість')} ${qty}`
-  }
-
-  return `${translate('Позиція')} ${address}. ${translate('Кількість')} ${qty}`
+      return address === translate('Без розміщення')
+        ? `${address}. ${translate('Кількість')} ${formatAmount(qty)}`
+        : `${translate('Позиція')} ${address}. ${translate('Кількість')} ${formatAmount(qty)}`
+    })
+    .join(', ')
 }
 
 function formatAmount(value?: number): string {

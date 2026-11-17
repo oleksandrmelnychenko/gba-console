@@ -63,7 +63,7 @@ import type {
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, excelImportErrorText } from '../../../shared/excel/excelImportMessages'
-import { formatPlacementAddress } from '../../../shared/placements/placementAddress'
+import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
 import { getTransferTimeSource } from '../productTransferTime'
 import './product-transfers-page.css'
 
@@ -1437,34 +1437,15 @@ function getProductCode(item: ProductTransferItem): string {
   return item.Product?.VendorCode || item.Product?.Articul || item.Product?.MainOriginalNumber || ''
 }
 
+/** «Без розміщення: 1, A-2-3: 4»: one entry per address, quantities added up. */
 function formatLocations(locations: ProductTransferLocation[]): string {
-  const formattedLocations = locations.reduce<string[]>((values, location) => {
-    const value = formatLocation(location)
-
-    if (value) {
-      values.push(value)
-    }
-
-    return values
-  }, [])
-
-  return formattedLocations.join(', ')
-}
-
-function formatLocation(location: ProductTransferLocation): string {
-  const placement = location.ProductPlacement
-  const address = formatPlacementAddress(placement)
-  const qty = formatAmount(toNumber(location.Qty) ?? toNumber(placement?.Qty))
-
-  if (!address && !qty) {
-    return ''
-  }
-
-  if (!address) {
-    return `${translate('Кількість')} ${qty}`
-  }
-
-  return `${address}: ${qty}`
+  return mergePlacementQuantities(
+    locations,
+    (location) => location.ProductPlacement,
+    (location) => toNumber(location.Qty) ?? toNumber(location.ProductPlacement?.Qty),
+  )
+    .map(({ address, qty }) => (address ? `${address}: ${formatAmount(qty)}` : `${translate('Кількість')} ${formatAmount(qty)}`))
+    .join(', ')
 }
 
 function toNumber(value: unknown): number | null {
