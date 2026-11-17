@@ -119,6 +119,12 @@ import {
   getSortedPricingSourceDefinitions,
   isBusinessOrganizationVisible,
 } from '../clientResourcePolicies'
+import {
+  CURRENCY_LIMITS,
+  MEASURE_UNIT_LIMITS,
+  validateCurrencyLimits,
+  validateMeasureUnitLimits,
+} from '../referenceFieldLimits'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import '../../../shared/ui/console-table-page.css'
@@ -1994,14 +2000,18 @@ function CurrencyEditorModal({
           <TextInput
             autoFocus
             label={translate("Назва")}
+            maxLength={CURRENCY_LIMITS.nameMaxLength}
             required
             value={values.Name}
             onChange={(event) => setField('Name', event.currentTarget.value)}
           />
           <TextInput
+            description={translate('2–25 символів: A–Z, 0–9, дефіс')}
             label={translate("Код")}
+            maxLength={CURRENCY_LIMITS.codeMaxLength}
+            required
             value={values.Code}
-            onChange={(event) => setField('Code', event.currentTarget.value)}
+            onChange={(event) => setField('Code', event.currentTarget.value.toUpperCase())}
           />
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
@@ -2170,11 +2180,13 @@ function MeasureUnitEditorModal({
           <TextInput
             autoFocus
             label={translate("Код 1С")}
+            maxLength={MEASURE_UNIT_LIMITS.codeOneCMaxLength}
             value={values.CodeOneC}
             onChange={(event) => setField('CodeOneC', event.currentTarget.value)}
           />
           <TextInput
             label={translate("Назва")}
+            maxLength={MEASURE_UNIT_LIMITS.nameMaxLength}
             required
             value={values.Name}
             onChange={(event) => setField('Name', event.currentTarget.value)}
@@ -5517,7 +5529,7 @@ function validateCurrencyForm(values: CurrencyFormValues): string | null {
     return translate('Вкажіть назву валюти')
   }
 
-  return null
+  return validateCurrencyLimits(values, translate)
 }
 
 function buildCurrencyPayload(
@@ -5600,7 +5612,7 @@ function validateMeasureUnitForm(values: MeasureUnitFormValues): string | null {
     return translate('Вкажіть повну назву одиниці')
   }
 
-  return null
+  return validateMeasureUnitLimits(values, translate)
 }
 
 function buildMeasureUnitPayload(
