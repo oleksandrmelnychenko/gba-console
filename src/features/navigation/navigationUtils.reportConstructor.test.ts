@@ -23,11 +23,11 @@ describe('BUG-1274-only report navigation', () => {
       const node = modules[0].Children[0]
       expect(node).toMatchObject({ Id: 12, NetUid: 'existing-report-node', Route: route, Module: 'Звіти' })
       expect(getNavigationNodePath(node)).toBe('/reports/stocks')
-      for (const path of ['/reports/stocks', '/reports/constructor', '/reports/registers', '/reports/sale', '/reports/sales']) {
+      for (const path of ['/reports/stocks', '/reports/constructor', '/reports/registers', '/reports/history', '/reports/sale', '/reports/sales']) {
         expect(isNavigationPathAllowed(modules, path), path).toBe(true)
         expect(findNavigationMatch(modules, path)?.node, path).toBe(node)
       }
-      for (const path of ['/reports/sale/details', '/reports/sales-other', '/reports/registers/details']) {
+      for (const path of ['/reports/sale/details', '/reports/sales-other', '/reports/registers/details', '/reports/history/1']) {
         expect(isNavigationPathAllowed(modules, path), path).toBe(false)
       }
     },
