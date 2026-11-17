@@ -93,6 +93,13 @@ describe('AmountInput', () => {
 
     expect(input.value).toBe('1500,5')
   })
+
+  it('rounds a computed amount to the field precision instead of rejecting it', () => {
+    const input = renderForm(0.1 + 0.2)
+
+    expect(input.value).toBe('0,3')
+    expect(input.validity.customError).toBe(false)
+  })
 })
 
 describe('parseAmountText', () => {

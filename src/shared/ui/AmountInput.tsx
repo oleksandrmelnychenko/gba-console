@@ -42,7 +42,7 @@ export function AmountInput({
   ...props
 }: AmountInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
-  const [text, setText] = useState(() => formatAmountText(value))
+  const [text, setText] = useState(() => formatAmountText(value, decimalScale))
   const [seenValue, setSeenValue] = useState(value)
 
   // The form changed the amount itself (reset, auto-allocation): show it,
@@ -51,7 +51,7 @@ export function AmountInput({
     setSeenValue(value)
 
     if ((toAmount(value) ?? 0) !== toEmittedAmount(parseAmountText(text))) {
-      setText(formatAmountText(value))
+      setText(formatAmountText(value, decimalScale))
     }
   }
 
@@ -83,7 +83,7 @@ export function AmountInput({
         const next = parseAmountText(text)
 
         if (next.value !== null && !getAmountError(next, { decimalScale, max, maxMessage, min })) {
-          setText(formatAmountText(next.value))
+          setText(formatAmountText(next.value, decimalScale))
         }
 
         onBlur?.(event)

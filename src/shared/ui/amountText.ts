@@ -85,7 +85,7 @@ export function toAmount(value: number | string | null | undefined): number | nu
   return amount === null || !Number.isFinite(amount) ? null : amount
 }
 
-export function formatAmountText(value: number | string | null | undefined): string {
+export function formatAmountText(value: number | string | null | undefined, decimalScale = 2): string {
   const amount = toAmount(value)
 
   // An untouched amount of 0 is shown empty, so typing does not append to «0».
@@ -93,5 +93,10 @@ export function formatAmountText(value: number | string | null | undefined): str
     return ''
   }
 
-  return String(amount).replace('.', ',')
+  // Amounts the form computes (0.1 + 0.2) are shown at the field's precision,
+  // so they never trip the «no more than N decimals» check.
+  const factor = 10 ** decimalScale
+  const rounded = Math.round(amount * factor) / factor
+
+  return String(rounded).replace('.', ',')
 }
