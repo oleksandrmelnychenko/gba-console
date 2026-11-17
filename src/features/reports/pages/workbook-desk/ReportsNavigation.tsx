@@ -1,11 +1,11 @@
-import { NATIVE_PRICE_COMPARISON_WORKBOOK } from '../../data/nativePriceComparison'
-import { CUSTOMER_GROUPS_WORKBOOK } from '../../data/customerGroups'
-import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { Menu } from '@mantine/core'
+import { CUSTOMER_RETURN_WORKBOOK } from '../../data/customerReturnReport'
 import { BarChart3, Boxes, ChevronDown, FileText, ShoppingCart, Wallet } from 'lucide-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { PURCHASES_CONSTRUCTOR_FILE, STOCK_PERIOD_CONSTRUCTOR_FILE, type WorkbookLaunch } from '../../data/bug1274WorkbookLaunch'
 import { GROSS_PROFIT_CONSTRUCTOR_WORKBOOK, SALES_CONSTRUCTOR_WORKBOOK } from '../../data/salesConstructorProfiles'
+import { CASH_NAVIGATION, SALES_NAVIGATION, SPECIAL_NAVIGATION } from '../../data/reportNavigationEntries'
+import { ReportHistoryNavigationButton } from './ReportHistoryNavigationButton'
 import './reports-navigation.css'
 
 type Props = {
@@ -15,28 +15,16 @@ type Props = {
   disabled: boolean
   onOpen: (launch: WorkbookLaunch) => void
   onStocks: () => void
+  historyActive?: boolean
 }
 
-const sales = [
-  { label: 'Звіт по продажам', file: SALES_CONSTRUCTOR_WORKBOOK },
-  { label: 'Валовий прибуток', file: GROSS_PROFIT_CONSTRUCTOR_WORKBOOK },
-]
-const cash = [
-  { label: 'Відомість по коштах', file: 'Ведомость по денежным средствам.xls' },
-  { label: 'Взаєморозрахунки всі', file: 'Взаємороз всі.xls' },
-  { label: 'Дебіторська заборгованість', file: 'ДБіторка.xls' },
-]
-const special = [
-  { label: 'Аналіз залишків і продажів', file: 'Впарювання.xls' },
-  { label: 'Звіт повернення', file: CUSTOMER_RETURN_WORKBOOK },
-  { label: 'Звіт по скидкам клієнтів', file: null },
-  { label: 'Продажі порівнянням за типами цін', file: NATIVE_PRICE_COMPARISON_WORKBOOK },
-  { label: 'Порівняння роботи клієнтів', file: CUSTOMER_GROUPS_WORKBOOK },
-]
+const sales = SALES_NAVIGATION
+const cash = CASH_NAVIGATION
+const special = SPECIAL_NAVIGATION
 
-export function ReportsNavigation({ launches, active, movement, disabled, onOpen, onStocks }: Props) {
+export function ReportsNavigation({ launches, active, movement, disabled, onOpen, onStocks, historyActive = false }: Props) {
   const { t } = useI18n()
-  const activeSource = movement ? null : launches.find(launch => launch.fileName === active)?.dataset.DataSource
+  const activeSource = movement || historyActive ? null : launches.find(launch => launch.fileName === active)?.dataset.DataSource
   const stocks = launches.find(launch => launch.fileName === STOCK_PERIOD_CONSTRUCTOR_FILE)
   const purchases = launches.find(launch => launch.fileName === PURCHASES_CONSTRUCTOR_FILE)
   const unavailable = t('Звіт ще не доступний у поточному каталозі.')
@@ -74,6 +62,7 @@ export function ReportsNavigation({ launches, active, movement, disabled, onOpen
       </button>
       {dropdown('Грошові кошти', Wallet, cash, activeSource === 40 || activeSource === 41)}
       {dropdown('Особливі звіти', FileText, special, activeSource === 39 || active === CUSTOMER_RETURN_WORKBOOK || activeSource === 44 || activeSource === 46)}
+      <ReportHistoryNavigationButton className={pill(historyActive)} active={historyActive} disabled={disabled} />
     </div>
   </nav>
 }

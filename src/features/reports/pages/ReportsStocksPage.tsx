@@ -91,6 +91,8 @@ import { requestCashReadMode } from '../data/cashReadMode'
 import { Suspense, type FormEvent, type ReactNode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
+import { getReportHistorySettings } from '../api/reportHistoryApi'
+import { clearReportHandoff, droppedSettingsLine, peekReportHandoff, sanitizeHistorySettings, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -377,11 +379,16 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string; warning?: string } | null>(null)
   const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
   const [workbookResolving, setWorkbookResolving] = useState(false)
-  const [initialWorkbook, setInitialWorkbook] = useState<'pending' | 'opening' | 'settled'>('pending')
+  const [handoff] = useState(() => peekReportHandoff())
+  const historyRun = useRef(handoff.history)
+  const historyAction = useRef<ReportHistoryAction | null>(null)
+  const [historyRevision, setHistoryRevision] = useState(0)
+  const [initialWorkbook, setInitialWorkbook] = useState<'pending' | 'opening' | 'settled'>(handoff.history ? 'settled' : 'pending')
   if (initialWorkbook === 'opening' && !workbookResolving) setInitialWorkbook('settled')
   const workbookLaunches = useMemo(() => availableBug1274WorkbookLaunches(datasetStorage.datasets), [datasetStorage.datasets])
   const initialWorkbookLaunch = initialWorkbook === 'pending' && canGenerateReport && datasetHidden && !activeWorkbook
-    && datasetStorage.loaded && !datasetStorage.error ? workbookLaunches[0] ?? null : null
+    && datasetStorage.loaded && !datasetStorage.error
+    ? workbookLaunches.find(item => item.fileName === handoff.workbook) ?? workbookLaunches[0] ?? null : null
   const [deskTemplatesOpened, setDeskTemplatesOpened] = useState(false)
   const [templateIntent, setTemplateIntent] = useState({ create: false, revision: 0 })
   function openDeskTemplates(create: boolean) {
@@ -517,6 +524,18 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
           to: formatDate(lastRun.to),
         })
       : null
+
+  const runHistoryAction = useEffectEvent((action: ReportHistoryAction) => { void runReport(action === 'open') })
+  useEffect(() => {
+    const action = historyAction.current
+    if (!action || workbookResolving || isLoading) return
+    if (!reportIsReady || !canGenerateReport) {
+      const timer = setTimeout(() => { if (historyAction.current === action) historyAction.current = null }, 1500)
+      return () => clearTimeout(timer)
+    }
+    historyAction.current = null
+    runHistoryAction(action)
+  }, [historyRevision, workbookResolving, isLoading, reportIsReady, canGenerateReport])
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -691,6 +710,44 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setActiveTemplate(structuredClone(template))
     return true
   }
+
+  function applyHistory(source: ReportRequestBody, action: ReportHistoryAction) {
+    const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (source.dataSource ?? 0))
+    if (!nextDataset || !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) {
+      setCatalogueNotice({ text: t('Цей звіт більше не можна відкрити.'), failed: true })
+      return
+    }
+    const unified = upgradeCurrentVparivanieAnalysis(withUnifiedSource(source, nextDataset), nextDataset)
+    const sanitized = sanitizeHistorySettings(unified, nextDataset)
+    const reviewed = productClassificationReviewError(sanitized.data, nextDataset) ? withoutProductClassification(sanitized.data) : sanitized.data
+    const data = withCurrentVparivanieMovementScope(withDefaultReadModes(reviewed, nextDataset))
+    const incompatible = datasetConfigurationError(editableProductColumnsTemplate(data, nextDataset), nextDataset, 'workspace')
+      ?? (lacksCurrentReadMode(data, nextDataset) ? TEMPLATE_WITHOUT_READ_MODE_ERROR : null)
+    if (incompatible) {
+      setCatalogueNotice({ text: t(incompatible), failed: true })
+      return
+    }
+    applyConfiguration({ Name: '', Data: data }, nextDataset)
+    const profile = readReportProfile(requestReportProfile(data))
+    setActiveWorkbook(profile ? salesConstructorWorkbook(profile) : null)
+    const line = droppedSettingsLine(sanitized.dropped)
+    if (line) setCatalogueNotice({ text: '', failed: false, warning: line })
+    historyAction.current = action
+    setHistoryRevision(value => value + 1)
+  }
+
+  const loadHistoryRun = useEffectEvent((run: ReportHistoryRun) => {
+    getReportHistorySettings(run.id).then(data => applyHistory(data, run.action)).catch(failure => {
+      setCatalogueNotice({ text: failure instanceof Error ? failure.message : t('Цей звіт більше не можна відкрити.'), failed: true })
+    })
+  })
+  useEffect(() => { clearReportHandoff() }, [])
+  useEffect(() => {
+    const run = historyRun.current
+    if (!run || !canGenerateReport || !datasetStorage.loaded || datasetStorage.error) return
+    historyRun.current = null
+    loadHistoryRun(run)
+  }, [canGenerateReport, datasetStorage.loaded, datasetStorage.error])
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
     setSettingsRevision(value => value + 1)
