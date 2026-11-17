@@ -1,4 +1,4 @@
-import { memo, type CSSProperties } from 'react'
+import { memo, type CSSProperties, type KeyboardEvent } from 'react'
 import {
   ActionIcon,
   Group,
@@ -209,7 +209,19 @@ function DataTableHeaderCellInner<TData>({
       }}
     >
       <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify={justify}>
+        {/* A <div role="button">, not a <button>: header content may hold its own
+            buttons (e.g. «remove column»), and a button inside a button is
+            invalid HTML that React reports as a hydration error (WH2-24). */}
         <UnstyledButton
+          component="div"
+          role={canSort || canReorder ? 'button' : undefined}
+          tabIndex={canSort || canReorder ? 0 : undefined}
+          onKeyDown={canSort ? (event: KeyboardEvent<HTMLDivElement>) => {
+            if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+              event.preventDefault()
+              header.column.toggleSorting()
+            }
+          } : undefined}
           {...(canReorder ? attributes : {})}
           {...(canReorder ? listeners : {})}
           className="data-table-header-button"
