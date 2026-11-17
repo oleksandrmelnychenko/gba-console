@@ -201,6 +201,16 @@ function AccountingCashFlowRoute({ mode }: { mode: AccountingCashFlowMode }) {
   return <AccountingCashFlowPage mode={mode} routeNetId={id} />
 }
 
+function CounterpartyNotFound() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Контрагента не знайдено')} variant="light">
+      {t('Перевірте посилання або відкрийте взаєморозрахунки зі списку контрагентів.')}
+    </Alert>
+  )
+}
+
 function AccountingCashFlowPage({ mode, routeNetId }: { mode: AccountingCashFlowMode; routeNetId: string }) {
   return (
     <PermissionGate
@@ -224,6 +234,15 @@ function AccountingCashFlowPermissionDenied() {
 
 function AccountingCashFlowPageContent({ mode, routeNetId }: { mode: AccountingCashFlowMode; routeNetId: string }) {
   const model = useAccountingCashFlowPageModel(mode, routeNetId)
+  // The server answers 200 with an empty record for an unknown or malformed id: say so instead
+  // of an empty page with zero balances.
+  const isMissing = !model.isCounterpartyLoading
+    && !model.counterpartyError
+    && (!model.counterparty || (!model.counterparty.Id && !model.counterparty.NetUid))
+
+  if (isMissing) {
+    return <CounterpartyNotFound />
+  }
 
   return <AccountingCashFlowPageView model={model} />
 }
