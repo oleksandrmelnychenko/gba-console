@@ -18,7 +18,7 @@ export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, 
   const reasonId = useId()
   const raw = requestAbcClassification(data), draft = readAbcDraft(raw), cap = readAbcCapabilities(dataset)
   const error = reportAbcClassificationError(data, dataset), initial = defaultAbcClassification(data, dataset)
-  const prerequisites = getRankingPrerequisites('ABC', data, cap, disabled)
+  const prerequisites = getRankingPrerequisites('ABC', data, cap)
   return <Stack component="section" aria-label="ABC-класифікація" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>ABC-класифікація</Text>

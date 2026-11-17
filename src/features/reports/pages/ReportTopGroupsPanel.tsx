@@ -20,12 +20,12 @@ export function ReportTopGroupsPanel({ data, dataset, disabled, onChange, onConf
   const reasonId = useId()
   const raw = requestTopGroups(data), draft = readTopGroupsDraft(raw), cap = readTopGroupsCapabilities(dataset)
   const error = reportTopGroupsError(data, dataset), initial = defaultReportTopGroups(data, dataset)
-  const prerequisites = getRankingPrerequisites('TOP', data, cap, disabled)
+  const prerequisites = getRankingPrerequisites('TOP', data, cap)
   return <Stack component="section" aria-label="TOP цілих груп" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>TOP цілих груп</Text>
       {raw != null ? <Button type="button" variant="default" size="compact-sm" disabled={disabled}
-        aria-describedby={disabled ? reasonId : undefined} onClick={() => onChange(undefined)}>Вимкнути TOP: залишити всі групи</Button> : cap ?
+        aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => onChange(undefined)}>Вимкнути TOP: залишити всі групи</Button> : cap ?
         <Button type="button" variant="default" size="compact-sm" disabled={disabled || !initial}
           aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => { if (initial) onChange(initial) }}>Увімкнути TOP цілих груп</Button> : null}
     </Group>

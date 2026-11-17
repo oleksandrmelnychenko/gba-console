@@ -2,7 +2,6 @@ import { Alert, Button, Group, Select, SimpleGrid, Stack, Text } from '@mantine/
 import { useId } from 'react'
 import type { ReportDataset, ReportOrderRule, ReportRequestBody } from '../types'
 import { readOrderingCapabilities, readReportOrdering, reportOrderingError, requestOrdering, setReportOrderRule } from '../data/reportOrdering'
-import { REPORT_RULE_LOCK_REASON } from './reportRankingReadiness'
 
 const byOptions = [{ value: '1', label: 'За значенням поля' }, { value: '2', label: 'За точним підписом' }, { value: '3', label: 'За підсумком показника' }]
 const directions = [{ value: '1', label: 'За зростанням' }, { value: '2', label: 'За спаданням' }]
@@ -66,14 +65,14 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
 }
 
 function orderingSetupReason(disabled: boolean, supported: boolean, groupCount: number) {
-  if (disabled) return REPORT_RULE_LOCK_REASON
+  if (disabled) return null
   if (!supported) return 'Для цього набору даних сервер не підтвердив підтримку сортування.'
   if (!groupCount) return 'Додайте поля до рядків або стовпців, щоб налаштувати порядок їхніх значень.'
   return null
 }
 
 function orderingFieldReason(disabled: boolean, allowedCount: number, hasRule: boolean, occupied: number, maximum: number) {
-  if (disabled) return REPORT_RULE_LOCK_REASON
+  if (disabled) return undefined
   if (!allowedCount) return 'Для цього поля сортування недоступне.'
   if (!hasRule && occupied >= maximum) return `Досягнуто межі ${maximum} правил. Приберіть одне правило, щоб додати інше.`
   return undefined

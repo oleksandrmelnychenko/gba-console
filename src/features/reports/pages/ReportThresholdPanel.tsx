@@ -3,7 +3,6 @@ import { useId } from 'react'
 import type { ReportDataset, ReportRequestBody, ReportThresholdCapabilities } from '../types'
 import { ABC_CLASS_GROUPING } from '../data/reportAbcClassification'
 import { defaultReportThreshold, readThresholdCapabilities, readThresholdDraft, reportThresholdError, requestThreshold, type ReportThresholdDraft } from '../data/reportThreshold'
-import { REPORT_RULE_LOCK_REASON } from './reportRankingReadiness'
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; onChange: (value: unknown) => void }
 export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Props) {
@@ -11,7 +10,7 @@ export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Prop
   const raw = requestThreshold(data), draft = readThresholdDraft(raw), cap = readThresholdCapabilities(dataset)
   const error = reportThresholdError(data, dataset), initial = defaultReportThreshold(data, dataset)
   const setupReason = !initial ? thresholdSetupReason(data, cap) : null
-  const reason = disabled ? REPORT_RULE_LOCK_REASON : raw == null ? setupReason : null
+  const reason = !disabled && raw == null ? setupReason : null
   return <Stack component="section" aria-label="Поріг групування" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>Поріг групування</Text>

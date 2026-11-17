@@ -123,7 +123,8 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     const navigate = screen.getByRole('button', { name: `Налаштувати групування для ${name}` }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     expect(navigate.disabled).toBe(true)
-    expect(document.getElementById(button.getAttribute('aria-describedby')!)?.textContent).toContain('Редагування недоступне')
+    expect(document.getElementById(button.getAttribute('aria-describedby')!)?.textContent).toContain(`Для ${name} додайте до рядків`)
+    expect(screen.queryByText(/Редагування недоступне/)).toBeNull()
     fireEvent.click(button)
     fireEvent.click(navigate)
     expect(onChange).not.toHaveBeenCalled()
