@@ -364,7 +364,9 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       users.find((user) => getUserLabel(user) === typedColleague || getEntityValue(user) === typedColleague) ??
       null
 
-    const validationError = validateOutgoingCashOrderForm({
+    const validationError = (!form.isManagementAccounting && !form.isAccounting
+      ? t('Оберіть облік: управлінський або бухгалтерський')
+      : null) || validateOutgoingCashOrderForm({
       amount: form.amount,
       selectedColleague: resolvedColleague,
       selectedCurrencyRegister,
@@ -629,7 +631,8 @@ function createInitialForm(): CreateFormState {
     date: formatLocalDate(now),
     invoiceNumber: '',
     isAccounting: false,
-    isManagementAccounting: false,
+    // Same default as the other cash forms; an order with neither ledger showed «- -».
+    isManagementAccounting: true,
     movementSearch: '',
     organizationValue: '',
     paymentPurpose: '',

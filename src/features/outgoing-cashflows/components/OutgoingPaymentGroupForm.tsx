@@ -272,7 +272,6 @@ export function OutgoingPaymentGroupForm({
         const defaultOrganization = nextOrganizations[0] || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization, initialRegisterType)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
-        const defaultMovement = nextMovements[0] || null
 
         setOrganizations(nextOrganizations)
         setAvailableOrganizations(nextOrganizations)
@@ -290,8 +289,10 @@ export function OutgoingPaymentGroupForm({
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedCurrencyValue: defaultCurrency ? getEntityValue(defaultCurrency) : '',
-          selectedMovementValue: defaultMovement ? getEntityValue(defaultMovement) : '',
-          movementSearch: getEntityName(defaultMovement),
+          // No preselected article: the list mixes income and expense articles
+          // (the first one was «Оплата від покупця») and orders were saved under it.
+          selectedMovementValue: '',
+          movementSearch: '',
         }))
       } catch (loadError) {
         if (!cancelled) {
