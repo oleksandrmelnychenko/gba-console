@@ -67,7 +67,12 @@ export function ConsoleNav({ mode = 'all', availableWidth }: ConsoleNavProps) {
 
   const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
   const activeNodeKey = selectedNode ? selectedNode.NetUid || String(selectedNode.Id) : null
-  const items = useMemo(() => selectedModule?.Children ?? [], [selectedModule])
+  // Sub-items come from the permission-filtered module, not the raw server menu.
+  const items = useMemo(() => {
+    if (!selectedModule) return []
+    const visible = modules.find((module) => (module.NetUid || String(module.Id)) === activeModuleKey)
+    return visible?.Children ?? []
+  }, [activeModuleKey, modules, selectedModule])
 
   if (mode === 'items' && selectedModule == null) {
     return null
