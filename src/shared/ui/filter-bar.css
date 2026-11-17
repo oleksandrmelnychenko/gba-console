@@ -58,11 +58,11 @@
 }
 
 /* Page cards sit 4px inside the 16px console frame, so their corners are
-   concentric at 16 − 4 = 12px (--app-radius-md). Mantine writes --card-radius
+   concentric at 16 − 4 = 12px (--app-radius-md). Mantine writes --paper-radius
    inline from radius="md", hence !important on the variable. */
 .app-data-card.mantine-Card-root,
 .sales-ukraine-card.mantine-Card-root {
-  --card-radius: var(--app-radius-md) !important;
+  --paper-radius: var(--app-radius-md) !important;
 }
 
 /* ---- Canonical filter strip ---- */
