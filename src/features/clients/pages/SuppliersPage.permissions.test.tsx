@@ -117,8 +117,17 @@ describe('SuppliersPage canonical permission guards', () => {
 
     const row = await screen.findByRole('button', { name: 'Test supplier' })
     expect((row as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Добавити' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Додати' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Експорт в Excel' })).toBeNull()
+  })
+
+  it('labels the create action «Додати», not the russism «Добавити»', async () => {
+    allowedPermissions.add(PermissionKeys.Suppliers.Page.View)
+    allowedPermissions.add(PermissionKeys.Clients.Client.Create)
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Додати' })).toBeTruthy()
+    expect(screen.queryByText('Добавити')).toBeNull()
   })
 
   it('keeps supplier passport independent from card, cash flow, and status actions', async () => {

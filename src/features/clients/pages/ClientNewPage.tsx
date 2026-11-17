@@ -48,6 +48,7 @@ import { PricingPanel } from '../components/pricing/PricingPanel'
 import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { type ClientFormErrors, validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
+import { newClientRoleTexts } from './newClientRoleTexts'
 import { findInvertedAgreement } from '../components/pricing/clientAgreementDraft'
 import { errorsForStep, hasNewClientDraftContent, newClientRequiredErrors } from './newClientWizardRules'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
@@ -300,6 +301,8 @@ export function ClientNewPage() {
   const returnPath = getNewClientReturnPath(routeState)
   const role = useMemo(() => getDraftRole(draft), [draft])
   const isPricingValid = (draft.ClientAgreements?.length || 0) > 0
+  const roleTexts = newClientRoleTexts(role.isProvider, t)
+  const nameRequiredMessage = roleTexts.nameRequired
   const { lookups, error: lookupsError, reloadCountries, reloadIncoterms, reloadRegions } = useClientFormLookups({
     needsProviderLookups: role.isProvider,
     needsBuyerLookups: role.isBuyer,
@@ -691,7 +694,7 @@ export function ClientNewPage() {
 
     const stepErrors = errorsForStep(
       {
-        ...newClientRequiredErrors(draft, t('Вкажіть назву клієнта')),
+        ...newClientRequiredErrors(draft, nameRequiredMessage),
         ...validateClientForm(draft, role, t('Забагато символів'), { t }),
       },
       currentStep,
@@ -747,7 +750,7 @@ export function ClientNewPage() {
 
     const draftToSubmit = applyPendingDiscountDraft(draft, pendingDiscountDraftRef.current) as ClientDraft
     const validationErrors = {
-      ...newClientRequiredErrors(draftToSubmit, t('Вкажіть назву клієнта')),
+      ...newClientRequiredErrors(draftToSubmit, nameRequiredMessage),
       ...validateClientForm(draftToSubmit, role, t('Забагато символів'), { t }),
     }
     setFormErrors(validationErrors)
@@ -821,7 +824,7 @@ export function ClientNewPage() {
 
       notifications.show({
         color: documentsWereSaved ? 'green' : 'yellow',
-        message: documentsWereSaved ? t('Клієнта створено') : t('Клієнта створено без документів'),
+        message: documentsWereSaved ? roleTexts.created : roleTexts.createdWithoutDocuments,
       })
       setSubmitted(true)
       clearNewClientSession()
@@ -956,6 +959,11 @@ export function ClientNewPage() {
                   />
                 </Card>
 
+            {visibleSteps.indexOf(currentStep) === visibleSteps.length - 1 && !isPricingValid && (
+              <Text c="dimmed" size="sm" data-testid="create-disabled-reason">
+                {roleTexts.createDisabledReason}
+              </Text>
+            )}
             <Group className="client-new-footer" justify="space-between">
               <Button
                 variant="light"

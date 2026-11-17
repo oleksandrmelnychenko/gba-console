@@ -680,7 +680,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
               leftSection={<Plus size={16} />}
               onClick={openNewSupplier}
             >
-              {t('Добавити')}
+              {t('Додати')}
             </Button>
           )}
         </div>
