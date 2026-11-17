@@ -4,6 +4,7 @@ import { notifications } from '@mantine/notifications'
 import { Package, Trash2 } from 'lucide-react'
 import { useEffect, useReducer } from 'react'
 import { useAuth } from '../../auth/useAuth'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getProductWriteOffRuleLocaleLabel } from '../../products/utils'
 import { deleteProductWriteOffRule, getProductWriteOffBaseRules } from '../api/productWriteOffRulesApi'
@@ -86,7 +87,9 @@ function rulesReducer(state: RulesState, action: RulesAction): RulesState {
 
 export function ProductWriteOffRulesControl() {
   const runActionOnce = useSingleFlight()
-  const { isAuthenticated, session } = useAuth()
+  const { hasPermission, isAuthenticated, session } = useAuth()
+  // Everyone may read the global rules; deleting needs its key (the server refuses with 403 otherwise).
+  const canDeleteRule = hasPermission(PermissionKeys.ProductsAssortment.WriteOffRules.Delete)
   const { t } = useI18n()
   const [state, dispatch] = useReducer(rulesReducer, initialRulesState)
 
@@ -117,7 +120,7 @@ export function ProductWriteOffRulesControl() {
 
   async function removeRule(rule: ProductWriteOffRule) {
     return runActionOnce('removeRule', async () => {
-      if (!rule.NetUid) {
+      if (!rule.NetUid || !canDeleteRule) {
         return
       }
 
@@ -196,15 +199,17 @@ export function ProductWriteOffRulesControl() {
                       {parseRuleType(rule.RuleType, t)}
                     </Text>
                   </Box>
-                  <ActionIcon
-                    aria-label={t('Видалити')}
-                    color="gray"
-                    variant="subtle"
-                    loading={state.removingNetUid === rule.NetUid}
-                    onClick={() => removeRule(rule)}
-                  >
-                    <Trash2 size={16} strokeWidth={1.7} />
-                  </ActionIcon>
+                  {canDeleteRule ? (
+                    <ActionIcon
+                      aria-label={t('Видалити')}
+                      color="gray"
+                      variant="subtle"
+                      loading={state.removingNetUid === rule.NetUid}
+                      onClick={() => removeRule(rule)}
+                    >
+                      <Trash2 size={16} strokeWidth={1.7} />
+                    </ActionIcon>
+                  ) : null}
                 </Group>
               ))}
             </Stack>
