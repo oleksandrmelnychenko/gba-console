@@ -10,6 +10,10 @@ import './wizard-product-photo.css'
 // Related rows unmount while moving between products. Keep successful loads
 // across those mounts so browser-cached photos do not flash a loading mask.
 const loadedPhotoUrls = new Set<string>()
+// A missing shop photo answers with an HTML page that the browser blocks (ERR_BLOCKED_BY_ORB) before
+// onError fires; that console line cannot be suppressed from script. Remember the failure so every card
+// and every remount does not request the same missing photo again in this session.
+const failedPhotoUrls = new Set<string>()
 const MAX_CACHED_PHOTOS = 256
 
 function rememberLoadedPhoto(url: string) {
@@ -46,7 +50,7 @@ export function WizardProductPhoto({
   const [failedUrls, setFailedUrls] = useState<string[]>([])
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null)
   const imageUrl = [getProductMainImage(product)?.ImageUrl, getProductShopImageUrl(product)]
-    .find((url) => url && !failedUrls.includes(url))
+    .find((url) => url && !failedUrls.includes(url) && !failedPhotoUrls.has(url))
   const name = product.NameUA || product.Name || product.VendorCode || t('Без назви')
   const loading = Boolean(imageUrl && imageUrl !== loadedUrl && !loadedPhotoUrls.has(imageUrl))
   const markLoaded = useCallback((image: HTMLImageElement) => {
@@ -73,6 +77,7 @@ export function WizardProductPhoto({
 
   const handleImageError = () => {
     loadedPhotoUrls.delete(imageUrl)
+    if (imageUrl) failedPhotoUrls.add(imageUrl)
     setFailedUrls((urls) => urls.includes(imageUrl) ? urls : [...urls, imageUrl])
   }
   const photo = (
