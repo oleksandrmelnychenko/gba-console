@@ -105,9 +105,8 @@ describe('SEO contact info', () => {
     expect(api.updateSeoContactInfo).not.toHaveBeenCalled()
   })
 
-  it('stores Pixel ID on the first save by updating the record the server just created', async () => {
+  it('stores Pixel ID with the single first save', async () => {
     api.updateSeoContactInfo
-      .mockResolvedValueOnce(makeSettings({ Locale: 'uk', NetUid: 'new-info', PixelId: undefined, SiteUrl: 'https://shop.test' }))
       .mockResolvedValueOnce(makeSettings({ Locale: 'uk', NetUid: 'new-info', PixelId: 'PX-1', SiteUrl: 'https://shop.test' }))
     const dialog = await openContactInfoEditor()
 
@@ -115,9 +114,12 @@ describe('SEO contact info', () => {
     fireEvent.change(within(dialog).getByRole('textbox', { name: 'Pixel ID' }), { target: { value: 'PX-1' } })
     fireEvent.click(within(dialog).getAllByRole('button', { name: 'Зберегти' })[0])
 
-    await waitFor(() => { expect(api.updateSeoContactInfo).toHaveBeenCalledTimes(2) })
+    await waitFor(() => {
+      expect(api.showNotification).toHaveBeenCalledWith(expect.objectContaining({ message: 'Контактну інформацію оновлено' }))
+    })
+    expect(api.updateSeoContactInfo).toHaveBeenCalledTimes(1)
     expect(api.updateSeoContactInfo.mock.calls[0]?.[0]).not.toHaveProperty('NetUid')
-    expect(api.updateSeoContactInfo.mock.calls[1]?.[0]).toMatchObject({ NetUid: 'new-info', PixelId: 'PX-1' })
+    expect(api.updateSeoContactInfo.mock.calls[0]?.[0]).toMatchObject({ Locale: 'uk', PixelId: 'PX-1' })
   })
 })
 

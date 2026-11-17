@@ -1272,24 +1272,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     const controller = startAbortableSave()
 
     try {
-      const targetLocale = contactInfo?.Locale || locale
-      let nextSettings = await updateSeoContactInfo({
+      const nextSettings = await updateSeoContactInfo({
         ...(contactInfo || {}),
         ...values,
-        Locale: targetLocale,
+        Locale: contactInfo?.Locale || locale,
       }, controller.signal)
-      const created = !contactInfo?.NetUid
-        ? nextSettings.find((entry) => entry.locale === locale)?.settings.EcommerceContactInfo
-        : null
-
-      // The server's first save (INSERT) drops PixelId; a follow-up update of the new record stores it.
-      if (created?.NetUid && values.PixelId.trim() && !created.PixelId) {
-        nextSettings = await updateSeoContactInfo({
-          ...created,
-          ...values,
-          Locale: created.Locale || targetLocale,
-        }, controller.signal)
-      }
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Контактну інформацію оновлено') })
