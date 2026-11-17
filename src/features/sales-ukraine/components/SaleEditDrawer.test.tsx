@@ -122,6 +122,21 @@ describe('SaleEditDrawer repeated edits', () => {
     await waitFor(() => expect(shift.disabled).toBe(false))
   })
 
+  it('keeps a fractional quantity instead of truncating it', async () => {
+    render(<Harness />)
+
+    const input = await waitFor(() => {
+      const element = document.querySelector<HTMLInputElement>('.sale-edit-shift-input input')
+      expect(element?.disabled).toBe(false)
+      return element as HTMLInputElement
+    })
+
+    fireEvent.change(input, { target: { value: '1.5' } })
+    fireEvent.blur(input)
+
+    expect(input.value).toBe('1.5')
+  })
+
   it('keeps shift inputs editable after a successful edit and reopening the same invoice', async () => {
     render(<Harness />)
 

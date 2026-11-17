@@ -39,6 +39,7 @@ describe('TTN settings round trip', () => {
     const defaults = { LoadingPoint: '', Number: 'P3' } as SaleConsignmentNoteSetting
 
     expect(applyConsignmentDocumentDefaults({ ...stored }, defaults, '123')).toMatchObject({ LoadingPoint: 'Львів', Number: '123' })
+    expect(applyConsignmentDocumentDefaults({ ...stored, Number: '777' }, defaults, '123')).toMatchObject({ Number: '777' })
     expect(applyConsignmentDocumentDefaults({ ...stored, LoadingPoint: '' }, { ...defaults, LoadingPoint: 'Адреса організації' }))
       .toMatchObject({ LoadingPoint: 'Адреса організації', Number: 'P3' })
   })

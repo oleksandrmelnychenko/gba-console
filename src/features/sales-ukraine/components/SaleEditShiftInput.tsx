@@ -20,7 +20,9 @@ export const SaleEditShiftInput = memo(function SaleEditShiftInput({
   return (
     <Tooltip label={hint} disabled={!showHint} withArrow>
       <NumberInput
-        allowDecimal={false}
+        // Weighed goods (kg, l) are shifted in fractions; the server accepts any positive quantity.
+        allowDecimal
+        decimalScale={3}
         allowNegative={false}
         // Too large values are clamped to the remaining quantity on blur instead of being silently dropped.
         clampBehavior="blur"

@@ -674,7 +674,7 @@ function toNumber(value: number | string): number {
     return Number.isFinite(value) ? value : 0
   }
 
-  const parsed = Number(value)
+  const parsed = Number(String(value).replace(',', '.'))
 
   return Number.isFinite(parsed) ? parsed : 0
 }

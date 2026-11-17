@@ -7,8 +7,8 @@ export const DIMENSION_INPUT_PROPS = { allowDecimal: false, allowNegative: false
 export const WEIGHT_INPUT_PROPS = { allowNegative: false, clampBehavior: 'strict', decimalScale: 2, hideControls: true, max: MAX_WEIGHT_T, min: 0 } as const
 
 /**
- * A saved setting does not store the TTN number (it belongs to the printed document), so the number the
- * user typed for this document is kept; every stored field, including the loading point, is loaded back.
+ * Every stored field is loaded back (TTN number and loading point included). Only when the setting has no
+ * stored number, the number typed for this document (or the document default P<sale number>) is used.
  */
 export function applyConsignmentDocumentDefaults(
   setting: SaleConsignmentNoteSetting,
@@ -19,7 +19,7 @@ export function applyConsignmentDocumentDefaults(
     ...defaults,
     ...setting,
     LoadingPoint: setting.LoadingPoint || defaults.LoadingPoint,
-    Number: currentNumber || defaults.Number,
+    Number: setting.Number || currentNumber || defaults.Number,
   }
 }
 
