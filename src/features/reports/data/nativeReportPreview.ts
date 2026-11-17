@@ -357,18 +357,36 @@ export function previewAmountText(value: string): string {
   return previewNumberText(`${match[1]}.${fraction}`)
 }
 
+function previewCaptionName(caption: string): string {
+  return caption.replace(/\s+\[(?:id=)?-?\d+\](?=,\s|$)/gi, '').replace(/\s+/g, ' ').trim()
+}
+
+const sharedAppearances = new WeakMap<ReadonlySet<string>, ReadonlySet<string>>()
+
+function appearances(sharedNames: ReadonlySet<string>): ReadonlySet<string> {
+  let folded = sharedAppearances.get(sharedNames)
+  if (!folded) {
+    folded = new Set([...sharedNames].map(name => name.toLocaleUpperCase('uk')))
+    sharedAppearances.set(sharedNames, folded)
+  }
+  return folded
+}
+
 export function previewCaptionText(caption: string, sharedNames?: ReadonlySet<string>): string {
-  const name = caption.replace(/\s+\[(?:id=)?-?\d+\](?=,\s|$)/gi, '')
-  return sharedNames?.has(name) ? caption : name
+  const name = previewCaptionName(caption)
+  return sharedNames && appearances(sharedNames).has(name.toLocaleUpperCase('uk')) ? caption.replace(/\s+/g, ' ').trim() : name
 }
 
 export function previewSharedNames(captions: readonly string[]): ReadonlySet<string> {
-  const byName = new Map<string, Set<string>>()
+  const byName = new Map<string, { name: string, all: Set<string> }>()
   for (const caption of captions) {
-    const name = previewCaptionText(caption)
-    byName.set(name, (byName.get(name) ?? new Set()).add(caption))
+    const name = previewCaptionName(caption)
+    const key = name.toLocaleUpperCase('uk')
+    const entry = byName.get(key) ?? { name, all: new Set<string>() }
+    entry.all.add(caption.replace(/\s+/g, ' ').trim())
+    byName.set(key, entry)
   }
-  return new Set([...byName].filter(([, all]) => all.size > 1).map(([name]) => name))
+  return new Set([...byName.values()].filter(entry => entry.all.size > 1).map(entry => entry.name))
 }
 
 export function previewCellText(value: NativeReportPreviewScalar | undefined): string {

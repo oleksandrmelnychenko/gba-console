@@ -122,3 +122,13 @@ describe('native report preview transport', () => {
     expect(() => normalizeNativeReportPreview({ Preview: { ...preview, Request: { ...request, DataSource: 'a'.repeat(65537) } } })).toThrow('опис розрахунку')
   })
 })
+
+describe('repeated names', () => {
+  it('treats names that differ only in spaces or case as the same name', () => {
+    const captions = ['СКЛАД Вітрина [1]', 'СКЛАД ВІТРИНА [2]', 'Дефлектор кабіни  ліва сторона [3]', 'Дефлектор кабіни ліва сторона [4]', 'ТРАНС-ОПТІМ  ТОВ [5]']
+    const shared = previewSharedNames(captions)
+    expect(captions.map(caption => previewCaptionText(caption, shared))).toEqual([
+      'СКЛАД Вітрина [1]', 'СКЛАД ВІТРИНА [2]', 'Дефлектор кабіни ліва сторона [3]', 'Дефлектор кабіни ліва сторона [4]', 'ТРАНС-ОПТІМ ТОВ',
+    ])
+  })
+})
