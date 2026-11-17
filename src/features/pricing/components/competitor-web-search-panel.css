@@ -234,6 +234,7 @@
   display: grid;
   gap: 8px;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
+  box-sizing: border-box;
   min-height: 44px;
   padding: 8px 8px;
   text-align: left;

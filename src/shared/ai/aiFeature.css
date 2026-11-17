@@ -44,3 +44,10 @@
 .ai-feature-badge__text {
   transform: translateY(-0.5px);
 }
+
+/* On an active tab/pill or a filled button the background is the brand orange,
+   so an orange marker vanished and only left an empty gap after the label.
+   There it takes the control's own text colour (white). */
+:is(.is-active, [data-active], [aria-pressed="true"], [aria-selected="true"], .mantine-Button-root[data-variant="filled"]) > .ai-feature-badge {
+  --ai-badge-color: currentColor;
+}

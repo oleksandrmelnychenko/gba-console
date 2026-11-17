@@ -1731,6 +1731,9 @@ html[data-gba-env='qa'] .console-header {
 .console-subnav-pill .ai-feature-badge {
   align-self: center;
   margin-left: -4px;
+  /* scale(0.8) keeps the full 18px layout box: give the unused 4px back so
+     the pill's right inset matches its left one. */
+  margin-right: -4px;
   transform: translateY(-5px) scale(0.8);
   transform-origin: bottom left;
 }
