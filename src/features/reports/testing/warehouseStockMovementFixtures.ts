@@ -37,7 +37,7 @@ const base = (Index: number, Depth: number, Level: StockMovementRow['Level'], La
 
 export const stockMovementRows: StockMovementRow[] = [
   base(0, 0, 'warehouse', 'СКЛАД -1', quantity(-2, 10, 3)),
-  base(1, 1, 'product', '94000 — Фільтр масляний', quantity(-2, 10, 3)),
+  base(1, 1, 'product', 'Фільтр масляний', quantity(-2, 10, 3)),
   { ...base(2, 2, 'registrar', 'Прихідна накладна ПН-1 від 03.02.2025 10:00:00', quantity(-2, 10, 0)),
     DocumentKind: 'receipt', DocumentType: 'Прихідна накладна', DocumentNumber: 'ПН-1', DocumentDate: '2025-02-03 10:00:00', Counterparty: 'Постачальник', Source: '1c' },
   { ...base(3, 2, 'registrar', 'Видаткова накладна ВН-7 від 20.10.2026 9:15:00', quantity(8, 0, 3)),

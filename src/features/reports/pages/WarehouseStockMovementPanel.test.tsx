@@ -113,11 +113,15 @@ describe('native warehouse stock movement', () => {
     expect(rows).toHaveLength(1 + stockMovementRows.length + 1)
     expect(rows[1].textContent).toContain('СКЛАД -1')
     expect(rows[1].getAttribute('data-summary')).toBe('true')
-    const opening = within(rows[1]).getAllByRole('cell')[1]
+    expect(within(table).getAllByRole('columnheader').slice(0, 2).map(cell => cell.textContent)).toEqual(['СкладТоварДокумент руху (реєстратор)', 'Артикул'])
+    expect(within(rows[1]).getAllByRole('cell')[1].textContent).toBe('')
+    expect(within(rows[2]).getAllByRole('cell').slice(0, 2).map(cell => cell.textContent)).toEqual(['Фільтр масляний', '94000'])
+    const opening = within(rows[1]).getAllByRole('cell')[2]
     expect(opening.textContent).toBe('-2')
     expect(opening.getAttribute('data-negative')).toBe('true')
     expect(rows[3].textContent).toContain('Прихідна накладна ПН-1 від 03.02.2025 10:00:00')
-    expect(within(rows[3]).getAllByRole('cell')[3].textContent).toBe('')
+    expect(within(rows[3]).getAllByRole('cell')[1].textContent).toBe('')
+    expect(within(rows[3]).getAllByRole('cell')[4].textContent).toBe('')
     expect(rows[4].textContent).not.toContain('GBA')
     expect(within(rows[5]).getAllByRole('columnheader').map(cell => cell.textContent)).toEqual(['Підсумок', '-2', '10', '3', '5'])
     expect(screen.queryByText(/у підсумку: кількість/)).toBeNull()
@@ -357,7 +361,7 @@ describe('native warehouse stock movement', () => {
   it('validates grouping before calling the server', async () => {
     render(panel())
     fireEvent.click(await screen.findByLabelText('Склад'))
-    fireEvent.click(screen.getByLabelText('Артикул'))
+    fireEvent.click(screen.getByLabelText('Товар'))
     fireEvent.click(screen.getByLabelText('Документ руху (реєстратор)'))
     expect(screen.getByText('Оберіть хоча б одне групування рядків.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(true)

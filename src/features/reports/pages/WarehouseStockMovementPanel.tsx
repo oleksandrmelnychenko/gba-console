@@ -156,6 +156,7 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
   const { result, request } = run
   const measures = STOCK_MOVEMENT_MEASURES.filter(measure => request.Measures.includes(measure) && draftMeasures.includes(measure))
   const deepest = request.Levels.length - 1
+  const articles = request.Levels.includes('product')
   const start = result.Offset, end = result.Offset + result.Rows.length
   const totalUnknown = grandTotals && measures.some(measure => result.Totals[measureKey[measure]] === null)
   const totalNote = result.PhysicalQuantityExceptions?.length ? STOCK_MOVEMENT_UNCONFIRMED_TOTAL_NOTE : STOCK_MOVEMENT_UNKNOWN_TOTAL_NOTE
@@ -165,6 +166,7 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
         <Table.Thead>
           <Table.Tr>
             <Table.Th className="stock-movement__label-head">{request.Levels.map(level => <span key={level}>{STOCK_MOVEMENT_LEVEL_LABELS[level]}</span>)}</Table.Th>
+            {articles ? <Table.Th>Артикул</Table.Th> : null}
             {measures.map(measure => <Table.Th key={measure} className="app-table-cell-number">{STOCK_MOVEMENT_MEASURE_LABELS[measure]}<br /><span className="stock-movement__unit">Кількість</span></Table.Th>)}
           </Table.Tr>
         </Table.Thead>
@@ -179,13 +181,14 @@ function ResultTable({ run, draftMeasures, negativeRed, grandTotals, busy, onPag
                   : <span>{row.Label}</span>}
               </div>
             </Table.Td>
+            {articles ? <Table.Td>{row.Level === 'product' ? row.Article ?? '' : ''}</Table.Td> : null}
             {measures.map(measure => <QuantityCell key={measure} value={row.Quantity[measureKey[measure]]} negativeRed={negativeRed}
               reason={row.QuantityStatus === 'unconfirmed_batch' ? STOCK_MOVEMENT_UNCONFIRMED_CELL_NOTE : STOCK_MOVEMENT_UNKNOWN_CELL_NOTE} />)}
           </Table.Tr>)}
         </Table.Tbody>
         {grandTotals ? <Table.Tfoot>
           <Table.Tr>
-            <Table.Th>Підсумок</Table.Th>
+            <Table.Th colSpan={articles ? 2 : undefined}>Підсумок</Table.Th>
             {measures.map(measure => <Table.Th key={measure} className="app-table-cell-number"
               data-negative={negativeRed && (result.Totals[measureKey[measure]] ?? 0) < 0 ? 'true' : undefined}
               title={result.Totals[measureKey[measure]] === null ? totalNote : undefined}>{formatStockQuantity(result.Totals[measureKey[measure]])}</Table.Th>)}

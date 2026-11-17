@@ -16,7 +16,7 @@ import { LEGACY_PREVIEW_COLUMNS, MAXIMUM_PREVIEW_PAGE_COLUMNS, MAXIMUM_RESULT_CO
 export type NativeReportPreviewScalar = { Kind: string; Value: string | null; Provenance: string }
 export type CurrentVparivanieProduct = { RowSourceIndex: number } & Record<typeof CURRENT_VPARIVANIE_PRODUCT_FIELDS[number], string | null>
 type CurrentVparivanieProducts = { Version: 1 | 2; ResultSha256: string; Rows: CurrentVparivanieProduct[] }
-export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar }[] }
+export type NativeReportPreviewAxis = { Ordinal: number; SourceIndex: number; Values: { Caption: string; Identity?: NativeReportPreviewScalar; Article?: string }[] }
 export type NativeReportPreviewCell = { RowSourceIndex: number; ColumnSourceIndex: number; Value: NativeReportPreviewScalar }
 type NativeReportPreviewGroupTotal = { Level: number; RowSourceIndex: number; RowCount: number; Values: NativeReportPreviewCell[] }
 type NativeReportPreviewTotals = { State: 'materialized'; Values: NativeReportPreviewCell[]; Groups: NativeReportPreviewGroupTotal[] }
@@ -61,7 +61,7 @@ export type NativeReportPreview = {
   PresentationOnly: boolean
   Request: NativeReportPreviewRequest | null
   Page: NativeReportPreviewPage
-  RowSchema: { Caption: string }[]
+  RowSchema: { Caption: string; ArticleCaption?: string }[]
   ColumnSchema: { Caption: string; Identity?: string; KeyKind?: string }[]
   Rows: NativeReportPreviewAxis[]
   Columns: NativeReportPreviewAxis[]
@@ -180,7 +180,8 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
     || !boundedInteger(preview.Page.ReturnedRows, 50)
     || typeof preview.Page.HasMore !== 'boolean'
     || !Array.isArray(preview.RowSchema) || preview.RowSchema.length > 64
-    || !preview.RowSchema.every(item => record(item) && typeof item.Caption === 'string')
+    || !preview.RowSchema.every(item => record(item) && typeof item.Caption === 'string'
+      && (item.ArticleCaption === undefined || typeof item.ArticleCaption === 'string'))
     || !Array.isArray(preview.ColumnSchema) || preview.ColumnSchema.length > 66
     || !preview.ColumnSchema.every(item => record(item) && typeof item.Caption === 'string')
     || !Array.isArray(preview.Rows) || preview.Rows.length > 50
@@ -198,7 +199,8 @@ export function normalizeNativeReportPreview(response: unknown, fullCurrentVpari
   const axis = (item: unknown, max: number): item is NativeReportPreviewAxis => record(item)
     && boundedInteger(item.Ordinal, max) && boundedInteger(item.SourceIndex, 500000)
     && Array.isArray(item.Values) && item.Values.length <= 66
-    && item.Values.every(value => record(value) && typeof value.Caption === 'string')
+    && item.Values.every(value => record(value) && typeof value.Caption === 'string'
+      && (value.Article === undefined || typeof value.Article === 'string'))
   const page = preview.Page as NativeReportPreview['Page']
   if (!preview.Rows.every(item => axis(item, 500000)) || !preview.Columns.every(item => axis(item, columnBound))
     || page.ReturnedRows !== preview.Rows.length

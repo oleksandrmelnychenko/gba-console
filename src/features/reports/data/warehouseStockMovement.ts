@@ -23,7 +23,7 @@ export type StockMovementArticleMatch = typeof STOCK_MOVEMENT_ARTICLE_MATCHES[nu
 
 export const STOCK_MOVEMENT_LEVEL_LABELS: Record<StockMovementLevel, string> = {
   warehouse: 'Склад',
-  product: 'Артикул',
+  product: 'Товар',
   month: 'Місяць',
   day: 'День',
   registrar: 'Документ руху (реєстратор)',
