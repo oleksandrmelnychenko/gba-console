@@ -48,6 +48,11 @@ export function Paginator({
   const { t } = useI18n()
   const canPrevious = page > 1
   const canNext = hasNext ?? (typeof totalPages === 'number' ? page < totalPages : true)
+  // The last reachable page: the known total, or the current page when the server said there
+  // is nothing after it (an unknown total with hasNext=false). Unknown otherwise.
+  const maxPage = typeof totalPages === 'number'
+    ? Math.max(1, totalPages)
+    : hasNext === false ? Math.max(1, page) : undefined
 
   // Editable page number: jump to an arbitrary page on Enter/blur, clamped to [1, totalPages]
   // when the total is known. Kept as a draft so typing doesn't fire a jump per keystroke.
@@ -63,7 +68,7 @@ export function Paginator({
       return
     }
 
-    const clamped = typeof totalPages === 'number' ? Math.min(parsed, Math.max(1, totalPages)) : parsed
+    const clamped = typeof maxPage === 'number' ? Math.min(parsed, maxPage) : parsed
 
     if (clamped !== page) {
       onPageChange(clamped)
@@ -94,7 +99,7 @@ export function Paginator({
         disabled={isLoading}
         hideControls
         min={1}
-        max={typeof totalPages === 'number' ? Math.max(1, totalPages) : undefined}
+        max={maxPage}
         size="xs"
         value={currentPageDraft}
         w={52}
