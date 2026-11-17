@@ -1,4 +1,5 @@
 import { formatEuroValuation } from '../euroValuation'
+import { normalizeGuid } from '../../../shared/guid/sameGuid'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -80,7 +81,7 @@ function PaymentAccountsPageContent() {
   const [searchValue, setSearchValue] = useValueState(() => searchParams.get('value') || '')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const [typeFilter, setTypeFilter] = useValueState<TypeFilter>(() => normalizeTypeFilter(searchParams.get('type')))
-  const [organizationNetId, setOrganizationNetId] = useValueState(() => searchParams.get('organizationNetId') || '')
+  const [organizationNetId, setOrganizationNetId] = useValueState(() => normalizeGuid(searchParams.get('organizationNetId')))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingLookups, setLoadingLookups] = useValueState(true)

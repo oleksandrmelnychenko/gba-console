@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -239,6 +239,28 @@ describe('SalesUkrainePage event permissions', () => {
     renderPage('/sales/ukraine/all?saleNetId=deep-linked-sale')
 
     await waitFor(() => expect(mocks.getSalesUkraineSaleDetails).toHaveBeenCalledWith('deep-linked-sale'))
+  })
+
+  it('treats an upper-case deep-linked sale GUID as the opened sale, so closing it sticks', async () => {
+    grant(
+      PermissionKeys.SalesUkraine.Sale.View,
+      PermissionKeys.SalesUkraine.Sale.OpenDetails,
+    )
+    const netUid = '6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b'
+    // The API echoes GUIDs lower-case whatever case the link carried.
+    mocks.getSalesUkraineSaleDetails.mockImplementation(async () => ({ ...sale, HasDetails: true, NetUid: netUid }))
+    mocks.getSalesUkraine.mockResolvedValue([{ ...sale, HasDetails: true, NetUid: netUid }])
+    renderPage(`/sales/ukraine/all?saleNetId=${netUid.toUpperCase()}`)
+
+    const drawer = await screen.findByRole('dialog', { name: 'Деталі продажу' })
+    await waitFor(() => expect(screen.getAllByText('Клієнт без granular прав').length).toBeGreaterThan(1))
+    const callsBeforeClose = mocks.getSalesUkraineSaleDetails.mock.calls.length
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Деталі продажу' })).toBeNull())
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(screen.queryByRole('dialog', { name: 'Деталі продажу' })).toBeNull()
+    expect(mocks.getSalesUkraineSaleDetails.mock.calls.length).toBe(callsBeforeClose)
   })
 
   it('does not render an empty context-menu opener', async () => {

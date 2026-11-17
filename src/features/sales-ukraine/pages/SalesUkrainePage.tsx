@@ -1,5 +1,6 @@
 import { reuseSaleSnapshot, reuseSaleSnapshots } from '../saleSnapshot'
 import { getEurToUahNote } from '../eurToUahNote'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { saleAgreementLabel, saleAgreementTitle } from '../../../shared/saleAgreementLabel'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -452,7 +453,7 @@ function SalesUkrainePageContent() {
   )
 
   const closeSelectedSale = useCallback(() => {
-    if (focusedSaleNetId && selectedSale?.NetUid === focusedSaleNetId) {
+    if (focusedSaleNetId && sameGuid(selectedSale?.NetUid, focusedSaleNetId)) {
       dismissedFocusedSaleNetIdRef.current = focusedSaleNetId
     }
 
@@ -872,12 +873,12 @@ function SalesUkrainePageContent() {
       !canOpenSale ||
       !focusedSaleNetId ||
       dismissedFocusedSaleNetIdRef.current === focusedSaleNetId ||
-      selectedSale?.NetUid === focusedSaleNetId
+      sameGuid(selectedSale?.NetUid, focusedSaleNetId)
     ) {
       return
     }
 
-    const currentSale = salesRef.current.find((sale) => sale.NetUid === focusedSaleNetId)
+    const currentSale = salesRef.current.find((sale) => sameGuid(sale.NetUid, focusedSaleNetId))
 
     if (currentSale) {
       void openSaleSheet(currentSale)

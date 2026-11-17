@@ -36,6 +36,7 @@ import {
   useState,
 } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -715,7 +716,7 @@ function SalesOnlineShopOrdersPage() {
       const sale = resolveRealtimeSale(payload)
       const netId = sale?.NetUid
 
-      if (!netId || salesRef.current.some((current) => current.NetUid === netId)) {
+      if (!netId || salesRef.current.some((current) => sameGuid(current.NetUid, netId))) {
         scheduleRealtimeReload()
       }
     },

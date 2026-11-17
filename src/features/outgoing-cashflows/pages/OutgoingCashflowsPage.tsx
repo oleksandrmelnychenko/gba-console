@@ -1,3 +1,4 @@
+import { normalizeGuid, sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -115,8 +116,8 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const [fromDate, setFromDate] = useValueState(() => readDateSearchParam(searchParams.get('from'), shiftDate(-7)))
   const [toDate, setToDate] = useValueState(() => readDateSearchParam(searchParams.get('to'), formatLocalDate(new Date())))
   const [searchValue, setSearchValue] = useValueState('')
-  const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
-  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
+  const [currencyNetId, setCurrencyNetId] = useValueState(() => normalizeGuid(searchParams.get('currencyNetId')))
+  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => normalizeGuid(searchParams.get('registerNetId')))
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -371,7 +372,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
   const rows = useMemo(() => buildCashflowRows(cashflows.Collection), [cashflows.Collection])
   const closeCashflowDetails = useCallback(() => {
-    if (focusedOrderNetId && selectedRow?.order.NetUid === focusedOrderNetId) {
+    if (focusedOrderNetId && sameGuid(selectedRow?.order.NetUid, focusedOrderNetId)) {
       dismissedFocusedOrderNetIdRef.current = focusedOrderNetId
     }
 
@@ -393,12 +394,12 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
       !focusedOrderNetId ||
       isLoading ||
       dismissedFocusedOrderNetIdRef.current === focusedOrderNetId ||
-      selectedRow?.order.NetUid === focusedOrderNetId
+      sameGuid(selectedRow?.order.NetUid, focusedOrderNetId)
     ) {
       return
     }
 
-    const focusedRow = rows.find((row) => row.order.NetUid === focusedOrderNetId)
+    const focusedRow = rows.find((row) => sameGuid(row.order.NetUid, focusedOrderNetId))
 
     if (focusedRow) {
       openCashflowDetails(focusedRow)

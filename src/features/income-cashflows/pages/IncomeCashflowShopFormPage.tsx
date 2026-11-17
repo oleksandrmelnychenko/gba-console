@@ -1,4 +1,5 @@
 import { paymentAgreementWithoutDocumentaryRead, paymentClientWithoutDocumentaryRead } from '../incomeDocumentaryReadBoundary'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
@@ -384,7 +385,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
             getIncomeCashflowRetailClientSales(retailClientId),
           ])
           const retailClient = nextRetailClients.find(
-            (client) => getEntityValue(client) === retailClientId,
+            (client) => sameGuid(getEntityValue(client), retailClientId),
           ) || null
 
           if (!cancelled) {
@@ -1541,7 +1542,7 @@ function matchesClientAgreementRouteId(
 
   return String(agreement.Id || '') === routeAgreementId ||
     String(agreement.AgreementId || '') === routeAgreementId ||
-    getEntityValue(agreement.Agreement) === routeAgreementId
+    sameGuid(getEntityValue(agreement.Agreement), routeAgreementId)
 }
 
 function parsePositiveEntityId(value: string): number | null {
@@ -1597,7 +1598,7 @@ function selectClientAgreement(
       (item) =>
         String(item.Id || '') === selectedAgreementId ||
         String(item.AgreementId || '') === selectedAgreementId ||
-        getEntityValue(item.Agreement) === selectedAgreementId,
+        sameGuid(getEntityValue(item.Agreement), selectedAgreementId),
     )
 
     if (agreement) {

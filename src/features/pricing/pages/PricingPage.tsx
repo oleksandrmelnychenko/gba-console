@@ -3,6 +3,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { Check, PackageSearch, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { normalizeGuid } from '../../../shared/guid/sameGuid'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -76,7 +77,7 @@ export function PricingPage() {
     items: SalesUkraineProduct[]
   }>({ query: '', items: [] })
   const [selectedProduct, setSelectedProduct] = useState<SalesUkraineProduct | null>(() => {
-    const netId = searchParams.get('productNetId')
+    const netId = normalizeGuid(searchParams.get('productNetId'))
     return netId ? ({ NetUid: netId } as SalesUkraineProduct) : null
   })
 
@@ -93,7 +94,7 @@ export function PricingPage() {
     items: SalesUkraineClientAgreement[]
   }>({ clientNetId: '', items: [] })
   const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | null>(
-    () => searchParams.get('clientAgreementNetId'),
+    () => normalizeGuid(searchParams.get('clientAgreementNetId')) || null,
   )
 
   const normalizedProductQuery = debouncedProductQuery.trim()

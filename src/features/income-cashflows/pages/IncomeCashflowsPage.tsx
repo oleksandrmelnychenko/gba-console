@@ -1,4 +1,5 @@
 import { incomePaymentAllocationView } from '../incomePaymentAllocationSummary'
+import { normalizeGuid, sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
@@ -136,8 +137,8 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const [fromDate, setFromDate] = useValueState(() => readDateSearchParam(searchParams.get('from'), shiftDate(-7)))
   const [toDate, setToDate] = useValueState(() => readDateSearchParam(searchParams.get('to'), formatLocalDate(new Date())))
   const [searchValue, setSearchValue] = useValueState('')
-  const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
-  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
+  const [currencyNetId, setCurrencyNetId] = useValueState(() => normalizeGuid(searchParams.get('currencyNetId')))
+  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => normalizeGuid(searchParams.get('registerNetId')))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
@@ -230,7 +231,7 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
 
   const closeIncomeDetails = useCallback(() => {
-    if (focusedOrderNetId && selectedRow?.income.NetUid === focusedOrderNetId) {
+    if (focusedOrderNetId && sameGuid(selectedRow?.income.NetUid, focusedOrderNetId)) {
       dismissedFocusedOrderNetIdRef.current = focusedOrderNetId
     }
 
@@ -376,12 +377,12 @@ function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
       !focusedOrderNetId ||
       isLoading ||
       dismissedFocusedOrderNetIdRef.current === focusedOrderNetId ||
-      selectedRow?.income.NetUid === focusedOrderNetId
+      sameGuid(selectedRow?.income.NetUid, focusedOrderNetId)
     ) {
       return
     }
 
-    const focusedRow = rows.find((row) => row.income.NetUid === focusedOrderNetId)
+    const focusedRow = rows.find((row) => sameGuid(row.income.NetUid, focusedOrderNetId))
 
     if (focusedRow) {
       openIncomeDetails(focusedRow)

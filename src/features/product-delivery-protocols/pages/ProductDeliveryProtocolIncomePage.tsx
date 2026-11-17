@@ -1,3 +1,4 @@
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import {
@@ -386,12 +387,12 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
           setProductIncome(loadedProductIncome)
           setStorages(loadedStorages)
           setSelectedStorageId((current) =>
-            loadedStorages.some((storage) => storage.NetUid === current)
+            loadedStorages.some((storage) => sameGuid(storage.NetUid, current))
               ? current
               : loadedStorages[0]?.NetUid || null,
           )
           setSelectedInvoiceId((current) =>
-            loadedSource.SupplyInvoices.some((invoice) => invoice.NetUid === current)
+            loadedSource.SupplyInvoices.some((invoice) => sameGuid(invoice.NetUid, current))
               ? current
               : loadedSource.SupplyInvoices[0]?.NetUid || null,
           )
@@ -514,7 +515,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         const loadedPackList = await getPackingListSpecificationProducts(source, netId)
         if (packingListRequestRef.current === requestId) {
           const columns =
-            invoice?.PackingLists.find((list) => list.NetUid === netId)?.DynamicProductPlacementColumns || []
+            invoice?.PackingLists.find((list) => sameGuid(list.NetUid, netId))?.DynamicProductPlacementColumns || []
           applyLoadedPackingList({ ...loadedPackList, DynamicProductPlacementColumns: columns })
           setDirty(false)
         }
@@ -640,11 +641,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   ])
 
   const selectedStorage = useMemo(
-    () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
+    () => storages.find((storage) => sameGuid(storage.NetUid, selectedStorageId)) || null,
     [selectedStorageId, storages],
   )
   const selectedSourceInvoice = useMemo(
-    () => protocol?.SupplyInvoices.find((sourceInvoice) => sourceInvoice.NetUid === selectedInvoiceId) || null,
+    () => protocol?.SupplyInvoices.find((sourceInvoice) => sameGuid(sourceInvoice.NetUid, selectedInvoiceId)) || null,
     [protocol, selectedInvoiceId],
   )
   // The invoice-items DTO intentionally omits DeliveryProductProtocol. Keep an
@@ -1693,7 +1694,7 @@ function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProp
 
 function getIncomeCommercialContext(model: ProtocolIncomeModel) {
   const sourceInvoice = model.protocol?.SupplyInvoices.find(
-    (invoice) => invoice.NetUid === model.selectedInvoiceId,
+    (invoice) => sameGuid(invoice.NetUid, model.selectedInvoiceId),
   )
   const sourceOrder = sourceInvoice?.SupplyOrder || model.invoice?.SupplyOrder
   const client = model.protocol?.Client || sourceOrder?.Client
