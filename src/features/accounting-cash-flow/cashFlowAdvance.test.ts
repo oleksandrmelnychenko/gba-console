@@ -22,7 +22,9 @@ describe('cash flow advance presentation', () => {
       EURO_STATEMENT_NOTE,
       'Документів без збереженої суми EUR: 2; їх оцінено за поточним курсом',
     ])
-    expect(EURO_STATEMENT_NOTE).toBe('Суми в EUR — збережені суми документів; «Аванс» — неоплачений залишок оплати')
+    // currency#13: the chip is the overpayment at payment time; the server does not reduce it when a sale consumes the advance.
+    expect(AGREEMENT_STATEMENT_NOTE).toBe('«Аванс» — частина оплати понад борги на момент оплати; пізніші продажі могли її використати')
+    expect(EURO_STATEMENT_NOTE).toBe('Суми в EUR — збережені суми документів; «Аванс» — частина оплати понад борги на момент оплати; пізніші продажі могли її використати')
   })
 
   it('keeps the agreement-currency statement free of the EUR note', () => {

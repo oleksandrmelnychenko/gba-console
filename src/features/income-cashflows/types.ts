@@ -138,6 +138,8 @@ export type Agreement = EntityFields & {
   ClientInDebts?: ClientInDebt[]
   Currency?: Currency | null
   CurrencyId?: number
+  IsAccounting?: boolean
+  IsManagementAccounting?: boolean
   IsSelected?: boolean
   Name?: string
   Number?: string

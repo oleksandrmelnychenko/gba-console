@@ -1,3 +1,4 @@
+import { differsFromAgreementAccounting, getAgreementAccountingFlags } from '../incomeAccountingFlags'
 import { keepPickedRegister, pickRegisterCurrency } from '../incomeRegisterSelection'
 import { buildIncomeConfirmLines, formatOrderDate, isFutureOrderDate } from '../incomeCashflowConfirm'
 import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
@@ -270,6 +271,24 @@ function IncomeCashflowClientFormPageContent() {
     () => clientAgreements.find((agreement) => getEntityValue(agreement.Agreement) === form.selectedAgreementValue) || null,
     [clientAgreements, form.selectedAgreementValue],
   )
+  const agreementAccounting = getAgreementAccountingFlags(selectedClientAgreement?.Agreement)
+  const agreementAccountingKey = agreementAccounting && selectedClientAgreement?.Agreement
+    ? `${getEntityValue(selectedClientAgreement.Agreement)}:${agreementAccounting.isAccounting}:${agreementAccounting.isManagementAccounting}`
+    : ''
+
+  useEffect(() => {
+    // A newly chosen agreement brings its accounting type; the user may still change it (with a notice).
+    if (!agreementAccountingKey) {
+      return
+    }
+
+    const [, isAccounting, isManagementAccounting] = agreementAccountingKey.split(':')
+    setForm((current) => ({
+      ...current,
+      isAccounting: isAccounting === 'true',
+      isManagementAccounting: isManagementAccounting === 'true',
+    }))
+  }, [agreementAccountingKey, setForm])
   const selectedSupplyAgreement = useMemo(
     () => supplyOrganizationAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
     [form.selectedAgreementValue, supplyOrganizationAgreements],
@@ -1373,6 +1392,11 @@ function IncomeCashflowClientFormPageContent() {
                 onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
               />
             </Group>
+            {differsFromAgreementAccounting(form, agreementAccounting) ? (
+              <Text c="orange" size="xs">
+                {t('Облік ордера відрізняється від обліку договору')}: {agreementAccounting?.isManagementAccounting ? t('Управлінський облік') : ''}{agreementAccounting?.isManagementAccounting && agreementAccounting?.isAccounting ? ', ' : ''}{agreementAccounting?.isAccounting ? t('Бухгалтерський облік') : ''}
+              </Text>
+            ) : null}
           </Stack>
 
           {!isSupplierSearch && selectedClient && (

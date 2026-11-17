@@ -4,9 +4,9 @@ export const INCOME_PAYMENT_ORDER_TYPE = 12
 
 export const ADVANCE_LABEL = 'Аванс'
 
-export const EURO_STATEMENT_NOTE = 'Суми в EUR — збережені суми документів; «Аванс» — неоплачений залишок оплати'
+export const EURO_STATEMENT_NOTE = 'Суми в EUR — збережені суми документів; «Аванс» — частина оплати понад борги на момент оплати; пізніші продажі могли її використати'
 
-export const AGREEMENT_STATEMENT_NOTE = '«Аванс» — неоплачений залишок оплати'
+export const AGREEMENT_STATEMENT_NOTE = '«Аванс» — частина оплати понад борги на момент оплати; пізніші продажі могли її використати'
 
 export function getCashFlowAdvanceAmount(item: AccountingCashFlowHeadItem | null | undefined): number | null {
   if (!item || item.Type !== INCOME_PAYMENT_ORDER_TYPE) {
