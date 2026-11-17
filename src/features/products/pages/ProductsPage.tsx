@@ -175,6 +175,7 @@ const VIRTUAL_PAGE_SIZE = 10
 // "assortment" is a tab sentinel, NOT a product NetUid, so it must not be treated as a
 // product deep-link (which would fail with «Товар не знайдено»).
 const ROUTE_ASSORTMENT_SENTINEL = 'assortment'
+const ORIGINAL_NUMBER_MAX_LENGTH = 100
 const GUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SEARCH_DEBOUNCE_MS = 250
 const DETAIL_LOAD_DEBOUNCE_MS = 250
@@ -1682,7 +1683,11 @@ function ProductOriginalNumbersTab({
       getOriginalNumberText(item).toLowerCase() === normalizedCode.toLowerCase()
       && getProductOriginalNumberIdentity(item) !== selectedNetUid
     ))
-  const canSave = Boolean(productNetUid && normalizedCode && !isDuplicate && !isSaving)
+  // Server contract: up to 100 characters after trimming, no angle brackets.
+  const codeFormatError = normalizedCode.includes('<') || normalizedCode.includes('>')
+    ? t('Оригінальний номер не може містити символи < і >')
+    : undefined
+  const canSave = Boolean(productNetUid && normalizedCode && !isDuplicate && !codeFormatError && !isSaving)
   const canEditOriginalNumbers = hasPermission(PRODUCT_EDIT_PERMISSION)
 
   function selectOriginalNumber(item: ProductOriginalNumber) {
@@ -1901,7 +1906,8 @@ function ProductOriginalNumbersTab({
               className="product-original-number-input"
               label={t('Оригінальний номер')}
               value={codeDraft}
-              error={isDuplicate ? t('Такий оригінальний номер вже існує') : undefined}
+              error={isDuplicate ? t('Такий оригінальний номер вже існує') : codeFormatError}
+              maxLength={ORIGINAL_NUMBER_MAX_LENGTH}
               onChange={(event) => setCodeDraft(event.currentTarget.value)}
             />
             <Checkbox

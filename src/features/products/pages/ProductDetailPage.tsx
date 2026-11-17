@@ -5,6 +5,8 @@ import type { PhysicalCoverage } from '../../../shared/ui/product-movement-histo
 import { useProductImageDraft } from '../useProductImageDraft'
 import { partitionProductImageFiles, PRODUCT_IMAGE_ACCEPT } from '../productImageFiles'
 import { parseSpecificationAmount, SPECIFICATION_AMOUNT_MAX } from '../productSpecificationAmounts'
+import { isConflictError, isNotFoundError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getProductMovementRowKey, withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
@@ -97,7 +99,7 @@ import type {
   ProductStorageLocationHistory,
   ProductWriteOffRule,
 } from '../types'
-import { createProductEditForm, type ProductEditForm } from './productEditForm'
+import { createProductEditForm, parseProductWeight, type ProductEditForm } from './productEditForm'
 import {
   displayValue,
   formatAmount,
@@ -1106,7 +1108,7 @@ export function ProductActionDrawer({
     return (
       <AppModal opened title={t('Редагувати товар')} size={800} onClose={onClose} className="product-edit-modal app-compact-form" closeOnClickOutside={false}>
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
-          <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} />
+          <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} onClose={onClose} onReload={onReload} />
         </PermissionGate>
       </AppModal>
     )
@@ -1192,14 +1194,19 @@ function ProductPermissionDeniedAlert() {
   )
 }
 
-function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () => void; onProductSaved: (product: Product | null) => void; product: Product }) {
+function ProductEditPanel({ onClose, onProductSaved, onReload, product }: { onClose: () => void; onProductSaved: (product: Product | null) => void; onReload?: () => void; product: Product }) {
   const { t } = useI18n()
   const [form, setForm] = useState<ProductEditForm>(() => createProductEditForm(product))
   const canEditClassification = canEditNativeProductClassification(product)
   const [error, setError] = useState<string | null>(null)
+  const [weightError, setWeightError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState<string | null>(null)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   function setField<K extends keyof ProductEditForm>(field: K, value: ProductEditForm[K]) {
+    if (field === 'Weight') {
+      setWeightError(null)
+    }
     setForm((currentForm) => ({
       ...currentForm,
       [field]: value,
@@ -1208,10 +1215,16 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
 
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const weight = parseProductWeight(form.Weight, t)
+    if (weight.error) {
+      setWeightError(weight.error)
+      return
+    }
     if (!tryStartSaving()) {
       return
     }
     setError(null)
+    setConflict(null)
 
     try {
         const nextProduct = await updateProduct({
@@ -1230,13 +1243,19 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
           SynonymsUA: form.SynonymsUA,
           Top: form.Top,
           Volume: form.Volume,
-          Weight: form.Weight,
+          Weight: weight.value,
         })
 
       onProductSaved(nextProduct)
       notifications.show({ color: 'green', message: t('Товар збережено') })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти товар'))
+      if (isConflictError(saveError)) {
+        setConflict(t('Товар змінив інший користувач після того, як ви відкрили картку. Перезавантажте товар; ваші незбережені зміни буде втрачено.'))
+        return
+      }
+      setError(isNotFoundError(saveError)
+        ? t('Товар видалено або не знайдено. Зміни не збережено.')
+        : saveError instanceof Error ? saveError.message : t('Не вдалося зберегти товар'))
     } finally {
       setSaving(false)
     }
@@ -1251,6 +1270,15 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
         </Group>
         <div className="product-edit-fields">
 
+          {conflict && (
+            <StaleRecordAlert
+              message={conflict}
+              onReload={() => {
+                onClose()
+                onReload?.()
+              }}
+            />
+          )}
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -1279,7 +1307,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
               <TextInput label={t('Top')} value={form.Top} maxLength={3} onChange={(event) => setField('Top', event.currentTarget.value)} />
               <TextInput label={t('Розмір')} value={form.Size} onChange={(event) => setField('Size', event.currentTarget.value)} />
               <TextInput label={t("Об'єм")} value={form.Volume} onChange={(event) => setField('Volume', event.currentTarget.value)} />
-              <NumberInput hideControls label={t('Вага')} value={form.Weight ?? ''} min={0} onChange={(value) => setField('Weight', typeof value === 'number' ? value : null)} />
+              <TextInput error={weightError} inputMode="decimal" label={t('Вага')} maxLength={20} value={form.Weight ?? ''} onChange={(event) => setField('Weight', event.currentTarget.value)} />
               <TextInput label={t('Норма пакування')} value={form.OrderStandard} onChange={(event) => setField('OrderStandard', event.currentTarget.value)} />
               <TextInput label={t('Пакування')} value={form.PackingStandard} onChange={(event) => setField('PackingStandard', event.currentTarget.value)} />
               <TextInput label={t('Синоніми UA')} value={form.SynonymsUA} onChange={(event) => setField('SynonymsUA', event.currentTarget.value)} />
