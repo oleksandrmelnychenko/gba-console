@@ -2333,6 +2333,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   const [isLoadingGroups, setLoadingGroups] = useState(Boolean(productNetUid))
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [removingNetUid, setRemovingNetUid] = useState<string | null>(null)
+  const removingRuleRef = useRef(false)
   const selectedProductGroup = useMemo(
     () => productGroups.find((group) => group.NetUid === selectedProductGroupNetUid) || null,
     [productGroups, selectedProductGroupNetUid],
@@ -2547,10 +2548,15 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
 
   const removeRule = useCallback(
     async (rule: ProductWriteOffRule) => {
-      if (!canDeleteRule || !rule.NetUid) {
+      if (!canDeleteRule || !rule.NetUid || removingRuleRef.current) {
         return
       }
 
+      if (!window.confirm(t('Видалити правило списання «{rule}»?', { rule: t(formatRuleType(rule.RuleType)) }))) {
+        return
+      }
+
+      removingRuleRef.current = true
       setRemovingNetUid(rule.NetUid)
       setError(null)
 
@@ -2562,6 +2568,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
       } catch (deleteError) {
         setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити правило списання'))
       } finally {
+        removingRuleRef.current = false
         setRemovingNetUid(null)
       }
     },
@@ -2621,7 +2628,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         </div>
         <div className="app-filter-actions">
           <PermissionGate permissionKey={PRODUCT_WRITE_OFF_CREATE_PERMISSION}>
-            <Button className="app-filter-primary-action" disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSaving} onClick={addRule}>
+            <Button className="app-filter-primary-action" disabled={!productNetUid || isLoading || isSaving || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isSaving} onClick={addRule}>
               {t('Додати')}
             </Button>
           </PermissionGate>
