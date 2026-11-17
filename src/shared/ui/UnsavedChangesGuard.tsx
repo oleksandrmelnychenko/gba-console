@@ -31,7 +31,9 @@ export function useUnsavedChangesGuard(isDirty: boolean, message?: string): {
 
   function guard(close: () => void) {
     if (isDirty) {
-      setPendingClose(() => close)
+      // Opened after the current event: when Escape triggered the close, the
+      // question dialog would otherwise receive the same Escape and vanish at once.
+      window.setTimeout(() => setPendingClose(() => close), 0)
       return
     }
 

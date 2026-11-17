@@ -38,16 +38,16 @@ describe('useUnsavedChangesGuard', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('asks before a filled form is closed, and stays on «Залишитися»', () => {
+  it('asks before a filled form is closed, and stays on «Залишитися»', async () => {
     const onClose = renderForm(true)
 
     fireEvent.click(screen.getByRole('button', { name: 'close' }))
-    expect(screen.getByText('Є незбережені зміни')).toBeTruthy()
+    expect(await screen.findByText('Є незбережені зміни')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Залишитися' }))
     expect(onClose).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'close' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Закрити без збереження' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Закрити без збереження' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
