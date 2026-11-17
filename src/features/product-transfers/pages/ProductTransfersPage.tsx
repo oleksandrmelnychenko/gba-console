@@ -62,6 +62,9 @@ import type {
   ProductTransferStorage,
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, excelImportErrorText } from '../../../shared/excel/excelImportMessages'
+import { formatPlacementAddress } from '../../../shared/placements/placementAddress'
+import { getTransferTimeSource } from '../productTransferTime'
 import './product-transfers-page.css'
 
 type FilterDraft = {
@@ -137,6 +140,8 @@ function useProductTransfersPageModel({
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [exceptionMessages, setExceptionMessages] = useValueState<string[]>([])
   const [isCreating, setCreating, tryStartCreating] = useBusyState()
+  /* Set after a successful import until the dialog is opened again (FormData posts are not deduped). */
+  const createdRef = useRef(false)
   const [error, setError] = useValueState<string | null>(null)
   const [storageError, setStorageError] = useValueState<string | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -324,6 +329,7 @@ function useProductTransfersPageModel({
       return
     }
 
+    createdRef.current = false
     setCreateError(null)
     setCreateForm((current) => resolveStorageDefaults(current, storages))
     setCreateModalOpen(true)
@@ -338,11 +344,12 @@ function useProductTransfersPageModel({
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setCreateError(null)
 
-    if (!canCreate) {
+    if (!canCreate || createdRef.current) {
       return
     }
+
+    setCreateError(null)
 
     const createFormForSave = {
       ...createForm,
@@ -384,6 +391,7 @@ function useProductTransfersPageModel({
           ToStorageNetUid: selectedToStorage.NetUid || '',
         },
       })
+      createdRef.current = true
 
       setCreateModalOpen(false)
       setCreateForm(resolveStorageDefaults(createInitialForm(today), storages))
@@ -394,13 +402,12 @@ function useProductTransfersPageModel({
       }
 
       notifications.show({
+        autoClose: 8000,
         color: messages.length > 0 ? 'yellow' : 'green',
         message: messages.length > 0 ? t('Переміщення створено з попередженнями') : t('Переміщення створено'),
       })
     } catch (createErrorValue) {
-      setCreateError(
-        createErrorValue instanceof Error ? createErrorValue.message : t('Не вдалося створити переміщення з файлу'),
-      )
+      setCreateError(excelImportErrorText(createErrorValue, t('Не вдалося створити переміщення з файлу')))
     } finally {
       setCreating(false)
     }
@@ -946,7 +953,7 @@ function useProductTransferColumns(
           <>
             <Text fw={600}>{displayValue(formatDate(parseDate(transfer.FromDate)))}</Text>
             <Text size="xs" c="dimmed">
-              {displayValue(formatTime(parseDate(transfer.FromDate)))}
+              {displayValue(formatTime(getTransferTimeSource(transfer)))}
             </Text>
           </>
         ),
@@ -1236,10 +1243,10 @@ function createInitialForm(today: string): CreateFormState {
     fromDate: today,
     fromStorageNetUid: '',
     isManagement: false,
-    qtyColumnNumber: '',
-    startRow: '',
+    qtyColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.qtyColumn,
+    startRow: DEFAULT_EXCEL_IMPORT_LAYOUT.startRow,
     toStorageNetUid: '',
-    vendorCodeColumnNumber: '',
+    vendorCodeColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.codeColumn,
   }
 }
 
@@ -1290,7 +1297,7 @@ function validateCreateForm(form: CreateFormState, storages: ProductTransferStor
   }
 
   if (!form.file) {
-    return translate('Додайте XLS або XLSX файл')
+    return translate(EXCEL_FILE_REQUIRED_MESSAGE)
   }
 
   if (!isPositiveNumber(form.vendorCodeColumnNumber) || !isPositiveNumber(form.qtyColumnNumber)) {
@@ -1446,7 +1453,7 @@ function formatLocations(locations: ProductTransferLocation[]): string {
 
 function formatLocation(location: ProductTransferLocation): string {
   const placement = location.ProductPlacement
-  const address = [placement?.StorageNumber, placement?.RowNumber, placement?.CellNumber].filter(Boolean).join('-')
+  const address = formatPlacementAddress(placement)
   const qty = formatAmount(toNumber(location.Qty) ?? toNumber(placement?.Qty))
 
   if (!address && !qty) {
