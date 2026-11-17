@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../../shared/api/apiClient'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { createUser, getUserRolesForCreate } from '../api/usersApi'
@@ -158,5 +159,18 @@ describe('new user workflow', () => {
     expect(screen.getByLabelText('Поточний email').textContent).toBe('')
     expect(screen.getByLabelText('Поточний пароль').textContent).toBe('')
     expect(screen.getByLabelText('Поточне підтвердження').textContent).toBe('')
+  })
+  it('shows the server refusal of a role the creator may not assign and keeps the form open', async () => {
+    const refusal = 'Недостатньо прав, щоб призначити цю роль: вона містить права, яких немає у вашій ролі.'
+    vi.mocked(createUser).mockRejectedValue(new ApiError(refusal, 403, { Message: refusal, StatusCode: 403 }))
+    renderWorkflow()
+
+    await waitFor(() => expect(getUserRolesForCreate).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Заповнити валідні дані' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
+
+    expect(await screen.findByText(refusal)).not.toBeNull()
+    expect(screen.queryByText('Реєстр користувачів')).toBeNull()
+    expect(screen.getByLabelText('Поточний email').textContent).toBe('test-user@example.com')
   })
 })
