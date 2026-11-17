@@ -23,6 +23,7 @@ import {
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
 import { realtimeUrl } from './realtimeUrl'
 import { applyDataSyncNotification } from './dataSyncProgressStore'
+import { humanizeSyncStepKeys } from './syncStepLabel'
 import { DATA_SYNC_ERROR_NOTIFICATION_ID, getDataSyncToastAction } from './dataSyncNotificationToast'
 import { reconcileDataSyncProgressWithServer, useDataSyncProgressWatchdog } from './dataSyncStatusReconciler'
 import { manageConnections } from './hubConnectionManager'
@@ -320,7 +321,7 @@ function createDataSyncNotificationPresenter(
       return
     }
 
-    const { description, title } = splitDataSyncMessage(notification.DisplayMessage, t)
+    const { description, title } = splitDataSyncMessage(humanizeSyncStepKeys(notification.DisplayMessage), t)
 
     notifications.hide(DATA_SYNC_ERROR_NOTIFICATION_ID)
     notifications.show({

@@ -175,7 +175,7 @@ describe('RealtimeProvider data-sync channel', () => {
     expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({
       autoClose: false,
       id: 'data-sync-error',
-      title: 'Помилка синхронізації (DailySession.MasterData.Clients)',
+      title: 'Помилка синхронізації (Щоденна синхронізація → Довідники та основні дані → Клієнти)',
     }))
 
     vi.mocked(notifications.hide).mockClear()
