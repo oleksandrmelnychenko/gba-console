@@ -12,8 +12,8 @@ import {
 } from '@mantine/core'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
-import { Archive, CheckCircle2, CircleAlert, Globe, MapPin, Plus, RefreshCw, RotateCcw, Save, Search, Wallet, type LucideIcon } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { Archive, CheckCircle2, CircleAlert, Globe, MapPin, Plus, RefreshCw, RotateCcw, Save, Search, Trash2, Wallet, type LucideIcon } from 'lucide-react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { translate } from '../../../shared/i18n/translate'
@@ -90,12 +90,13 @@ export function OnlineShopCitiesPage() {
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isEditorOpen, setEditorOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const saveAbortRef = useRef<AbortController | null>(null)
   const visibleCities = useMemo(
     () => filterCities(cities, searchValue).filter((city) => matchCityFilter(city, cityFilter)),
     [cities, cityFilter, searchValue],
   )
   const cityNavigationItems = useMemo<CityNavigationItem[]>(
-    () => [
+    () => ([
       {
         count: cities.length,
         label: t('Всі міста'),
@@ -121,7 +122,7 @@ export function OnlineShopCitiesPage() {
         label: t('Загальна оплата'),
         value: CITY_FILTER_GLOBAL,
       },
-    ],
+    ] satisfies CityNavigationItem[]).filter((item) => item.value !== CITY_FILTER_ARCHIVED || item.count > 0),
     [cities, t],
   )
   const openEditor = useCallback((city?: OnlineShopCity) => {
@@ -188,11 +189,13 @@ export function OnlineShopCitiesPage() {
     setCityFilter(CITY_FILTER_ALL)
   }
 
-  function closeEditor() {
-    if (isSaving) {
-      return
-    }
+  function abortPendingSave() {
+    saveAbortRef.current?.abort()
+    saveAbortRef.current = null
+  }
 
+  function closeEditor() {
+    abortPendingSave()
     setEditorOpen(false)
     setEditingCity(null)
     setFormValues(EMPTY_FORM_VALUES)
@@ -227,9 +230,11 @@ export function OnlineShopCitiesPage() {
     }
     setError(null)
     setFormError(null)
+    const controller = new AbortController()
+    saveAbortRef.current = controller
 
     try {
-      const nextCities = await saveOnlineShopCity(payload, action)
+      const nextCities = await saveOnlineShopCity(payload, action, controller.signal)
 
       setCities(nextCities)
       notifications.show({
@@ -238,8 +243,15 @@ export function OnlineShopCitiesPage() {
       })
       closeEditor()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти місто'))
+      if (!controller.signal.aborted) {
+        const message = saveError instanceof Error ? saveError.message : t('Не вдалося зберегти місто')
+        setFormError(message)
+        notifications.show({ color: 'red', message })
+      }
     } finally {
+      if (saveAbortRef.current === controller) {
+        saveAbortRef.current = null
+      }
       setSaving(false)
     }
   }
@@ -253,22 +265,31 @@ export function OnlineShopCitiesPage() {
       return
     }
     setError(null)
+    const controller = new AbortController()
+    saveAbortRef.current = controller
 
     try {
       const nextCities = await saveOnlineShopCity({
         ...archiveTarget,
         Deleted: true,
-      }, 'archive')
+      }, 'archive', controller.signal)
 
       setCities(nextCities)
       notifications.show({
         color: 'green',
-        message: t('Місто архівовано'),
+        message: t('Місто видалено'),
       })
       setArchiveTarget(null)
     } catch (archiveError) {
-      setError(archiveError instanceof Error ? archiveError.message : t('Не вдалося архівувати місто'))
+      if (!controller.signal.aborted) {
+        const message = archiveError instanceof Error ? archiveError.message : t('Не вдалося видалити місто')
+        setError(message)
+        notifications.show({ color: 'red', message })
+      }
     } finally {
+      if (saveAbortRef.current === controller) {
+        saveAbortRef.current = null
+      }
       setSaving(false)
     }
   }
@@ -308,7 +329,10 @@ export function OnlineShopCitiesPage() {
         city={canArchiveCity ? archiveTarget : null}
         isSaving={isSaving}
         onArchive={handleArchiveCity}
-        onClose={() => setArchiveTarget(null)}
+        onClose={() => {
+          abortPendingSave()
+          setArchiveTarget(null)
+        }}
       />
     </Stack>
   )
@@ -538,9 +562,9 @@ function useCityColumns({
 
           return onRequestArchive ? (
             <TableRowAction
-              action="archive"
+              action="delete"
               disabled={!city.Id || isArchived}
-              label={t('Архівувати')}
+              label={t('Видалити')}
               onClick={() => onRequestArchive(city)}
             />
           ) : null
@@ -617,17 +641,17 @@ function CityEditorModal({
                 <Button
                   color="red"
                   disabled={isSaving}
-                  leftSection={<Archive size={16} />}
+                  leftSection={<Trash2 size={16} />}
                   type="button"
                   variant="subtle"
                   onClick={() => onArchive(city)}
                 >
-                  {t('Архівувати')}
+                  {t('Видалити')}
                 </Button>
               )}
             </Box>
             <Group gap="xs">
-              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={onClose}>
+              <Button color="gray" type="button" variant="default" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
@@ -652,15 +676,15 @@ function CityArchiveModal({ city, isSaving, onArchive, onClose }: CityArchiveMod
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(city)} title={t('Архівувати місто')} onClose={onClose}>
+    <AppModal centered opened={Boolean(city)} title={t('Видалити місто')} onClose={onClose}>
       <Stack gap={10}>
-        <Text>{city ? t('Місто "{name}" буде прибране з активного списку.', { name: getCityName(city) }) : ''}</Text>
+        <Text>{city ? t('Місто "{name}" буде видалено назавжди. Відновити його з інтерфейсу неможливо.', { name: getCityName(city) }) : ''}</Text>
         <AppModalFooter>
-          <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
+          <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" loading={isSaving} onClick={onArchive}>
-            {t('Архівувати')}
+          <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={onArchive}>
+            {t('Видалити')}
           </Button>
         </AppModalFooter>
       </Stack>

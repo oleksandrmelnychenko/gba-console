@@ -10,10 +10,12 @@ export async function getOnlineShopCities(): Promise<OnlineShopCity[]> {
 export async function saveOnlineShopCity(
   city: OnlineShopCity,
   action: 'archive' | 'create' | 'edit',
+  signal?: AbortSignal,
 ): Promise<OnlineShopCity[]> {
   const result = await apiRequest<unknown>(`/seo/info/ecommerce/${action}`, {
     method: 'POST',
     body: city,
+    ...(signal ? { signal } : {}),
   })
 
   return normalizeOnlineShopCities(result)

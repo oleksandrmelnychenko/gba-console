@@ -20,6 +20,10 @@ vi.mock('../../auth/usePermissions', () => ({
   }),
 }))
 
+const { showNotification } = vi.hoisted(() => ({ showNotification: vi.fn() }))
+
+vi.mock('@mantine/notifications', () => ({ notifications: { show: showNotification } }))
+
 vi.mock('../api/onlineShopCitiesApi', () => ({
   getOnlineShopCities: vi.fn(),
   saveOnlineShopCity: vi.fn(),
@@ -71,6 +75,7 @@ beforeEach(() => {
   vi.mocked(getOnlineShopCities).mockReset()
   vi.mocked(getOnlineShopCities).mockResolvedValue(CITIES)
   vi.mocked(saveOnlineShopCity).mockReset()
+  showNotification.mockReset()
 })
 
 describe('OnlineShopCitiesPage rail', () => {
@@ -143,7 +148,7 @@ describe('OnlineShopCitiesPage business permissions', () => {
 
     const city = await screen.findByText('Київ')
     expect(screen.queryByRole('button', { name: 'Нове місто' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Видалити' })).toBeNull()
     fireEvent.click(city)
     expect(screen.queryByText('Редагування міста')).toBeNull()
   })
@@ -151,13 +156,70 @@ describe('OnlineShopCitiesPage business permissions', () => {
   it('keeps create, edit and archive independent', async () => {
     const { unmount } = renderPage([PermissionKeys.OnlineShopCities.City.Create])
     expect(await screen.findByRole('button', { name: 'Нове місто' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Видалити' })).toBeNull()
     unmount()
 
     renderPage([PermissionKeys.OnlineShopCities.City.Edit])
     const city = await screen.findByText('Київ')
     fireEvent.click(city)
     expect(await screen.findByText('Редагування міста')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Архівувати' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Видалити' })).toBeNull()
+  })
+})
+
+describe('OnlineShopCitiesPage delete (server has no archive list or restore)', () => {
+  it('hides the Архів chip when the server returns no archived cities', async () => {
+    vi.mocked(getOnlineShopCities).mockResolvedValue(CITIES.filter((city) => !city.Deleted))
+    renderPage()
+    await screen.findByText('Київ')
+    const rail = screen.getByRole('complementary', { name: 'Міста' })
+    expect(within(rail).queryByRole('button', { name: /Архів/ })).toBeNull()
+    expect(within(rail).getByRole('button', { name: /Активні/ })).toBeTruthy()
+  })
+
+  it('names the action Видалити and warns that it is permanent', async () => {
+    vi.mocked(saveOnlineShopCity).mockResolvedValue([])
+    renderPage()
+    await screen.findByText('Київ')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Видалити' })[0])
+    expect(await screen.findByText(/буде видалено назавжди/)).toBeTruthy()
+    const dialog = screen.getByRole('dialog', { name: 'Видалити місто' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Видалити' }))
+    await waitFor(() => { expect(saveOnlineShopCity).toHaveBeenCalledTimes(1) })
+    expect(vi.mocked(saveOnlineShopCity).mock.calls[0]?.[0]).toMatchObject({ Deleted: true, Id: 1 })
+    expect(vi.mocked(saveOnlineShopCity).mock.calls[0]?.[1]).toBe('archive')
+  })
+
+  it('keeps Скасувати enabled while saving, aborts the request and stays silent', async () => {
+    let signal: AbortSignal | undefined
+    vi.mocked(saveOnlineShopCity).mockImplementation((_city, _action, nextSignal) => {
+      signal = nextSignal
+      return new Promise((_resolve, reject) => {
+        nextSignal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+      })
+    })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Нове місто' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[UA\]/ }), { target: { value: 'Тест' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[RU\]/ }), { target: { value: 'Тест' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    const cancel = screen.getByRole('button', { name: 'Скасувати' }) as HTMLButtonElement
+    expect(cancel.disabled).toBe(false)
+    fireEvent.click(cancel)
+    expect(signal?.aborted).toBe(true)
+    await waitFor(() => { expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull() })
+    expect(showNotification).not.toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }))
+  })
+
+  it('ends a failed save with an error toast', async () => {
+    vi.mocked(saveOnlineShopCity).mockRejectedValue(new Error('Сервер недоступний'))
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Нове місто' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[UA\]/ }), { target: { value: 'Тест' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Назва \[RU\]/ }), { target: { value: 'Тест' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => {
+      expect(showNotification).toHaveBeenCalledWith(expect.objectContaining({ color: 'red', message: 'Сервер недоступний' }))
+    })
   })
 })
