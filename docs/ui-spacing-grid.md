@@ -55,7 +55,7 @@ Mantine: `spacing.xs` перевизначено з 10 на 8px (`theme.ts`); п
 
 ## Свідомі винятки
 
-- Хедер: рядок модулів 52px + підменю 44px = `--app-shell-header-offset` 96px (`ConsoleLayout.tsx` AppShell header;
+- Хедер: рядок модулів 48px + підменю 44px = `--app-shell-header-offset` 92px (`ConsoleLayout.tsx` AppShell header;
   формули висоти сторінок читають цю змінну).
 
 - Розміри < 24px (гліфи іконок, статус-крапки 6px, оптичні зсуви) — це оптика, не ритм.

@@ -271,15 +271,15 @@ describe('filter-bar CSS contract', () => {
 describe('console page shell spacing contract', () => {
   const root = postcss.parse(consoleTablePageCss)
 
-  it('keeps the registry card 8px below the console frame', () => {
+  it('keeps the registry card 4px inside the console frame on every side', () => {
     const pageRule = findRule(root, 'height', '.console-table-page')
 
     expect(declarations(pageRule)).toMatchObject({
       'box-sizing': 'border-box',
-      height: 'calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px)',
+      height: 'calc(100vh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 12px)',
       'min-height': '0',
       overflow: 'hidden',
-      padding: '8px 4px 0',
+      padding: '4px 4px 0',
     })
   })
 })

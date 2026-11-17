@@ -53,8 +53,16 @@
 .console-table-shell {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--app-radius-md);
   min-width: 0;
+}
+
+/* Page cards sit 4px inside the 16px console frame, so their corners are
+   concentric at 16 − 4 = 12px (--app-radius-md). Mantine writes --card-radius
+   inline from radius="md", hence !important on the variable. */
+.app-data-card.mantine-Card-root,
+.sales-ukraine-card.mantine-Card-root {
+  --card-radius: var(--app-radius-md) !important;
 }
 
 /* ---- Canonical filter strip ---- */
