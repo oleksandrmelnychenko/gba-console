@@ -46,7 +46,8 @@ const PERMISSION_EDIT_COMPLETED_PROTOCOL = PermissionKeys.ProductDeliveryProtoco
 const PERMISSION_CHANGE_STATUS = PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus
 const PERMISSION_MANAGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
 const PERMISSION_ASSIGN_INVOICES = PermissionKeys.ProductDeliveryProtocols.Invoice.Assign
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload
+const PERMISSION_DELETE_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Delete
 const PERMISSION_CREATE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create
 const PERMISSION_EDIT_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Edit
 const PERMISSION_CALCULATE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Calculate
@@ -136,7 +137,8 @@ function useLogisticPathModel(netId: string | undefined) {
   }, [netId, setLoadState, t])
 
   const canEdit = !protocol?.IsCompleted || hasPermission(PERMISSION_EDIT_COMPLETED_PROTOCOL)
-  const canEditDeliveryDocuments = canEdit && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canEditDeliveryDocuments = canEdit &&
+    (hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS))
 
   async function changeStatus() {
     if (!canEdit || !hasPermission(PERMISSION_CHANGE_STATUS) || !protocol?.NetUid) {
@@ -192,7 +194,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function saveInvoiceDocuments(invoice: SupplyInvoice, documents: File[]) {
-    if (!canEdit || !hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
+    if (!canEdit || !(hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS))) {
       return
     }
 

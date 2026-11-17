@@ -177,7 +177,7 @@ describe('Product delivery protocol logistic-path permission guards', () => {
       },
       {
         button: 'invoice-documents-final',
-        permission: PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download,
+        permission: PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload,
         request: addDocumentsToSupplyInvoice,
       },
       {

@@ -46,6 +46,8 @@ import { formatDateTime, formatMoney, getInvoiceCurrencyCode, getInvoiceTotalNet
 
 const MANAGE_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
 const ASSIGN_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.Invoice.Assign
+const UPLOAD_DELIVERY_DOCUMENTS_PERMISSION = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload
+const DELETE_DELIVERY_DOCUMENTS_PERMISSION = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Delete
 
 type InvoicesSectionPermissions = {
   canEditAssignments: boolean
@@ -89,6 +91,11 @@ function InvoiceViewCard({
 }) {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  // Adding files and removing stored ones are separate rights; Save needs at least one.
+  const canUploadDocuments = canEditDeliveryDocuments && hasPermission(UPLOAD_DELIVERY_DOCUMENTS_PERMISSION)
+  const canDeleteDocuments = canEditDeliveryDocuments && hasPermission(DELETE_DELIVERY_DOCUMENTS_PERMISSION)
+  const canSaveDocuments = canUploadDocuments || canDeleteDocuments
   const currencyCode = getInvoiceCurrencyCode(invoice)
   const invoiceNetPrice = getInvoiceTotalNetPrice(invoice)
   const totalNetPrice =
@@ -104,7 +111,7 @@ function InvoiceViewCard({
   const [expensesOpened, setExpensesOpened] = useValueState(false)
 
   function toggleDeleted(document: SupplyDocument, index: number) {
-    if (!canEditDeliveryDocuments || isSaving) {
+    if (!canDeleteDocuments || isSaving) {
       return
     }
 
@@ -119,7 +126,7 @@ function InvoiceViewCard({
 
   async function handleSaveDocuments() {
     return runActionOnce('handleSaveDocuments', async () => {
-      if (!canEditDeliveryDocuments || isSaving) {
+      if (!canSaveDocuments || isSaving) {
         return
       }
 
@@ -133,7 +140,7 @@ function InvoiceViewCard({
   }
 
   function handleChangeFiles(nextFiles: File[] | null) {
-    if (!canEditDeliveryDocuments || isSaving) {
+    if (!canUploadDocuments || isSaving) {
       return
     }
 
@@ -161,7 +168,7 @@ function InvoiceViewCard({
           {t('Детальні витрати')}
         </Button>
       )}
-      {canEditDeliveryDocuments && (
+      {canSaveDocuments && (
         <Button
           color={CREATE_ACTION_COLOR}
           disabled={isSaving}
@@ -226,7 +233,7 @@ function InvoiceViewCard({
                         {t('Видалено')}
                       </Badge>
                     )}
-                    {canEditDeliveryDocuments && (
+                    {canDeleteDocuments && (
                       <Tooltip label={document.Deleted ? t('Відновити') : t('Видалити')}>
                         <ActionIcon
                           aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
@@ -248,7 +255,7 @@ function InvoiceViewCard({
             <Text c="dimmed" size="xs">{t('Документи ще не додані')}</Text>
           )}
         </LabelValueRow>
-        {canEditDeliveryDocuments && (
+        {canUploadDocuments && (
           <div className="protocol-document-upload">
             <div className="protocol-document-upload__copy">
               <Paperclip size={18} aria-hidden="true" />

@@ -9,9 +9,9 @@ export function ResaleControl() {
   const navigate = useGuardedNavigate()
 
   return (
-    <Tooltip label={t('Перепродаж (Resale)')} openDelay={300}>
+    <Tooltip label={t('Перепродаж')} openDelay={300}>
       <ActionIcon
-        aria-label={t('Перепродаж (Resale)')}
+        aria-label={t('Перепродаж')}
         className="console-header-action"
         variant="subtle"
         color="gray"

@@ -544,7 +544,9 @@ export const PermissionKeys = {
       View: 'orders.product_delivery_protocols.page.view',
     },
     DeliveryDocuments: {
+      Delete: 'orders.delivery_protocol.delivery_documents.delete',
       Download: 'orders.delivery_protocol.delivery_documents.download',
+      Upload: 'orders.delivery_protocol.delivery_documents.upload',
     },
     Document: {
       Download: 'orders.delivery_protocol.document.download',
@@ -580,6 +582,7 @@ export const PermissionKeys = {
     SpecificationCodes: {
       Download: 'orders.delivery_protocol.specification_codes.download',
       Open: 'orders.delivery_protocol.specification_codes.open',
+      Upload: 'orders.delivery_protocol.specification_codes.upload',
     },
     SpecificationHistory: {
       Open: 'orders.delivery_protocol.specification_history.open',
@@ -824,6 +827,7 @@ export const PermissionKeys = {
       Invoice: {
         Print: 'warehouses.ukraine.invoice.print',
         PrintEditAct: 'warehouses.ukraine.invoice.print_edit_act',
+        MarkPrinted: 'warehouses.ukraine.invoice.mark_printed',
       },
     },
   },
@@ -1118,12 +1122,18 @@ export const PermissionKeys = {
         'orders.ukraine.specification_codes.download_customs_documents',
       Edit: 'orders.ukraine.specification_codes.edit',
       ViewHistory: 'orders.ukraine.specification_codes.view_history',
+      UploadCodes: 'orders.ukraine.specification_codes.upload_codes',
+      UploadCustomsDocuments:
+        'orders.ukraine.specification_codes.upload_customs_documents',
+      DeleteCustomsDocuments:
+        'orders.ukraine.specification_codes.delete_customs_documents',
     },
   },
   SalesUkraine: {
     Sale: {
       View: 'sales.ukraine.sale.view',
       CancelAnyReturn: 'sales.ukraine.sale_return.cancel_any',
+      CancelReturn: 'sales.ukraine.sale_return.cancel',
       CreateAnyReturn: 'sales.ukraine.sale_return.create_any',
       OpenCreateDialog: 'sales.ukraine.sale.open_create_dialog',
       Create: 'sales.ukraine.sale.create',

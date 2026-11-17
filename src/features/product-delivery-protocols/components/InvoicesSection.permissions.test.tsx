@@ -89,11 +89,29 @@ describe('InvoicesSection permissions', () => {
     expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull()
     managementOnly.unmount()
 
+    // An editable protocol alone is not enough: adding and removing files are separate rights.
     allowedPermissions.clear()
+    const withoutDocumentRights = renderSection(true)
+
+    expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull()
+    expect(screen.queryByText('Додати документи доставки')).toBeNull()
+    withoutDocumentRights.unmount()
+
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload)
+    const uploadOnly = renderSection(true)
+
+    expect(screen.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
+    expect(screen.getByText('Додати документи доставки')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Видалити файл' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Управління інвойсами' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Детальні витрати' })).toBeNull()
+    uploadOnly.unmount()
+
+    allowedPermissions.clear()
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Delete)
     renderSection(true)
 
     expect(screen.getByRole('button', { name: 'Зберегти' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Управління інвойсами' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Детальні витрати' })).toBeNull()
+    expect(screen.queryByText('Додати документи доставки')).toBeNull()
   })
 })

@@ -22,6 +22,9 @@ import type { DeliveryDocumentDraft } from '../specificationTypes'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 type UploadDeliveryDocumentsModalProps = {
+  /** Adding files needs the upload right; marking stored files deleted needs the delete right. */
+  canAddDocuments?: boolean
+  canRemoveDocuments?: boolean
   dateCustomDeclaration: string
   existingDocuments: DeliveryDocumentDraft[]
   isSaving: boolean
@@ -49,6 +52,8 @@ import './customs-import-modals.css'
 const EMPTY_SUPPLY_ORGANIZATIONS: SupplyOrganization[] = []
 
 export function UploadDeliveryDocumentsModal({
+  canAddDocuments = true,
+  canRemoveDocuments = true,
   dateCustomDeclaration,
   existingDocuments,
   isSaving,
@@ -170,13 +175,15 @@ export function UploadDeliveryDocumentsModal({
           <section className="customs-import-section" aria-label={t('Файли')}>
             <Group justify="space-between" gap="xs">
               <Text className="app-section-title">{t('Файли')}</Text>
-              <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
-                {(props) => (
-                  <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} size="xs" variant="default">
-                    {t('Завантажити')}
-                  </Button>
-                )}
-              </FileButton>
+              {canAddDocuments && (
+                <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
+                  {(props) => (
+                    <Button {...props} disabled={isSaving} leftSection={<Upload size={16} />} size="xs" variant="default">
+                      {t('Додати файли')}
+                    </Button>
+                  )}
+                </FileButton>
+              )}
             </Group>
             {newDocuments.length === 0 && existingDocuments.length === 0 && (
               <Text className="customs-import-hint">{t('Оберіть файли XLS, XLSX або PDF')}</Text>
@@ -235,17 +242,19 @@ export function UploadDeliveryDocumentsModal({
                         </Text>
                       )}
                     </Group>
-                    <Tooltip label={document.deleted ? t('Відновити') : t('Видалити')}>
-                      <ActionIcon
-                        aria-label={document.deleted ? t('Відновити') : t('Видалити')}
-                        color={document.deleted ? 'gray' : 'red'}
-                        disabled={isSaving}
-                        variant="subtle"
-                        onClick={() => onRemoveExistingDocument(document)}
-                      >
-                        {document.deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
-                      </ActionIcon>
-                    </Tooltip>
+                    {canRemoveDocuments && (
+                      <Tooltip label={document.deleted ? t('Відновити') : t('Видалити')}>
+                        <ActionIcon
+                          aria-label={document.deleted ? t('Відновити') : t('Видалити')}
+                          color={document.deleted ? 'gray' : 'red'}
+                          disabled={isSaving}
+                          variant="subtle"
+                          onClick={() => onRemoveExistingDocument(document)}
+                        >
+                          {document.deleted ? <Undo2 size={16} /> : <Trash2 size={16} />}
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
                   </Group>
                 ))}
               </Stack>

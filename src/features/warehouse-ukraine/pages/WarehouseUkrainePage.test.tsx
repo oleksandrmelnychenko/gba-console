@@ -17,10 +17,11 @@ vi.mock('../api/shellApi', () => ({
 }))
 
 vi.mock('../components/SalesTab', () => ({
-  SalesTab: ({ canCreateShipment, canPrintEditAct, canPrintInvoice, onCreateShipment }: {
+  SalesTab: ({ canCreateShipment, canPrintEditAct, canPrintInvoice, canUpdatePrintStatus, onCreateShipment }: {
     canCreateShipment: boolean
     canPrintEditAct: boolean
     canPrintInvoice: boolean
+    canUpdatePrintStatus: boolean
     onCreateShipment: () => void
   }) => (
     <div data-testid="sales-tab-content">
@@ -28,6 +29,7 @@ vi.mock('../components/SalesTab', () => ({
       <div className="console-table-body" data-testid="sales-table" />
       <span data-testid="invoice-print-right">{String(canPrintInvoice)}</span>
       <span data-testid="edit-act-print-right">{String(canPrintEditAct)}</span>
+      <span data-testid="print-status-right">{String(canUpdatePrintStatus)}</span>
       <button disabled={!canCreateShipment} type="button" onClick={onCreateShipment}>Create shipment</button>
     </div>
   ),
@@ -140,6 +142,22 @@ describe('WarehouseUkrainePage layout', () => {
     expect(screen.getByRole('button', { name: 'Відвантаження' }).getAttribute('aria-pressed')).toBe('true')
   })
 
+  it('saves the printed status only with the mark-printed key, not with print or sale edit', () => {
+    permissionState.granted = new Set([
+      PermissionKeys.Warehouses.Ukraine.Page.View,
+      PermissionKeys.Warehouses.Ukraine.Invoices.Open,
+      PermissionKeys.Warehouses.Ukraine.Invoice.Print,
+      PermissionKeys.SalesUkraine.Sale.Edit,
+    ])
+    const view = renderPage()
+    expect(screen.getByTestId('print-status-right').textContent).toBe('false')
+    view.unmount()
+
+    permissionState.granted.add(PermissionKeys.Warehouses.Ukraine.Invoice.MarkPrinted)
+    renderPage()
+    expect(screen.getByTestId('print-status-right').textContent).toBe('true')
+  })
+
   it('keeps tab access independent from create, edit, carry-out and print actions', async () => {
     permissionState.granted = new Set([
       PermissionKeys.Warehouses.Ukraine.Page.View,
@@ -156,6 +174,7 @@ describe('WarehouseUkrainePage layout', () => {
     expect((screen.getByRole('button', { name: 'Create shipment' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByTestId('invoice-print-right').textContent).toBe('false')
     expect(screen.getByTestId('edit-act-print-right').textContent).toBe('false')
+    expect(screen.getByTestId('print-status-right').textContent).toBe('false')
     expect(getTotalActForEditing).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Відвантаження' }))

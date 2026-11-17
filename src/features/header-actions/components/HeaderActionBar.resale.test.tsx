@@ -30,7 +30,7 @@ function renderWith(keys: string[]) {
   )
 }
 
-const resaleButton = () => screen.queryByRole('button', { name: 'Перепродаж (Resale)' })
+const resaleButton = () => screen.queryByRole('button', { name: 'Перепродаж' })
 
 describe('Resale header shortcut', () => {
   it('shows the shortcut with the header key and access to the Resale screen', () => {

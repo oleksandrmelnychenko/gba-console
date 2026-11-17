@@ -65,8 +65,9 @@ const CURRENCY_EUR = 'eur'
 const CURRENCY_UAH = 'uah'
 const SERVICES_MANAGEMENT = 'management'
 const SERVICES_ACCOUNTING = 'accounting'
-const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
+const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Upload
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload
+const PERMISSION_DELETE_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Delete
 const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.ProductDeliveryProtocols.Documents.Download
 const PERMISSION_MERGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.Invoice.Merge
 const PERMISSION_OPEN_SPECIFICATIONS = PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open
@@ -514,7 +515,7 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openDocuments() {
-    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)) {
+    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) && !hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS)) {
       return
     }
 
@@ -649,7 +650,7 @@ function useSpecificationModel(netId: string | undefined) {
   async function saveDocuments() {
     const invoice = selectedInvoice
 
-    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || isSavingDocuments) {
+    if ((!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) && !hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS)) || isSavingDocuments) {
       return
     }
 
@@ -928,7 +929,9 @@ function ProductDeliveryProtocolSpecificationPageContent() {
     canMutateSpecification &&
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) &&
     Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
-  const canUploadDocuments = canMutateSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canAddDocumentFiles = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canRemoveDocumentFiles = hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS)
+  const canUploadDocuments = canMutateSpecification && (canAddDocumentFiles || canRemoveDocumentFiles)
   const canOpenDeliveryDocuments =
     canMutateSpecification && Boolean(model.selectedInvoice?.NetUid)
   const canEditSpecification = canMutateSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
@@ -1185,6 +1188,8 @@ function ProductDeliveryProtocolSpecificationPageContent() {
         ) : null}
 
         <ProductDeliveryProtocolSpecificationModals
+          canAddDocumentFiles={canAddDocumentFiles}
+          canRemoveDocumentFiles={canRemoveDocumentFiles}
           canSaveSpecification={canSaveSpecification}
           invoices={invoices}
           model={model}
@@ -1212,10 +1217,14 @@ function getSpecificationUnavailableMessage(
 type SpecificationModel = ReturnType<typeof useSpecificationModel>
 
 function ProductDeliveryProtocolSpecificationModals({
+  canAddDocumentFiles,
+  canRemoveDocumentFiles,
   canSaveSpecification,
   invoices,
   model,
 }: {
+  canAddDocumentFiles: boolean
+  canRemoveDocumentFiles: boolean
   canSaveSpecification: boolean
   invoices: SpecificationSupplyInvoice[]
   model: SpecificationModel
@@ -1240,6 +1249,8 @@ function ProductDeliveryProtocolSpecificationModals({
       <UploadProductSpecificationResultModal result={model.uploadResult} onClose={() => model.setUploadResult(null)} />
 
       <UploadDeliveryDocumentsModal
+        canAddDocuments={canAddDocumentFiles}
+        canRemoveDocuments={canRemoveDocumentFiles}
         dateCustomDeclaration={model.dateCustomDeclaration}
         existingDocuments={model.existingDocuments}
         isSaving={model.isSavingDocuments}

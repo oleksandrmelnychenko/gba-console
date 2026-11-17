@@ -210,17 +210,17 @@ describe('Supply Ukraine direct-order specification permissions', () => {
 
   it('rechecks specification upload permission at the final handler boundary', async () => {
     allowedPermissions.add(PermissionKeys.OrdersUkraine.Order.OpenSpecificationCodes)
-    allowedPermissions.add(PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCodes)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.SpecificationCodes.UploadCodes)
     renderPage()
 
     fireEvent.click(await screen.findByRole('button', { name: 'Завантаження митних кодів' }))
     const finalSubmit = screen.getByRole('button', { name: 'upload-final' })
 
-    allowedPermissions.delete(PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCodes)
+    allowedPermissions.delete(PermissionKeys.OrdersUkraine.SpecificationCodes.UploadCodes)
     fireEvent.click(finalSubmit)
     expect(uploadProductSpecificationForInvoice).not.toHaveBeenCalled()
 
-    allowedPermissions.add(PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCodes)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.SpecificationCodes.UploadCodes)
     fireEvent.click(finalSubmit)
 
     await waitFor(() => expect(uploadProductSpecificationForInvoice).toHaveBeenCalledWith(

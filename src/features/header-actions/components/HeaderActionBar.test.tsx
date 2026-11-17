@@ -14,7 +14,7 @@ vi.mock('./ProductWriteOffRulesControl', () => ({
   ProductWriteOffRulesControl: () => null,
 }))
 vi.mock('./ResaleControl', () => ({
-  ResaleControl: () => <button type="button">Перепродаж (Resale)</button>,
+  ResaleControl: () => <button type="button">Перепродаж</button>,
 }))
 vi.mock('./SyncControl', () => ({
   SyncControl: () => <button type="button">1С синхронізація</button>,

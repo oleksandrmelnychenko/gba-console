@@ -169,8 +169,8 @@ describe('Product delivery protocol specification permission guards', () => {
 
   it('keeps customs-code and declaration workflows available after the protocol has arrived', async () => {
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open)
-    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Download)
-    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Upload)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload)
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.Invoice.Merge)
     vi.mocked(getProtocolForSpecification).mockResolvedValue({
       ...PROTOCOL,
@@ -188,7 +188,7 @@ describe('Product delivery protocol specification permission guards', () => {
 
   it('does not expose the declaration workflow before the protocol is shipped', async () => {
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.SpecificationCodes.Open)
-    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download)
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Upload)
     vi.mocked(getProtocolForSpecification).mockResolvedValue({
       ...PROTOCOL,
       IsShipped: false,

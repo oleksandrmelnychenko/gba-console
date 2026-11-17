@@ -136,6 +136,8 @@ export function NewUkraineSaleReturnPage() {
   // sales.ukraine.sale_return.create_any, so the dialog is only usable with that key.
   const { can } = usePermissions()
   const canCreateReturn = can(PermissionKeys.SalesUkraine.Sale.CreateAnyReturn)
+  // The server needs sales.ukraine.sale_return.cancel; cancel_any only widens it to other users' returns.
+  const canCancelReturn = can(PermissionKeys.SalesUkraine.Sale.CancelReturn)
   const runCancelMutation = usePersistentSalesMutation(
     'sale-return-cancel',
     'ukraine-sale-return:cancel',
@@ -229,7 +231,7 @@ export function NewUkraineSaleReturnPage() {
   const detailColumns = useDetailColumns({ onOpenProductCard: setProductCardNetId, t })
   const returnColumns = useReturnColumns({
     exportingNetId,
-    onCancel: setCancelCandidate,
+    onCancel: canCancelReturn ? setCancelCandidate : undefined,
     onExport: handleExport,
   })
 
@@ -515,7 +517,7 @@ export function NewUkraineSaleReturnPage() {
   }
 
   async function confirmCancel() {
-    if (!cancelCandidate?.NetUid) {
+    if (!canCancelReturn || !cancelCandidate?.NetUid) {
       return
     }
 
@@ -1137,13 +1139,11 @@ export function NewUkraineSaleReturnPage() {
         onClose={() => setDownloadModalOpened(false)}
       />
 
-      <AppModal className="new-sale-return-cancel-modal" size={420} opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
+      <AppModal className="new-sale-return-cancel-modal" size={420} opened={canCancelReturn && Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
         <Stack className="app-compact-form" gap={12}>
-          <Group gap={6} className="new-sale-return-cancel-message">
-            <Text>{t('Скасувати повернення')}</Text>
-            <TableChip tone="document" value={cancelCandidate?.Number} />
-            <Text>?</Text>
-          </Group>
+          <Text className="new-sale-return-cancel-message">
+            {`${t('Скасувати повернення')} ${cancelCandidate?.Number ?? ''}?`}
+          </Text>
           <AppModalFooter>
             <Button variant="default" onClick={() => setCancelCandidate(null)}>
               {t('Ні')}
@@ -1186,7 +1186,7 @@ function useReturnColumns({
   onExport,
 }: {
   exportingNetId: string | null
-  onCancel: (saleReturn: SalesReturn) => void
+  onCancel?: (saleReturn: SalesReturn) => void
   onExport: (saleReturn: SalesReturn) => void
 }): DataTableColumn<SalesReturn>[] {
   const { t } = useI18n()
@@ -1275,7 +1275,7 @@ function ReturnActionsCell({
 }: {
   exportingNetId: string | null
   saleReturn: SalesReturn
-  onCancel: (saleReturn: SalesReturn) => void
+  onCancel?: (saleReturn: SalesReturn) => void
   onExport: (saleReturn: SalesReturn) => void
 }) {
   const { t } = useI18n()
@@ -1288,12 +1288,14 @@ function ReturnActionsCell({
         loading={exportingNetId === saleReturn.NetUid}
         onClick={() => onExport(saleReturn)}
       />
-      <TableRowAction
-        action="cancel"
-        disabled={saleReturn.IsCanceled}
-        label={t('Скасувати')}
-        onClick={() => onCancel(saleReturn)}
-      />
+      {onCancel && (
+        <TableRowAction
+          action="cancel"
+          disabled={saleReturn.IsCanceled}
+          label={t('Скасувати')}
+          onClick={() => onCancel(saleReturn)}
+        />
+      )}
     </div>
   )
 }

@@ -158,7 +158,7 @@ function WarehouseUkrainePageContent() {
             canCreateShipment={hasPermission(PermissionKeys.Warehouses.Ukraine.Shipment.Create)}
             canPrintInvoice={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.Print)}
             canPrintEditAct={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.PrintEditAct)}
-            canUpdatePrintStatus={hasPermission(PermissionKeys.SalesUkraine.Sale.Edit)}
+            canUpdatePrintStatus={hasPermission(PermissionKeys.Warehouses.Ukraine.Invoice.MarkPrinted)}
             onCreateShipment={openShipmentCreation}
           />
         )

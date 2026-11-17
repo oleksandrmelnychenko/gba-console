@@ -72,8 +72,9 @@ const PERMISSION_OPEN_PRODUCT_CARD = PermissionKeys.OrdersUkraine.Order.OpenProd
 const PERMISSION_DOWNLOAD_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadApplicationFiles
 const PERMISSION_EDIT_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
 const PERMISSION_SAVE_SPECIFICATION = PermissionKeys.OrdersUkraine.SpecificationCodes.Edit
-const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCustomsDocuments
-const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.OrdersUkraine.SpecificationCodes.DownloadCodes
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.OrdersUkraine.SpecificationCodes.UploadCustomsDocuments
+const PERMISSION_DELETE_DELIVERY_DOCUMENTS = PermissionKeys.OrdersUkraine.SpecificationCodes.DeleteCustomsDocuments
+const PERMISSION_UPLOAD_SPECIFICATIONS = PermissionKeys.OrdersUkraine.SpecificationCodes.UploadCodes
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {
@@ -151,7 +152,9 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const canDownload = hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) && Boolean(packingList && (packingList.Id || 0) > 0)
   const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION)
   const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION)
-  const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canAddDocumentFiles = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canRemoveDocumentFiles = hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS)
+  const canUploadDocuments = canAddDocumentFiles || canRemoveDocumentFiles
   const canUploadSpecifications = hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(selectedInvoice)
   const canOpenProductCard = hasPermission(PERMISSION_OPEN_PRODUCT_CARD)
   const isActionBusy = isUploading || isSavingDocuments || isDownloading || isSavingSpecification || isInvoiceLoading
@@ -459,7 +462,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   }
 
   function openDocuments() {
-    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || !selectedInvoice || isSavingDocuments) {
+    if (!canUploadDocuments || !selectedInvoice || isSavingDocuments) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
       return
     }
@@ -580,7 +583,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   async function saveDocuments() {
     const invoice = selectedInvoice
 
-    if (!hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || !invoice?.NetUid || isSavingDocuments) {
+    if (!(hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS) || hasPermission(PERMISSION_DELETE_DELIVERY_DOCUMENTS)) || !invoice?.NetUid || isSavingDocuments) {
       return
     }
 
@@ -731,6 +734,8 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     canEditSpecification,
     canOpenProductCard,
     canSaveSpecification,
+    canAddDocumentFiles,
+    canRemoveDocumentFiles,
     canUploadDocuments,
     canUploadSpecifications,
     closeDocumentsDraft,
@@ -1130,6 +1135,8 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
       />
       <UploadProductSpecificationResultModal result={model.uploadResult} onClose={() => model.setUploadResult(null)} />
       <UploadDeliveryDocumentsModal
+        canAddDocuments={model.canAddDocumentFiles}
+        canRemoveDocuments={model.canRemoveDocumentFiles}
         dateCustomDeclaration={model.dateCustomDeclaration}
         existingDocuments={model.existingDocuments}
         isSaving={model.isSavingDocuments}

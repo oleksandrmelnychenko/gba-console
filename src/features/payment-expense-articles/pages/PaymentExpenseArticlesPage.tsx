@@ -77,6 +77,8 @@ function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExp
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const canCreate = can(PERMISSION_CREATE_EXPENSE_ARTICLE)
+  // Without the save key the dialog is read-only, so the row action is "view", not "edit".
+  const canSaveArticle = can(PermissionKeys.FinancialAdministration.ExpenseArticles.Article.Save)
 
   const openArticle = useCallback(
     (article: PaymentExpenseArticle) => {
@@ -114,11 +116,13 @@ function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExp
         enableSorting: false,
         enableHiding: false,
         cell: (article) => (
-          <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openArticle(article)} />
+          canSaveArticle
+            ? <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openArticle(article)} />
+            : <TableRowAction action="view" label={t('Переглянути')} onClick={() => openArticle(article)} />
         ),
       },
     ],
-    [openArticle, t],
+    [canSaveArticle, openArticle, t],
   )
 
   useEffect(() => {
