@@ -226,7 +226,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
   } = model
 
   return (
-    <Stack className="act-reconciliations-page console-table-page" gap={6}>
+    <Stack className="act-reconciliations-page console-table-page" gap={8}>
       <div className="console-table-shell act-reconciliations-shell">
         <div className="app-filter-bar act-reconciliations-filter-bar">
           <div className="app-filter-fields act-reconciliations-filter-row">
@@ -422,7 +422,7 @@ function DifferenceCell({ summary }: { summary?: RowSummary }) {
   }
 
   return (
-    <Group gap={6} wrap="nowrap">
+    <Group gap={8} wrap="nowrap">
       {negativeSum > 0 && (
         <Text c="red" fw={600} size="sm" style={ACT_MONO_STYLE}>
           - {negativeSum}
@@ -453,7 +453,7 @@ function ActStatusBadge({ summary }: { summary?: RowSummary }) {
   }[state]
 
   return (
-    <Group gap={6} wrap="nowrap">
+    <Group gap={8} wrap="nowrap">
       <Badge color={meta.color} variant="light">{t(meta.label)}</Badge>
       {summary && state === 'partial' && (
         <Text c="dimmed" size="xs">{summary.pendingCount} / {summary.dismissedCount + summary.resolvedCount}</Text>

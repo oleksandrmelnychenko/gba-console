@@ -250,7 +250,7 @@ export function AccountableExpensesPage() {
   const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
 
   return (
-    <Stack className="accountable-expenses-page console-table-page" gap={6}>
+    <Stack className="accountable-expenses-page console-table-page" gap={8}>
       <div className="accountable-expenses-shell console-table-shell">
         <div className="app-filter-bar accountable-expenses-command-bar">
           <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { setFromDate(range.from); setToDate(range.to); setPage(1); setOrders([]); setTotalOrders(undefined) }} />
@@ -744,7 +744,7 @@ function ExpenseDetailMetric({ label, meta, value }: { label: string; meta?: str
   return (
     <Stack gap={4}>
       <Text c="gray.9" size="xs">{label}</Text>
-      <Group gap={6}><Text className="app-money" fw={500}>{value}</Text>{meta ? <TableChip tone="source" value={meta} /> : null}</Group>
+      <Group gap={8}><Text className="app-money" fw={500}>{value}</Text>{meta ? <TableChip tone="source" value={meta} /> : null}</Group>
     </Stack>
   )
 }

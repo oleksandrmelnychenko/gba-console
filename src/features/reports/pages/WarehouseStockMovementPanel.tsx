@@ -209,7 +209,7 @@ function LevelsEditor({ levels, disabled, onChange }: { levels: StockMovementLev
   return <Stack gap={4} role="list" aria-label="Групування рядків">
     {ordered.map(level => {
       const index = levels.indexOf(level)
-      return <Group key={level} gap={6} wrap="nowrap" role="listitem" className="stock-movement__level">
+      return <Group key={level} gap={8} wrap="nowrap" role="listitem" className="stock-movement__level">
         <Checkbox size="xs" checked={index >= 0} disabled={disabled} label={STOCK_MOVEMENT_LEVEL_LABELS[level]}
           onChange={event => onChange(toggleLevel(levels, level, event.currentTarget.checked))} />
         {index >= 0 ? <Group gap={2} wrap="nowrap" ml="auto">
@@ -397,11 +397,11 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
             {STOCK_MOVEMENT_MEASURES.map(measure => <Checkbox key={measure} size="xs" disabled={locked} checked={draft.measures.includes(measure)}
               label={`${STOCK_MOVEMENT_MEASURE_LABELS[measure]} (Кількість)`}
               onChange={event => update({ measures: event.currentTarget.checked ? [...draft.measures, measure] : draft.measures.filter(item => item !== measure) })} />)}
-            <Checkbox size="xs" mt={6} disabled={locked} checked={draft.negativeRed} label="Від'ємне червоним" onChange={event => update({ negativeRed: event.currentTarget.checked })} />
+            <Checkbox size="xs" mt={8} disabled={locked} checked={draft.negativeRed} label="Від'ємне червоним" onChange={event => update({ negativeRed: event.currentTarget.checked })} />
             <Checkbox size="xs" disabled={locked} checked={draft.grandTotals} label="Виводити загальні підсумки" onChange={event => update({ grandTotals: event.currentTarget.checked })} />
           </Stack> },
         { id: 'filters', title: 'Відбори', summary: filters.join('; ') || 'Фільтрів немає',
-          content: <Stack gap={6}>
+          content: <Stack gap={8}>
             <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
               copyDisabled={!draft.listed}
               footer={capability.FilterExpression || draft.filterExpression ? (view => <ReportFilterExpressionPanel data={view.data} dataset={view.dataset}

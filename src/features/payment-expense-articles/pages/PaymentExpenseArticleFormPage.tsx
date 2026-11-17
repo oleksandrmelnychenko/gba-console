@@ -254,7 +254,7 @@ export function PaymentExpenseArticleFormPage() {
       onClose={handleCancel}
     >
       <form id="payment-expense-article-form" onSubmit={handleSubmit}>
-        <Stack gap={10}>
+        <Stack gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
@@ -327,7 +327,7 @@ export function PaymentExpenseArticleFormPage() {
         title={t('Видалити статтю витрат')}
         onClose={() => setFormState((current) => ({ ...current, deleteModalOpened: false }))}
       >
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
           </Text>

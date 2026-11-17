@@ -5,7 +5,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -22,7 +22,7 @@
 .advance-report-entry-document,
 .advance-report-entry-numbers,
 .advance-report-entry-comment {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .advance-report-entry-document > * {

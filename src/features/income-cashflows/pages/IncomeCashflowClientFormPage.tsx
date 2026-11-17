@@ -1096,7 +1096,7 @@ function IncomeCashflowClientFormPageContent() {
       >
       <form className="income-cashflow-client-form" id="income-cashflow-client-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Stack gap={6}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">
               {t('Тип надходження')}
             </Text>
@@ -1162,7 +1162,7 @@ function IncomeCashflowClientFormPageContent() {
               />
             )}
 
-            <Stack gap={6}>
+            <Stack gap={8}>
               <Text className="income-cashflow-client-form__field-label" size="sm">
                 {t('Тип контрагента')}
               </Text>

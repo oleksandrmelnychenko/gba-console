@@ -782,7 +782,7 @@ function PaymentAccountFormCard({
 
   return (
     <form id="payment-account-form" onSubmit={onSubmit}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -808,7 +808,7 @@ function PaymentAccountFormCard({
           onChange={onSetAccountType}
         />
 
-        <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
+        <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={8} verticalSpacing={8}>
           <TextInput
             disabled={isFormDisabled}
             label={t('Назва')}
@@ -938,7 +938,7 @@ function BankFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
+    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={8} verticalSpacing={8}>
       <Select
         clearable
         data={bankOptions}
@@ -992,7 +992,7 @@ function CardFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={10} verticalSpacing={10}>
+    <SimpleGrid className="payment-account-fields" cols={{ base: 1, md: 2 }} spacing={8} verticalSpacing={8}>
       <Select
         clearable
         data={bankOptions}
@@ -2203,7 +2203,7 @@ function ActivityTable<T>({
   )
 
   return (
-    <Stack className="payment-account-activity-table" gap={6}>
+    <Stack className="payment-account-activity-table" gap={8}>
       {title && <Text className="payment-account-activity-table__title">{title}</Text>}
       <DataTable
         columns={dataTableColumns}

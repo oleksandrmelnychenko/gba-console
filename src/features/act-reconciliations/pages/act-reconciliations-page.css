@@ -34,16 +34,16 @@
 }
 
 .act-reconciliations-page .act-reconciliations-filter-row > .act-reconciliations-status-filter {
-  flex: 0 1 230px;
-  min-width: 190px;
-  width: 230px;
+  flex: 0 1 228px;
+  min-width: 188px;
+  width: 228px;
 }
 
 .act-reconciliations-page .act-reconciliations-filter-row > .app-filter-date-range {
-  flex: 0 1 330px;
+  flex: 0 1 328px;
   grid-template-columns: repeat(2, minmax(140px, 1fr));
-  width: 330px;
-  min-width: 290px;
+  width: 328px;
+  min-width: 288px;
 }
 
 .act-reconciliations-filter-bar .mantine-InputWrapper-label {

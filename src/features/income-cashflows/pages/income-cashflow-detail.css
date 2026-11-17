@@ -1,7 +1,7 @@
 .income-cashflow-view__sheet-title {
   flex: 1;
   min-width: 0;
-  margin-right: 10px;
+  margin-right: 8px;
 }
 
 .income-cashflow-view__header {
@@ -51,7 +51,7 @@
 .income-cashflow-view__metric {
   display: grid;
   justify-items: end;
-  gap: 6px;
+  gap: 8px;
 }
 
 .income-cashflow-view__metric > span:first-child {
@@ -66,7 +66,7 @@
 .income-cashflow-view__amount {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   max-width: 100%;
   white-space: nowrap;
 }
@@ -83,7 +83,7 @@
 .income-cashflow-view__metadata {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -134,7 +134,7 @@
 @container document-detail (max-width: 380px) {
   .income-cashflow-view__metadata .document-detail-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+    gap: 4px;
   }
 }
 
@@ -142,7 +142,7 @@
   height: 32px;
   min-height: 32px;
   border-radius: 8px;
-  padding-inline: 10px 30px;
+  padding-inline: 8px 28px;
   color: var(--mantine-color-gray-9);
   font: 400 12px var(--font-mono);
 }
@@ -158,8 +158,8 @@
 }
 
 .income-reassign-dropdown .mantine-Combobox-option {
-  min-height: 30px;
-  padding: 6px 10px;
+  min-height: 28px;
+  padding: 8px 8px;
 }
 
 .income-reassign-dropdown .mantine-Combobox-option:is([data-combobox-selected], [data-combobox-active]) {
@@ -176,7 +176,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: 8px 8px;
 }
 
 .income-reassign-title .app-table-chip {
@@ -186,9 +186,9 @@
 .app-modal.income-reassign-modal .income-reassign-fields {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
 }
 
@@ -200,11 +200,11 @@
 
 .app-modal.income-reassign-modal .app-modal-footer {
   margin-top: 0;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .income-reassign-content .mantine-Alert-root {
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .income-cashflow-view__related-title {

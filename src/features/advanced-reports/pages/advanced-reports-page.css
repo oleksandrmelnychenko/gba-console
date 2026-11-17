@@ -30,7 +30,7 @@
 
 .advanced-reports-page__alert {
   flex: 0 0 auto;
-  margin: 10px 8px 0;
+  margin: 8px 8px 0;
 }
 
 .advanced-reports-page__table {
@@ -57,7 +57,7 @@
   align-items: center;
   display: flex;
   flex: 0 0 auto;
-  min-height: 30px;
+  min-height: 28px;
   overflow-x: auto;
   padding: 4px 12px;
 }
@@ -86,7 +86,7 @@
 .advanced-reports-card { container: advanced-reports / inline-size; }
 .advanced-reports-filter-bar.app-filter-bar { overflow: visible; }
 .advanced-reports-filter-bar .advanced-reports-filter-row { display: flex; flex-wrap: wrap; gap: 8px; --app-multi-select-width: 200px; }
-.advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root { flex: 0 1 170px; width: 170px; min-width: 0; }
+.advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root { flex: 0 1 168px; width: 168px; min-width: 0; }
 .advanced-reports-filter-bar .advanced-reports-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
 .advanced-reports-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
 @container advanced-reports (max-width: 1250px) {

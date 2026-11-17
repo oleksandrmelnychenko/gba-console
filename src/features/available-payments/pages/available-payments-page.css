@@ -33,7 +33,7 @@
 .available-payments-alert,
 .available-payments-selection {
   flex: 0 0 auto;
-  margin: 10px 8px 0;
+  margin: 8px 8px 0;
 }
 
 .available-payments-page__table {
@@ -87,7 +87,7 @@
 .available-payments-summary {
   border-top: 1px solid var(--mantine-color-gray-2);
   flex: 0 0 auto;
-  min-height: 30px;
+  min-height: 28px;
   overflow-x: auto;
   padding: 4px 12px;
 }
@@ -104,7 +104,7 @@
 .available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root:has(input[type='date']) { flex: 0 0 140px; width: 140px; }
 .available-payments-filter-row > .app-filter-actions { margin-left: 0; flex: 0 0 auto; }
 @container available-payments (max-width: 1000px) {
-  .available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root { flex-basis: 130px; width: 130px; }
+  .available-payments-filter-bar .available-payments-filter-row > .mantine-InputWrapper-root { flex-basis: 128px; width: 128px; }
   .available-payments-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
   .available-payments-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
   .available-payments-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }

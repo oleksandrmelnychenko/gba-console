@@ -240,7 +240,7 @@ function PaymentExpenseArticlesPageContent({ inSharedShell = false }: PaymentExp
   }
 
   return (
-    <Stack className="payment-expense-articles-page console-table-page" gap={6}>
+    <Stack className="payment-expense-articles-page console-table-page" gap={8}>
       <div className="console-table-shell">{content}</div>
     </Stack>
   )

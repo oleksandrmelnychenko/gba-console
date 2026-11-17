@@ -54,7 +54,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
   const count = selectedIds.length
   return <Stack gap="xs">
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
-      label={<Group component="span" gap={6} wrap="nowrap">
+      label={<Group component="span" gap={8} wrap="nowrap">
         {list === 'IncludeGroupIds' ? <UserRoundPlus size={16} aria-hidden="true" /> : <UserRoundMinus size={16} aria-hidden="true" />}
         {list === 'IncludeGroupIds' ? 'Включити групи контрагентів' : 'Виключити групи контрагентів'}
       </Group>}

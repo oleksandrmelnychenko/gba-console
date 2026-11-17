@@ -235,10 +235,10 @@ function AccountingBanksPageContent() {
   }
 
   return (
-    <Stack className="accounting-banks-page" gap={6}>
+    <Stack className="accounting-banks-page" gap={8}>
       <Card className="app-data-card accounting-banks-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar accounting-banks-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields accounting-banks-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields accounting-banks-filter-row">
             <TextInput
               size="sm"
               leftSection={<Search size={16} />}
@@ -372,7 +372,7 @@ function BankEditorModal({
             value={values.name}
             onChange={(event) => onFieldChange('name', event.currentTarget.value)}
           />
-          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10}>
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={8}>
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('МФО')}
@@ -393,7 +393,7 @@ function BankEditorModal({
           </Card>
           <Card className="app-section-card accounting-bank-editor-card" withBorder radius="md" padding="md">
             <Text className="app-section-title" size="sm">{t('Контактні дані')}</Text>
-          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10}>
+          <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={8}>
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('Місто')}

@@ -15,7 +15,7 @@ export function PaymentArticlesPage() {
   const { t } = useI18n()
 
   return (
-    <Stack className="payment-articles-page" gap={6}>
+    <Stack className="payment-articles-page" gap={8}>
       <div className="payment-articles-page__grid">
         <section aria-label={t('Статті витрат')} className="payment-articles-page__panel console-table-shell">
           <div className="payment-articles-page__heading">

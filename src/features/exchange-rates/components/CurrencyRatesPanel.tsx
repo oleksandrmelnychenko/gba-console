@@ -397,7 +397,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style, opened = 
         }}
       >
         <Group justify="space-between" wrap="nowrap" className="exchange-rates-panel-header">
-          <Group gap={10} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <Text className="exchange-rates-panel-title">{t('Курси валют')}</Text>
             {/^(?:НБУ )?(UAH|PLN)$/.test(group.title) ? <>
               {group.title.startsWith('НБУ ') && <Text size="xs">{t('НБУ')}</Text>}

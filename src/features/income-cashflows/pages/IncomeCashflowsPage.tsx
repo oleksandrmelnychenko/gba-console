@@ -709,10 +709,10 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
   }
 
   return (
-    <Stack className="income-cashflows-page console-table-page" gap={6}>
+    <Stack className="income-cashflows-page console-table-page" gap={8}>
       <div className="console-table-shell income-cashflows-card">
         <div className="app-filter-bar income-cashflows-filter-bar">
-          <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields income-cashflows-filter-row">
+          <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields income-cashflows-filter-row">
             <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={(range) => { onSetFromDate(range.from); onSetToDate(range.to) }} />
             <TextInput
               leftSection={<Search size={16} />}
@@ -954,7 +954,7 @@ function useIncomeCashflowColumns({
         minWidth: 115,
         accessor: (row) => row.number,
         cell: (row) => (
-          <Group gap={6} wrap="nowrap">
+          <Group gap={8} wrap="nowrap">
             <TableChip tone="document" value={displayValue(row.number)} />
             {row.isCanceled && (
               <Badge className="app-role-pill is-red" size="xs" variant="light">
@@ -1478,7 +1478,7 @@ function CancelIncomeCashflowModal({
 
   return (
     <AppModal className="app-compact-form" centered opened={Boolean(row)} title={t('Скасувати прибутковий ордер')} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text>
           {t('Скасувати ордер')} <Text span fw={600}>{row?.number || t('Без номера')}</Text>?
         </Text>
@@ -1720,7 +1720,7 @@ export function ReassignIncomeClientModal({
       }
       onClose={handleClose}
     >
-      <Stack className="income-reassign-content" gap={10}>
+      <Stack className="income-reassign-content" gap={8}>
         <Card className="app-section-card income-reassign-fields" withBorder radius="md" padding={12}>
           <SearchableSelect
             comboboxProps={{ classNames: { dropdown: 'income-reassign-dropdown' } }}
@@ -1797,7 +1797,7 @@ function PayerCell({ row }: { row: IncomeCashflowRow }) {
   const { t } = useI18n()
 
   return (
-    <Group gap={6} wrap="nowrap">
+    <Group gap={8} wrap="nowrap">
       <Text size="sm">{displayValue(row.payer)}</Text>
       {row.rootAssigned && (
         <Badge className="app-role-pill" size="xs" variant="light">

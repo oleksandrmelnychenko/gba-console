@@ -112,7 +112,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
 
   if (!available) return null
   return <section aria-label="Регіональна форма Аналіз залишків і продажів">
-    <Stack gap="sm"><Text component="h2" fw={600} size="sm"><Group component="span" gap={6} wrap="nowrap"><MapIcon size={16} style={{ flexShrink: 0 }} aria-hidden="true" />{CURRENT_REGIONAL_TITLE}</Group></Text>
+    <Stack gap="sm"><Text component="h2" fw={600} size="sm"><Group component="span" gap={8} wrap="nowrap"><MapIcon size={16} style={{ flexShrink: 0 }} aria-hidden="true" />{CURRENT_REGIONAL_TITLE}</Group></Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting || !!(request.currentVparivanieMovements ?? request.CurrentVparivanieMovements)} onChange={onFullScopeChange} />
       <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>

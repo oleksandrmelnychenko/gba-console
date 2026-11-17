@@ -1698,7 +1698,7 @@ function AvailablePaymentOutcomeForm({
 
   return (
     <form id="available-payment-outcome-form" onSubmit={onSubmit}>
-      <Stack className="app-section-card available-payment-outcome-form" gap={10} p={12}>
+      <Stack className="app-section-card available-payment-outcome-form" gap={8} p={12}>
         <Group justify="space-between">
           <Text className="app-section-title" fw={600}>
             {t('Новий видатковий ордер')}
@@ -1717,7 +1717,7 @@ function AvailablePaymentOutcomeForm({
               <InfoCell
                 label={t('Сума до оплати')}
                 mono
-                value={<Group gap={6}><span>{formatAmount(baseOutcomeAmount)}</span><TableChip tone="source" value={taskCurrencyCode} /></Group>}
+                value={<Group gap={8}><span>{formatAmount(baseOutcomeAmount)}</span><TableChip tone="source" value={taskCurrencyCode} /></Group>}
               />
             </div>
 
@@ -1785,7 +1785,7 @@ function AvailablePaymentOutcomeForm({
                   })
                 }}
               />
-              <Stack gap={6}>
+              <Stack gap={8}>
                 <Select
                   data={(selectedRegister?.PaymentCurrencyRegisters || []).map((currencyRegister) => ({
                     label: currencyRegister.Currency?.Code || currencyRegister.Currency?.Name || getEntityValue(currencyRegister),
@@ -1842,7 +1842,7 @@ function AvailablePaymentOutcomeForm({
                 readOnly
                 value={calculateVatAmount(form.amount, form.vatRate)}
               />
-              <Stack gap={6}>
+              <Stack gap={8}>
                 <Select
                   data={movements.map((movement) => ({
                     label: getPaymentMovementLabel(movement),
@@ -2097,7 +2097,7 @@ function CashFlowTab({
     [t],
   )
   const controls = (
-    <Group align="end" gap={10} wrap="wrap">
+    <Group align="end" gap={8} wrap="wrap">
       <AppDateInput
         label={t('Від')}
         type="date"

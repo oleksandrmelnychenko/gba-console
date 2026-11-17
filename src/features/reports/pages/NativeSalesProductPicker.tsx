@@ -182,7 +182,7 @@ export function NativeSalesProductPicker({
     if (choice) onChange([choice.value])
   }
   return (
-    <Stack gap={6}>
+    <Stack gap={8}>
       <ReportValuePicker
         mode={multiple ? 'multi' : 'single'}
         label={label}

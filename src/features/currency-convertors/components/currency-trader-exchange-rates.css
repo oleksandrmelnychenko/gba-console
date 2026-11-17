@@ -6,7 +6,7 @@
   gap: 8px;
   padding: 8px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .currency-trader-rates-heading {
   color: var(--mantine-color-gray-9);
@@ -15,7 +15,7 @@
 }
 .currency-trader-rates-create {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px;
 }
 .currency-trader-rates-fields {
@@ -31,15 +31,15 @@
   max-height: min(360px, 48vh);
   overflow: auto;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .currency-trader-rates-table { min-width: 440px; }
 .currency-trader-rates-table thead { position: sticky; top: 0; background: var(--mantine-color-white); z-index: 1; }
 .currency-trader-rates-table .currency-trader-rates-number { text-align: right; }
 .currency-trader-rates-number .mantine-TextInput-input { text-align: right; }
-.currency-trader-rates-number .mantine-TextInput-root { max-width: 130px; margin-left: auto; }
+.currency-trader-rates-number .mantine-TextInput-root { max-width: 128px; margin-left: auto; }
 .currency-trader-rates-actions-heading { width: 80px; }
-.currency-trader-rates-empty { border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 24px 12px; text-align: center; }
+.currency-trader-rates-empty { border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; padding: 24px 12px; text-align: center; }
 .currency-trader-rates-empty .mantine-Text-root { font-family: var(--font-mono); font-size: 12px; }
 .currency-trader-rates-error { padding: 8px 12px; font-size: 12px; }
 @media (max-width: 480px) {
@@ -51,7 +51,7 @@
 .app-modal.app-form-sheet.currency-trader-rates-modal .mantine-TextInput-input {
   height: 32px;
   min-height: 32px;
-  padding-inline: 10px;
+  padding-inline: 8px;
   border-radius: 8px;
   color: var(--mantine-color-gray-9);
   font: 400 12px var(--font-mono);

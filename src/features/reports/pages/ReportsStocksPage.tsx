@@ -1105,7 +1105,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const excelUrl = result?.document.DocumentURL || null
   const pdfUrl = result?.document.PdfDocumentURL || null
   return (
-    <Stack className="reports-stocks-page workbook-desk" gap={6}>
+    <Stack className="reports-stocks-page workbook-desk" gap={8}>
       <PageSubmenuActions>
         <ReportsNavigation launches={workbookLaunches} active={activeWorkbook} movement={publishedTab === 'movement'}
           disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')} />
@@ -1316,7 +1316,7 @@ function LegacyReportBuilder({
   const measuresSection = (
     <section className="app-section-card reports-stocks-legacy-panel reports-stocks-legacy-measurements">
       <div className="reports-stocks-legacy-panel__header">
-        <Group className="reports-stocks-legacy-panel__title" gap={6} wrap="nowrap">
+        <Group className="reports-stocks-legacy-panel__title" gap={8} wrap="nowrap">
           <Text className="app-section-title" component="h2" fw={600} size="sm">{t('Показники')}</Text>
           <TableChip value={checkedMeasurements} tone="neutral" />
         </Group>
@@ -1651,7 +1651,7 @@ export function ReportSelectionsCard({
       <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
         <div className="reports-stocks-legacy-panel__header">
           <div className="reports-stocks-legacy-panel__title">
-            <Group gap={6} wrap="nowrap">
+            <Group gap={8} wrap="nowrap">
               <Text className="app-section-title" component="h2" fw={600} size="sm">
                 {title ?? t('Умови відбору')}
               </Text>
@@ -1728,7 +1728,7 @@ export function ReportSelectionsCard({
         onClose={closeEditor}
       >
         {draftSelection ? (
-          <Stack gap={10}>
+          <Stack gap={8}>
             {analysis ? <><Text size="sm">Поле</Text><Button variant="default" onClick={() => setFieldPickerOpen(true)}>
               {analysis.filters.find(f => f.type === draftSelection.SelectedField.Type && draftSelection.SelectedField.Name)?.name ?? 'Оберіть поле'}</Button>
               <ReportFieldPicker opened={fieldPickerOpen} title="Поле відбору" options={analysis.filters.map(f => ({ value: String(f.type), label: f.name, path: f.path, disabled: f.available === false, reason: f.unavailabilityReason }))}
@@ -2271,7 +2271,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
         {t('Сервер ще не підтримує довідник поточних документів GBA для цього звіту. Збережені відбори залишено; новий пошук недоступний.')}
       </Text> : null}
       {isSaleDocumentFilter ? (
-        <Stack gap={6}>
+        <Stack gap={8}>
           <Select
             allowDeselect={false}
             data={SALE_DOCUMENT_STATUS_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}

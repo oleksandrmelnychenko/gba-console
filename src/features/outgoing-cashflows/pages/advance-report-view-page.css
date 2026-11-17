@@ -1,14 +1,14 @@
 .advance-report-detail-drawer {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .advance-report-detail-title {
   flex: 1;
   min-width: 0;
-  margin-right: 10px;
+  margin-right: 8px;
 }
 
 .advance-report-detail-header,
@@ -40,7 +40,7 @@
   justify-content: flex-end;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   color: var(--mantine-color-gray-9);
   font: 500 16px/1.4 var(--font-mono);
   font-variant-numeric: tabular-nums;

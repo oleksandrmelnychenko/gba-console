@@ -21,7 +21,7 @@
   background: #f8f9fa;
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: 310px minmax(300px, 1fr) auto auto;
   overflow-x: auto;
 }
@@ -169,7 +169,7 @@
 .accountable-expenses-money-cell {
   align-items: baseline;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
   line-height: 1.1;
   min-width: 0;
@@ -215,7 +215,7 @@
 .accountable-expenses-status-cell {
   align-items: center;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -293,9 +293,9 @@
 
 .accountable-expense-detail-hero {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) minmax(390px, 0.78fr);
-  padding: 14px;
+  padding: 12px;
 }
 
 .accountable-expense-detail-eyebrow,
@@ -313,8 +313,8 @@
 .accountable-expense-detail-title {
   align-items: center;
   display: flex;
-  gap: 10px;
-  margin-top: 7px;
+  gap: 8px;
+  margin-top: 8px;
   min-width: 0;
 }
 
@@ -367,8 +367,8 @@
 .accountable-expense-detail-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .accountable-expense-detail-badges .mantine-Badge-root,
@@ -409,7 +409,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -430,7 +430,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 10px;
   font-weight: 500;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .accountable-expense-detail-section__header {
@@ -438,24 +438,24 @@
   display: flex;
   justify-content: space-between;
   min-width: 0;
-  padding: 11px 14px 12px;
+  padding: 12px 12px 12px;
   position: relative;
 }
 
 .accountable-expense-detail-section__main {
   align-items: center;
   display: flex;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
 .accountable-expense-detail-section__icon {
   border-radius: 999px;
   box-sizing: border-box;
-  flex: 0 0 30px;
-  height: 30px;
+  flex: 0 0 28px;
+  height: 28px;
   line-height: 1;
-  width: 30px;
+  width: 28px;
 }
 
 .accountable-expense-detail-section__icon svg {
@@ -481,7 +481,7 @@
 }
 
 .accountable-expense-detail-section__body {
-  padding: 16px 14px 14px;
+  padding: 16px 12px 12px;
 }
 
 .accountable-expense-detail-grid {
@@ -553,14 +553,14 @@
 .accountable-expense-detail-product__main {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .accountable-expense-detail-product__icon {
   border-radius: 999px;
-  height: 34px;
-  width: 34px;
+  height: 32px;
+  width: 32px;
 }
 
 .accountable-expense-detail-product__main div {
@@ -583,7 +583,7 @@
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .accountable-expense-detail-comment {
@@ -597,8 +597,8 @@
 
 .accountable-expense-detail-open-button {
   height: 28px;
-  padding-left: 9px;
-  padding-right: 9px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .accountable-expense-detail-empty {
@@ -611,19 +611,19 @@
 
 .accountable-expense-detail-links {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .accountable-expense-detail-link-card {
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 10px;
+  padding: 8px;
 }
 
 .accountable-expense-detail-link-card__head {
   border-bottom: 1px solid var(--mantine-color-gray-1);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   padding-bottom: 8px;
 }
 

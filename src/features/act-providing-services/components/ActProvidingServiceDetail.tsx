@@ -43,7 +43,7 @@ export function ActProvidingServiceDetailBody({
   } = model
 
   return (
-    <Stack gap={10}>
+    <Stack gap={8}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -55,7 +55,7 @@ export function ActProvidingServiceDetailBody({
           <DocumentDetailSummary variant="inventory" eyebrow={t('Акт надання послуг')}
             title={displayValue(displayModel.number)}
             meta={<><span className="app-money">{formatDateTime(displayModel.date)}</span><TableChip value={displayModel.accountingMarker ? t('Бухгалтерський') : t('Управлінський')} /></>}
-            metrics={<Group gap={6}><Text className="app-money">{formatMoney(displayModel.totalWithVat)}</Text><TableChip tone="source" value={displayModel.currency} /></Group>}
+            metrics={<Group gap={8}><Text className="app-money">{formatMoney(displayModel.totalWithVat)}</Text><TableChip tone="source" value={displayModel.currency} /></Group>}
           />
         }>
           <DocumentDetailSection title={t('Реквізити')}>
@@ -75,7 +75,7 @@ export function ActProvidingServiceDetailBody({
           </DocumentDetailSection>
 
           <DocumentDetailSection title={t('Редагування')} stacked>
-            <Group align="start" gap={10}>
+            <Group align="start" gap={8}>
               <AppDateInput maw={230}
                 disabled={!canEdit || isLoading || isSaving}
                 label={t('Дата акта')}

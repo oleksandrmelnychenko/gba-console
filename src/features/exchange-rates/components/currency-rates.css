@@ -1,16 +1,16 @@
 /* Currency quotes live on the brand rail; financial values keep tabular mono. */
 .rates-footer-groups { width: max-content; padding-block: 0; gap: 0; }
-.rates-footer-state { color: #fff; white-space: nowrap; padding-inline: 10px; }
+.rates-footer-state { color: #fff; white-space: nowrap; padding-inline: 8px; }
 .rates-footer-state.is-error { font-weight: 600; }
 .rate-stale-warning {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 24px;
-  margin-inline: 6px;
+  margin-inline: 8px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--mantine-color-orange-6);
   color: #fff;
   font-size: 12px;
@@ -23,9 +23,9 @@
   position: relative;
   flex: 0 0 auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   height: 32px;
-  padding: 2px 10px;
+  padding: 2px 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -74,15 +74,15 @@
   height: min(660px, calc(100dvh - 64px));
   overflow: hidden;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--mantine-color-white);
   color: var(--mantine-color-gray-8);
   box-shadow: 0 16px 48px rgba(24, 31, 41, 0.18);
 }
 .exchange-rates-panel-header {
-  min-height: 50px;
+  min-height: 48px;
   flex: 0 0 auto;
-  padding: 9px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 .exchange-rates-panel-title { font: 600 16px/1.25 var(--font-mono); }
@@ -91,8 +91,8 @@
   flex: 1 1 auto;
   width: 100%;
   min-height: 0;
-  padding: 10px;
-  gap: 10px;
+  padding: 8px;
+  gap: 8px;
   grid-template-rows: auto minmax(0, 1fr);
 }
 .exchange-rates-panel .document-detail-tree { display: flex; flex-direction: column; min-height: 0; }
@@ -102,16 +102,16 @@
 .exchange-rates-current-code { color: var(--mantine-color-gray-6); font: 500 12px var(--font-mono); }
 .exchange-rates-current-updated { display: flex; flex-direction: column; gap: 4px; }
 .exchange-rates-current-updated > span { color: var(--mantine-color-gray-7); font: 500 11px var(--font-mono); }
-.exchange-rates-panel-list { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 6px; }
-.exchange-rates-panel-rate.mantine-Button-root { flex: 1 1 100px; padding-inline: 12px 10px; }
+.exchange-rates-panel-list { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; }
+.exchange-rates-panel-rate.mantine-Button-root { flex: 1 1 100px; padding-inline: 12px 8px; }
 .exchange-rates-panel-rate .mantine-Button-label { width: 100%; justify-content: space-between; gap: 8px; }
 .exchange-rates-panel-rate:focus-visible { outline: 2px solid var(--app-focus-border); outline-offset: 2px; }
 .exchange-rates-panel-rate-code { font-size: 11px; font-weight: 500; }
 .exchange-rates-panel-rate-value { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .exchange-rates-history-card { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 180px; box-shadow: none; }
-.exchange-rates-history-heading { padding: 10px 12px; border-bottom: 1px solid var(--mantine-color-gray-2); }
+.exchange-rates-history-heading { padding: 8px 12px; border-bottom: 1px solid var(--mantine-color-gray-2); }
 .exchange-rates-history-heading .app-section-title { font-size: 13px; }
-.exchange-rates-history-card .app-filter-bar { padding: 8px 10px; }
+.exchange-rates-history-card .app-filter-bar { padding: 8px 8px; }
 .exchange-rates-history-card .app-filter-fields { flex-wrap: nowrap; gap: 8px; align-items: flex-end; }
 .exchange-rates-history-card .app-filter-bar .app-filter-date-range { flex: 1 1 0; width: auto; min-width: 0; }
 .exchange-rates-history-scroll { flex: 1 1 auto; min-height: 80px; overflow: auto; }
@@ -122,14 +122,14 @@
 .exchange-rates-history-change { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .exchange-rates-history-change.is-up { color: var(--app-chip-success-text); }
 .exchange-rates-history-change.is-down { color: var(--app-chip-danger-text); }
-.exchange-rates-panel-controls.app-modal-footer { flex: 0 0 auto; padding: 10px 12px; margin: 0; }
+.exchange-rates-panel-controls.app-modal-footer { flex: 0 0 auto; padding: 8px 12px; margin: 0; }
 .exchange-rates-form { width: 100%; min-width: 0; }
 .exchange-rates-form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .exchange-rates-form-fields .mantine-InputWrapper-root { min-width: 0; }
 
 @media (max-width: 420px) {
   .exchange-rates-panel-header { padding-inline: 12px; }
-  .exchange-rates-current { padding: 10px 12px; }
+  .exchange-rates-current { padding: 8px 12px; }
   .exchange-rates-panel-rate.mantine-Button-root { flex-basis: 90px; }
   .exchange-rates-history-card .app-filter-bar .app-filter-date-range { flex-basis: 100%; }
 }

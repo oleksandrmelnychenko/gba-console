@@ -619,7 +619,7 @@ export function AdvanceReportConsumableOrderModal({
       title={t('Додати товар / послугу')}
       onClose={requestClose}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -627,7 +627,7 @@ export function AdvanceReportConsumableOrderModal({
         )}
 
         <Card className="app-section-card" withBorder padding={12} radius="md">
-          <Group gap={8} mb={10}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
+          <Group gap={8} mb={8}><Text c="gray.9" size="xs" fw={500}>{t('Організація')}</Text><TableChip tone="product" value={getOrganizationDisplayName(outcomeOrder.Organization)} /></Group>
           <div className="advance-report-entry-parties advance-report-entry-parties--order">
             <SearchableSelect
               data={supplierOptions}
@@ -824,7 +824,7 @@ export function AdvanceReportConsumableOrderModal({
           title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')}
           onClose={closeItemEditor}
         >
-          <Stack gap={10}>
+          <Stack gap={8}>
             {itemEditor.error && (
               <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
                 {itemEditor.error}
@@ -952,7 +952,7 @@ export function AdvanceReportConsumableOrderModal({
             }
           }}
         >
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
             <AppModalFooter>
               <Button color="gray" disabled={isBusy} variant="default" onClick={() => setConfirmCloseOpen(false)}>

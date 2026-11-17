@@ -27,7 +27,7 @@ const CONTROL_STYLE = {
 
 const SUGGESTIONS_PANEL_STYLE = {
   border: '1px solid var(--mantine-color-gray-3)',
-  borderRadius: 6,
+  borderRadius: 'var(--app-radius-md)',
   boxShadow: 'var(--mantine-shadow-md)',
   overflowY: 'auto',
   zIndex: 20,
@@ -40,7 +40,7 @@ const SUGGESTION_BUTTON_STYLE = {
   cursor: 'pointer',
   display: 'flex',
   justifyContent: 'space-between',
-  padding: '7px 8px',
+  padding: '8px 8px',
   textAlign: 'left',
   width: '100%',
 } as const

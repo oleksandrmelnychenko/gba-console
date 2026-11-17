@@ -10,7 +10,7 @@
 
 .reports-navigation__row > .console-subnav-pill {
   flex-shrink: 0;
-  gap: 6px;
+  gap: 8px;
 }
 
 .reports-navigation__dropdown {

@@ -63,7 +63,7 @@ export function DayProfitControls({ part, dataset, disabled, profitReadMode, day
     </> : null}
     {shows('filters') && isProductServiceFilterCapability(dataset?.productServiceFilter) && productClassification != null ? (() => {
       const replacement = productServiceFromClassification(productClassification)
-      return <Stack gap={6}>
+      return <Stack gap={8}>
         <Text size="xs" c="red">{replacement
           ? t('Шаблон містить відбір виду товару 1С. Замініть його на рівнозначний відбір GBA і збережіть шаблон повторно.')
           : unmappedProductClassificationError(productClassification)}</Text>
@@ -84,7 +84,7 @@ export function DayProfitControls({ part, dataset, disabled, profitReadMode, day
       {productServiceFilter != null && !goods
         ? <Text size="xs" c="orange">{t('Шаблон містить відбір «Послуги». Увімкнення перемикача замінить його на «Товар без послуг».')}</Text> : null}
     </> : null}
-    {shows('organizations') && profitReadMode !== 1 && sourceOrganizations != null ? <Stack gap={6} mt="sm">
+    {shows('organizations') && profitReadMode !== 1 && sourceOrganizations != null ? <Stack gap={8} mt="sm">
       <Text size="xs" c="orange">{t('Шаблон містить інший перелік організацій. Залиште всі організації або оберіть потрібні у відборі.')}</Text>
       <Group gap="xs">
         <Button size="xs" variant="light" disabled={disabled} onClick={() => setSourceOrganizations(undefined)}>
@@ -98,7 +98,7 @@ export function DayProfitControls({ part, dataset, disabled, profitReadMode, day
         onChange={event => setSourceOrganizations(event.currentTarget.checked
           ? { Version: 1, SourceWorld: 'fenix', OrganizationIds: [...DAY_ORGANIZATION_SAVED_ORGANIZATION_IDS] }
           : undefined)} />
-      <Group gap={6} mt={8} aria-label={t('Організації книги ВП')}>
+      <Group gap={8} mt={8} aria-label={t('Організації книги ВП')}>
         {['ТОВ «АМГ «КОНКОРД»', 'Фенікс', 'ФОП Самолюк А.Д.', 'ФОП Самолюк Ю.М.'].map(name =>
           <TableChip key={name} value={name} tone="product" />)}
       </Group>
