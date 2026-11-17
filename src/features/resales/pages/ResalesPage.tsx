@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { RESALE_AMOUNT_INPUT_PROPS, RESALE_MARKUP_INPUT_PROPS, RESALE_PRICE_INPUT_PROPS, resaleQtyInputProps } from '../resaleInputLimits'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -1014,6 +1015,7 @@ function NewResalePageContent({
                 hideControls
                 className="resales-new-control is-number"
                 label={t('Сума для рахунку')}
+                {...RESALE_AMOUNT_INPUT_PROPS}
                 value={form.amount}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: toNumber(value) }))}
               />
@@ -1028,6 +1030,7 @@ function NewResalePageContent({
                 hideControls
                 className="resales-new-control is-number"
                 label={t('Націнка, %')}
+                {...RESALE_MARKUP_INPUT_PROPS}
                 value={form.extraChargePercent}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: toNumber(value) }))}
               />
@@ -2478,7 +2481,7 @@ function useProcessColumns({
         accessor: (row) => row.QtyToReSale,
         cell: (row) => (
           <NumberInput
-            min={0}
+            {...resaleQtyInputProps(row.Qty)}
             value={row.QtyToReSale}
             onChange={(value) => onChangeQty(row.__rowIndex, value)}
           />
@@ -2492,7 +2495,7 @@ function useProcessColumns({
         accessor: (row) => row.SalePrice,
         cell: (row) => (
           <NumberInput
-            min={0}
+            {...RESALE_PRICE_INPUT_PROPS}
             value={row.SalePrice}
             onChange={(value) => onChangeSalePrice(row.__rowIndex, value)}
           />
@@ -2685,7 +2688,7 @@ function useResaleDetailColumns({
         width: 132,
         accessor: (row) => row.QtyToReSale,
         cell: (row) => changedToInvoice ? formatAmount(row.QtyToReSale) : (
-          <NumberInput disabled={isBusy} min={0} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
+          <NumberInput disabled={isBusy} {...resaleQtyInputProps(row.Qty)} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
         ),
       },
       {
@@ -2695,7 +2698,7 @@ function useResaleDetailColumns({
         width: 140,
         accessor: (row) => row.SalePrice,
         cell: (row) => isCompleted ? formatMoney(row.SalePrice) : (
-          <NumberInput disabled={isBusy} min={0} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
+          <NumberInput disabled={isBusy} {...RESALE_PRICE_INPUT_PROPS} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
         ),
       },
       {
