@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -53,6 +53,27 @@ describe('NotificationCenter', () => {
 
     expect(screen.getByTestId('current-route').textContent).toBe('/sales-online-shop')
     expect(getConsoleNotificationState('user-a').items[0].readAt).toEqual(expect.any(String))
+  })
+
+  it('closes on Escape while focus stays on the bell', async () => {
+    render(
+      <MantineProvider env="test">
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/dashboard']}>
+            <NotificationCenter userKey="user-a" />
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    const bell = screen.getByRole('button', { name: /Сповіщення: 1 непрочитаних/ })
+    bell.focus()
+    fireEvent.click(bell)
+    await screen.findByText('Нове замовлення з інтернет-магазину')
+
+    fireEvent.keyDown(bell, { key: 'Escape' })
+
+    await waitFor(() => expect(screen.queryByText('Нове замовлення з інтернет-магазину')).toBeNull())
   })
 
   it('uses the order metadata pattern for ecommerce interests', async () => {

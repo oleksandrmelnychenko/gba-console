@@ -6,6 +6,7 @@ import { useEffect, useReducer } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useCloseOnEscape } from '../../../shared/hooks/useCloseOnEscape'
 import { getProductWriteOffRuleLocaleLabel } from '../../products/utils'
 import { deleteProductWriteOffRule, getProductWriteOffBaseRules } from '../api/productWriteOffRulesApi'
 import type { ProductWriteOffRule } from '../types'
@@ -92,6 +93,7 @@ export function ProductWriteOffRulesControl() {
   const canDeleteRule = hasPermission(PermissionKeys.ProductsAssortment.WriteOffRules.Delete)
   const { t } = useI18n()
   const [state, dispatch] = useReducer(rulesReducer, initialRulesState)
+  useCloseOnEscape(state.opened, () => dispatch({ type: 'openedChanged', opened: false }))
 
   useEffect(() => {
     if (!isAuthenticated || !session?.csrfToken) {

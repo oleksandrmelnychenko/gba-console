@@ -14,6 +14,7 @@ import { Bell, CheckCheck, ChevronRight, Heart, ShoppingCart, Sparkles, Trash2 }
 import { useState } from 'react'
 import { useGuardedNavigate } from '../../../shared/router/navigationGuard'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useCloseOnEscape } from '../../../shared/hooks/useCloseOnEscape'
 import { useConsoleNotificationCenter } from '../../../shared/notification-center/store'
 import type { ConsoleNotification } from '../../../shared/notification-center/types'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -35,6 +36,7 @@ const notificationClockFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 export function NotificationCenter({ userKey }: NotificationCenterProps) {
   const [opened, setOpened] = useState(false)
+  useCloseOnEscape(opened, () => setOpened(false))
   const navigate = useGuardedNavigate()
   const { t } = useI18n()
   const { clear, items, markAllRead, markRead, unreadCount } = useConsoleNotificationCenter(userKey)
