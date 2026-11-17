@@ -8,7 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
-import { getClientForRegistryById } from '../api/clientFormApi'
+import { getClientForAccountingCashFlow } from '../api/clientFormApi'
 import { switchClientActiveStateForRegistry, updateClientOrderExpireDaysForRegistry } from '../api/clientsApi'
 import { useClientSourceOwnership } from '../clientSourceOwnership'
 import type { Client } from '../types'
@@ -43,7 +43,7 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
     const current = ++request.current
     setLoading(true)
     try {
-      const result = await getClientForRegistryById(netUid)
+      const result = await getClientForAccountingCashFlow(netUid)
       if (request.current !== current) return
       if (!result) throw new Error(t('Клієнта не знайдено'))
       setClient(result)

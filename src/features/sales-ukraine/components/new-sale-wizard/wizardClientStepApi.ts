@@ -107,8 +107,12 @@ export async function getWizardClientIdentityAttention(
   return getClientIdentityAttention(clientNetId, signal)
 }
 
-export async function getWizardClientAgreements(clientNetId: string, signal?: AbortSignal): Promise<ClientAgreement[]> {
-  const agreements = (await getSaleClientAgreements(clientNetId, signal)) as unknown as ClientAgreement[]
+export async function getWizardClientAgreements(
+  clientNetId: string,
+  scope: 'create' | 'edit' | 'client-card',
+  signal?: AbortSignal,
+): Promise<ClientAgreement[]> {
+  const agreements = (await getSaleClientAgreements(clientNetId, scope, signal)) as unknown as ClientAgreement[]
 
   return agreements.filter(isSalesAgreement)
 }

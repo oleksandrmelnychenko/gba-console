@@ -232,7 +232,7 @@ describe('resales API contracts', () => {
     apiRequestMock.mockResolvedValueOnce({ Items: [agreement] })
 
     await expect(getResaleClientAgreements('client-net-id', controller.signal)).resolves.toEqual([agreement])
-    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/resales/page/client/all', {
       query: {
         includeDebts: false,
         netId: 'client-net-id',

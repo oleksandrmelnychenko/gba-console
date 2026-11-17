@@ -151,7 +151,8 @@ export async function getOrganizations(): Promise<SadOrganization[]> {
 }
 
 export async function searchClients(value: string): Promise<SadClient[]> {
-  const result = await apiRequest<unknown>('/clients/search/all', {
+  // SAD editor (open-details key) facades replace the SAD/Tax Free page-key lookups.
+  const result = await apiRequest<unknown>('/clients/sad/open-details/search', {
     query: {
       value,
     },
@@ -161,7 +162,7 @@ export async function searchClients(value: string): Promise<SadClient[]> {
 }
 
 export async function getClientAgreements(netId: string): Promise<SadClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/sad/open-details/client/all', {
     query: {
       netId,
     },
@@ -191,7 +192,7 @@ export async function searchStathams(value: string): Promise<SadStatham[]> {
 }
 
 export async function getSadPalletTypes(): Promise<SadPalletType[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/pallet/types/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/pallet/types/sad/open-details/all')
 
   return normalizeArray<SadPalletType>(result)
 }

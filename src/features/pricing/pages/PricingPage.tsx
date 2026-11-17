@@ -132,7 +132,7 @@ export function PricingPage() {
     }
 
     let cancelled = false
-    searchSaleProducts(value)
+    searchSaleProducts(value, 'pricing')
       .then((list) => {
         if (!cancelled) {
           setProductSearchResult({ query: value, items: list })
@@ -184,7 +184,7 @@ export function PricingPage() {
     }
 
     let cancelled = false
-    getSaleClientAgreements(clientNetId)
+    getSaleClientAgreements(clientNetId, 'pricing')
       .then((list) => {
         if (cancelled) {
           return

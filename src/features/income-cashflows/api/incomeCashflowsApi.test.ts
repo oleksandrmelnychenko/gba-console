@@ -230,7 +230,7 @@ describe('income cashflow API lookup contracts', () => {
       })
 
     await expect(
-      getIncomeCashflowClientAgreements('client-1'),
+      getIncomeCashflowClientAgreements('client-1', 'income-form'),
     ).resolves.toEqual([{ Id: 11, Agreement: { Id: 12 } }])
     await expect(
       getIncomeCashflowSupplyOrganizationAgreements(42),
@@ -238,7 +238,7 @@ describe('income cashflow API lookup contracts', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/agreements/client/all',
+      '/agreements/income-cashflows/form/client/all',
       {
         query: {
           netId: 'client-1',

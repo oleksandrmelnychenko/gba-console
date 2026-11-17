@@ -141,6 +141,16 @@ describe('ClientResourcesPage permissions', () => {
     expect(input.value).toBe('3')
   })
 
+  it('hides the reserve-days edit action without the reservation days key', async () => {
+    canMock.mockImplementation((key: string) => key !== 'counterparties.clients.reservation_days.edit')
+    getClientTypesMock.mockResolvedValue([{ Type: 0, ClientTypeRoles: [
+      { Id: 1, Name: 'Покупці Україна', OrderExpireDays: 3 },
+    ] }])
+    renderPage('/clients/resources/product-reserve')
+    expect(await screen.findByText('Покупці Україна')).toBeTruthy()
+    expect(screen.queryByLabelText('Редагувати резерв')).toBeNull()
+  })
+
   it('hides each reviewed transporter control without its own permission', async () => {
     const denied = new Set<string>([
       PermissionKeys.ClientResources.Transporter.Create,

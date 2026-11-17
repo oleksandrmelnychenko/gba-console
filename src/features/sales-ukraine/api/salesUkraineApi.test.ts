@@ -430,7 +430,7 @@ describe('sales Ukraine document request contracts', () => {
       { NetUid: 'agreement-1' },
     ])
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/sales-ukraine/reassign/client/all', {
       query: { includeDebts: false, netId: 'client-1' },
     })
   })

@@ -239,7 +239,7 @@ describe('ReassignIncomeClientModal', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Client A' }))
 
     await waitFor(() =>
-      expect(getClientAgreementsMock).toHaveBeenCalledWith('client-a'),
+      expect(getClientAgreementsMock).toHaveBeenCalledWith('client-a', 'income-form'),
     )
 
     fireEvent.change(clientInput, { target: { value: 'Client' } })
@@ -252,7 +252,7 @@ describe('ReassignIncomeClientModal', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Client B' }))
 
     await waitFor(() =>
-      expect(getClientAgreementsMock).toHaveBeenCalledWith('client-b'),
+      expect(getClientAgreementsMock).toHaveBeenCalledWith('client-b', 'income-form'),
     )
 
     await act(async () => {
@@ -310,7 +310,7 @@ describe('ReassignIncomeClientModal', () => {
     fireEvent.click(screen.getByRole('option', { name: 'ТОВ "ТЕРМО-БУД"' }))
 
     await waitFor(() =>
-      expect(getClientAgreementsMock).toHaveBeenCalledWith('termo-1'),
+      expect(getClientAgreementsMock).toHaveBeenCalledWith('termo-1', 'income-form'),
     )
   })
 })

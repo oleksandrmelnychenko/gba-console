@@ -40,7 +40,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 const SEARCH_DEBOUNCE_MS = 300
 
 /** Registers and cash-flow articles are read through the facade of the document's own «create outcome» key. */
-function outcomeLookupScope(source: DocumentOutcomePaymentSource): CashflowLookupScope {
+function outcomeLookupScope(source: DocumentOutcomePaymentSource): Extract<CashflowLookupScope, 'sad-outcome' | 'tax-free-outcome'> {
   return source.type === 'sad' ? 'sad-outcome' : 'tax-free-outcome'
 }
 const SELECT_PAYMENT_MOVEMENT = 'Виберіть статтю грошових витрат'
@@ -150,7 +150,7 @@ export function DocumentOutcomePaymentModal({
           searchIncomeCashflowPaymentRegisters('', outcomeLookupScope(activeSource)) as Promise<OutcomePaymentRegister[]>,
           getIncomeCashflowPaymentMovements(outcomeLookupScope(activeSource)),
           shouldLoadClientAgreements && activeSource.clientNetId
-            ? getIncomeCashflowClientAgreements(activeSource.clientNetId).catch((agreementsError) => {
+            ? getIncomeCashflowClientAgreements(activeSource.clientNetId, outcomeLookupScope(activeSource)).catch((agreementsError) => {
                 if (!cancelled) {
                   setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
                 }

@@ -833,7 +833,7 @@ export async function getResaleClientAgreements(
   netId: string,
   signal?: AbortSignal,
 ): Promise<ResaleClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/resales/page/client/all', {
     query: {
       includeDebts: false,
       netId,

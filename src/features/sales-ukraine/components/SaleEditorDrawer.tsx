@@ -1115,7 +1115,7 @@ function AddProductForm({
       setSearching(true)
 
       try {
-        const next = await searchSaleProducts(value, sale.ClientAgreement?.NetUid ?? '', controller.signal)
+        const next = await searchSaleProducts(value, 'sale-edit', sale.ClientAgreement?.NetUid ?? '', controller.signal)
 
         if (!cancelled) {
           setResults(next)
@@ -1536,7 +1536,7 @@ function ClientTab({ canReassign, sale, onSwitched }: { canReassign: boolean; on
 
     async function load(id: string) {
       try {
-        const [nextAgreements, nextDebt] = await Promise.all([getSaleClientAgreements(id), getSaleClientDebtTotal(id)])
+        const [nextAgreements, nextDebt] = await Promise.all([getSaleClientAgreements(id, 'online-shop-sales'), getSaleClientDebtTotal(id)])
 
         if (!cancelled) {
           setAgreements(nextAgreements)

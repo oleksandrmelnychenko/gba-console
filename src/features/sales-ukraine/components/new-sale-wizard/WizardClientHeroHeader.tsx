@@ -114,7 +114,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
 
     async function load() {
       try {
-        const next = await getWizardClientAgreements(id)
+        const next = await getWizardClientAgreements(id, permissionFlow)
 
         if (!cancelled) {
           setLoadedAgreements({ key: id, value: next })
@@ -131,7 +131,7 @@ export const WizardClientHeroHeader = memo(function WizardClientHeroHeader({
     return () => {
       cancelled = true
     }
-  }, [agreements, resolvedNetId])
+  }, [agreements, permissionFlow, resolvedNetId])
 
   useEffect(() => {
     if (debts || !resolvedNetId) {

@@ -278,6 +278,7 @@ describe('IncomeCashflowClientFormPage automatic debt allocation', () => {
     await waitFor(() =>
       expect(getIncomeCashflowClientAgreements).toHaveBeenCalledWith(
         client.NetUid,
+        'income-form',
       ),
     )
 

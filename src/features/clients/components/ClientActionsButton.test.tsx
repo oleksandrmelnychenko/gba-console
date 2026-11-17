@@ -5,12 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { ClientActionsButton } from './ClientActionsButton'
-import { getClientForRegistryById } from '../api/clientFormApi'
+import { getClientForAccountingCashFlow } from '../api/clientFormApi'
 import { updateClientOrderExpireDaysForRegistry } from '../api/clientsApi'
 
 const permissions = new Set<string>()
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: (key: string) => permissions.has(key) }) }))
-vi.mock('../api/clientFormApi', () => ({ getClientForRegistryById: vi.fn() }))
+vi.mock('../api/clientFormApi', () => ({ getClientForAccountingCashFlow: vi.fn() }))
 vi.mock('../api/clientsApi', () => ({
   updateClientOrderExpireDaysForRegistry: vi.fn(),
   switchClientActiveStateForRegistry: vi.fn(),
@@ -32,21 +32,21 @@ describe('client actions from a report', () => {
   beforeEach(() => {
     permissions.clear()
     vi.clearAllMocks()
-    vi.mocked(getClientForRegistryById).mockResolvedValue({ NetUid: 'client-1', FullName: 'Клієнт звіту', OrderExpireDays: 3, SourceFenixId: '12' })
+    vi.mocked(getClientForAccountingCashFlow).mockResolvedValue({ NetUid: 'client-1', FullName: 'Клієнт звіту', OrderExpireDays: 3, SourceFenixId: '12' })
   })
   it('does not offer actions or fetch client details without permissions', () => {
     mount()
     expect(screen.queryByRole('button', { name: 'Дії клієнта' })).toBeNull()
-    expect(getClientForRegistryById).not.toHaveBeenCalled()
+    expect(getClientForAccountingCashFlow).not.toHaveBeenCalled()
   })
   it('opens the registry menu and preserves the report as the card return location', async () => {
     permissions.add(PermissionKeys.Clients.Details.Open)
     permissions.add(PermissionKeys.Clients.Status.ToggleActive)
     mount()
-    expect(getClientForRegistryById).not.toHaveBeenCalled()
+    expect(getClientForAccountingCashFlow).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Дії клієнта' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Відкрити картку' }))
-    expect(getClientForRegistryById).toHaveBeenCalledWith('client-1')
+    expect(getClientForAccountingCashFlow).toHaveBeenCalledWith('client-1')
     expect(screen.queryByRole('button', { name: 'Позначити неактивним' })).toBeNull()
     const location = JSON.parse(screen.getByTestId('location').textContent || '{}')
     expect(location.path).toBe('/clients/edit/client-1/general-information')

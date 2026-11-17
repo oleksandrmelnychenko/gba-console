@@ -27,7 +27,7 @@ function AgreementScope({ clientNetId, children }: Props) {
     let cancelled = false
     async function load() {
       try {
-        const rows = clientNetId ? await getWizardClientAgreements(clientNetId) : []
+        const rows = clientNetId ? await getWizardClientAgreements(clientNetId, 'client-card') : []
         const agreements = rows.filter((row) => row.NetUid && !row.Deleted && !row.Agreement?.Deleted && row.Agreement?.IsActive)
         if (!cancelled) {
           setState({ agreements, error: null, loading: false })

@@ -4274,6 +4274,9 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
 
 function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   const navigate = useNavigate()
+  const { can } = usePermissions()
+  // The save writes the role's reservation days (server: counterparties.clients.reservation_days.edit).
+  const canEditReserveDays = can(PermissionKeys.Clients.ReservationDays.Edit)
   const state = useResourceData<ClientResourceClientType[]>(getClientResourceClientTypes, [])
   const [search, setSearch] = useValueState('')
   const [editor, setEditor] = useValueState<ReserveEditorState | null>(null)
@@ -4287,7 +4290,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   const pagination = useClientResourcePagination(filteredRoles)
 
   async function saveReserveDays(daysValue: string) {
-    if (!editor?.role) {
+    if (!editor?.role || !canEditReserveDays) {
       return
     }
 
@@ -4388,7 +4391,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 enableReorder: false,
                 enableResizing: false,
                 enableSorting: false,
-                cell: (role) => (
+                cell: (role) => canEditReserveDays ? (
                   <Group justify="flex-end" wrap="nowrap">
                     <TableRowAction
                       action="edit"
@@ -4399,7 +4402,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                       }}
                     />
                   </Group>
-                ),
+                ) : null,
               },
             ]}
             data={pagination.data}

@@ -579,7 +579,7 @@ export function OutgoingPaymentGroupForm({
 
     try {
       const nextAgreements = client.NetUid
-        ? await getIncomeCashflowClientAgreements(client.NetUid).catch(() => client.ClientAgreements || [])
+        ? await getIncomeCashflowClientAgreements(client.NetUid, 'outgoing-create').catch(() => client.ClientAgreements || [])
         : client.ClientAgreements || []
       if (!counterpartySelectionRequestGuard.isCurrent(request)) {
         return

@@ -33,6 +33,16 @@ import { calculateIncomeCashflowExchange, getIncomeCashflowRetailClientAgreement
 import { getNonDefectiveStorages as getAssortmentUploadStorages } from './products/api/productsApi'
 import { getClientDeliveryRecipients as getWizardDeliveryRecipients } from './sales-ukraine/components/new-sale-wizard/newSaleWizardApi'
 import { getWizardClientStructure, getWizardClientStructureDebtTotal } from './sales-ukraine/components/new-sale-wizard/wizardSaleHeaderApi'
+import { searchProductsByVendorCode as searchCapitalizationProducts } from './product-capitalizations/api/productCapitalizationsApi'
+import { searchPlacementProducts } from './warehouse-ukraine/api/orderPlacementsApi'
+import { getOffersClientAgreements, searchOffersProducts } from './sales-offers/api/salesOffersApi'
+import { getOnlineShopReassignmentAgreements, getSaleClientAgreements, searchSaleProducts } from './sales-ukraine/api/salesUkraineApi'
+import { getReportClientAgreements } from './reports/api/reportsApi'
+import { getResaleClientAgreements } from './resales/api/resalesApi'
+import { getClientAgreements as getSadClientAgreements, getSadPalletTypes, searchClients as searchSadClients } from './sad/api/sadApi'
+import { getClientAgreements as getPackListClientAgreements, searchClients as searchPackListClients } from './tax-free-pack-lists/api/taxFreePackListsApi'
+import { getIncomeCashflowClientAgreements } from './income-cashflows/api/incomeCashflowsApi'
+import { getClientForAccountingCashFlow } from './clients/api/clientFormApi'
 
 vi.mock('../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 
@@ -116,6 +126,63 @@ describe('form-scoped lookup facades', () => {
       '/supplies/ukraine/order/cart/items/sad/edit/all',
       '/clients/sales-offers/create/subclients',
       '/storages/orders-ukraine/placement/nondefective',
+    ])
+  })
+
+  it('splits agreements, vendor-code and client searches by the UI that asks for them', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await searchCapitalizationProducts('A1').catch(() => null)
+    await searchPlacementProducts('A1').catch(() => null)
+    await searchOffersProducts('A1')
+    await searchSaleProducts('A1', 'pricing')
+    await searchSaleProducts('A1', 'sale-edit')
+    await getOffersClientAgreements('c-1')
+    await getSaleClientAgreements('c-1', 'pricing')
+    await getSaleClientAgreements('c-1', 'online-shop-sales')
+    await getSaleClientAgreements('c-1', 'create')
+    await getSaleClientAgreements('c-1', 'edit')
+    await getSaleClientAgreements('c-1', 'client-card')
+    await getOnlineShopReassignmentAgreements('c-1')
+    await getReportClientAgreements('c-1')
+    await getResaleClientAgreements('c-1')
+    await getSadClientAgreements('c-1')
+    await searchSadClients('ab')
+    await getSadPalletTypes()
+    await getPackListClientAgreements('c-1')
+    await searchPackListClients('ab').catch(() => null)
+    for (const scope of ['income-form', 'outgoing-create', 'sad-income', 'sad-outcome', 'tax-free-income', 'tax-free-outcome'] as const) {
+      await getIncomeCashflowClientAgreements('c-1', scope)
+    }
+    await getClientForAccountingCashFlow('c-1')
+
+    expect(routes()).toEqual([
+      '/products/capitalization/create/search/vendorcode',
+      '/products/orders-ukraine/placement/search/vendorcode',
+      '/products/sales-offers/create/search/vendorcode',
+      '/products/pricing/page/search/vendorcode',
+      '/products/sales-ukraine/edit/search/vendorcode',
+      '/agreements/sales-offers/create/client/all',
+      '/agreements/pricing/page/client/all',
+      '/agreements/online-shop-sales/page/client/all',
+      '/agreements/sales-ukraine/create/client/all',
+      '/agreements/sales-ukraine/edit/client/all',
+      '/agreements/clients-card/details/client/all',
+      '/agreements/sales-ukraine/reassign/client/all',
+      '/agreements/reports/stocks/client/all',
+      '/agreements/resales/page/client/all',
+      '/agreements/sad/open-details/client/all',
+      '/clients/sad/open-details/search',
+      '/supplies/ukraine/order/packlists/sad/pallet/types/sad/open-details/all',
+      '/agreements/tax-free-pack-lists/open-details/client/all',
+      '/clients/tax-free-pack-lists/open-details/search',
+      '/agreements/income-cashflows/form/client/all',
+      '/agreements/outgoing-cashflows/create/client/all',
+      '/agreements/sad/accounting/income/client/all',
+      '/agreements/sad/accounting/outcome/client/all',
+      '/agreements/tax-free-documents/accounting/income/client/all',
+      '/agreements/tax-free-documents/accounting/outcome/client/all',
+      '/clients/accounting-cash-flow/details',
     ])
   })
 

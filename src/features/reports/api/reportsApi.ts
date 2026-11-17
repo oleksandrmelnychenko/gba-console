@@ -407,7 +407,7 @@ export async function getReportClientAgreements(netId: string): Promise<ReportEn
     return []
   }
 
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/reports/stocks/client/all', {
     query: {
       netId,
     },

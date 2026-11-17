@@ -120,7 +120,7 @@ export async function getOfferSubClients(clientNetId: string): Promise<OfferSubC
 }
 
 export async function getOffersClientAgreements(clientNetId: string): Promise<OfferClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/sales-offers/create/client/all', {
     query: { netId: clientNetId },
   })
 
@@ -128,7 +128,7 @@ export async function getOffersClientAgreements(clientNetId: string): Promise<Of
 }
 
 export async function searchOffersProducts(value: string): Promise<OffersProduct[]> {
-  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+  const result = await apiRequest<unknown>('/products/sales-offers/create/search/vendorcode', {
     query: { limit: 20, offset: 0, value: value.trim() },
   })
 

@@ -125,7 +125,7 @@ export function useWizardClientSelection(options: Options) {
     if (session.agreementsPromise) return session.agreementsPromise
     if (session.agreementsLoaded) return Promise.resolve(true)
     publish({ agreementsLoading: true })
-    session.agreementsPromise = getWizardClientAgreements(netId, session.controller.signal).then((list) => {
+    session.agreementsPromise = getWizardClientAgreements(netId, permissionFlow, session.controller.signal).then((list) => {
       if (sessionRef.current !== session) return false
       session.agreementsLoaded = true
       const restore = restoreAgreementRef.current
@@ -148,7 +148,7 @@ export function useWizardClientSelection(options: Options) {
       if (sessionRef.current === session) publish({ agreementsLoading: false })
     })
     return session.agreementsPromise
-  }, [publish])
+  }, [permissionFlow, publish])
 
   const loadDetails = useCallback((session: SelectionSession) => {
     if (sessionRef.current !== session) return

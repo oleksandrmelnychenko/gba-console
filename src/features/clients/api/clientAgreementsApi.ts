@@ -20,18 +20,6 @@ const AgreementDownloadDocumentType = {
 export type AgreementDownloadDocumentTypeValue =
   (typeof AgreementDownloadDocumentType)[keyof typeof AgreementDownloadDocumentType]
 
-export async function getClientAgreements(netId: string, signal?: AbortSignal): Promise<ClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
-    query: {
-      netId,
-      includeDebts: false,
-    },
-    ...(signal ? { signal } : {}),
-  })
-
-  return normalizeAgreementList(result)
-}
-
 export async function getClientAgreementsWithDebt(netId: string, signal?: AbortSignal): Promise<ClientAgreement[]> {
   const result = await apiRequest<unknown>('/agreements/client/all/grouped', {
     query: {

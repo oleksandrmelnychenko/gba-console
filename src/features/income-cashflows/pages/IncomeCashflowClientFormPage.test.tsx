@@ -337,6 +337,7 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     await waitFor(() =>
       expect(getIncomeCashflowClientAgreements).toHaveBeenCalledWith(
         client.NetUid,
+        'income-form',
       ),
     )
     await waitFor(() => {

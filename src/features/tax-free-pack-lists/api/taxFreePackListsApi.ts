@@ -178,7 +178,7 @@ export async function searchClients(value: string, signal?: AbortSignal): Promis
     return []
   }
 
-  const result = await apiRequest<unknown>('/clients/search/all', {
+  const result = await apiRequest<unknown>('/clients/tax-free-pack-lists/open-details/search', {
     query: {
       value: value.trim(),
     },
@@ -189,7 +189,7 @@ export async function searchClients(value: string, signal?: AbortSignal): Promis
 }
 
 export async function getClientAgreements(netId: string): Promise<ClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/tax-free-pack-lists/open-details/client/all', {
     query: {
       netId,
     },

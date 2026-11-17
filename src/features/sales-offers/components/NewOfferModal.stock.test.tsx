@@ -61,10 +61,10 @@ beforeEach(() => {
     if (path === '/clients/sales-ukraine/offers/create/search') {
       return [{ NetUid: 'client-1', FullName: 'Муляр Іван Сергійович' }]
     }
-    if (path === '/agreements/client/all') {
+    if (path === '/agreements/sales-offers/create/client/all') {
       return [{ Id: 503943, NetUid: agreementNetId, Agreement: { Name: 'Основной договор', WithVATAccounting: withVatAccounting } }]
     }
-    if (path === '/products/search/vendorcode') return products
+    if (path === '/products/sales-offers/create/search/vendorcode') return products
     if (path === '/products/reservations/current/carousel/agreement') return []
     if (path === '/products/all/availabilities/product') {
       if (availability instanceof Error) throw availability
@@ -106,7 +106,7 @@ describe('NewOfferModal product search stock', () => {
       expect(row.getByText('ПДВ: 0', { exact: true })).toBeTruthy()
       expect(row.getByText('Перепродаж: 0')).toBeTruthy()
     }
-    expect(apiMock).toHaveBeenCalledWith('/products/search/vendorcode', {
+    expect(apiMock).toHaveBeenCalledWith('/products/sales-offers/create/search/vendorcode', {
       query: { limit: 20, offset: 0, value: '045.40' },
     })
     expect(apiMock.mock.calls.some(([path]) => path.includes('/reservations/'))).toBe(false)

@@ -667,7 +667,7 @@ function IncomeCashflowClientFormPageContent() {
     try {
       const [nextAgreements, nextDebtTotal] = await Promise.all([
         clientNetId
-          ? getIncomeCashflowClientAgreements(clientNetId)
+          ? getIncomeCashflowClientAgreements(clientNetId, 'income-form')
           : Promise.resolve(client.ClientAgreements || []),
         clientNetId ? getIncomeCashflowClientDebtTotal(clientNetId).catch(() => null) : Promise.resolve(null),
       ])

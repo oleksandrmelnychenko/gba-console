@@ -381,8 +381,20 @@ function expandIncomeCashflowClientOptions(clients: Client[]): Client[] {
   return options
 }
 
-export async function getIncomeCashflowClientAgreements(netId: string): Promise<ClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+const CASHFLOW_CLIENT_AGREEMENT_ROUTES: Record<Exclude<CashflowLookupScope, 'income-client-payment'>, string> = {
+  'income-form': '/agreements/income-cashflows/form/client/all',
+  'outgoing-create': '/agreements/outgoing-cashflows/create/client/all',
+  'sad-income': '/agreements/sad/accounting/income/client/all',
+  'sad-outcome': '/agreements/sad/accounting/outcome/client/all',
+  'tax-free-income': '/agreements/tax-free-documents/accounting/income/client/all',
+  'tax-free-outcome': '/agreements/tax-free-documents/accounting/outcome/client/all',
+}
+
+export async function getIncomeCashflowClientAgreements(
+  netId: string,
+  scope: Exclude<CashflowLookupScope, 'income-client-payment'>,
+): Promise<ClientAgreement[]> {
+  const result = await apiRequest<unknown>(CASHFLOW_CLIENT_AGREEMENT_ROUTES[scope], {
     query: {
       netId,
     },

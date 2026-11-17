@@ -1649,7 +1649,7 @@ export function ReassignIncomeClientModal({
     const requestGuard = agreementRequestGuard
     const request = requestGuard.start(selectedClientValue)
 
-    void getIncomeCashflowClientAgreements(selectedClientValue)
+    void getIncomeCashflowClientAgreements(selectedClientValue, 'income-form')
       .then((result) => {
         if (requestGuard.isCurrent(request)) {
           setClientAgreements(result)

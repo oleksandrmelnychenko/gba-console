@@ -97,7 +97,7 @@ beforeEach(() => {
       if (hasAdded && failRefreshAfterAdd) throw new Error('refresh unavailable')
       return sale
     }
-    if (path === '/products/search/vendorcode') return products
+    if (path === '/products/sales-ukraine/edit/search/vendorcode') return products
     if (path === '/products/all/availabilities/product') {
       if (failAvailability) throw new Error('availability unavailable')
       const productNetUid = String(options?.query?.netId)
@@ -205,7 +205,7 @@ describe('/sales-online-shop → existing sale editor → add product (BUG-1252)
     }
     expect((within(modal).getByRole('textbox', { name: 'Кількість' }) as HTMLInputElement).disabled).toBe(true)
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/ukraine/edit/details', { query: { netId: saleNetUid } })
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/search/vendorcode', expect.objectContaining({
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/sales-ukraine/edit/search/vendorcode', expect.objectContaining({
       query: { limit: 20, offset: 0, value: '45' },
     }))
     expect(apiRequestMock.mock.calls.filter(([path]) => path === '/products/all/availabilities/product')).toHaveLength(5)

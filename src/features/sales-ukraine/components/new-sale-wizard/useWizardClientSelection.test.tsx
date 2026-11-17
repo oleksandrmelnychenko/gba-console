@@ -86,7 +86,7 @@ describe('wizard client selection', () => {
     expect(mocks.agreements).not.toHaveBeenCalled()
     await act(async () => result.current.confirmClient(client(2)))
     await tick()
-    expect(mocks.agreements).toHaveBeenCalledExactlyOnceWith('client-2', expect.any(AbortSignal))
+    expect(mocks.agreements).toHaveBeenCalledExactlyOnceWith('client-2', 'create', expect.any(AbortSignal))
     expect(props.onClientChange).toHaveBeenLastCalledWith('client-2')
   })
 
@@ -214,14 +214,14 @@ describe('wizard client selection', () => {
     const { result, unmount } = renderHook(useWizardClientSelection, { initialProps: options() })
     await act(async () => result.current.confirmClient(client(1)))
     expect(result.current.selectedAgreement).toBe(active)
-    const signals = [mocks.agreements, mocks.debts, mocks.identity].map(mock => mock.mock.calls[0][1] as AbortSignal)
+    const signals = [mocks.agreements.mock.calls[0][2], mocks.debts.mock.calls[0][1], mocks.identity.mock.calls[0][1]] as AbortSignal[]
     act(() => result.current.confirmClient(client(2), { debounceDetails: true }))
     expect(signals.every(signal => signal?.aborted)).toBe(true)
     await act(async () => { oldDebt.resolve([{ Debt: { Total: 999 } }]); oldIdentity.resolve({ ClientNetUid: 'client-1' }) })
     expect(result.current.groupedDebts).toEqual([])
     expect(result.current.identityAttention).toBeNull()
     await tick()
-    const currentSignal = mocks.agreements.mock.calls[1][1] as AbortSignal
+    const currentSignal = mocks.agreements.mock.calls[1][2] as AbortSignal
     unmount()
     expect(currentSignal.aborted).toBe(true)
   })
@@ -318,7 +318,7 @@ describe('wizard client selection', () => {
     mocks.agreements.mockReturnValueOnce(agreements.promise)
     mocks.debts.mockReturnValueOnce(debts.promise)
     act(() => { void result.current.retryAgreements(); void result.current.retryGroupedDebts() })
-    const signals = [mocks.agreements.mock.calls[1][1], mocks.debts.mock.calls[1][1]] as AbortSignal[]
+    const signals = [mocks.agreements.mock.calls[1][2], mocks.debts.mock.calls[1][1]] as AbortSignal[]
     act(() => result.current.confirmClient(client(2), { debounceDetails: true }))
     expect(signals.every(signal => signal.aborted)).toBe(true)
     expect(result.current.agreementsError).toBe(false)

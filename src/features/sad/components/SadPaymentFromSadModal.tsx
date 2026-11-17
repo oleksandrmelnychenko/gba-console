@@ -146,7 +146,7 @@ export function SadPaymentFromSadModal({
         const [nextOrganizations, nextAgreements, nextRegisters, nextMovements] = await Promise.all([
           getIncomeCashflowOrganizations(),
           client?.NetUid
-            ? getIncomeCashflowClientAgreements(client.NetUid).catch((agreementsError) => {
+            ? getIncomeCashflowClientAgreements(client.NetUid, 'sad-income').catch((agreementsError) => {
                 if (!cancelled) {
                   setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
                 }

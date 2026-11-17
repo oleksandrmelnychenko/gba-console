@@ -732,7 +732,10 @@ export function NewSaleProductsStep({
     return snapshot?.calculatedPricings[0] ?? null
   }
 
-  const canEditMainDescription = hasPermission(CHANGE_PRODUCT_DESCRIPTION_PERMISSION)
+  // Saving a description writes the product card (server: products.assortment.product.edit); the main card also needs
+  // the sale-level comment key.
+  const canSaveProductDescription = hasPermission(PermissionKeys.ProductsAssortment.Product.Edit)
+  const canEditMainDescription = canSaveProductDescription && hasPermission(CHANGE_PRODUCT_DESCRIPTION_PERMISSION)
 
   const renderAnalogueMetrics = useCallback((product: WizardSaleProduct) => (
     <WizardRelatedProductMetrics product={product} isVatSale={isVatSale} localCurrencyCode={localCurrencyCode} />
@@ -1066,7 +1069,7 @@ export function NewSaleProductsStep({
         <Stack gap="md">
           {detailProduct && (
             <WizardProductDetailsPanel
-              canEditDescription={detailSource !== 'main' || canEditMainDescription}
+              canEditDescription={detailSource === 'main' ? canEditMainDescription : canSaveProductDescription}
               currentPriceEur={detailSource === 'main' ? getWizardProductNumber(getProductMeta(detailProduct)?.price) : undefined}
               descriptionDraft={descriptionEditor.draft}
               descriptionError={descriptionEditor.error}

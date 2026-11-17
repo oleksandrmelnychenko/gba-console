@@ -149,7 +149,7 @@ describe('wizard client step API contracts', () => {
       },
     ])
 
-    await expect(getWizardClientAgreements('client-1')).resolves.toEqual([
+    await expect(getWizardClientAgreements('client-1', 'create')).resolves.toEqual([
       {
         NetUid: 'sales-agreement',
         Agreement: {
@@ -160,7 +160,7 @@ describe('wizard client step API contracts', () => {
         },
       },
     ])
-    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/client/all', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/agreements/sales-ukraine/create/client/all', {
       query: { netId: 'client-1' },
     })
   })
@@ -179,7 +179,7 @@ it('forwards cancellation to all client-preview details', async () => {
   apiRequestMock.mockReset().mockResolvedValue([])
   const signal = new AbortController().signal
   await Promise.all([
-    getWizardClientAgreements('client-1', signal),
+    getWizardClientAgreements('client-1', 'edit', signal),
     getWizardClientGroupedDebts('client-1', signal),
     getWizardClientIdentityAttention('client-1', signal),
   ])

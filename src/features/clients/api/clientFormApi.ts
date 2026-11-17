@@ -58,6 +58,18 @@ export async function getClientForRegistryById(netId: string): Promise<Client | 
   return normalizeClient(result)
 }
 
+/** The client actions button on the accounting cash-flow page (cash-flow open key). */
+export async function getClientForAccountingCashFlow(netId: string): Promise<Client | null> {
+  const result = await apiRequest<unknown>('/clients/accounting-cash-flow/details', {
+    query: {
+      netId,
+      includeDebts: false,
+    },
+  })
+
+  return normalizeClient(result)
+}
+
 export async function getSupplierPassportById(netId: string): Promise<Client | null> {
   const result = await apiRequest<unknown>('/clients/suppliers/passport/details', {
     query: {

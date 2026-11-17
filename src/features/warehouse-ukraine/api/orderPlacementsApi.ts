@@ -97,7 +97,7 @@ export async function createProductIncomeFromDynamicPlacements(
 }
 
 export async function searchPlacementProducts(value: string): Promise<PlacementProduct[]> {
-  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+  const result = await apiRequest<unknown>('/products/orders-ukraine/placement/search/vendorcode', {
     query: { limit: 20, offset: 0, value: value.trim() },
   })
 

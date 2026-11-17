@@ -403,12 +403,15 @@ export async function deleteOrderItem(
   })
 }
 
+/** `pricing`: the pricing page; `sale-edit`: adding items in the sale editor drawer. */
 export async function searchSaleProducts(
   value: string,
+  scope: 'pricing' | 'sale-edit',
   clientAgreementNetId?: string,
   signal?: AbortSignal,
 ): Promise<SalesUkraineProduct[]> {
-  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+  const route = scope === 'pricing' ? '/products/pricing/page/search/vendorcode' : '/products/sales-ukraine/edit/search/vendorcode'
+  const result = await apiRequest<unknown>(route, {
     query: { limit: 20, offset: 0, value: value.trim() },
     signal,
   })
@@ -492,8 +495,23 @@ export async function addOrderItem(
   return result && typeof result === 'object' && !Array.isArray(result) ? (result as SalesUkraineOrderItem) : null
 }
 
-export async function getSaleClientAgreements(clientNetId: string, signal?: AbortSignal): Promise<SalesUkraineClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+/** Which UI reads the client's agreements; each maps to the facade of the key that admits the user there. */
+export type SaleClientAgreementScope = 'pricing' | 'online-shop-sales' | 'create' | 'edit' | 'client-card'
+
+const SALE_CLIENT_AGREEMENT_ROUTES: Record<SaleClientAgreementScope, string> = {
+  'client-card': '/agreements/clients-card/details/client/all',
+  create: '/agreements/sales-ukraine/create/client/all',
+  edit: '/agreements/sales-ukraine/edit/client/all',
+  'online-shop-sales': '/agreements/online-shop-sales/page/client/all',
+  pricing: '/agreements/pricing/page/client/all',
+}
+
+export async function getSaleClientAgreements(
+  clientNetId: string,
+  scope: SaleClientAgreementScope,
+  signal?: AbortSignal,
+): Promise<SalesUkraineClientAgreement[]> {
+  const result = await apiRequest<unknown>(SALE_CLIENT_AGREEMENT_ROUTES[scope], {
     ...(signal ? { signal } : {}),
     query: { netId: clientNetId },
   })
@@ -504,7 +522,7 @@ export async function getSaleClientAgreements(clientNetId: string, signal?: Abor
 export async function getOnlineShopReassignmentAgreements(
   clientNetId: string,
 ): Promise<SalesUkraineClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/client/all', {
+  const result = await apiRequest<unknown>('/agreements/sales-ukraine/reassign/client/all', {
     query: { includeDebts: false, netId: clientNetId },
   })
 

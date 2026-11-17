@@ -59,9 +59,11 @@ vi.mock('../../../products/api/productsApi', async (importOriginal) => ({
   updateProduct: apiMocks.updateProduct,
 }))
 
+const deniedPermissions = vi.hoisted(() => new Set<string>())
+
 vi.mock('../../../auth/useAuth', () => ({
   useAuth: () => ({
-    hasPermission: () => true,
+    hasPermission: (key: string) => !deniedPermissions.has(key),
     session: { userNetUid: 'USER-A' },
     user: { FirstName: 'Test', LastName: 'User', NetUid: 'user-1' },
   }),
@@ -207,6 +209,7 @@ async function findCartRowAction(name: string) {
 }
 
 beforeEach(() => {
+  deniedPermissions.clear()
   clearAllSalesPendingMutations()
   clearAllWizardSplitRecoveries()
   initializeWizardKeyboard(1)
@@ -314,6 +317,22 @@ describe('NewSaleProductsStep selected product summary', () => {
     fireEvent.click(within(drawer).getByRole('button', { name: 'Закрити деталі товару' }))
     expect(getWizardKeyboardState()).toBe(source === 'analogue' ? 'AnalogueSelection' : 'ComponentSelection')
     expect(apiMocks.addOrderItem).not.toHaveBeenCalled()
+  })
+
+  it('hides the description editor on an analogue card without the product edit key', async () => {
+    deniedPermissions.add('products.assortment.product.edit')
+    const related = createSearchProduct(7, { NetUid: 'related-product', VendorCode: 'RELATED', HasAnalogue: false,
+      Description: 'Опис пов’язаного товару', ProductAvailabilities: [{ Amount: 7 }] })
+    apiMocks.getProductAnalogues.mockResolvedValue([related])
+    apiMocks.searchSaleProductsWithAvailability.mockResolvedValueOnce([createSearchProduct(10, { HasAnalogue: true })])
+    renderStep()
+    fireEvent.change(screen.getByPlaceholderText(/пошук/i), { target: { value: 'SEM12081' } })
+    fireEvent.click(await screen.findByText('RELATED'))
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true })
+    const drawer = await findDetailDrawer('RELATED')
+    expect(within(drawer).getByText('Опис пов’язаного товару')).toBeTruthy()
+    expect(within(drawer).queryByRole('button', { name: 'Редагувати' })).toBeNull()
+    expect(apiMocks.updateProduct).not.toHaveBeenCalled()
   })
 
   it('opens the selected photo and closes it without losing the selection or changing the cart', async () => {

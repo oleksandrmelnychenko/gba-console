@@ -99,7 +99,8 @@ export async function searchProductsByVendorCode(
   limit = 20,
   offset = 0,
 ): Promise<ProductCapitalizationSearchProduct[]> {
-  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+  // Only the new-capitalization panel searches products (capitalization create key).
+  const result = await apiRequest<unknown>('/products/capitalization/create/search/vendorcode', {
     query: {
       limit,
       offset,

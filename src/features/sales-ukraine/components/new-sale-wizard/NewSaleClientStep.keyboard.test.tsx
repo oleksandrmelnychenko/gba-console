@@ -133,7 +133,7 @@ describe('new-sale client keyboard navigation', () => {
     })
 
     await waitFor(() => expect(onClientChange).toHaveBeenCalledWith(client.NetUid), { timeout: 3_000 })
-    expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledWith(client.NetUid, expect.any(AbortSignal))
+    expect(apiMocks.getWizardClientAgreements).toHaveBeenCalledWith(client.NetUid, 'create', expect.any(AbortSignal))
     expect(apiMocks.getWizardClientGroupedDebts).toHaveBeenCalledWith(client.NetUid, expect.any(AbortSignal))
   })
 
