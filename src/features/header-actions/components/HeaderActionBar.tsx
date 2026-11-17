@@ -16,6 +16,8 @@ export function HeaderActionBar() {
   // The shortcut needs its own header key and access to the Resale screen itself.
   const canOpenResale = hasPermission(PermissionKeys.OnlineShopSeo.Resale.Open)
     && hasPermission(PermissionKeys.Resales.Page.View)
+  // The global write-off rules (and their counter badge) need products.assortment.write_off_rules.open.
+  const canOpenWriteOffRules = hasPermission(PermissionKeys.ProductsAssortment.WriteOffRules.Open)
 
   return (
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
@@ -23,7 +25,7 @@ export function HeaderActionBar() {
       {canOpenSync && !afterCutover && <SyncControl />}
       {canOpenResale && <ResaleControl />}
       {canExportToOneC && <OneCExportControl />}
-      <ProductWriteOffRulesControl />
+      {canOpenWriteOffRules && <ProductWriteOffRulesControl />}
     </Group>
   )
 }
