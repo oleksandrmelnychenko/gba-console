@@ -355,11 +355,17 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
       const addressValue = current.addressValue.trim()
 
       if (addressValue) {
-        address = await newDeliveryRecipientAddress({
-          DeliveryRecipient: created,
-          DeliveryRecipientId: created.Id,
-          Value: addressValue,
-        })
+        try {
+          address = await newDeliveryRecipientAddress({
+            DeliveryRecipient: created,
+            DeliveryRecipientId: created.Id,
+            Value: addressValue,
+          })
+        } catch {
+          // The recipient exists now; keep it (a retry must not create a duplicate) and keep the typed address.
+          address = null
+          notifications.show({ color: 'orange', message: t('Отримувача створено, але адресу не збережено. Перевірте адресу.') })
+        }
       }
 
       const recipient = address && (address.Id ?? 0) > 0
