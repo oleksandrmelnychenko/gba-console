@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type {
+  CellContext,
   ColumnOrderState,
   ColumnPinningState,
   ColumnSizingState,
@@ -136,4 +137,6 @@ export type DataTableColumnMeta = {
   enableReorder?: boolean
   fill?: boolean
   numeric?: boolean
+  /** Latest cell renderer of the column; read by the stable DataTableCellContent component. */
+  renderCell?: (context: CellContext<unknown, unknown>) => ReactNode
 }

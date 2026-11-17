@@ -23,6 +23,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type CellContext,
   type ColumnDef,
   type ColumnOrderState,
   type ColumnPinningState,
@@ -69,6 +70,18 @@ import type {
 import './data-table.css'
 
 const EXPAND_COLUMN_WIDTH = 40
+
+/* One component type for every body cell. TanStack's flexRender mounts a
+   function `cell` as a React component, so a column list rebuilt on every
+   keystroke (columns memoized on row data) used to give each cell a new
+   component type: React remounted the cell, an <input> inside it lost focus
+   and only the first typed character stayed (WH2-03/05/15). The renderer
+   itself lives in the column meta and may change freely. */
+function DataTableCellContent(context: CellContext<unknown, unknown>) {
+  const renderCell = (context.column.columnDef.meta as DataTableColumnMeta | undefined)?.renderCell
+
+  return renderCell ? renderCell(context) : null
+}
 // Module-level sensor options keep useSensor/useSensors memoization intact
 // (inline literals re-created the descriptors on every render).
 const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 6 } }
@@ -229,16 +242,17 @@ export function DataTable<TData>({
         enableReorder: column.enableReorder !== false,
         fill: column.fill,
         numeric: isDataTableNumericColumn(column),
+        renderCell: (context) =>
+          column.cell
+            ? column.cell((context as unknown as CellContext<TData, unknown>).row.original)
+            : formatCellValue(context.getValue(), labels),
       }
 
       return {
         id: column.id,
         header: () => (typeof column.header === 'string' ? t(column.header) : column.header),
         accessorFn: column.accessor ?? (() => null),
-        cell: (context) =>
-          column.cell
-            ? column.cell(context.row.original)
-            : formatCellValue(context.getValue(), labels),
+        cell: DataTableCellContent as ColumnDef<TData, unknown>['cell'],
         enableHiding: column.enableHiding !== false,
         enablePinning: enablePinning && column.enablePinning !== false,
         enableResizing: column.enableResizing !== false,
