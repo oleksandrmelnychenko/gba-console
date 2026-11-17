@@ -4,10 +4,44 @@ import type { DataTableColumn } from './types'
 const ACTION_COLUMN_ID_PATTERN =
   /^(?:(?:.+)Action|actions|operations?|controls?|edit|delete|remove|archive|view|open|process|print|cancel|reassign|menu)$/i
 
-const ACTION_ICON_SIZE = 28
+// Row actions are 24px icons (--app-control-height-xs) in a cell with 8px
+// inline padding, so one action needs 40px, two 68px, three 96px.
+const ACTION_ICON_SIZE = 24
 const ACTION_GAP = 4
 const ACTION_CELL_INLINE_PADDING = 16
-const MIN_ACTION_COLUMN_WIDTH = 56
+const MIN_ACTION_COLUMN_WIDTH = 40
+const ACTION_CONTROL_SELECTOR = 'button, a[href], [role="button"], input, .mantine-ActionIcon-root'
+
+/**
+ * Width an action column needs for what it actually renders: the horizontal
+ * span of the controls in its body cells (max over rows) plus the cell's inline
+ * padding. Returns null when nothing measurable is rendered (no rows, jsdom).
+ */
+export function measureActionColumnFitWidth(
+  root: ParentNode,
+  columnId: string,
+): number | null {
+  const cells = root.querySelectorAll<HTMLElement>(
+    `td[data-column-id="${CSS.escape(columnId)}"]`,
+  )
+  let span = 0
+
+  cells.forEach((cell) => {
+    const controls = Array.from(cell.querySelectorAll<HTMLElement>(ACTION_CONTROL_SELECTOR))
+      .map((control) => control.getBoundingClientRect())
+      .filter((rect) => rect.width > 0)
+
+    if (controls.length === 0) return
+
+    const left = Math.min(...controls.map((rect) => rect.left))
+    const right = Math.max(...controls.map((rect) => rect.right))
+    span = Math.max(span, right - left)
+  })
+
+  if (span <= 0) return null
+
+  return Math.max(MIN_ACTION_COLUMN_WIDTH, Math.ceil(span) + ACTION_CELL_INLINE_PADDING)
+}
 
 export function isDataTableActionColumn<TData>(
   column: DataTableColumn<TData>,

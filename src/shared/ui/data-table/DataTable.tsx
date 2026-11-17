@@ -1,5 +1,5 @@
 import { getPinnedStyle } from './dataTablePinning'
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Table } from '@mantine/core'
 import {
   closestCenter,
@@ -44,6 +44,7 @@ import {
 import { DataTableHeaderCell } from './DataTableHeaderCell'
 import {
   getDataTableActionColumnIds,
+  measureActionColumnFitWidth,
   pinDataTableActionsRight,
   prepareDataTableColumns,
 } from './dataTableActions'
@@ -146,6 +147,9 @@ export function DataTable<TData>({
     () => getDataTableActionColumnIds(preparedColumns),
     [preparedColumns],
   )
+  // Action columns (pinned right) fit the icons they actually render instead
+  // of the width a page guessed: measured after render, only ever narrower.
+  const [actionFitWidths, setActionFitWidths] = useState<Record<string, number>>({})
   const effectiveDefaultLayout = useMemo(
     () =>
       enablePinning
@@ -243,13 +247,13 @@ export function DataTable<TData>({
         enablePinning: enablePinning && column.enablePinning !== false,
         enableResizing: column.enableResizing !== false,
         enableSorting: column.enableSorting ?? Boolean(column.accessor),
-        maxSize: column.maxWidth,
+        maxSize: actionFitWidths[column.id] ?? column.maxWidth,
         meta,
-        minSize: column.minWidth,
-        size: column.width,
+        minSize: actionFitWidths[column.id] ?? column.minWidth,
+        size: actionFitWidths[column.id] ?? column.width,
       }
     })
-  }, [preparedColumns, enablePinning, labels, t])
+  }, [actionFitWidths, preparedColumns, enablePinning, labels, t])
 
   // Persist write-through on USER changes only. A watch-effect used to mirror the
   // layout state into storage, but on a layoutVersion bump it raced the reset
@@ -338,6 +342,15 @@ export function DataTable<TData>({
     [actionColumnIds, normalizedLayout.columnPinning],
   )
 
+  // Fitted action columns ignore stored widths (they are not user-resizable).
+  const effectiveColumnSizing = useMemo(() => {
+    const fittedIds = Object.keys(actionFitWidths)
+    if (fittedIds.length === 0) return normalizedLayout.columnSizing
+    const sizing = { ...normalizedLayout.columnSizing }
+    fittedIds.forEach((columnId) => delete sizing[columnId])
+    return sizing
+  }, [actionFitWidths, normalizedLayout.columnSizing])
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     columns: tableColumns,
@@ -367,7 +380,7 @@ export function DataTable<TData>({
     state: {
       columnOrder: normalizedLayout.columnOrder,
       columnPinning: effectiveColumnPinning,
-      columnSizing: normalizedLayout.columnSizing,
+      columnSizing: effectiveColumnSizing,
       columnVisibility: normalizedLayout.columnVisibility,
       sorting,
       ...(pagination ? { pagination } : {}),
@@ -426,6 +439,23 @@ export function DataTable<TData>({
     renderedColumnTableWidth,
     visibleLeafColumns,
   ])
+  useLayoutEffect(() => {
+    if (!scrollNode || actionColumnIds.length === 0) return
+    setActionFitWidths((current) => {
+      let next = current
+      actionColumnIds.forEach((columnId) => {
+        const fit = measureActionColumnFitWidth(scrollNode, columnId)
+        const column = table.getColumn(columnId)
+        if (fit === null || !column) return
+        // Shrink only, and only when the column is wider than its icons need.
+        if (fit < column.getSize() - 1 && current[columnId] !== fit) {
+          next = next === current ? { ...current } : next
+          next[columnId] = fit
+        }
+      })
+      return next
+    })
+   }, [actionColumnIds, data, effectiveDensity, isLoading, scrollNode, table])
   baseColumnWidthsRef.current = new Map(
     visibleLeafColumns.map((column) => [column.id, column.getSize()]),
   )
