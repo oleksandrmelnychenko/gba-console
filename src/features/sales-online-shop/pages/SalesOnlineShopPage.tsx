@@ -1407,7 +1407,7 @@ export function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   ]
 
   if (retailClientLine) {
-    clientRows.splice(1, 0, [t('Retail-клієнт'), retailClientLine])
+    clientRows.splice(1, 0, [t('Роздрібний клієнт'), retailClientLine])
   }
 
   return (

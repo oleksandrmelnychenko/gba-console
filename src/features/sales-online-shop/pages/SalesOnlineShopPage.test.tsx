@@ -47,6 +47,28 @@ describe('SaleDetail', () => {
     expect(value?.contains(icon)).toBe(true)
     expect(label.parentElement).toBe(row)
   })
+
+  it('labels the retail client row in Ukrainian', () => {
+    const sale = {
+      ClientAgreement: { Agreement: { Name: 'Договір' }, Client: { FullName: 'Клієнт' } },
+      NetUid: 'dc8d6ccc-e2f3-4011-a73f-9be8a570b2ae',
+      Order: { OrderItems: [] },
+      RetailClient: { Name: 'Іван Петренко', PhoneNumber: '+380501112233' },
+      SaleNumber: { Value: 'КАв00002566' },
+    } as unknown as SalesOnlineShopSale
+
+    render(
+      <MantineProvider theme={theme}>
+        <I18nProvider>
+          <SaleDetail sale={sale} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Роздрібний клієнт')).toBeTruthy()
+    expect(screen.getByText('+380501112233 - Іван Петренко')).toBeTruthy()
+    expect(screen.queryByText('Retail-клієнт')).toBeNull()
+  })
 })
 
 describe('SalesOnlineShopGridRow shipment acceptance', () => {
