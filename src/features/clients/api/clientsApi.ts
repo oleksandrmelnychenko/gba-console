@@ -377,19 +377,24 @@ export async function exportSuppliersDocument(params: ClientSearchParams): Promi
   return normalizeDocument(result)
 }
 
+// A state change: POST (the shared client adds the CSRF header to unsafe methods).
 export async function switchClientActiveState(netId: string): Promise<void> {
   await apiRequest<unknown>('/clients/registry/switch/active', {
+    method: 'POST',
     query: {
       netId,
     },
+    body: {},
   })
 }
 
 export async function switchClientActiveStateForRegistry(netId: string): Promise<void> {
   await apiRequest<unknown>('/clients/registry/switch/active', {
+    method: 'POST',
     query: {
       netId,
     },
+    body: {},
   })
 }
 

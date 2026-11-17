@@ -584,9 +584,11 @@ describe('clients API query contracts', () => {
     await switchClientActiveState('client-net-id')
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/switch/active', {
+      method: 'POST',
       query: {
         netId: 'client-net-id',
       },
+      body: {},
     })
   })
 
@@ -596,9 +598,11 @@ describe('clients API query contracts', () => {
     await switchClientActiveStateForRegistry('client-net-id')
 
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/registry/switch/active', {
+      method: 'POST',
       query: {
         netId: 'client-net-id',
       },
+      body: {},
     })
   })
 
