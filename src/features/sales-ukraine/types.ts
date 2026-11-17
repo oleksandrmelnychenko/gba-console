@@ -295,6 +295,10 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
   InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean
+  /** Registry only: the invoice's stock posting is still queued or retried ("Pending") or was given up ("Failed"); absent once posted. */
+  StockPostingState?: string | null
+  /** Why the stock posting has not completed: InsufficientStock, PricingUnavailable, ShiftWithoutMovement, Other. */
+  StockPostingReason?: string | null
   IsCashOnDelivery?: boolean
   IsDevelopment?: boolean
   IsFullPayment?: boolean

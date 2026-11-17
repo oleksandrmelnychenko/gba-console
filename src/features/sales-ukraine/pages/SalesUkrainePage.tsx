@@ -84,6 +84,7 @@ import {
 import { getSaleDiscountSummary } from '../saleDiscounts'
 import {
   getSaleLifecycleStatusKey,
+  getSaleStockPostingMarker,
   getStatusTypeKey,
   isDiscountEditableSaleLifecycle,
   isDiscountPercentageEditableSaleLifecycle,
@@ -591,7 +592,13 @@ function SalesUkrainePageContent() {
           return null
         }
 
-        const next = { ...loaded, TotalRowsQty: sale.TotalRowsQty }
+        // The stock posting marker comes with the registry row only; loading details must not drop it.
+        const next = {
+          ...loaded,
+          StockPostingReason: loaded.StockPostingReason ?? sale.StockPostingReason,
+          StockPostingState: loaded.StockPostingState ?? sale.StockPostingState,
+          TotalRowsQty: sale.TotalRowsQty,
+        }
 
         setSales((current) => replaceSaleInList(current, next))
 
@@ -2096,6 +2103,7 @@ const SaleGridRow = memo(function SaleGridRow({
         <Badge className={`app-role-pill ${getSaleStatusPillClass(sale)}`} size="sm" variant="light">
           {getSaleStatusLabel(sale)}
         </Badge>
+        <SaleStockPostingPill sale={sale} />
         <span className="sg-status-pay">
           <span
             className="sg-status-pay__indicator"
@@ -2388,6 +2396,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
             {sale.IsFullPayment && <span className="app-role-pill sale-detail-pill is-green">{t('Повна оплата')}</span>}
             {sale.IsVatSale && <span className="app-role-pill sale-detail-pill">{t('ПДВ')}</span>}
             {sale.IsLocked && <span className="app-role-pill sale-detail-pill is-red">{t('Заблоковано')}</span>}
+            <SaleStockPostingPill detail sale={sale} />
             {sale.IsPrinted && <span className="app-role-pill sale-detail-pill is-gray">{t('Друковано')}</span>}
           </div>
         </>}
@@ -2725,6 +2734,29 @@ function getSaleUserName(sale: SalesUkraineSale): string {
     || user?.Name?.trim()
     || user?.Abbreviation?.trim()
     || ''
+  )
+}
+
+/** A «Накладна» whose stock has not moved: posting pending or failed, with the reason in the tooltip. */
+function SaleStockPostingPill({ detail = false, sale }: { detail?: boolean; sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+  const marker = getSaleStockPostingMarker(sale)
+
+  if (!marker) {
+    return null
+  }
+
+  return (
+    <Tooltip label={t(marker.hint)} multiline w={320} withArrow>
+      <span
+        aria-label={`${t(marker.label)}. ${t(marker.hint)}`}
+        className={`app-role-pill ${detail ? 'sale-detail-pill ' : ''}${marker.tone === 'danger' ? 'is-red' : 'is-orange'}`}
+        data-stock-posting={marker.tone}
+        tabIndex={0}
+      >
+        {t(marker.label)}
+      </span>
+    </Tooltip>
   )
 }
 

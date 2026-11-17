@@ -78,6 +78,52 @@ export function isDiscountPercentageEditableSaleLifecycle(value: number | string
   return getSaleLifecycleTypeKey(value) === '0'
 }
 
+export type SaleStockPostingMarker = {
+  hint: string
+  label: string
+  tone: 'danger' | 'warning'
+}
+
+const STOCK_POSTING_REASON_HINTS: Record<string, string> = {
+  InsufficientStock:
+    'Товар за накладною не списано з партій: на складах, з яких дозволено списання за цим договором, не вистачає залишку.',
+  PricingUnavailable: 'Товар за накладною не списано з партій: для позиції не визначено ціну за договором.',
+  ShiftWithoutMovement: 'Акт зсуву не проведено по складу: його зареєстровано до складського проведення накладної.',
+}
+
+const STOCK_POSTING_CONSEQUENCE = 'Резерв утримується, собівартості немає, повернення за накладною недоступне.'
+
+/**
+ * Marker for an invoice whose stock has not moved. The server reports the state of its stock posting —
+ * the same condition the return form words as «Складське проведення не завершено».
+ */
+export function getSaleStockPostingMarker(sale: {
+  StockPostingReason?: string | null
+  StockPostingState?: string | null
+}): SaleStockPostingMarker | null {
+  const state = String(sale.StockPostingState ?? '').trim().toLowerCase()
+
+  if (state !== 'pending' && state !== 'failed') {
+    return null
+  }
+
+  const failed = state === 'failed'
+  const reason = STOCK_POSTING_REASON_HINTS[String(sale.StockPostingReason ?? '').trim()]
+    ?? (failed ? 'Товар за накладною не списано з партій.' : 'Складське списання за накладною ще в черзі.')
+
+  return failed
+    ? {
+        hint: `${reason} ${STOCK_POSTING_CONSEQUENCE} Автоматичні спроби вичерпано — зверніться до адміністратора.`,
+        label: 'Складське проведення не виконано',
+        tone: 'danger',
+      }
+    : {
+        hint: `${reason} ${STOCK_POSTING_CONSEQUENCE} Проведення повторюється автоматично.`,
+        label: 'Складське проведення не завершено',
+        tone: 'warning',
+      }
+}
+
 function isNewOrPackagingSaleLifecycle(value: number | string | null | undefined): boolean {
   const key = getSaleLifecycleTypeKey(value)
 
