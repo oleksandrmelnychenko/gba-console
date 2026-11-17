@@ -6,7 +6,7 @@ import { useWizardSalesRegisterActions } from './useWizardSalesRegisterActions'
 
 const mocks = vi.hoisted(() => ({
   audit: vi.fn(), getSale: vi.fn(), getEdit: vi.fn(), document: vi.fn(), auditDocument: vi.fn(),
-  runUpdate: vi.fn(), updateSale: vi.fn(), notify: vi.fn(), bumpDebt: vi.fn(),
+  runUpdate: vi.fn(), updateSale: vi.fn(), notify: vi.fn(), bumpDebt: vi.fn(), invoiceDocument: vi.fn(),
 }))
 vi.mock('../../../../shared/i18n/useI18n', () => ({ useI18n: () => ({ t: (value: string) => value }) }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: mocks.notify } }))
@@ -14,6 +14,7 @@ vi.mock('../../../../shared/sale-audit/saleAuditApi', () => ({ getSalesUkraineSa
 vi.mock('../../api/salesUkraineApi', () => ({
   getSaleById: mocks.getSale, getSalesUkraineEditDetails: mocks.getEdit,
   getSaleActProtocolEditDocument: mocks.document, getSalesUkraineSaleAuditEditActDocument: mocks.auditDocument,
+  getSaleInvoiceDocument: mocks.invoiceDocument,
   updateSale: mocks.updateSale,
 }))
 vi.mock('../../usePersistentSaleJsonMutation', () => ({ usePersistentSaleJsonMutationRunner: () => mocks.runUpdate }))
@@ -204,6 +205,18 @@ describe('wizard register actions', () => {
     expect(mocks.getSale).not.toHaveBeenCalled()
     expect(mocks.runUpdate).not.toHaveBeenCalled()
     expect(mocks.document).toHaveBeenCalledOnce()
+  })
+
+  it('prints the invoice instead of an empty edit act for a sale that was never edited', async () => {
+    mocks.getSale.mockResolvedValue({ ...sale, HistoryInvoiceEdit: [] })
+    mocks.invoiceDocument.mockResolvedValue({ pdfUrl: '/invoice.pdf' })
+    const { result } = setup()
+
+    await act(async () => result.current.printRow(sale))
+
+    expect(mocks.invoiceDocument).toHaveBeenCalledWith('sale-a')
+    expect(mocks.document).not.toHaveBeenCalled()
+    expect(result.current.printState?.document?.pdfUrl).toBe('/invoice.pdf')
   })
 
   it('does not submit a printed flag or request a document after preview closes during hydration', async () => {

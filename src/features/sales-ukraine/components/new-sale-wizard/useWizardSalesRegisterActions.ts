@@ -3,7 +3,7 @@ import { notifications } from '@mantine/notifications'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSalesUkraineSaleAudit } from '../../../../shared/sale-audit/saleAuditApi'
 import type { SaleAuditStatistic } from '../../../../shared/sale-audit/saleAuditTypes'
-import { getSaleActProtocolEditDocument, getSaleById, getSalesUkraineEditDetails,
+import { getSaleActProtocolEditDocument, getSaleById, getSaleInvoiceDocument, getSalesUkraineEditDetails,
   getSalesUkraineSaleAuditEditActDocument, updateSale } from '../../api/salesUkraineApi'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import { usePersistentSaleJsonMutationRunner } from '../../usePersistentSaleJsonMutation'
@@ -196,12 +196,14 @@ export function useWizardSalesRegisterActions(options: Options) {
     publish({ print: session, printState: { document: null, isLoading: true } })
     const isActive = () => isCurrent(session) && stateRef.current.print === session
     session.promise = (async () => {
+      let details: SalesUkraineSale | null = null
       // Registry rows are partial. Always hydrate before updating the printed
       // flag, otherwise /sales/update could remove the sale's OrderPackages.
       if (current.canEdit && !sale.IsPrintedActProtocolEdit) {
         try {
           const hydrated = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineEditDetails : getSaleById)(netId, session.controller.signal)
           if (!isActive()) return
+          details = hydrated
           if (hydrated) {
             const attempt = await current.runSaleUpdate(`sale-update:invoice-print:${netId}`,
               { ...hydrated, IsInvoice: true, IsPrintedActProtocolEdit: true }, updateSale)
@@ -215,7 +217,11 @@ export function useWizardSalesRegisterActions(options: Options) {
       if (!isActive()) return
       void latestRef.current.refreshRegistryRow(sale, true, 'audit')
       try {
-        const document = await (current.permissionScopedSalesUkraineApi ? getSalesUkraineSaleAuditEditActDocument : getSaleActProtocolEditDocument)(netId, session.controller.signal)
+        // A sale that was never edited has an empty «Акт редагування»: print its invoice instead.
+        const edits = (details ?? sale).HistoryInvoiceEdit
+        const document = edits !== undefined && edits.length === 0
+          ? await getSaleInvoiceDocument(netId)
+          : await (current.permissionScopedSalesUkraineApi ? getSalesUkraineSaleAuditEditActDocument : getSaleActProtocolEditDocument)(netId, session.controller.signal)
         if (isActive()) publish({ printState: { document, isLoading: false } })
       } catch {
         if (isActive()) {
