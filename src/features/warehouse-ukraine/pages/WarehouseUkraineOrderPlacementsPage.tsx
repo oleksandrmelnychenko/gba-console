@@ -24,10 +24,12 @@ import { TableRowAction } from '../../../shared/ui/table-row-action'
 import {
   createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
+  getOrderReceivedStorageNetId,
   getSupplyOrderUkraineById,
   saveDynamicPlacementRow,
   updateSupplyOrderUkraine,
 } from '../api/orderPlacementsApi'
+import { resolvePlacementStorageId } from '../placementStorageDefault'
 import { NewDynamicColumnModal } from '../components/NewDynamicColumnModal'
 import { PlacementEditDrawer } from '../components/PlacementEditDrawer'
 import { PlacementUnorderedProductsDrawer } from '../components/PlacementUnorderedProductsDrawer'
@@ -49,6 +51,7 @@ const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placem
 const PLACEMENT_ACT_RECONCILIATION_PERMISSION = PermissionKeys.OrdersUkraine.Placement.CreateReconciliation
 const PLACEMENT_CARRY_OUT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Post
 const PLACEMENT_GET_UP_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Capitalize
+const PLACEMENT_INCOME_READ_PERMISSION = PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
@@ -185,6 +188,8 @@ function useOrderPlacementsModel() {
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams<{ id: string }>()
+  const { hasPermission } = useAuth()
+  const canReadOrderIncome = hasPermission(PLACEMENT_INCOME_READ_PERMISSION)
   const routeState = location.state as PlacementLocationState | null
   const backgroundLocation = routeState?.backgroundLocation
   const fallbackReturnPath = location.pathname.startsWith('/warehouse/ukraine/orders/')
@@ -230,14 +235,21 @@ function useOrderPlacementsModel() {
           getNonDefectiveStorages(),
         ])
 
+        /* The server answers 200 with an empty body for an unknown, zero or
+           malformed id: show «Замовлення не знайдено», never a phantom order. */
+        const found = Boolean(loadedOrder.Id || loadedOrder.NetUid)
+        /* «Склад» starts on the storage this order was already received to
+           (an open order only: a closed one has no select), never on the first
+           storage of the list. */
+        const receivedStorageNetId = found && !loadedOrder.IsPlaced && canReadOrderIncome
+          ? await getOrderReceivedStorageNetId(id as string)
+          : null
+
         if (!cancelled) {
-          /* The server answers 200 with an empty body for an unknown, zero or
-             malformed id: show «Замовлення не знайдено», never a phantom order. */
-          const found = Boolean(loadedOrder.Id || loadedOrder.NetUid)
           setNotFound(!found)
           setOrder(found ? loadedOrder : null)
           setStorages(loadedStorages)
-          setSelectedStorageId((current) => current || loadedStorages[0]?.NetUid || null)
+          setSelectedStorageId((current) => resolvePlacementStorageId(current, loadedStorages, receivedStorageNetId))
           setDirty(false)
         }
       } catch (loadError) {
@@ -257,7 +269,10 @@ function useOrderPlacementsModel() {
     return () => {
       cancelled = true
     }
-  }, [id, reloadKey, setDirty, setError, setLoading, setNotFound, setOrder, setPlacing, setSelectedStorageId, setStorages, t])
+  }, [
+    canReadOrderIncome, id, reloadKey, setDirty, setError, setLoading, setNotFound, setOrder, setPlacing,
+    setSelectedStorageId, setStorages, t,
+  ])
 
   const gridRows = useMemo(() => (order ? buildGridRows(order) : []), [order])
   const isBusy = isSaving || isPlacing
@@ -1044,6 +1059,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                   className="warehouse-order-placement-control"
                   data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
                   label={t('Склад')}
+                  placeholder={t('Оберіть склад')}
                   disabled={model.isBusy}
                   value={model.selectedStorageId}
                   w={240}
@@ -1093,7 +1109,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 <Button
                   className="warehouse-order-placement-action-button"
                   color={CREATE_ACTION_COLOR}
-                  disabled={model.isBusy || model.isDirty}
+                  disabled={model.isBusy || model.isDirty || !model.selectedStorageId}
                   onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
                 >
                   {t('Провести')}
@@ -1103,7 +1119,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 <Button
                   className="warehouse-order-placement-action-button"
                   color={CREATE_ACTION_COLOR}
-                  disabled={model.isBusy || model.isDirty}
+                  disabled={model.isBusy || model.isDirty || !model.selectedStorageId}
                   variant="outline"
                   onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
                 >

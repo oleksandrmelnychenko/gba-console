@@ -11,6 +11,7 @@ import { WarehouseUkraineOrderPlacementsPage } from './WarehouseUkraineOrderPlac
 const apiMocks = vi.hoisted(() => ({
   createIncome: vi.fn(),
   getOrder: vi.fn(),
+  getReceivedStorage: vi.fn(),
   getStorages: vi.fn(),
   savePlacementRow: vi.fn(),
   updateOrder: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('../../auth/useAuth', () => ({
 vi.mock('../api/orderPlacementsApi', () => ({
   createProductIncomeFromDynamicPlacements: apiMocks.createIncome,
   getNonDefectiveStorages: apiMocks.getStorages,
+  getOrderReceivedStorageNetId: apiMocks.getReceivedStorage,
   getSupplyOrderUkraineById: apiMocks.getOrder,
   saveDynamicPlacementRow: apiMocks.savePlacementRow,
   updateSupplyOrderUkraine: apiMocks.updateOrder,
@@ -134,7 +136,12 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
         }],
       }],
     })
-    apiMocks.getStorages.mockResolvedValue([{ Id: 51, NetUid: 'storage-1', Name: 'Основний' }])
+    /* The order was already partly received to «Основний», which is not the first storage of the list. */
+    apiMocks.getStorages.mockResolvedValue([
+      { Id: 50, NetUid: 'storage-other', Name: 'Чужий склад' },
+      { Id: 51, NetUid: 'storage-1', Name: 'Основний' },
+    ])
+    apiMocks.getReceivedStorage.mockResolvedValue('storage-1')
     apiMocks.savePlacementRow.mockImplementation(async (row) => row)
     apiMocks.createIncome.mockImplementation(async (order) => order)
   })
@@ -268,5 +275,33 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
     expect(apiMocks.createIncome).toHaveBeenCalledTimes(1)
     resolveReload({ ...openOrder, IsPlaced: true })
     expect(await screen.findByText('Оприходувано')).toBeTruthy()
+  })
+
+  it('sends the rest of a partly received order to the storage it was received to, not the first of the list', async () => {
+    renderPage()
+    expect(await screen.findByText('SKU-1')).toBeTruthy()
+
+    expect(apiMocks.getReceivedStorage).toHaveBeenCalledWith('order-1')
+    fireEvent.click(screen.getByRole('button', { name: 'Оприходувати' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+
+    await waitFor(() => expect(apiMocks.createIncome).toHaveBeenCalledTimes(1))
+    expect(apiMocks.createIncome.mock.calls[0]?.[2]).toBe('storage-1')
+  })
+
+  it('preselects no storage for an order that was not received yet and keeps the income actions disabled', async () => {
+    apiMocks.getReceivedStorage.mockResolvedValue(null)
+    renderPage()
+    expect(await screen.findByText('SKU-1')).toBeTruthy()
+
+    const receive = screen.getByRole('button', { name: 'Оприходувати' }) as HTMLButtonElement
+    const post = screen.getByRole('button', { name: 'Провести' }) as HTMLButtonElement
+    expect(receive.disabled).toBe(true)
+    expect(post.disabled).toBe(true)
+    expect(screen.getByPlaceholderText('Оберіть склад')).toBeTruthy()
+
+    fireEvent.click(receive)
+    expect(screen.queryByRole('button', { name: 'Підтвердити' })).toBeNull()
+    expect(apiMocks.createIncome).not.toHaveBeenCalled()
   })
 })

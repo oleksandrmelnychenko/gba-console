@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createProductIncomeFromDynamicPlacements,
+  getOrderReceivedStorageNetId,
   getSupplyOrderUkraineById,
   saveDynamicPlacementRow,
   updateSupplyOrderUkraine,
@@ -126,5 +127,25 @@ describe('orderPlacementsApi', () => {
 
     expect(apiRequestMock.mock.calls[0]?.[0]).toBe('/products/incomes/warehouse-ukraine/dynamic/post')
     expect(apiRequestMock.mock.calls[1]?.[0]).toBe('/products/incomes/warehouse-ukraine/dynamic/capitalize')
+  })
+
+  it('reads the storage an order has already been received to from its latest product income', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Id: 5, Storage: { Id: 1, NetUid: 'storage-main', Name: 'QA Склад основний' } })
+
+    await expect(getOrderReceivedStorageNetId('order-1')).resolves.toBe('storage-main')
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/incomes/supply/order/ukraine/get', {
+      query: { netId: 'order-1' },
+    })
+  })
+
+  it('treats a not yet received order and a failed income request as an unknown storage', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+    await expect(getOrderReceivedStorageNetId('order-1')).resolves.toBeNull()
+
+    apiRequestMock.mockResolvedValueOnce({ Id: 5, Storage: null })
+    await expect(getOrderReceivedStorageNetId('order-1')).resolves.toBeNull()
+
+    apiRequestMock.mockRejectedValueOnce(new Error('Недостатньо прав для цієї дії.'))
+    await expect(getOrderReceivedStorageNetId('order-1')).resolves.toBeNull()
   })
 })

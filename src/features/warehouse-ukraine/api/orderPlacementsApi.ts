@@ -137,3 +137,26 @@ export async function getNonDefectiveStorages(): Promise<PlacementStorage[]> {
 
   return []
 }
+
+/**
+ * The storage this order has already been received to: the storage of its latest
+ * product income, or null when nothing has been received yet. It only presets the
+ * «Склад» select, so any failure (no permission, server error) means "unknown".
+ */
+export async function getOrderReceivedStorageNetId(orderNetId: string): Promise<string | null> {
+  try {
+    const result = await apiRequest<unknown>('/products/incomes/supply/order/ukraine/get', {
+      query: { netId: orderNetId },
+    })
+
+    if (!result || typeof result !== 'object') {
+      return null
+    }
+
+    const storage = (result as { Storage?: PlacementStorage | null }).Storage
+
+    return storage?.NetUid || null
+  } catch {
+    return null
+  }
+}
