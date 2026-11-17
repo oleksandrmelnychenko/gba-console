@@ -375,7 +375,7 @@ function AiFleetServiceRow({
           </Text>
         </Tooltip>
 
-        <Group gap={6} justify="flex-end" wrap="wrap" className="ai-fleet-row__statuses">
+        <Group gap={8} justify="flex-end" wrap="wrap" className="ai-fleet-row__statuses">
           {isLoading ? (
             <Loader size="xs" />
           ) : (

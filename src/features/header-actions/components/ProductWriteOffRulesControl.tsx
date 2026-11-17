@@ -192,7 +192,7 @@ export function ProductWriteOffRulesControl() {
                 <Group key={rule.NetUid || rule.Id} gap="xs" justify="space-between" wrap="nowrap" className="write-off-rule-row">
                   <Box>
                     <TableChip tone="document" value={parseRuleLocale(rule.RuleLocale, t)} />
-                    <Text mt={5} size="xs" c="dimmed">
+                    <Text mt={4} size="xs" c="dimmed">
                       {parseRuleType(rule.RuleType, t)}
                     </Text>
                   </Box>

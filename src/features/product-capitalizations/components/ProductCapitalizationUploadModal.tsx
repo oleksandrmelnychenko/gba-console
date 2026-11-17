@@ -157,7 +157,7 @@ export function ProductCapitalizationUploadModal({
               checked={form.weightPerItem}
               disabled={isSubmitting}
               label={t('За одиницю')}
-              mb={6}
+              mb={8}
               onChange={(event) => {
                 const nextValue = event.currentTarget.checked
                 setForm((current) => ({ ...current, weightPerItem: nextValue }))
@@ -178,7 +178,7 @@ export function ProductCapitalizationUploadModal({
               checked={form.pricePerItem}
               disabled={isSubmitting}
               label={t('За одиницю')}
-              mb={6}
+              mb={8}
               onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, pricePerItem: nextValue })) }}
             />
           </Group>

@@ -26,15 +26,15 @@
 }
 
 .product-specification-modal .product-specification-summary {
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .product-specification-modal :is(.product-specification-content, .product-specification-values) {
-  gap: 10px;
+  gap: 8px;
 }
 
 .product-specification-modal .product-specification-history-item + .product-specification-history-item {
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .product-specification-modal .product-specification-empty {

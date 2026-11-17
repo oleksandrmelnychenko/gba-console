@@ -936,7 +936,7 @@ function ProductsPageContent() {
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
   return (
-    <Stack gap={6} className="products-page">
+    <Stack gap={8} className="products-page">
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -1051,7 +1051,7 @@ function ProductAssortmentFilterBar({
 
   return (
     <Box className="app-filter-bar product-assortment-filter-scroll">
-      <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-assortment-filter-row">
+      <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-assortment-filter-row">
         <Select
           aria-label={t('Поле пошуку')}
           allowDeselect={false}
@@ -1130,7 +1130,7 @@ function ProductAssortmentCarousel({
           <Stack gap={12} justify="flex-end" h="100%" p="xs">
             {Array.from({ length: 6 }, (_, index) => (
               <Box key={index}>
-                <Skeleton height={11} mb={6} radius="sm" width="45%" />
+                <Skeleton height={11} mb={8} radius="sm" width="45%" />
                 <Skeleton height={10} radius="sm" width="75%" />
               </Box>
             ))}
@@ -1199,7 +1199,7 @@ function ProductAssortmentCarousel({
         ))}
         {isVirtualLoad ? (
           <Box p="xs">
-            <Skeleton height={11} mb={6} radius="sm" width="45%" />
+            <Skeleton height={11} mb={8} radius="sm" width="45%" />
             <Skeleton height={10} radius="sm" width="75%" />
           </Box>
         ) : null}
@@ -1343,7 +1343,7 @@ function ProductInlineView({
             )}
           </Box>
           {productImages.length > 1 ? (
-            <Group gap={6} className="product-inline-thumbs">
+            <Group gap={8} className="product-inline-thumbs">
               {productImages.slice(0, 8).map((image, index) => (
                 <button
                   type="button"
@@ -1414,13 +1414,13 @@ function ProductInlineViewSkeleton() {
   return (
     <Box aria-busy className="product-inline-view">
       <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
-        <Group gap={10} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+        <Group gap={8} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
           <Skeleton height={24} radius="sm" width={130} />
           <Skeleton height={20} radius="sm" width="min(340px, 40%)" />
         </Group>
         <Group gap="xs" wrap="nowrap">
           {Array.from({ length: 8 }, (_, index) => (
-            <Skeleton height={38} key={index} radius="sm" width={38} />
+            <Skeleton height={36} key={index} radius="sm" width={36} />
           ))}
         </Group>
       </Group>
@@ -1438,7 +1438,7 @@ function ProductInlineViewSkeleton() {
           ))}
         </Box>
         <Box className="product-inline-prices">
-          <Stack gap={10}>
+          <Stack gap={8}>
             {Array.from({ length: 9 }, (_, index) => (
               <Group gap="sm" key={index} wrap="nowrap">
                 <Skeleton height={14} radius="sm" style={{ flex: 1 }} />
@@ -1463,7 +1463,7 @@ function ProductInlineViewSkeleton() {
 
       <Group gap="xs" mt="md">
         {Array.from({ length: 5 }, (_, index) => (
-          <Skeleton height={30} key={index} radius="xl" width={index === 0 ? 150 : 110} />
+          <Skeleton height={28} key={index} radius="xl" width={index === 0 ? 150 : 110} />
         ))}
       </Group>
       <Skeleton height={200} mt="sm" radius="md" />
@@ -2028,7 +2028,7 @@ function ProductRelatedProductsTab({
       minWidth: 150,
       accessor: (row) => getProductCode(row.product),
       cell: (row) => (
-        <Group gap={6} wrap="nowrap" align="center">
+        <Group gap={8} wrap="nowrap" align="center">
           {type === 'components' ? (
             row.isProductSet ? (
               <BoxIcon size={15} className="product_page_iconBox" />
@@ -2442,7 +2442,7 @@ function ProductPlacementStorageUploadModal({
 
   return (
     <AppModal centered opened={opened} size={notPassedRows.length ? "min(1120px, 96vw)" : 760} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження місць зберігання')}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form product-import-form" gap={10}>
+      <Stack className="app-compact-form product-import-form" gap={8}>
         {(error || storagesError) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">{error || storagesError}</Alert>
         ) : null}
@@ -2450,7 +2450,7 @@ function ProductPlacementStorageUploadModal({
         {notPassedRows.length === 0 ? (
           <>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <Text className="app-section-title" fw={600} size="sm">{t('Файл і склад')}</Text>
                 <Select
                   data={storageOptions}
@@ -2471,9 +2471,9 @@ function ProductPlacementStorageUploadModal({
               </Stack>
             </Card>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <Text className="app-section-title" fw={600} size="sm">{t('Колонки та рядки')}</Text>
-                <SimpleGrid cols={{ base: 2, sm: 3 }} spacing={10} style={{ alignItems: 'end' }}>
+                <SimpleGrid cols={{ base: 2, sm: 3 }} spacing={8} style={{ alignItems: 'end' }}>
                   <NumberInput label={t('Початковий рядок')} min={1} value={startRow} onChange={(value) => setStartRow(Number(value) || 0)} />
                   <NumberInput label={t('Кінцевий рядок')} min={0} value={endRow} onChange={(value) => setEndRow(Number(value) || 0)} />
                   <NumberInput label={t('Колонка коду')} min={1} value={columnVendorCode} onChange={(value) => setColumnVendorCode(Number(value) || 0)} />
@@ -2491,7 +2491,7 @@ function ProductPlacementStorageUploadModal({
         ) : (
           <>
             <Card className="app-section-card" withBorder radius="md" padding="md">
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <Group gap={8}>
                   <Text className="app-section-title" fw={600} size="sm">{t('Не пройшли позиції')}</Text>
                   <TableChip tone="danger" value={notPassedRows.length} />
@@ -2726,7 +2726,7 @@ export function ProductFileUploadModal({
 
   return (
     <AppModal centered opened={opened} size="min(960px, 96vw)" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Завантаження товарів')}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form product-import-form" gap={10}>
+      <Stack className="app-compact-form product-import-form" gap={8}>
         {(error || pricingState.error) ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || pricingState.error}
@@ -2739,9 +2739,9 @@ export function ProductFileUploadModal({
         ) : null}
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">{t('Файл і операція')}</Text>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10} style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8} style={{ alignItems: 'end' }}>
               <Select
                 allowDeselect={false}
                 data={productFileUploadModeOptions.map((option) => ({ ...option, label: t(option.label) }))}
@@ -2779,7 +2779,7 @@ export function ProductFileUploadModal({
         </Card>
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">{t('Колонки')}</Text>
             <Box className="product-import-columns" style={{ alignItems: 'end' }}>
               {productFileUploadFieldLabels.map((item) => (
@@ -2797,7 +2797,7 @@ export function ProductFileUploadModal({
         </Card>
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Group justify="space-between">
               <Group gap={8}>
                 <Text className="app-section-title" fw={600} size="sm">{t('Ціни')}</Text>
@@ -3007,7 +3007,7 @@ function ProductUploadDocumentModal({
 
   return (
     <AppModal centered opened={opened} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t(labels.title)}</span>} onClose={closeModal}>
-      <Stack className="app-compact-form product-import-form" gap={10} onKeyDown={handleUploadKeyDown}>
+      <Stack className="app-compact-form product-import-form" gap={8} onKeyDown={handleUploadKeyDown}>
         {error ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -3015,7 +3015,7 @@ function ProductUploadDocumentModal({
         ) : null}
 
         <Card className="app-section-card" withBorder radius="md" padding="md">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <Text className="app-section-title" fw={600} size="sm">{t('Дані завантаження')}</Text>
 
             <FileInput
@@ -3026,7 +3026,7 @@ function ProductUploadDocumentModal({
               onChange={(nextFile) => setField('file', nextFile)}
             />
 
-            <SimpleGrid cols={2} spacing={10} style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={2} spacing={8} style={{ alignItems: 'end' }}>
               <TextInput
                 label={t('Артикул товару')}
                 className="product-import-code"
@@ -3281,7 +3281,7 @@ function ProductInlineMovementsTab({
 
   return (
     <Stack className="product-inline-movements product-inline-table-frame" gap={0}>
-      <Group className="app-filter-bar product-movement-toolbar" align="end" gap={10} wrap="nowrap">
+      <Group className="app-filter-bar product-movement-toolbar" align="end" gap={8} wrap="nowrap">
         <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
           min="1900-01-01" max="9999-12-30" required
           onChange={({ from, to }) => { setDateFrom(from); setDateTo(to) }} />

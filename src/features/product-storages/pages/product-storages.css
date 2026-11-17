@@ -35,7 +35,7 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .product-storages-table {
@@ -117,8 +117,8 @@
 .product-storages-action-mode.mantine-SegmentedControl-root {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 9px;
-  padding: 3px;
+  border-radius: 8px;
+  padding: 4px;
 }
 
 .product-storages-action-mode .mantine-SegmentedControl-label {
@@ -132,7 +132,7 @@
   letter-spacing: 0;
   line-height: 1.2;
   min-height: 28px;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .product-storages-action-mode .mantine-SegmentedControl-control[data-active] .mantine-SegmentedControl-label,
@@ -143,7 +143,7 @@
 .product-storages-action-mode .mantine-SegmentedControl-indicator {
   background: var(--brand-orange);
   border: 1px solid var(--brand-orange);
-  border-radius: 7px;
+  border-radius: var(--app-radius-xs);
   box-shadow: none;
 }
 
@@ -194,7 +194,7 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 10px 12px 12px;
+  padding: 8px 12px 12px;
 }
 
 .product-storages-return-title {
@@ -212,7 +212,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
-  min-height: 34px;
+  min-height: 32px;
 }
 
 .product-storages-return-list {
@@ -231,10 +231,10 @@
   color: var(--mantine-color-gray-9);
   cursor: pointer;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 44px;
-  padding: 7px 10px;
+  padding: 8px 8px;
   position: relative;
   text-align: left;
   width: 100%;
@@ -307,22 +307,22 @@
   border: 1px dashed var(--mantine-color-gray-3);
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
-  min-height: 42px;
-  padding: 9px 10px;
+  min-height: 40px;
+  padding: 8px 8px;
 }
 
 .product-storages-return-details {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .product-storages-return-detail {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
+  border-radius: 8px;
   min-width: 0;
-  padding: 7px 8px;
+  padding: 8px 8px;
 }
 
 .product-storages-return-detail span,
@@ -376,9 +376,9 @@
   font: 400 12px / 16px var(--font-mono);
 }
 .product-storages-filter-dropdown [data-combobox-option] {
-  min-height: 30px;
-  padding: 7px 8px;
-  border-radius: 6px;
+  min-height: 28px;
+  padding: 8px 8px;
+  border-radius: 8px;
 }
 .product-storages-filter-dropdown [data-combobox-option]:is(:hover, [data-combobox-selected], [aria-selected='true']) {
   background: var(--mantine-color-gray-1);
@@ -398,5 +398,5 @@
 
 /* Scalar stock actions stay content-height; the preview table retains its drawer. */
 .product-storages-action-sheet .mantine-Modal-body { background: var(--mantine-color-gray-0); }
-.product-storages-action-date-row .mantine-Switch-root { padding-block: 6px; }
-.product-storages-action-placement { max-width: 470px; }
+.product-storages-action-date-row .mantine-Switch-root { padding-block: 8px; }
+.product-storages-action-placement { max-width: 468px; }

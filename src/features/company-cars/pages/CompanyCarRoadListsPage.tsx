@@ -250,7 +250,7 @@ function CompanyCarRoadListsPageContent() {
   }
 
   return (
-    <Stack className="company-car-road-lists-page" gap={6}>
+    <Stack className="company-car-road-lists-page" gap={8}>
       <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
         <Group gap="sm" wrap="wrap" className="company-car-road-lists-identity">
           <Button variant="default" size="sm" leftSection={<ArrowLeft size={16} />} onClick={() => navigate(returnPath)}>
@@ -261,7 +261,7 @@ function CompanyCarRoadListsPageContent() {
           {companyCar?.Organization && <TableChip tone="product" value={companyCar.Organization.Name} />}
         </Group>
         <div className="app-filter-bar company-car-road-lists-filter-bar">
-          <Group align="end" gap={10} wrap="wrap" className="app-filter-fields company-car-road-lists-filter-row">
+          <Group align="end" gap={8} wrap="wrap" className="app-filter-fields company-car-road-lists-filter-row">
             <ToolbarDateRangeFilter
               from={fromDate}
               to={toDate}
@@ -584,7 +584,7 @@ function DeleteRoadListModal({
 
   return (
     <AppModal centered opened={Boolean(roadList)} title={<span style={{ fontFamily: 'var(--font-mono)' }}>{t('Видалити шляховий лист')}</span>} onClose={onClose}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Text>{t('Шляховий лист буде видалено.')}</Text>
         <AppModalFooter>
           <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>

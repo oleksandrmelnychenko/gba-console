@@ -129,7 +129,7 @@ export function CompanyCarRoadListFormModal({
       title={`${isEditMode ? t('Редагування шляхового листа') : t('Створення шляхового листа')} ${t('для автомобіля')} ${effectiveCompanyCar.LicensePlate || ''}`.trim()}
       onClose={onClose}
     >
-      <Stack gap={10}>
+      <Stack gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -520,7 +520,7 @@ function RoadListKilometerFields({
   const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={10}>
+    <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing={8}>
       <TextInput
         inputMode="decimal"
         label={t('Показники одометра')}

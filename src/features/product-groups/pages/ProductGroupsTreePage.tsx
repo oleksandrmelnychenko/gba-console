@@ -122,13 +122,13 @@ function ProductGroupsTreePageContent() {
   const treeNodes = useMemo(() => (detail ? [buildGroupNode(detail, t)] : []), [detail, t])
 
   return (
-    <Stack className="product-groups-tree-page" gap={6}>
+    <Stack className="product-groups-tree-page" gap={8}>
       <ListTreeLayout
         className="product-groups-tree-layout"
         list={
-          <Stack className="product-groups-tree-list-pane" gap={6}>
+          <Stack className="product-groups-tree-list-pane" gap={8}>
             <div className="app-filter-bar product-groups-tree-filter-bar">
-              <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-groups-tree-filter-row">
+              <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-groups-tree-filter-row">
                 <TextInput
                   label={t('Пошук групи')}
                   leftSection={<Search size={16} />}
@@ -161,9 +161,9 @@ function ProductGroupsTreePageContent() {
               ) : null}
 
               {isLoading ? (
-                <Stack gap={5}>
+                <Stack gap={4}>
                   {Array.from({ length: 6 }, (_, index) => (
-                    <Skeleton key={index} height={46} radius={7} />
+                    <Skeleton key={index} height={46} radius={8} />
                   ))}
                 </Stack>
               ) : groups.length > 0 ? (

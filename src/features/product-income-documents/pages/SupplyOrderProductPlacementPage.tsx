@@ -242,7 +242,7 @@ function SupplyOrderProductPlacementContent({
       }
       onClose={handleClose}
     >
-      <Stack className="supply-placement-content" gap={10}>
+      <Stack className="supply-placement-content" gap={8}>
         {error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
@@ -250,8 +250,8 @@ function SupplyOrderProductPlacementContent({
         )}
 
         <Card className="app-section-card supply-placement-summary" withBorder radius="md" padding="sm">
-          <Stack gap={10}>
-            <Group justify="space-between" gap={10}>
+          <Stack gap={8}>
+            <Group justify="space-between" gap={8}>
               <Text className="app-section-title" fw={600} size="sm">
                 {firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}
               </Text>

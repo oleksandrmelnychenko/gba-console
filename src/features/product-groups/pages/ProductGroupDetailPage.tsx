@@ -263,7 +263,7 @@ function ProductGroupDetailPageContent() {
       title={<span className="product-group-detail-title">{productGroup?.Name || t('Товарна група')}</span>}
       onClose={closeSheet}
     >
-    <Stack className="product-group-detail-content" gap={10}>
+    <Stack className="product-group-detail-content" gap={8}>
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -282,7 +282,7 @@ function ProductGroupDetailPageContent() {
       ) : formProductGroup ? (
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
           <Card className="app-section-card product-group-detail-form-card" withBorder radius="md" padding={12}>
-            <Text className="app-section-title" mb={10}>{t('Товарна група')}</Text>
+            <Text className="app-section-title" mb={8}>{t('Товарна група')}</Text>
             <ProductGroupForm
               compact
               disabled={!canEdit || isSaving}

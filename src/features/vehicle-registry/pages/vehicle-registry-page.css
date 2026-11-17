@@ -5,7 +5,7 @@
 .vehicle-registry-tabs {
   flex: 0 0 auto;
   border-radius: 0;
-  min-height: 39px;
+  min-height: 40px;
 }
 
 .vehicle-registry-summary {
@@ -15,8 +15,8 @@
   display: grid;
   flex: 0 0 auto;
   grid-template-columns: repeat(5, minmax(120px, 1fr)) minmax(220px, 1.5fr);
-  min-height: 70px;
-  padding: 10px 8px;
+  min-height: 68px;
+  padding: 8px 8px;
 }
 
 .vehicle-registry-summary__metric,
@@ -46,7 +46,7 @@
   content: '';
   display: inline-block;
   height: 6px;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: 1px;
   width: 6px;
 }
@@ -71,7 +71,7 @@
   font-size: 18px;
   font-weight: 600;
   line-height: 1.15;
-  margin-top: 7px;
+  margin-top: 8px;
 }
 
 .vehicle-registry-summary__latest {
@@ -122,7 +122,7 @@
 }
 
 .vehicle-registry-table-body .data-table-scroll {
-  padding-right: 10px;
+  padding-right: 8px;
 }
 
 .vehicle-registry-mono,
@@ -140,7 +140,7 @@
 .vehicle-registry-vehicle-main {
   align-items: center;
   display: flex;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -185,7 +185,7 @@
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  padding: 0 6px;
+  padding: 0 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -241,7 +241,7 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .vehicle-registry-two-line.is-right {
@@ -250,7 +250,7 @@
 
 .vehicle-registry-client-cell {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -267,7 +267,7 @@
 .vehicle-registry-client-cell > span {
   align-items: center;
   display: flex;
-  gap: 5px;
+  gap: 4px;
 }
 
 .vehicle-registry-client-cell small {
@@ -297,7 +297,7 @@
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
-  padding: 14px;
+  padding: 12px;
 }
 
 .vehicle-registry-workflow .app-detail-section-head {
@@ -307,8 +307,8 @@
 .vehicle-registry-client-matches {
   border-top: 1px solid var(--mantine-color-gray-2);
   display: grid;
-  gap: 9px;
-  padding-top: 14px;
+  gap: 8px;
+  padding-top: 12px;
 }
 
 .vehicle-registry-client-match-list {
@@ -322,9 +322,9 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 11px 12px;
+  padding: 12px 12px;
 }
 
 .vehicle-registry-client-match.is-selected {
@@ -334,14 +334,14 @@
 
 .vehicle-registry-client-match__copy {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .vehicle-registry-client-match__title {
   align-items: center;
   display: flex;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -363,7 +363,7 @@
   color: var(--mantine-color-gray-6);
   display: flex;
   font-size: 11px;
-  gap: 7px 14px;
+  gap: 8px 12px;
   min-width: 0;
 }
 
@@ -387,7 +387,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-5);
   display: flex;
-  gap: 10px;
+  gap: 8px;
   padding: 12px;
 }
 
@@ -408,9 +408,9 @@
 .vehicle-registry-history {
   border-left: 1px solid var(--mantine-color-gray-3);
   display: grid;
-  gap: 14px;
-  margin-left: 5px;
-  padding-left: 18px;
+  gap: 12px;
+  margin-left: 4px;
+  padding-left: 16px;
 }
 
 .vehicle-registry-history__item {
@@ -440,7 +440,7 @@
   color: var(--mantine-color-gray-9);
   display: block;
   font-size: 12.5px;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .vehicle-registry-issue-table {
@@ -516,8 +516,8 @@
   gap: 8px;
 }
 .vehicle-registry-shell .vehicle-registry-filter-bar > .mantine-InputWrapper-root {
-  flex: 0 0 130px;
-  width: 130px;
+  flex: 0 0 128px;
+  width: 128px;
   min-width: 0;
   max-width: 100%;
 }
@@ -537,7 +537,7 @@
 }
 .vehicle-registry-extra-filters {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 380px;
   max-width: calc(100vw - 24px);
@@ -552,7 +552,7 @@
   border-radius: 999px;
   font-size: 11px;
   line-height: 18px;
-  margin-left: 6px;
+  margin-left: 8px;
   min-width: 20px;
   text-align: center;
 }
@@ -563,12 +563,12 @@
 }
 @container registry (max-width: 1250px) {
   .vehicle-registry-shell .vehicle-registry-filter-bar > .mantine-InputWrapper-root {
-    flex-basis: 110px;
-    width: 110px;
+    flex-basis: 108px;
+    width: 108px;
   }
   .vehicle-registry-shell .vehicle-registry-filter-bar > .vehicle-registry-search {
-    flex-basis: 150px;
-    width: 150px;
+    flex-basis: 148px;
+    width: 148px;
   }
   .vehicle-registry-shell .app-filter-bar .data-table-layout-control {
     width: 36px;
@@ -593,15 +593,15 @@
 .vehicle-registry-detail .app-section-card {
   padding: 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-white);
 }
 .vehicle-registry-detail .app-detail-hero { padding: 12px; gap: 12px; }
 .vehicle-registry-detail .app-detail-title strong,
 .vehicle-registry-detail .app-detail-metric strong { font-size: 16px; }
 .vehicle-registry-detail .app-detail-section-head { margin-bottom: 8px; padding-bottom: 0; }
-.vehicle-registry-detail .vehicle-registry-leaders { gap: 10px; }
-.vehicle-registry-detail .vehicle-registry-workflow { gap: 10px; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); }
+.vehicle-registry-detail .vehicle-registry-leaders { gap: 8px; }
+.vehicle-registry-detail .vehicle-registry-workflow { gap: 8px; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); }
 .vehicle-registry-detail .vehicle-registry-client-matches { padding-top: 12px; }
 @media (max-width: 760px) {
   .vehicle-registry-detail .vehicle-registry-workflow { grid-template-columns: minmax(0, 1fr); }

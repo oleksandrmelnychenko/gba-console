@@ -179,7 +179,7 @@ function CompanyCarsPageContent() {
   }, [normalizedSearchValue, reloadKey, t])
 
   return (
-    <Stack className="company-cars-page console-table-page" gap={6}>
+    <Stack className="company-cars-page console-table-page" gap={8}>
       <div className="company-cars-card console-table-shell">
         <div className="app-filter-bar company-cars-filter-bar">
           <TextInput

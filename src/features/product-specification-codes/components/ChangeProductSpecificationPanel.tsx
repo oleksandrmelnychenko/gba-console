@@ -139,7 +139,7 @@ export function ChangeProductSpecificationPanel({
       onClose={requestClose}
     >
       {productSpecification && (
-        <Stack className="product-specification-change-body" gap={10}>
+        <Stack className="product-specification-change-body" gap={8}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}

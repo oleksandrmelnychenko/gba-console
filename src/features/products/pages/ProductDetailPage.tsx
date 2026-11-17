@@ -355,7 +355,7 @@ function ProductDetailPageContent() {
               aria-label={t('Оновити')}
               color="gray"
               loading={isLoading}
-              size={38}
+              size={36}
               variant="light"
               onClick={() => reload()}
             >
@@ -410,7 +410,7 @@ function ProductDetailPageContent() {
                     <ImageIcon size={48} color="var(--mantine-color-gray-5)" />
                   </Box>
                 )}
-                <Group gap={6} wrap="wrap">
+                <Group gap={8} wrap="wrap">
                   <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">
                     {t('Для продажу')}
                   </Badge>
@@ -543,7 +543,7 @@ function ProductActionToolbar({
           aria-label={t('AI-аналітика товару')}
           color="orange"
           disabled={analyticsDisabled}
-          h={38}
+          h={36}
           leftSection={<Sparkles fill="currentColor" size={16} strokeWidth={0} />}
           px="sm"
           size="xs"
@@ -554,52 +554,52 @@ function ProductActionToolbar({
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_STORAGE_HISTORY_PERMISSION}>
         <Tooltip label={t('Історія місця зберігання')}>
-          <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
+          <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={36} variant="light" onClick={() => openPanel('storage-history')}>
             <History size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_AUDIT_PERMISSION}>
         <Tooltip label={t('Історія змін полів')}>
-          <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={38} variant="light" onClick={() => openPanel('audit')}>
+          <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={36} variant="light" onClick={() => openPanel('audit')}>
             <ClipboardList size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <Tooltip label={t('Специфікація')}>
-        <ActionIcon aria-label={t('Специфікація')} color="gray" size={38} variant="light" onClick={() => openPanel('specification')}>
+        <ActionIcon aria-label={t('Специфікація')} color="gray" size={36} variant="light" onClick={() => openPanel('specification')}>
           <FileText size={18} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Зображення')}>
-        <ActionIcon aria-label={t('Зображення')} color="gray" size={38} variant="light" onClick={() => openPanel('images')}>
+        <ActionIcon aria-label={t('Зображення')} color="gray" size={36} variant="light" onClick={() => openPanel('images')}>
           <ImageIcon size={18} />
         </ActionIcon>
       </Tooltip>
       <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
         <Tooltip label={t('Залишки по партіям')}>
-          <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" onClick={() => openPanel('remains')}>
+          <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={36} variant="light" onClick={() => openPanel('remains')}>
             <Package size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
         <Tooltip label={t('Редагувати')}>
-          <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" onClick={() => openPanel('edit')}>
+          <ActionIcon aria-label={t('Редагувати')} color="gray" size={36} variant="light" onClick={() => openPanel('edit')}>
             <SquarePen size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
         <Tooltip label={t('Рух товару')}>
-          <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" onClick={() => openPanel('movement')}>
+          <ActionIcon aria-label={t('Рух товару')} color="gray" size={36} variant="light" onClick={() => openPanel('movement')}>
             <ArrowLeftRight size={18} />
           </ActionIcon>
         </Tooltip>
       </PermissionGate>
       <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
         <Tooltip label={t('Правила списання')}>
-          <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" onClick={() => openPanel('writeoff')}>
+          <ActionIcon aria-label={t('Правила списання')} color="gray" size={36} variant="light" onClick={() => openPanel('writeoff')}>
             <ClipboardList size={18} />
           </ActionIcon>
         </Tooltip>
@@ -718,7 +718,7 @@ function ProductAvailabilityPlacementRow({
   const amount = Number(availability.Amount) || 0
   const content = (
     <Stack gap={0} style={{ cursor: canOpenPlacements ? 'pointer' : 'default', minWidth: 0 }}>
-      <Group gap={6} align="center" wrap="nowrap">
+      <Group gap={8} align="center" wrap="nowrap">
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(availability.Amount)}
         </Text>
@@ -930,7 +930,7 @@ function ProductPlacementEditor({
   return (
     <Stack className="product-placement-editor" gap="sm">
       <Group className="product-placement-editor__header" justify="space-between" gap="sm" wrap="nowrap">
-        <Group gap={6} style={{ minWidth: 0 }}>
+        <Group gap={8} style={{ minWidth: 0 }}>
           <TableChip tone="storage" value={displayValue(availability.Storage?.Name)} />
           <TableChip tone="product" value={displayValue(availability.Storage?.Organization?.Name)} />
         </Group>
@@ -1081,7 +1081,7 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
 
   return (
     <Stack gap={0} style={{ minWidth: 0 }}>
-      <Group gap={6} align="center" wrap="nowrap">
+      <Group gap={8} align="center" wrap="nowrap">
         <Text className="app-money" size="xl" fw={700} lh={1.05}>
           {formatAmount(value)}
         </Text>
@@ -1252,7 +1252,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
 
   return (
     <form id="product-edit-drawer-form" className="app-compact-form" onSubmit={submitForm}>
-      <Stack gap={10}>
+      <Stack gap={8}>
         <Group className="product-edit-identity" gap={8} wrap="wrap">
           <TableChip tone="product" value={getProductCode(product)} />
           <Text size="sm" fw={600}>{getProductTitle(product)}</Text>
@@ -1266,7 +1266,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
           )}
           <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
             <Text className="app-section-title" mb={8}>{t('Характеристики')}</Text>
-            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={10} verticalSpacing={10} style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={8} verticalSpacing={8} style={{ alignItems: 'end' }}>
               {canEditClassification && (
                 <Select
                   label={t('Тип позиції')}
@@ -1295,7 +1295,7 @@ function ProductEditPanel({ onClose, onProductSaved, product }: { onClose: () =>
           </Card>
           <Card className="app-section-card product-edit-section" withBorder radius="md" padding="sm">
             <Text className="app-section-title" mb={8}>{t('Опис та нотатки')}</Text>
-            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={10} verticalSpacing={10} style={{ alignItems: 'end' }}>
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing={8} verticalSpacing={8} style={{ alignItems: 'end' }}>
               <Textarea autosize minRows={2} maxRows={5} label={t('Опис')} value={form.Description} onChange={(event) => setField('Description', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Опис UA')} value={form.DescriptionUA} onChange={(event) => setField('DescriptionUA', event.currentTarget.value)} />
               <Textarea autosize minRows={2} maxRows={5} label={t('Нотатки')} value={form.Notes} onChange={(event) => setField('Notes', event.currentTarget.value)} />
@@ -1370,8 +1370,8 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   }
 
   return (
-    <Stack className="product-images-panel" gap={10}>
-      <Group className="product-images-identity" gap={10} wrap="wrap">
+    <Stack className="product-images-panel" gap={8}>
+      <Group className="product-images-identity" gap={8} wrap="wrap">
         <TableChip tone="product" value={getProductCode(product)} />
         <Text fw={600} c="dark">{getProductTitle(product)}</Text>
       </Group>
@@ -1383,7 +1383,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
       )}
       <PermissionGate permissionKey={PRODUCT_IMAGE_ADD_PERMISSION}>
         <Card className="app-section-card product-images-upload" withBorder radius="md" p="sm">
-          <Text className="app-section-title" mb={10}>{t('Додати зображення')}</Text>
+          <Text className="app-section-title" mb={8}>{t('Додати зображення')}</Text>
           <FileInput
             multiple
             clearable
@@ -1404,14 +1404,14 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           {hasPermission(PRODUCT_IMAGE_ADD_PERMISSION) && <Text size="sm">{t('Оберіть файли, щоб додати фото товару')}</Text>}
         </div>
       ) : (
-        <SimpleGrid className="product-images-gallery" cols={{ base: 1, xs: 2, md: 3 }} spacing={10}>
+        <SimpleGrid className="product-images-gallery" cols={{ base: 1, xs: 2, md: 3 }} spacing={8}>
           {displayedImages.map(({ image, index }) => (
             <Box
               key={`${image.NetUid || image.FileName || index}`}
               className="product-image-card"
               data-deleted={image.Deleted || undefined}
             >
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <button
                   type="button"
                   className="product-image-preview"
@@ -1445,7 +1445,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
               key={preview.url}
               className="product-image-card"
             >
-              <Stack gap={10}>
+              <Stack gap={8}>
                 <button
                   type="button"
                   className="product-image-preview"
@@ -1533,7 +1533,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
   }, [field, productNetUid, t])
 
   return (
-    <Stack className="product-audit-panel app-compact-form" gap={10}>
+    <Stack className="product-audit-panel app-compact-form" gap={8}>
       <Select
         data={productAuditFieldOptions.map((option) => ({ ...option, label: t(option.label) }))}
         label={t('Поле')}
@@ -1559,7 +1559,7 @@ function ProductAuditPanel({ product }: { product: Product }) {
               }}
             >
               <Text size="sm" style={{ overflowWrap: 'anywhere' }}>{displayValue(entry.NewValues?.[0]?.Value)}</Text>
-              <Group justify="space-between" gap={8} wrap="wrap" mt={6}>
+              <Group justify="space-between" gap={8} wrap="wrap" mt={8}>
                 <TableChip tone="warning" value={entry.UpdatedBy} />
                 <Text className="product-audit-date" size="xs">{formatDate(entry.Created)}</Text>
               </Group>
@@ -1658,7 +1658,7 @@ function ProductSpecificationPanel({
         )}
       >
         <div className="product-specification-content">
-          <Stack gap={10}>
+          <Stack gap={8}>
             <DocumentDetailSection title={t('Поточна специфікація')} stacked>
               {currentSpecification ? (
                 <>
@@ -1726,7 +1726,7 @@ const ProductSpecificationHistory = memo(function ProductSpecificationHistory({ 
           <Text size="sm">{t(!hasCurrent ? 'Специфікацій не знайдено' : 'Історію не знайдено')}</Text>
         </div>
       ) : (
-        <Stack gap={10}>
+        <Stack gap={8}>
           {items.map((specification, index) => (
             <Stack className="product-specification-history-item" gap={8} key={specification.NetUid || specification.Id || index}>
               <SpecificationCodeChips specification={specification} />
@@ -1743,7 +1743,7 @@ function SpecificationCodeChips({ specification }: { specification: ProductSpeci
   const { t } = useI18n()
   const code = specification.SpecificationCode?.trim()
   return (
-    <Group gap={6}>
+    <Group gap={8}>
       <TableChip tone="warning" value={code || t('Код не вказано')} />
       {code && <TableChip tone="document" value={`${roundSpecificationPercent(getSpecificationDutyPercent(specification))}%`} />}
     </Group>
@@ -2705,7 +2705,7 @@ function PriceRow({ price }: { price: CalculatedProductPrice }) {
         </Text>
       </Group>
       {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
-        <Group gap={6} mt={4} wrap="wrap">
+        <Group gap={8} mt={4} wrap="wrap">
           {breakdown.hasBasePrice ? (
             <Text c="dimmed" size="xs">{t('База EUR')}: <span className="app-money app-money-meta">{formatPrice(breakdown.basePriceEUR)}</span></Text>
           ) : null}

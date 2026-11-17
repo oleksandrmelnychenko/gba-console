@@ -25,7 +25,7 @@
 .product-group-detail-content .product-group-form.is-compact {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .product-group-form.is-compact .product-group-form-names {
@@ -60,7 +60,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  min-height: 250px;
+  min-height: 248px;
   min-width: 0;
   overflow: hidden;
 }
@@ -75,7 +75,7 @@
 .product-group-detail-tabs.app-screen-tabs > .app-screen-tab {
   flex: 0 0 auto;
   min-height: 32px;
-  padding: 7px 12px;
+  padding: 8px 12px;
 }
 
 .product-group-detail-panel {

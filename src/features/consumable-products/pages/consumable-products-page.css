@@ -45,7 +45,7 @@
   align-self: end;
   display: flex;
   flex: 0 0 auto;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-height: 36px;
   min-width: 0;
@@ -63,7 +63,7 @@
   flex: 1 1 auto;
   gap: 12px;
   min-height: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .consumable-products-rail {
@@ -77,7 +77,7 @@
 .consumable-products-rail-title {
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   padding-left: 8px;
 }
 
@@ -110,7 +110,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   letter-spacing: 0;
   min-height: 40px;
-  padding: 4px 6px 4px 8px;
+  padding: 4px 8px 4px 8px;
   position: relative;
   text-align: left;
   transition:
@@ -155,7 +155,7 @@
 
 .consumable-products-roster {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
@@ -180,7 +180,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 48px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .consumable-category-panel__title,
@@ -211,7 +211,7 @@
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .consumable-category-panel__actions {

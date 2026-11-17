@@ -305,7 +305,7 @@ export function ProductCard({
     // reason instead of a bare dead-end, so the buyer knows it's «no signals», not an error.
     return (
       <Card className="assort-product-section" withBorder>
-        <Stack gap={6}>
+        <Stack gap={8}>
           <Text className="assort-product-hero__name">{detail?.name ?? `ID ${detail?.product_id ?? ''}`}</Text>
           {detail?.vendor_code && (
             <TableChip tone="product" value={detail.vendor_code} />
@@ -353,7 +353,7 @@ export function ProductCard({
 
       <ProductSalesAnalytics analytics={analytics} error={analyticsError} />
 
-      <SimpleGrid className="assort-score-grid" cols={{ base: 1, md: 3 }} spacing={10}>
+      <SimpleGrid className="assort-score-grid" cols={{ base: 1, md: 3 }} spacing={8}>
         <ScoreCard
           description={t('Наскільки товар продається та чи відповідає запас попиту.')}
           label={t('Загальна оцінка товару')}
@@ -396,13 +396,13 @@ function ProductHero({
 }) {
   return (
     <Card className="assort-product-hero" radius="md" withBorder>
-      <Group align="center" gap={10} wrap="wrap">
+      <Group align="center" gap={8} wrap="wrap">
           <Group gap={8} miw={0}>
             <Text className="assort-product-hero__name">{detail.name ?? detail.product_id}</Text>
             <TableChip tone="product" value={detail.vendor_code || `ID ${detail.product_id}`} />
           </Group>
           {producerId !== null && (
-            <Group className="assort-product-hero__producer" gap={6} wrap="nowrap" miw={0}>
+            <Group className="assort-product-hero__producer" gap={8} wrap="nowrap" miw={0}>
               <Factory size={14} />
               <TableChip tone="document" value={producerName || `#${producerId}`} />
             </Group>
@@ -439,7 +439,7 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
         <summary><span className="app-section-title">{t('Комерційний профіль')}</span></summary>
         <Stack gap={12}>
         <Text size="xs" c="dimmed">{financialPeriod(detail)}</Text>
-        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={10}>
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing={8}>
           <Stat label={t('Продано за період')} value={formatNullableNumber(detail.annual_units)} />
           <Stat label={t('Продажі до повернень, з ПДВ')} value={money.format(detail.revenue_eur)} />
           <Stat label={t('Продажі мінус повернення, з ПДВ')} value={detail.net_revenue_eur == null ? `${t('Відома частина')}: ${detail.known_net_revenue_eur == null ? '—' : money.format(detail.known_net_revenue_eur)}` : money.format(detail.net_revenue_eur)} />
@@ -458,7 +458,7 @@ function CommercialProfile({ detail, t }: { detail: ProductDetail; t: ProductCar
             value={detail.avg_price_eur == null ? t('Немає даних') : preciseMoney.format(detail.avg_price_eur)}
           />
         </SimpleGrid>
-        <Group gap={6}>
+        <Group gap={8}>
           <TableChip value={`${t('Внесок у продажі')}: ${ABC_LABELS[detail.abc] ? `${t(ABC_LABELS[detail.abc])} (${t('клас')} ${detail.abc})` : t(abcUnclassifiedLabel(detail) ?? 'недостатньо даних')}`} />
           <TableChip value={`${t('Регулярність попиту')}: ${XYZ_LABELS[detail.xyz] ? `${t(XYZ_LABELS[detail.xyz])} (${t('клас')} ${detail.xyz})` : t('недостатньо даних')}`} />
           <TableChip value={`${t('Стан запасу')}: ${t(formatClass(detail.band))}`} />
@@ -490,7 +490,7 @@ function SubstitutesPanel({ error, substitutes, t }: {
   const visible = expanded ? candidates : candidates.slice(0, 6)
   return (
     <Card className="assort-product-section assort-related-panel" radius="md" withBorder>
-      <Group justify="space-between" gap={6} mb={8}>
+      <Group justify="space-between" gap={8} mb={8}>
         <Text className="app-section-title" fw={600} size="sm">{t('Доступні замінники')}</Text>
         {!error && <TableChip value={candidates.length} title={t('Кількість замінників')} />}
       </Group>
@@ -536,7 +536,7 @@ function RegionsPanel({ error, productRegions, regionId, t }: {
   const visible = expanded ? regions : regions.slice(0, 6)
   return (
     <Card className="assort-product-section assort-related-panel" radius="md" withBorder>
-      <Group justify="space-between" gap={6} mb={8}>
+      <Group justify="space-between" gap={8} mb={8}>
         <Text className="app-section-title" fw={600} size="sm">{t('Де купують товар')}</Text>
         {!error && <TableChip value={regions.length} title={t('Кількість регіонів')} />}
       </Group>
@@ -589,8 +589,8 @@ function ScoreCard({
           <span className="app-section-title">{label}</span>
           <TableChip tone={score === null ? 'neutral' : healthTone(score)} value={formatScore(score)} />
         </summary>
-        <Stack gap={10}>
-        <Stack gap={3}>
+        <Stack gap={8}>
+        <Stack gap={4}>
           <Text c="dimmed" size="xs">
             {description}
           </Text>

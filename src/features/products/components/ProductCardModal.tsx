@@ -85,7 +85,7 @@ function ProductCardContent({
   const prices = salePrices ?? [{ currencyCode: 'EUR', unitPrice: product.CurrentPrice ?? null }, { currencyCode: t('Локальна'), unitPrice: product.CurrentLocalPrice ?? null }]
 
   return (
-    <Stack gap={10} className="product-card-content">
+    <Stack gap={8} className="product-card-content">
       <div className="product-card-hero">
       <Group className="product-card-summary" justify="space-between" align="flex-start" wrap="nowrap">
         <Stack gap={2}>
@@ -128,7 +128,7 @@ function ProductCardContent({
               <span aria-hidden className="product-card-image-zoom"><ZoomIn size={18} /></span>
             </button>
             {persistedImageUrls.length > 1 ? (
-              <Group gap={6} className="product-inline-thumbs">
+              <Group gap={8} className="product-inline-thumbs">
                 {persistedImageUrls.slice(0, 8).map((imageUrl, index) => (
                   <button
                     type="button"

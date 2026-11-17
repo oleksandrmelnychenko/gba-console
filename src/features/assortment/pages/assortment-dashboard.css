@@ -26,17 +26,17 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-height: 0;
   overflow-y: auto;
-  padding: 10px;
+  padding: 8px;
 }
 
 .assort-dash__overview {
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -62,7 +62,7 @@
   align-items: flex-end;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: flex;
-  gap: 10px;
+  gap: 8px;
   overflow-x: auto;
   width: 100%;
 }
@@ -71,7 +71,7 @@
   align-self: center;
   display: grid;
   flex: 1 0 270px;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -99,7 +99,7 @@
   display: flex;
   flex: 0 0 auto;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   min-width: 0;
 }
@@ -139,7 +139,7 @@
   font-weight: 600;
   height: var(--app-filter-control-height, 36px);
   margin-bottom: 0;
-  padding-inline: 10px;
+  padding-inline: 8px;
 }
 
 .assort-reset:hover {
@@ -179,14 +179,14 @@
   background: var(--mantine-color-white);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
   min-height: 64px;
-  padding: 6px 12px;
+  padding: 8px 12px;
 }
 
 .console-frame .assort-dash .mantine-Card-root.kpi-tile {
-  padding: 6px 12px;
+  padding: 8px 12px;
 }
 
 .kpi-tile + .kpi-tile {
@@ -235,17 +235,17 @@
   flex: 0 0 auto;
   gap: 16px;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .console-frame .assort-dash .mantine-Card-root.assort-region {
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .assort-region__title {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-width: 220px;
 }
 
@@ -277,7 +277,7 @@
 .assort-region__metrics {
   display: grid;
   flex: 1 1 auto;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(5, minmax(110px, 1fr));
   min-width: 0;
 }
@@ -309,24 +309,24 @@
 .assort-dash__insights {
   display: grid;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: 8px;
   grid-template-columns: minmax(390px, 1.15fr) minmax(260px, 0.55fr) minmax(390px, 0.9fr);
   min-width: 0;
 }
 
 .assort-card {
   min-width: 0;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .console-frame .assort-dash .mantine-Card-root.assort-card {
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .assort-card__head {
   align-items: baseline;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
   margin-bottom: 8px;
 }
@@ -369,7 +369,7 @@
   align-items: center;
   border-top: 1px solid var(--mantine-color-gray-1);
   display: flex;
-  gap: 7px;
+  gap: 8px;
   min-width: 0;
   padding: 4px 2px;
 }
@@ -441,13 +441,13 @@
   align-self: center;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .assort-mix__group {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -477,7 +477,7 @@
   font-size: 10.5px;
   gap: 4px;
   letter-spacing: 0;
-  padding: 1px 6px;
+  padding: 1px 8px;
 }
 
 .assort-mix__chip b {
@@ -592,7 +592,7 @@
 .rank-empty {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
-  padding: 14px 8px;
+  padding: 12px 8px;
   text-align: center;
 }
 
@@ -600,9 +600,9 @@
 
 .assort-table-card {
   display: flex;
-  flex: 1 0 390px;
+  flex: 1 0 388px;
   flex-direction: column;
-  min-height: 390px;
+  min-height: 388px;
   min-width: 0;
   overflow: hidden;
   padding: 0;
@@ -701,9 +701,9 @@
   align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
-  min-height: 110px;
+  min-height: 108px;
 }
 
 .assort-table-empty b {
@@ -735,7 +735,7 @@
 
   .assort-attention__row:nth-child(even) {
     border-left: 1px solid var(--mantine-color-gray-1);
-    padding-left: 10px;
+    padding-left: 8px;
   }
 }
 
@@ -765,7 +765,7 @@
 .assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex: 0 1 160px; width: 160px; }
 .assort-filter-row .app-filter-table-toolbar-slot { margin-left: 0; }
 @container assortment-toolbar (max-width: 1200px) {
- .assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex-basis: 130px; width: 130px; }
+ .assort-filter .assort-filter-row > .mantine-InputWrapper-root { flex-basis: 128px; width: 128px; }
  .assort-filter-row .data-table-layout-control { width: 36px; min-width: 36px; padding-inline: 0; }
  .assort-filter-row .data-table-layout-control .mantine-Button-label { display: none; }
  .assort-filter-row .data-table-layout-control .mantine-Button-section { margin: 0; }

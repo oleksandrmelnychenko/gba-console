@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   align-items: flex-end;
 }
-.company-car-road-lists-filter-row.app-filter-fields > .mantine-InputWrapper-root { flex: 0 1 170px; min-width: 145px; }
+.company-car-road-lists-filter-row.app-filter-fields > .mantine-InputWrapper-root { flex: 0 1 170px; min-width: 144px; }
 .company-car-road-lists-filter-row .app-filter-actions { margin-left: auto; }
 .company-car-road-lists-filter-row > .mantine-Button-root { flex: 0 0 auto; }
 

@@ -166,7 +166,7 @@ function CompositeSessionProgress({ progress }: { progress: CompositeSyncProgres
       <Progress
         aria-label={t('Завершені етапи сесії')}
         color="var(--brand-orange)"
-        mt={7}
+        mt={8}
         radius="xs"
         size="sm"
         value={progress.progressPercent}

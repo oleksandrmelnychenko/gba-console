@@ -31,7 +31,7 @@
 }
 
 .product-groups-page__alert {
-  margin: 10px 10px 0;
+  margin: 8px 8px 0;
 }
 
 .product-group-create-modal.app-modal .mantine-Modal-body {
@@ -72,7 +72,7 @@
 
 .product-groups-tree-layout {
   flex: 1 1 auto;
-  gap: 6px;
+  gap: 8px;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
@@ -110,7 +110,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-height: 0;
   overflow-y: auto;
   padding: 8px;
@@ -150,7 +150,7 @@
 .product-group-create-modal .product-group-form-names {
   display: grid;
 }
-.product-group-create-modal .mantine-InputWrapper-label { margin-bottom: 3px; }
+.product-group-create-modal .mantine-InputWrapper-label { margin-bottom: 4px; }
 .app-modal.app-form-sheet.product-group-create-modal .mantine-Button-root {
   height: 32px;
   min-height: 32px;
@@ -158,16 +158,16 @@
 }
 .product-group-create-modal .app-modal-footer {
   margin-top: 0;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 .product-group-select-dropdown {
   padding: 4px;
   border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: var(--app-radius-md);
 }
 .product-group-select-dropdown .product-group-select-option {
-  min-height: 30px;
-  padding: 6px 8px;
+  min-height: 28px;
+  padding: 8px 8px;
   color: var(--mantine-color-gray-9);
   font: 400 12px / 1.4 var(--font-mono);
 }

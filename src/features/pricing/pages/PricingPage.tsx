@@ -249,7 +249,7 @@ export function PricingPage() {
   const clientAgreementNetId = selectedAgreementNetId ?? ''
 
   return (
-    <Stack className="pricing-page console-table-page" gap={6}>
+    <Stack className="pricing-page console-table-page" gap={8}>
       <div className="pricing-page__shell console-table-shell">
         <div className="app-filter-bar pricing-page__filter-bar">
           <Select

@@ -26,7 +26,7 @@ export function SyncTypeChecklist({ selectedTypes, onChange }: SyncTypeChecklist
         }}
       />
       <Divider my={8} />
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={6}>
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
         {syncTypeOptions.map((option) => (
           <Tooltip
             key={option.value}

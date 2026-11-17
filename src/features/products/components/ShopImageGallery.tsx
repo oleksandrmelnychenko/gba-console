@@ -31,7 +31,7 @@ export function ShopImageGallery({ vendorCode, onImageClick }: ShopImageGalleryP
   }
 
   return (
-    <Group gap={6} className="product-inline-thumbs">
+    <Group gap={8} className="product-inline-thumbs">
       {images.map((url, index) => (
         <button type="button" className="product-inline-thumb" key={url} onClick={() => onImageClick(url)}>
           <Image loading="lazy" decoding="async" src={url} alt={`${index + 1}`} fit="cover" h="100%" w="100%" />

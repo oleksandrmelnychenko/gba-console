@@ -117,12 +117,12 @@
 
 .consumable-storage-detail-panel__body {
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .consumable-storage-detail-total {
   display: grid;
-  gap: 8px 14px;
+  gap: 8px 12px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   min-width: 0;
 }
@@ -148,7 +148,7 @@
 .consumable-storage-deprecated-toolbar .data-table-toolbar-right:empty { display: none; }
 .consumable-storage-deprecated-controls .mantine-ActionIcon-root { width: 28px; min-width: 28px; height: 36px; padding: 0; }
 
-.consumable-storage-form-section { display: grid; gap: 12px; background: var(--mantine-color-white); border: 1px solid var(--mantine-color-gray-2); border-radius: 10px; padding: 12px; min-width: 0; }
+.consumable-storage-form-section { display: grid; gap: 12px; background: var(--mantine-color-white); border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; padding: 12px; min-width: 0; }
 .consumable-storage-form-section h3 { margin: 0; font-size: 13px; }
 .consumable-storage-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
 .consumable-storage-form-modal .consumable-storage-form > .mantine-Stack-root { padding: 8px; background: var(--mantine-color-gray-0); border-radius: 12px; }

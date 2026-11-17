@@ -326,7 +326,7 @@ function ConsumableProductsPageContent() {
   }
 
   return (
-    <Stack className="consumable-products-page console-table-page" gap={6}>
+    <Stack className="consumable-products-page console-table-page" gap={8}>
       <div className="consumable-products-shell console-table-shell">
         <div className="app-filter-bar consumable-products-filter-bar">
           <TextInput
@@ -637,7 +637,7 @@ function ConsumableProductActionsModal({
       onClose={onClose}
     >
       {product && (
-        <Stack className="app-compact-form" gap={10}>
+        <Stack className="app-compact-form" gap={8}>
           <Group gap={8}>
             <TableChip tone="product" value={product.VendorCode} />
             <TableChip value={product.MeasureUnit?.Name} />
@@ -715,7 +715,7 @@ function CategoryEditorModal({
       onClose={onClose}
     >
       {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} mb={10} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} mb={8} variant="light">
           {error}
         </Alert>
       )}
@@ -748,7 +748,7 @@ function CategoryEditorForm({
   const [isSupplyServiceCategory, setSupplyServiceCategory] = useValueState(Boolean(editor.category?.IsSupplyServiceCategory))
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <Checkbox
         checked={isSupplyServiceCategory}
@@ -795,7 +795,7 @@ function ProductEditorModal({
       onClose={onClose}
     >
       {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} mb={10} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} mb={8} variant="light">
           {error}
         </Alert>
       )}
@@ -878,9 +878,9 @@ export function ProductEditorForm({
   }
 
   return (
-    <Stack className="app-compact-form" gap={10}>
+    <Stack className="app-compact-form" gap={8}>
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-      <SimpleGrid cols={2} spacing={10}>
+      <SimpleGrid cols={2} spacing={8}>
         <TextInput className="consumable-product-vendor-input" label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
         <SearchableSelect
           data={measureUnitOptions}

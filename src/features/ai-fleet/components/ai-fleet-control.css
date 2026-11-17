@@ -7,7 +7,7 @@
 .ai-fleet-row {
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .ai-fleet-operation {
@@ -15,8 +15,8 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 12px;
 }
 
 .ai-fleet-row__main {
@@ -25,13 +25,13 @@
 
 .ai-fleet-row__statuses {
   flex: 0 0 auto;
-  max-width: 330px;
+  max-width: 328px;
 }
 
 .ai-fleet-empty {
   border: 1px dashed var(--mantine-color-gray-3);
   border-radius: 8px;
-  padding: 18px 12px;
+  padding: 16px 12px;
   text-align: center;
 }
 

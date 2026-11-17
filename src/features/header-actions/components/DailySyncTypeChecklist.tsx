@@ -23,7 +23,7 @@ export function DailySyncTypeChecklist({ selectedTypes, onChange }: DailySyncTyp
       />
       <Divider my={8} />
       <Checkbox.Group value={selectedTypes} onChange={onChange}>
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={6}>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
           {dailySyncTypeOptions.map((option) => (
             <Checkbox key={option.value} value={option.value} label={t(option.label)} />
           ))}

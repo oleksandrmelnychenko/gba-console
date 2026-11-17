@@ -531,7 +531,7 @@ function AssortmentDashboardPageContent() {
   const columns = useAssortmentColumns(t, filters.regionId != null)
 
   return (
-    <Stack className="assort-dash" gap={6}>
+    <Stack className="assort-dash" gap={8}>
       <div className="assort-dash__shell">
         <AssortmentHeader
           avgHealth={avgHealth}
@@ -962,7 +962,7 @@ function AssortmentDetailTable({
         </span>
       </div>
       <div className="app-filter-bar assort-filter">
-        <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields assort-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields assort-filter-row">
           <Select
             clearable
             comboboxProps={ASSORT_COMBOBOX_PROPS}
