@@ -3,6 +3,7 @@ import {
   formatPremiseMoney,
   getCurrencyLabel,
   getWriteOffAvailableQty,
+  getWriteOffItemUnit,
   parseWriteOffQuantity,
   summarizeWriteOffItems,
 } from './premiseWriteOff'
@@ -68,5 +69,15 @@ describe('premise write-off totals and formatting (WH-10/12)', () => {
     expect(formatPremiseMoney(1200).replace(/\s/g, ' ')).toBe('1 200,00')
     expect(getCurrencyLabel({ Code: 'UAH', Name: 'Гривня' })).toBe('UAH')
     expect(getCurrencyLabel({ Name: 'Гривня' })).toBe('Гривня')
+  })
+})
+
+describe('premise write-off unit (WH2-09)', () => {
+  it('takes the unit from the premise remnants when the income line product has none', () => {
+    const fromIncome: DeprecatedConsumableOrderItem = { ConsumablesOrderItem: { ConsumableProduct: { NetUid: 'paper' }, Qty: 10 }, Qty: 1 }
+
+    expect(getWriteOffItemUnit(fromIncome, [paper])).toBe('шт')
+    expect(parseWriteOffQuantity('2.5', { unit: getWriteOffItemUnit(fromIncome, [paper]) }, t).error)
+      .toBe('Для одиниці «шт» кількість має бути цілою')
   })
 })

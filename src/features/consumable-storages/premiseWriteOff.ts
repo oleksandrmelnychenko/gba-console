@@ -1,4 +1,4 @@
-import { isWholeMeasureUnit } from '../../shared/units/wholeMeasureUnits'
+import { parseQuantityInput, type ParsedQuantityInput } from '../../shared/units/quantityInput'
 import type { ConsumableProduct, DeprecatedConsumableOrder, DeprecatedConsumableOrderItem, NamedEntity } from './types'
 
 /** DepreciatedConsumableOrder.Comment column size. */
@@ -6,10 +6,7 @@ export const WRITE_OFF_COMMENT_MAX_LENGTH = 500
 
 type Translate = (text: string, values?: Record<string, string | number>) => string
 
-export type WriteOffQuantity = {
-  error: string | null
-  qty: number | null
-}
+export type WriteOffQuantity = ParsedQuantityInput
 
 /**
  * Reads the typed write-off quantity. «2,5» is 2.5 (never 25); negatives,
@@ -21,35 +18,7 @@ export function parseWriteOffQuantity(
   options: { available?: number; unit?: string | null },
   t: Translate,
 ): WriteOffQuantity {
-  const normalized = text.trim().replace(',', '.')
-
-  if (!normalized) {
-    return { error: t('Вкажіть кількість'), qty: null }
-  }
-
-  if (/^-/.test(normalized)) {
-    return { error: t('Кількість не може бути від’ємною'), qty: null }
-  }
-
-  if (!/^\d+(\.\d+)?$/.test(normalized)) {
-    return { error: t('Введіть число'), qty: null }
-  }
-
-  const qty = Number(normalized)
-
-  if (qty <= 0) {
-    return { error: t('Кількість має бути більшою за 0'), qty }
-  }
-
-  if (isWholeMeasureUnit(options.unit) && !Number.isInteger(qty)) {
-    return { error: t('Для одиниці «{unit}» кількість має бути цілою', { unit: options.unit?.trim() || '' }), qty }
-  }
-
-  if (typeof options.available === 'number' && Number.isFinite(options.available) && qty > options.available) {
-    return { error: t('Більше, ніж доступно ({available})', { available: options.available }), qty }
-  }
-
-  return { error: null, qty }
+  return parseQuantityInput(text, options, t)
 }
 
 /** Text shown in the quantity field for a stored quantity. */
@@ -138,4 +107,26 @@ export function formatPremiseMoney(value?: number | null): string {
 
 export function formatPremiseQuantity(value?: number | null): string {
   return typeof value === 'number' && Number.isFinite(value) ? quantityFormat.format(value) : ''
+}
+
+/**
+ * Measure unit of a write-off row. Rows added «По накладних» carry the income
+ * line's product, which may come without its unit; the premise remnants know it.
+ */
+export function getWriteOffItemUnit(
+  item: DeprecatedConsumableOrderItem,
+  storageProducts: ConsumableProduct[],
+): string | undefined {
+  const own = item.ConsumablesOrderItem?.ConsumableProduct?.MeasureUnit?.Name
+
+  if (own?.trim()) {
+    return own
+  }
+
+  const productKey = getWriteOffItemProductKey(item)
+  const stockProduct = productKey
+    ? storageProducts.find((product) => (product.NetUid || (product.Id ? String(product.Id) : '')) === productKey)
+    : undefined
+
+  return stockProduct?.MeasureUnit?.Name || undefined
 }

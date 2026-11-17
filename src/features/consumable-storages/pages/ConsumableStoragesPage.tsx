@@ -77,6 +77,7 @@ import {
   formatWriteOffQuantityInput,
   getCurrencyLabel,
   getWriteOffAvailableQty,
+  getWriteOffItemUnit,
   parseWriteOffQuantity,
   summarizeWriteOffItems,
   WRITE_OFF_COMMENT_MAX_LENGTH,
@@ -558,7 +559,7 @@ function ConsumableStorageDetailDrawer({
               {totals.map((total) => (
                 <div className="consumable-storage-detail-total" key={getPriceTotalKey(total)}>
                   <DocumentDetailRow label={t('Валюта')} value={<TableChip value={getCurrencyLabel(total.Currency)} tone="source" />} />
-                  <DocumentDetailRow label={t('Кількість')} mono value={formatPremiseQuantity(total.Qty)} />
+                  <DocumentDetailRow label={t('Кількість')} mono value={formatPremiseQuantity(total.Qty ?? sumRemnantQtyForCurrency(products, getCurrencyLabel(total.Currency)))} />
                   <DocumentDetailRow label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
                 </div>
               ))}
@@ -615,6 +616,13 @@ function StorageRemnantsPanel({ products }: { products: ConsumableProduct[] }) {
   )
 }
 
+/** «Кількість» of a remnants currency total when the server leaves it empty: the sum of that currency's positions. */
+function sumRemnantQtyForCurrency(products: ConsumableProduct[], currency: string | undefined): number {
+  return products
+    .filter((product) => !currency || (getStorageRemnantCurrency(product) || '').split(' ').includes(currency))
+    .reduce((sum, product) => sum + (product.SpecificationQty ?? product.TotalQty ?? 0), 0)
+}
+
 function filterStorageRemnants(products: ConsumableProduct[], value: string): ConsumableProduct[] {
   const normalizedValue = value.trim().toLowerCase()
 
@@ -641,7 +649,7 @@ function getPriceTotalKey(total: NonNullable<ConsumablesStorage['PriceTotals']>[
 }
 
 function formatStorageRemnantQuantity(product: ConsumableProduct): string {
-  const quantity = formatAmount(product.SpecificationQty ?? product.TotalQty)
+  const quantity = formatPremiseQuantity(product.SpecificationQty ?? product.TotalQty)
   const unit = product.MeasureUnit && (product.MeasureUnit.Id ?? 0) > 0 ? product.MeasureUnit.Name : undefined
 
   return unit ? `${quantity} ${unit}` : quantity
@@ -1029,7 +1037,7 @@ function useDeprecatedConsumableOrderColumns({
         minWidth: 96,
         align: 'right',
         accessor: (row) => row.item?.Qty,
-        cell: (row) => formatAmount(row.item?.Qty),
+        cell: (row) => formatPremiseQuantity(row.item?.Qty),
       },
       {
         id: 'price',
@@ -1140,6 +1148,10 @@ function DeprecatedConsumableOrderEditorModal({
   const getAvailableQty = useCallback(
     (item: DeprecatedConsumableOrderItem) => getWriteOffAvailableQty(item, products, isEditMode ? order : null),
     [isEditMode, order, products],
+  )
+  const getUnit = useCallback(
+    (item: DeprecatedConsumableOrderItem) => getWriteOffItemUnit(item, products),
+    [products],
   )
   const consumableOrders = useMemo(() => storage.ConsumablesOrders || [], [storage.ConsumablesOrders])
   const productOptions = useMemo(
@@ -1257,7 +1269,7 @@ function DeprecatedConsumableOrderEditorModal({
       return
     }
 
-    const validationError = validateDeprecatedConsumableOrderDraft(draft, t, getAvailableQty)
+    const validationError = validateDeprecatedConsumableOrderDraft(draft, t, getAvailableQty, getUnit)
 
     if (validationError) {
       setError(validationError)
@@ -1393,6 +1405,7 @@ function DeprecatedConsumableOrderEditorModal({
 
         <DeprecatedConsumableOrderItemsTable
           getAvailableQty={getAvailableQty}
+          getUnit={getUnit}
           isSaving={isSaving}
           items={draft.DepreciatedConsumableOrderItems || []}
           movements={movements}
@@ -1478,7 +1491,7 @@ function ConsumablesOrderItemsPicker({
                     {displayValue(product?.Name)}
                   </Text>
                 </Table.Td>
-                <Table.Td className="app-table-number">{formatAmount(item.Qty)}</Table.Td>
+                <Table.Td className="app-table-number">{formatPremiseQuantity(item.Qty)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
                 <Table.Td><TableChip tone="source" value={displayValue(getCurrencyLabel(getConsumablesOrderItemCurrency(item, order)))} /></Table.Td>
@@ -1504,6 +1517,7 @@ function ConsumablesOrderItemsPicker({
 
 function DeprecatedConsumableOrderItemsTable({
   getAvailableQty,
+  getUnit,
   isSaving,
   items,
   movements,
@@ -1513,6 +1527,7 @@ function DeprecatedConsumableOrderItemsTable({
   onUpdateMovement,
 }: {
   getAvailableQty: (item: DeprecatedConsumableOrderItem) => number | undefined
+  getUnit: (item: DeprecatedConsumableOrderItem) => string | undefined
   isSaving: boolean
   items: DeprecatedConsumableOrderItem[]
   movements: PaymentCostMovement[]
@@ -1566,7 +1581,7 @@ function DeprecatedConsumableOrderItemsTable({
                     available={getAvailableQty(item)}
                     disabled={isSaving}
                     qty={item.Qty}
-                    unit={product?.MeasureUnit?.Name}
+                    unit={getUnit(item)}
                     onChange={(qty) => onUpdate(index, { Qty: qty })}
                   />
                 </Table.Td>
@@ -1859,6 +1874,7 @@ function validateDeprecatedConsumableOrderDraft(
   draft: DeprecatedConsumableOrder,
   t: (value: string, params?: Record<string, string | number>) => string,
   getAvailableQty: (item: DeprecatedConsumableOrderItem) => number | undefined,
+  getUnit: (item: DeprecatedConsumableOrderItem) => string | undefined,
 ): string | null {
   const items = draft.DepreciatedConsumableOrderItems || []
 
@@ -1881,7 +1897,7 @@ function validateDeprecatedConsumableOrderDraft(
 
     const quantityError = parseWriteOffQuantity(
       String(item.Qty),
-      { available: getAvailableQty(item), unit: item.ConsumablesOrderItem.ConsumableProduct.MeasureUnit?.Name },
+      { available: getAvailableQty(item), unit: getUnit(item) },
       t,
     ).error
 
