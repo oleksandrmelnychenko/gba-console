@@ -1,3 +1,4 @@
+import { formatStoredExchangeRate } from '../../../shared/money/storedExchangeRate'
 import { normalizeGuid, sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
@@ -1117,7 +1118,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
               <DocumentDetailSection title={t('Облік')} stacked>
                 <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={displayValue(row.organization)} />} />
                 <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={displayValue(row.responsible)} />} />
-                <DocumentDetailRow mono label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+                <DocumentDetailRow mono label={t('Курс')} value={formatStoredExchangeRate(row.order.ExchangeRate)} />
                 <DocumentDetailRow label={t('Сума в EUR')} value={<OutgoingDetailAmount value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} currency="EUR" />} />
                 <DocumentDetailRow mono label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
               </DocumentDetailSection>
@@ -1230,7 +1231,7 @@ function OutgoingCashflowDocumentStructureDrawer({
               value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
             />
             <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
-            <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DetailItem label={t('Курс')} value={formatStoredExchangeRate(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} mono value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ')} mono value={formatMoneyOptional(row.order.VAT)} />

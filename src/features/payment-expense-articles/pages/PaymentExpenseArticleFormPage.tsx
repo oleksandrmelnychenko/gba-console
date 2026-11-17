@@ -253,7 +253,7 @@ export function PaymentExpenseArticleFormPage() {
       title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
       onClose={handleCancel}
     >
-      <form id="payment-expense-article-form" onSubmit={handleSubmit}>
+      <form id="payment-expense-article-form" noValidate onSubmit={handleSubmit}>
         <Stack gap={10}>
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -330,6 +330,9 @@ export function PaymentExpenseArticleFormPage() {
         <Stack gap={10}>
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
+          </Text>
+          <Text c="dimmed" size="sm">
+            {t('Ордери, де її вже вказано, збережуть назву; для нових документів статті не буде у списку.')}
           </Text>
           <AppModalFooter>
             <Button

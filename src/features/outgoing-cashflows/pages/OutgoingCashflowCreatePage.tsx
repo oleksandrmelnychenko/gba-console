@@ -75,7 +75,8 @@ function OutgoingCashflowCreatePageContent() {
     ? t('Створення нового видаткового ордера')
     : activeMode === OUTGOING_CREATE_MODE.PaymentGroup
       ? paymentGroupTitle || t('Створення нового видаткового ордера')
-      : t('Створення видаткової статті бюджету')
+      // The picker lists outgoing order types (not budget articles).
+      : t('Новий видатковий ордер')
 
   function handleNavigate(path: string) {
     if (path.startsWith(OUTGOING_CASHFLOW_NEW_PATH)) {

@@ -1,3 +1,4 @@
+import { formatStoredExchangeRate } from '../../../shared/money/storedExchangeRate'
 import { notifications } from '@mantine/notifications'
 import { getIncomeCancelWarning } from '../incomeCashflowCancel'
 import { incomePaymentAllocationView } from '../incomePaymentAllocationSummary'
@@ -1219,7 +1220,7 @@ export function IncomeCashflowDetailDrawer({
                 <IncomeDetailField chip="product" label={t('Організація')} value={displayValue(row.organization)} />
                 <IncomeDetailField chip="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
                 <IncomeDetailField chip="neutral" label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
-                <IncomeDetailField label={t('Курс')} mono value={displayValue(income.ExchangeRate)} />
+                <IncomeDetailField label={t('Курс')} mono value={formatStoredExchangeRate(income.ExchangeRate)} />
                 {hasNumber(income.AgreementExchangedAmount) && (
                   <DocumentDetailRow label={t('Сума у валюті договору')} value={
                     <IncomeDetailAmount value={formatMoney(income.AgreementExchangedAmount)} currency={income.ClientAgreement?.Agreement?.Currency?.Code || income.ClientAgreement?.Agreement?.Currency?.Name || income.OrganizationClientAgreement?.Currency?.Code || income.OrganizationClientAgreement?.Currency?.Name} />

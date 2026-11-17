@@ -1,3 +1,4 @@
+import { keepPickedRegister, pickRegisterCurrency } from '../incomeRegisterSelection'
 import { buildIncomeConfirmLines, formatOrderDate, isFutureOrderDate } from '../incomeCashflowConfirm'
 import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
 import { ServerExchangeRateField } from '../components/ServerExchangeRateField'
@@ -697,8 +698,8 @@ function IncomeCashflowClientFormPageContent() {
       )
       const nextClientAgreements = nextOrganization ? filterClientAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
       const nextAgreement = selectDefaultClientAgreement(nextClientAgreements)
-      const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType)
-      const nextCurrency = nextRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
+      const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType, form.paymentRegisterValue)
+      const nextCurrency = pickRegisterCurrency(nextRegister, form.selectedCurrencyValue)
 
       setSelectedClient({
         ...client,
@@ -770,8 +771,8 @@ function IncomeCashflowClientFormPageContent() {
       )
       const nextSupplyAgreements = nextOrganization ? filterSupplyAgreementsByOrganization(nextAgreements, nextOrganization) : nextAgreements
       const nextAgreement = nextSupplyAgreements[0] || null
-      const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType)
-      const nextCurrency = nextRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
+      const nextRegister = selectDefaultRegister(paymentRegisters, nextOrganization, registerType, form.paymentRegisterValue)
+      const nextCurrency = pickRegisterCurrency(nextRegister, form.selectedCurrencyValue)
 
       setSelectedSupplyOrganization({
         ...supplyOrganization,
@@ -1228,6 +1229,7 @@ function IncomeCashflowClientFormPageContent() {
               <Select
                 data={registerOptions}
                 disabled={!selectedOrganization || isLoading || isSaving}
+                allowDeselect={false}
                 label={t('Каса / рахунок')}
                 required
                 searchable
@@ -1238,6 +1240,7 @@ function IncomeCashflowClientFormPageContent() {
                 className="cashflow-field-currency"
                 data={currencyOptions}
                 disabled={!selectedRegister || isLoading || isSaving}
+                allowDeselect={false}
                 label={t('Валюта')}
                 required
                 searchable
@@ -1248,6 +1251,7 @@ function IncomeCashflowClientFormPageContent() {
                 className="cashflow-field-agreement"
                 data={agreementOptions}
                 disabled={!agreementOptions.length || isLoading || isSaving}
+                allowDeselect={false}
                 label={t('Договір')}
                 required
                 searchable
@@ -2038,7 +2042,16 @@ function selectDefaultRegister(
   paymentRegisters: PaymentRegister[],
   organization: OrganizationWithDefaults | Organization | null,
   registerType: PaymentRegisterType,
+  currentValue = '',
 ): PaymentRegister | null {
+  // A register the user already picked stays while it fits the organization and type
+  // (picking the counterparty afterwards used to switch it back to the default one).
+  const currentRegister = keepPickedRegister(paymentRegisters, currentValue, (register) => matchesRegister(register, organization, registerType))
+
+  if (currentRegister) {
+    return currentRegister
+  }
+
   const mainRegister = (organization as OrganizationWithDefaults | null)?.MainPaymentRegister
   let firstRegister: PaymentRegister | null = null
 
