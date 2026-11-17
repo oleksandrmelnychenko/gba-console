@@ -221,4 +221,28 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
     expect(apiMocks.updateOrder).not.toHaveBeenCalled()
     expect(apiMocks.createIncome).not.toHaveBeenCalled()
   })
+
+  it('shows «Замовлення не знайдено» without «Оприходувати» when the server returns an empty body', async () => {
+    apiMocks.getOrder.mockResolvedValue({ DynamicProductPlacementColumns: [], SupplyOrderUkraineItems: [] })
+    renderPage()
+
+    expect(await screen.findByText('Замовлення не знайдено')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Оприходувати' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Провести' })).toBeNull()
+    expect(screen.queryByText('Не оприходувано')).toBeNull()
+  })
+
+  it('closes the confirm and shows the server reason when product income fails', async () => {
+    apiMocks.createIncome.mockRejectedValue(new Error('Помилка сервера. Нова сутність недопустима.'))
+    renderPage()
+
+    expect(await screen.findByText('SKU-1')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Оприходувати' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+
+    expect(await screen.findByText('Помилка сервера. Нова сутність недопустима.')).toBeTruthy()
+    expect(screen.queryByText('Ви впевнені?')).toBeNull()
+    expect(apiMocks.createIncome).toHaveBeenCalledTimes(1)
+  })
 })

@@ -42,6 +42,7 @@ import type {
   PlacementSupplyOrder,
 } from '../placementsTypes'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { userErrorText } from '../../../shared/api/userErrorText'
 import './warehouse-ukraine-page.css'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Save
@@ -208,7 +209,8 @@ function useOrderPlacementsModel() {
   const [unorderedOpen, setUnorderedOpen] = useValueState(false)
   const [incomeDate, setIncomeDate] = useValueState(() => formatLocalDate(new Date()))
   const [confirmPlacement, setConfirmPlacement] = useValueState<{ isFullPlaced: boolean } | null>(null)
-  const [isPlacing, setPlacing] = useValueState(false)
+  const [isPlacing, setPlacing, tryStartPlacing] = useBusyState()
+  const [isNotFound, setNotFound] = useValueState(false)
   const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-placements', 'normal')
 
   useEffect(() => {
@@ -229,7 +231,11 @@ function useOrderPlacementsModel() {
         ])
 
         if (!cancelled) {
-          setOrder(loadedOrder)
+          /* The server answers 200 with an empty body for an unknown, zero or
+             malformed id: show «Замовлення не знайдено», never a phantom order. */
+          const found = Boolean(loadedOrder.Id || loadedOrder.NetUid)
+          setNotFound(!found)
+          setOrder(found ? loadedOrder : null)
           setStorages(loadedStorages)
           setSelectedStorageId((current) => current || loadedStorages[0]?.NetUid || null)
           setDirty(false)
@@ -250,7 +256,7 @@ function useOrderPlacementsModel() {
     return () => {
       cancelled = true
     }
-  }, [id, reloadKey, setDirty, setError, setLoading, setOrder, setSelectedStorageId, setStorages, t])
+  }, [id, reloadKey, setDirty, setError, setLoading, setNotFound, setOrder, setSelectedStorageId, setStorages, t])
 
   const gridRows = useMemo(() => (order ? buildGridRows(order) : []), [order])
   const isBusy = isSaving || isPlacing
@@ -635,7 +641,9 @@ function useOrderPlacementsModel() {
         return
       }
 
-      setPlacing(true)
+      if (!tryStartPlacing()) {
+        return
+      }
 
       try {
         await createProductIncomeFromDynamicPlacements(
@@ -646,15 +654,19 @@ function useOrderPlacementsModel() {
         notifications.show({ color: 'green', message: t('Оприходування виконано') })
         setConfirmPlacement(null)
         setReloadKey((key) => key + 1)
-      } catch {
-        notifications.show({ color: 'red', message: t('Не вдалося виконати оприходування') })
+      } catch (placeError) {
+        /* Settle the «Ви впевнені?» confirm and say why it failed. */
+        const message = userErrorText(placeError, t('Не вдалося виконати оприходування'))
+        setConfirmPlacement(null)
+        setError(message)
+        notifications.show({ color: 'red', message })
       } finally {
         setPlacing(false)
       }
     },
     [
       incomeDate, isBusy, isDirty, order, selectedStorageId, setConfirmPlacement,
-      setPlacing, setReloadKey, t,
+      setError, setPlacing, setReloadKey, t, tryStartPlacing,
     ],
   )
 
@@ -664,7 +676,7 @@ function useOrderPlacementsModel() {
   return {
     closeSheet, columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
-    isBusy, isLoading, isPlacing, isSaving, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
+    isBusy, isLoading, isNotFound, isPlacing, isSaving, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setOrder, setSelectedStorageId,
     setUnorderedOpen, storages, toggleDensity, totalNetWeight, totalProductsCount, unorderedOpen,
   }
@@ -1100,6 +1112,12 @@ function WarehouseUkraineOrderPlacementsPageContent() {
             </Group>
           </Group>
         </Card>
+
+        {model.isNotFound && (
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Замовлення не знайдено')}
+          </Alert>
+        )}
 
         {model.error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
