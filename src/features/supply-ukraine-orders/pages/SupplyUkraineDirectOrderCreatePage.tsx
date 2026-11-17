@@ -229,7 +229,7 @@ function SupplyUkraineOrderFileCreatePageGuard({ mode }: { mode: CreateMode }) {
     ? PermissionKeys.OrdersUkraine.Order.OpenArrival
     : PermissionKeys.OrdersUkraine.Order.OpenOrder
 
-  if (!hasPermission(permission)) {
+  if (!hasPermission(permission) || !hasPermission(PermissionKeys.OrdersUkraine.Order.Create)) {
     return (
       <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
         {t('У вашої ролі немає права створювати це замовлення.')}
@@ -378,7 +378,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
         ? PermissionKeys.OrdersUkraine.Order.OpenArrival
         : PermissionKeys.OrdersUkraine.Order.OpenOrder
 
-      if (!hasPermission(permission)) {
+      if (!hasPermission(permission) || !hasPermission(PermissionKeys.OrdersUkraine.Order.Create)) {
         dispatchPage({ type: 'setError', error: t('Право на цю дію було відкликано') })
         return
       }

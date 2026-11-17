@@ -9,4 +9,6 @@ export const RESALE_COMPLETE_PERMISSION = PermissionKeys.Resales.Resale.Complete
 export const RESALE_AVAILABILITY_EXPORT_PERMISSION = PermissionKeys.Resales.Availability.Export
 export const RESALE_DOCUMENT_EXPORT_PERMISSION = PermissionKeys.Resales.Document.Export
 export const RESALE_CONSIGNMENT_NOTE_PERMISSION = PermissionKeys.Resales.ConsignmentNote.Print
+export const RESALE_CONSIGNMENT_NOTE_SETTING_SAVE_PERMISSION = PermissionKeys.Resales.ConsignmentNoteSetting.Save
+export const RESALE_CONSIGNMENT_NOTE_SETTING_DELETE_PERMISSION = PermissionKeys.Resales.ConsignmentNoteSetting.Delete
 export const PRODUCT_DETAILS_PERMISSION = PermissionKeys.ProductsAssortment.Page.View

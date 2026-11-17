@@ -158,6 +158,8 @@ describe('Product delivery protocol logistic-path permission guards', () => {
 
     await waitFor(() => expect(getProtocolForLogisticPath).toHaveBeenCalledWith('protocol-1'))
 
+    // Opening invoice management alone no longer allows assigning invoices.
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open)
     const cases = [
       {
         button: 'status-final',
@@ -166,7 +168,7 @@ describe('Product delivery protocol logistic-path permission guards', () => {
       },
       {
         button: 'invoice-assign-final',
-        permission: PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open,
+        permission: PermissionKeys.ProductDeliveryProtocols.Invoice.Assign,
         request: assignInvoicesToProtocol,
       },
       {

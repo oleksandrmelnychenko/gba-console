@@ -73,6 +73,14 @@ describe('InvoicesSection permissions', () => {
     withoutRights.unmount()
 
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open)
+    const openOnly = renderSection(false)
+
+    // Opening invoice details is not enough to change which invoices belong to the protocol.
+    expect(screen.queryByRole('button', { name: 'Управління інвойсами' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Детальні витрати' })).toBeTruthy()
+    openOnly.unmount()
+
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.Invoice.Assign)
     const managementOnly = renderSection(false)
 
     expect(screen.getByRole('button', { name: 'Управління інвойсами' })).toBeTruthy()

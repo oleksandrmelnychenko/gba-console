@@ -45,6 +45,7 @@ import { LabelValueRow } from './LabelValueRow'
 import { formatDateTime, formatMoney, getInvoiceCurrencyCode, getInvoiceTotalNetPrice } from './protocolDetailHelpers'
 
 const MANAGE_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
+const ASSIGN_INVOICES_PERMISSION = PermissionKeys.ProductDeliveryProtocols.Invoice.Assign
 
 type InvoicesSectionPermissions = {
   canEditAssignments: boolean
@@ -580,7 +581,8 @@ export function InvoicesSection({
   const [actionsTarget, setActionsTarget] = useState<HTMLDivElement | null>(null)
   const invoices = protocol.SupplyInvoices || []
   const canOpenInvoices = hasPermission(MANAGE_INVOICES_PERMISSION)
-  const canManageInvoices = permissions.canEditAssignments && canOpenInvoices
+  const canManageInvoices =
+    permissions.canEditAssignments && canOpenInvoices && hasPermission(ASSIGN_INVOICES_PERMISSION)
 
   const managementAction = canManageInvoices ? (
           <Button

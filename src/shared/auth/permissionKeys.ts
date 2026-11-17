@@ -320,6 +320,37 @@ export const PermissionKeys = {
       Delete: 'counterparties.resources.transporter.delete',
       Edit: 'counterparties.resources.transporter.edit',
     },
+    ClientType: {
+      Create: 'counterparties.resources.client_type.create',
+      Delete: 'counterparties.resources.client_type.delete',
+      Edit: 'counterparties.resources.client_type.edit',
+      TranslationCreate: 'counterparties.resources.client_type.translation.create',
+      TranslationDelete: 'counterparties.resources.client_type.translation.delete',
+      TranslationEdit: 'counterparties.resources.client_type.translation.edit',
+    },
+    ClientTypeRole: {
+      Create: 'counterparties.resources.client_type_role.create',
+      Delete: 'counterparties.resources.client_type_role.delete',
+      TranslationCreate: 'counterparties.resources.client_type_role.translation.create',
+      TranslationDelete: 'counterparties.resources.client_type_role.translation.delete',
+      TranslationEdit: 'counterparties.resources.client_type_role.translation.edit',
+    },
+    AgreementType: {
+      Create: 'counterparties.resources.agreement_type.create',
+      Delete: 'counterparties.resources.agreement_type.delete',
+      Edit: 'counterparties.resources.agreement_type.edit',
+      TranslationCreate: 'counterparties.resources.agreement_type.translation.create',
+      TranslationDelete: 'counterparties.resources.agreement_type.translation.delete',
+      TranslationEdit: 'counterparties.resources.agreement_type.translation.edit',
+    },
+    CalculationType: {
+      Create: 'counterparties.resources.calculation_type.create',
+      Delete: 'counterparties.resources.calculation_type.delete',
+      Edit: 'counterparties.resources.calculation_type.edit',
+      TranslationCreate: 'counterparties.resources.calculation_type.translation.create',
+      TranslationDelete: 'counterparties.resources.calculation_type.translation.delete',
+      TranslationEdit: 'counterparties.resources.calculation_type.translation.edit',
+    },
   },
   Clients: {
     Page: {
@@ -525,6 +556,7 @@ export const PermissionKeys = {
       Open: 'orders.delivery_protocol.invoice_management.open',
     },
     Invoice: {
+      Assign: 'orders.delivery_protocol.invoice.assign',
       Merge: 'orders.delivery_protocol.invoice.merge',
     },
     LogisticWay: {
@@ -1043,6 +1075,7 @@ export const PermissionKeys = {
     },
     Order: {
       AddDeliveryCosts: 'orders.ukraine.order.add_delivery_costs',
+      Create: 'orders.ukraine.order.create',
       MutateCompletedService:
         'orders.ukraine.order.completed_service_mutation',
       CreatePaymentTask: 'orders.ukraine.order.create_payment_task',
@@ -1147,6 +1180,10 @@ export const PermissionKeys = {
     ConsignmentNote: {
       Print: 'sales.resales.consignment_note.print',
     },
+    ConsignmentNoteSetting: {
+      Save: 'sales.resales.consignment_note_setting.save',
+      Delete: 'sales.resales.consignment_note_setting.delete',
+    },
   },
   ReportsStocks: {
     Page: {
@@ -1196,6 +1233,7 @@ export type ResalesPermissionKey =
   | Values<typeof PermissionKeys.Resales.Availability>
   | Values<typeof PermissionKeys.Resales.Document>
   | Values<typeof PermissionKeys.Resales.ConsignmentNote>
+  | Values<typeof PermissionKeys.Resales.ConsignmentNoteSetting>
 
 export type ReportsStocksPermissionKey =
   | Values<typeof PermissionKeys.ReportsStocks.Page>
@@ -1292,6 +1330,10 @@ export type ClientResourcesPermissionKey =
   | Values<typeof PermissionKeys.ClientResources.TaxInspection>
   | Values<typeof PermissionKeys.ClientResources.VatRate>
   | Values<typeof PermissionKeys.ClientResources.Transporter>
+  | Values<typeof PermissionKeys.ClientResources.ClientType>
+  | Values<typeof PermissionKeys.ClientResources.ClientTypeRole>
+  | Values<typeof PermissionKeys.ClientResources.AgreementType>
+  | Values<typeof PermissionKeys.ClientResources.CalculationType>
 
 export type ClientsPermissionKey =
   | Values<typeof PermissionKeys.Clients.Page>
@@ -1670,6 +1712,10 @@ const eventPermissionKeyList = [
     ...Object.values(PermissionKeys.ClientResources.TaxInspection),
     ...Object.values(PermissionKeys.ClientResources.VatRate),
     ...Object.values(PermissionKeys.ClientResources.Transporter),
+    ...Object.values(PermissionKeys.ClientResources.ClientType),
+    ...Object.values(PermissionKeys.ClientResources.ClientTypeRole),
+    ...Object.values(PermissionKeys.ClientResources.AgreementType),
+    ...Object.values(PermissionKeys.ClientResources.CalculationType),
   ...Object.values(PermissionKeys.Clients.Page),
   ...Object.values(PermissionKeys.Clients.AccountingCashFlow),
   ...Object.values(PermissionKeys.Clients.Client),
@@ -1872,6 +1918,7 @@ const eventPermissionKeyList = [
   ...Object.values(PermissionKeys.Resales.Availability),
   ...Object.values(PermissionKeys.Resales.Document),
   ...Object.values(PermissionKeys.Resales.ConsignmentNote),
+  ...Object.values(PermissionKeys.Resales.ConsignmentNoteSetting),
   ...Object.values(PermissionKeys.ReportsStocks.Page),
   ...Object.values(PermissionKeys.ReportsStocks.Report),
   ...Object.values(PermissionKeys.ReportsSaleFile.Page),

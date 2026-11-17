@@ -76,10 +76,34 @@ describe('SupplyUkraineOrdersPage permissions', () => {
     expect(getSupplyOrderCurrenciesMock).not.toHaveBeenCalled()
   })
 
-  it('shows supply creation only with open-arrival while keeping other create actions independent', async () => {
+  it('hides supply creation from a role that can open orders but not create them', async () => {
     canMock.mockReturnValue(true)
     hasPermissionMock.mockImplementation(
-      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenArrival,
+      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenArrival
+        || permissionKey === PermissionKeys.OrdersUkraine.Order.OpenOrder,
+    )
+    getSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
+    getDirectSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
+    getSupplyOrderCurrenciesMock.mockResolvedValue([])
+
+    render(
+      <MantineProvider>
+        <MemoryRouter>
+          <SupplyUkraineOrdersPage />
+        </MemoryRouter>
+      </MantineProvider>,
+    )
+
+    await waitFor(() => expect(getSupplyUkraineOrdersMock).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: 'Поставка' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Нове замовлення' })).toBeNull()
+  })
+
+  it('shows supply creation only with open-arrival and create while keeping other create actions independent', async () => {
+    canMock.mockReturnValue(true)
+    hasPermissionMock.mockImplementation(
+      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenArrival
+        || permissionKey === PermissionKeys.OrdersUkraine.Order.Create,
     )
     getSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
     getDirectSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
@@ -98,12 +122,13 @@ describe('SupplyUkraineOrdersPage permissions', () => {
     expect(screen.queryByRole('button', { name: 'Нове замовлення' })).toBeNull()
   })
 
-  it('shows direct creation with page and open-order access without requiring logistic-way access', async () => {
+  it('shows direct creation with page, open-order and create access without requiring logistic-way access', async () => {
     canMock.mockImplementation(
       (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Page.View,
     )
     hasPermissionMock.mockImplementation(
-      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenOrder,
+      (permissionKey) => permissionKey === PermissionKeys.OrdersUkraine.Order.OpenOrder
+        || permissionKey === PermissionKeys.OrdersUkraine.Order.Create,
     )
     getSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })
     getDirectSupplyUkraineOrdersMock.mockResolvedValue({ items: [], totalQty: 0 })

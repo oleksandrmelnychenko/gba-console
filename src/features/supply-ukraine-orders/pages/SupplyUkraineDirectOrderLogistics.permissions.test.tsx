@@ -139,6 +139,7 @@ describe('Supply Ukraine direct-order logistics permissions', () => {
 
     allowedPermissions.add(PermissionKeys.OrdersUkraine.Page.View)
     allowedPermissions.add(PermissionKeys.OrdersUkraine.Order.OpenOrder)
+    allowedPermissions.add(PermissionKeys.OrdersUkraine.Order.Create)
     vi.mocked(getSupplyOrderOrganizations).mockResolvedValue([organization])
     vi.mocked(getSupplyOrderCreateSuppliers).mockResolvedValue([{
       ClientAgreements: [clientAgreement],

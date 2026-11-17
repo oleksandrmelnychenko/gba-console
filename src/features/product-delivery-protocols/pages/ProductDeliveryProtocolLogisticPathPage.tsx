@@ -45,6 +45,7 @@ const PERMISSION_OPEN_LOGISTIC_PATH = PermissionKeys.ProductDeliveryProtocols.Lo
 const PERMISSION_EDIT_COMPLETED_PROTOCOL = PermissionKeys.ProductDeliveryProtocols.Protocol.EditCompleted
 const PERMISSION_CHANGE_STATUS = PermissionKeys.ProductDeliveryProtocols.UnifiedService.ChangeStatus
 const PERMISSION_MANAGE_INVOICES = PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open
+const PERMISSION_ASSIGN_INVOICES = PermissionKeys.ProductDeliveryProtocols.Invoice.Assign
 const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = PermissionKeys.ProductDeliveryProtocols.DeliveryDocuments.Download
 const PERMISSION_CREATE_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Create
 const PERMISSION_EDIT_SERVICE = PermissionKeys.ProductDeliveryProtocols.UnifiedService.Edit
@@ -163,7 +164,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   async function assignInvoices(invoices: SupplyInvoice[]) {
-    if (!canEdit || !hasPermission(PERMISSION_MANAGE_INVOICES) || !protocol) {
+    if (!canEdit || !hasPermission(PERMISSION_MANAGE_INVOICES) || !hasPermission(PERMISSION_ASSIGN_INVOICES) || !protocol) {
       return
     }
 

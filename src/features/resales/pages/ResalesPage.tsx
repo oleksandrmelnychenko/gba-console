@@ -110,6 +110,8 @@ import {
   RESALE_AVAILABILITY_EXPORT_PERMISSION,
   RESALE_COMPLETE_PERMISSION,
   RESALE_CONSIGNMENT_NOTE_PERMISSION,
+  RESALE_CONSIGNMENT_NOTE_SETTING_DELETE_PERMISSION,
+  RESALE_CONSIGNMENT_NOTE_SETTING_SAVE_PERMISSION,
   RESALE_CONVERT_PERMISSION,
   RESALE_CREATE_PERMISSION,
   RESALE_DELETE_PERMISSION,
@@ -3320,7 +3322,7 @@ function normalizeConsignmentLabel(value: string | undefined, legacyKey: string,
   return !value?.trim() || value.trim() === legacyKey ? fallback : value
 }
 
-function ConsignmentNoteSettingsDrawer({
+export function ConsignmentNoteSettingsDrawer({
   opened,
   resale,
   onClose,
@@ -3330,6 +3332,9 @@ function ConsignmentNoteSettingsDrawer({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canSaveSetting = hasPermission(RESALE_CONSIGNMENT_NOTE_SETTING_SAVE_PERMISSION)
+  const canDeleteSetting = hasPermission(RESALE_CONSIGNMENT_NOTE_SETTING_DELETE_PERMISSION)
   const defaultSetting = useMemo(() => ({
     ...buildDefaultConsignmentNoteSetting(resale),
     CarLabel: t('Автомобіль'),
@@ -3450,6 +3455,10 @@ function ConsignmentNoteSettingsDrawer({
   }
 
   async function saveSetting() {
+    if (!canSaveSetting) {
+      return
+    }
+
     const validationError = getConsignmentValidationError(noteState.setting, t)
 
     if (validationError) {
@@ -3496,6 +3505,10 @@ function ConsignmentNoteSettingsDrawer({
   }
 
   async function deleteSetting() {
+    if (!canDeleteSetting) {
+      return
+    }
+
     if (!noteState.setting.NetUid) {
       setNoteState((currentState) => ({ ...currentState, error: t('Налаштування без NetUid не можна видалити') }))
       return
@@ -3566,14 +3579,16 @@ function ConsignmentNoteSettingsDrawer({
           <Button disabled={!noteState.isEdited || isSaving} variant="default" onClick={resetChanges}>
             {t('Скасувати')}
           </Button>
-          {hasExistingSetting && (
+          {hasExistingSetting && canDeleteSetting && (
             <Button color="red" disabled={isSaving || isPrinting} variant="light" onClick={deleteSetting}>
               {t('Видалити')}
             </Button>
           )}
-          <Button color={CREATE_ACTION_COLOR} disabled={!noteState.isEdited || isPrinting} loading={isSaving} onClick={saveSetting}>
-            {hasExistingSetting ? t('Зберегти') : t('Створити')}
-          </Button>
+          {canSaveSetting && (
+            <Button color={CREATE_ACTION_COLOR} disabled={!noteState.isEdited || isPrinting} loading={isSaving} onClick={saveSetting}>
+              {hasExistingSetting ? t('Зберегти') : t('Створити')}
+            </Button>
+          )}
           <Button leftSection={<Truck size={16} />} loading={isPrinting} onClick={printDocument}>
             {t('Друк')}
           </Button>
