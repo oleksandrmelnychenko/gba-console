@@ -18,66 +18,73 @@ export async function getOnlineShopSeoSettings(): Promise<SeoLocaleEntry[]> {
   return normalizeSeoSettings(result)
 }
 
-export async function updateSeoPage(page: SeoPage): Promise<SeoLocaleEntry[]> {
+export async function updateSeoPage(page: SeoPage, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/page/update/locale', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: page,
   })
 
   return normalizeSeoSettings(result)
 }
 
-export async function updateSeoContactInfo(contactInfo: SeoContactInfo): Promise<SeoLocaleEntry[]> {
+export async function updateSeoContactInfo(contactInfo: SeoContactInfo, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/contactinfo/update', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: contactInfo,
   })
 
   return normalizeSeoSettings(result)
 }
 
-export async function updateSeoPaymentInfo(paymentInfo: SeoRetailPaymentInfo): Promise<SeoLocaleEntry[]> {
+export async function updateSeoPaymentInfo(paymentInfo: SeoRetailPaymentInfo, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/retail/payment/update', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: paymentInfo,
   })
 
   return normalizeSeoSettings(result)
 }
 
-export async function createSeoContact(contact: SeoContact): Promise<SeoLocaleEntry[]> {
+export async function createSeoContact(contact: SeoContact, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/contacts/add', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: contact,
   })
 
   return normalizeSeoSettings(result)
 }
 
-export async function uploadSeoContactImage(file: File, mode: 'create' | 'edit'): Promise<string> {
+export async function uploadSeoContactImage(file: File, mode: 'create' | 'edit', signal?: AbortSignal): Promise<string> {
   const formData = new FormData()
   formData.append('img', file)
 
   const result = await apiRequest<unknown>(`/seo/info/contacts/${mode}/img/add`, {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: formData,
   })
 
   return typeof result === 'string' ? result : ''
 }
 
-export async function updateSeoContact(contact: SeoContact): Promise<SeoLocaleEntry[]> {
+export async function updateSeoContact(contact: SeoContact, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/contacts/update', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     body: contact,
   })
 
   return normalizeSeoSettings(result)
 }
 
-export async function removeSeoContact(netId: string): Promise<SeoLocaleEntry[]> {
+export async function removeSeoContact(netId: string, signal?: AbortSignal): Promise<SeoLocaleEntry[]> {
   const result = await apiRequest<unknown>('/seo/info/contacts/remove', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     query: { netId },
   })
 
@@ -135,18 +142,20 @@ export async function addEcommerceStorage(netId: string): Promise<OnlineShopStor
   return normalizeCollection<OnlineShopStorage>(result)
 }
 
-export async function removeEcommerceStorage(netId: string): Promise<OnlineShopStorage[]> {
+export async function removeEcommerceStorage(netId: string, signal?: AbortSignal): Promise<OnlineShopStorage[]> {
   const result = await apiRequest<unknown>('/storages/online-shop-seo/ecommerce/unselect', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     query: { netId },
   })
 
   return normalizeCollection<OnlineShopStorage>(result)
 }
 
-export async function updateEcommerceStoragePriority(storageId: number, priority: number): Promise<OnlineShopStorage[]> {
+export async function updateEcommerceStoragePriority(storageId: number, priority: number, signal?: AbortSignal): Promise<OnlineShopStorage[]> {
   const result = await apiRequest<unknown>('/storages/online-shop-seo/priority', {
     method: 'POST',
+    ...(signal ? { signal } : {}),
     query: { priority, storageId },
   })
 

@@ -25,9 +25,12 @@ import type {
 } from '../types'
 import {
   contactInfoToFormValues,
+  getContactInfoFieldErrors,
   getLocaleLabel,
   hasPaymentRecord,
   paymentToFormValues,
+  SEO_FIELD_MAX_LENGTH,
+  type SeoContactInfoFieldErrors,
 } from '../utils'
 
 type SearchToolbarProps = {
@@ -104,16 +107,26 @@ type ContactInfoFormProps = {
 export function ContactInfoForm({ contactInfo, isSaving, locale, onSave }: ContactInfoFormProps) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => contactInfoToFormValues(contactInfo))
+  const [fieldErrors, setFieldErrors] = useValueState<SeoContactInfoFieldErrors>({})
 
   function setField<K extends keyof SeoContactInfoFormValues>(key: K, value: SeoContactInfoFormValues[K]) {
     setValues((currentValues) => ({
       ...currentValues,
       [key]: value,
     }))
+    setFieldErrors((currentErrors) => (currentErrors[key] ? { ...currentErrors, [key]: undefined } : currentErrors))
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const nextErrors = getContactInfoFieldErrors(values)
+
+    setFieldErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) {
+      return
+    }
+
     void onSave(locale, contactInfo, values)
   }
 
@@ -123,19 +136,41 @@ export function ContactInfoForm({ contactInfo, isSaving, locale, onSave }: Conta
         <Textarea
           autosize
           label={t('Адреса')}
+          maxLength={SEO_FIELD_MAX_LENGTH.Address}
           minRows={3}
           value={values.Address}
           onChange={(event) => setField('Address', event.currentTarget.value)}
         />
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
+            error={fieldErrors.Phone}
             label={t('Телефон')}
+            maxLength={SEO_FIELD_MAX_LENGTH.ContactInfoPhone}
+            type="tel"
             value={values.Phone}
             onChange={(event) => setField('Phone', event.currentTarget.value)}
           />
-          <TextInput label="E-mail" value={values.Email} onChange={(event) => setField('Email', event.currentTarget.value)} />
-          <TextInput label="Site URL" value={values.SiteUrl} onChange={(event) => setField('SiteUrl', event.currentTarget.value)} />
-          <TextInput label="Pixel ID" value={values.PixelId} onChange={(event) => setField('PixelId', event.currentTarget.value)} />
+          <TextInput
+            error={fieldErrors.Email}
+            label="E-mail"
+            maxLength={SEO_FIELD_MAX_LENGTH.ContactInfoEmail}
+            value={values.Email}
+            onChange={(event) => setField('Email', event.currentTarget.value)}
+          />
+          <TextInput
+            error={fieldErrors.SiteUrl}
+            label="Site URL"
+            maxLength={SEO_FIELD_MAX_LENGTH.SiteUrl}
+            placeholder="https://"
+            value={values.SiteUrl}
+            onChange={(event) => setField('SiteUrl', event.currentTarget.value)}
+          />
+          <TextInput
+            label="Pixel ID"
+            maxLength={SEO_FIELD_MAX_LENGTH.PixelId}
+            value={values.PixelId}
+            onChange={(event) => setField('PixelId', event.currentTarget.value)}
+          />
         </SimpleGrid>
         <Group justify="flex-end">
           <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
@@ -176,30 +211,34 @@ export function PaymentInfoForm({ isSaving, locale, onSave, payment }: PaymentIn
       <Stack gap="md">
         {!canSave && (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
-            {t('Запис оплати відсутній')}
+            {t('Запис оплати для цієї мови відсутній. Сервер дозволяє лише оновлювати наявний запис, тому створити його з інтерфейсу неможливо.')}
           </Alert>
         )}
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <TextInput
             classNames={{ input: isMoneyValue(values.LowPrice) ? 'app-money' : undefined }}
             label={t('Передплата')}
+            maxLength={SEO_FIELD_MAX_LENGTH.LowPrice}
             value={values.LowPrice}
             onChange={(event) => setField('LowPrice', event.currentTarget.value)}
           />
           <TextInput
             classNames={{ input: isMoneyValue(values.FullPrice) ? 'app-money' : undefined }}
             label={t('Повна ціна')}
+            maxLength={SEO_FIELD_MAX_LENGTH.FullPrice}
             value={values.FullPrice}
             onChange={(event) => setField('FullPrice', event.currentTarget.value)}
           />
         </SimpleGrid>
         <TextInput
           label={t('Коментар для картки')}
+          maxLength={SEO_FIELD_MAX_LENGTH.Comment}
           value={values.Comment}
           onChange={(event) => setField('Comment', event.currentTarget.value)}
         />
         <TextInput
           label={t('Повідомлення про успішне замовлення')}
+          maxLength={SEO_FIELD_MAX_LENGTH.FastOrderSuccessMessage}
           value={values.FastOrderSuccessMessage}
           onChange={(event) => setField('FastOrderSuccessMessage', event.currentTarget.value)}
         />

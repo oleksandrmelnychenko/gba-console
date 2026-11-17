@@ -21,7 +21,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { FileText, Info, Store, Users, Warehouse, type LucideIcon, CircleAlert, CreditCard, Hash, Image, Link, Pencil, Phone, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
-import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -83,8 +83,12 @@ import {
   getUniqueContacts,
   hasPaymentRecord,
   pageToFormValues,
+  SEO_CONTACT_IMAGE_ACCEPT,
+  SEO_FIELD_MAX_LENGTH,
   validateContact,
   validatePage,
+  validatePriorityRange,
+  validateSeoContactImage,
 } from '../utils'
 import { hasCompatibleEcommerceStorage, hasValidRetailConfiguration } from '../retailConfiguration'
 import { isMoneyValue } from '../../../shared/ui/moneyTypography'
@@ -270,7 +274,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const [isCardsLoading, setCardsLoading] = useValueState(true)
   const [isStoragesLoading, setStoragesLoading] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
-  const [isImageUploading, setImageUploading, tryStartImageUploading] = useBusyState()
+  const [isImageUploading, setImageUploading] = useBusyState()
+  const [pendingContactImage, setPendingContactImage] = useValueState<File | null>(null)
+  const [contactImagePreview, setContactImagePreview] = useValueState('')
+  // Cancel stays enabled while a save is pending: closing a dialog aborts the request.
+  const saveAbortRef = useRef<AbortController | null>(null)
   const [isPageEditorOpen, setPageEditorOpen] = useValueState(false)
   const [isContactEditorOpen, setContactEditorOpen] = useValueState(false)
   const [isStorageDrawerOpen, setStorageDrawerOpen] = useValueState(false)
@@ -334,9 +342,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
     setEditingContact(contact || null)
     setContactFormValues(contactToFormValues(contact))
+    setPendingContactImage(null)
+    setContactImagePreview('')
     setFormError(null)
     setContactEditorOpen(true)
-  }, [canCreateContact, canEditContact, setContactEditorOpen, setContactFormValues, setEditingContact, setFormError])
+  }, [canCreateContact, canEditContact, setContactEditorOpen, setContactFormValues, setContactImagePreview, setEditingContact, setFormError, setPendingContactImage])
 
   const requestRemoveContact = useCallback((contact: SeoContact) => {
     if (!canDeleteContact) {
@@ -1126,11 +1136,37 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     setShopDataSearchValue('')
   }
 
-  function closePageEditor() {
-    if (isSaving) {
+  function startAbortableSave() {
+    const controller = new AbortController()
+    saveAbortRef.current = controller
+
+    return controller
+  }
+
+  function finishAbortableSave(controller: AbortController) {
+    if (saveAbortRef.current === controller) {
+      saveAbortRef.current = null
+    }
+  }
+
+  function abortPendingSave() {
+    saveAbortRef.current?.abort()
+    saveAbortRef.current = null
+  }
+
+  /** A failed (not cancelled) save always ends with a visible error toast, even if its dialog was closed. */
+  function reportSaveError(controller: AbortController, saveError: unknown, fallback: string, showInline: (message: string) => void) {
+    if (controller.signal.aborted) {
       return
     }
 
+    const message = saveError instanceof Error && saveError.message ? saveError.message : fallback
+    showInline(message)
+    notifications.show({ color: 'red', message })
+  }
+
+  function closePageEditor() {
+    abortPendingSave()
     setPageEditorOpen(false)
     setSelectedPageRow(null)
     setPageFormValues(EMPTY_PAGE_FORM_VALUES)
@@ -1138,21 +1174,17 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   function closeContactEditor() {
-    if (isSaving || isImageUploading) {
-      return
-    }
-
+    abortPendingSave()
     setContactEditorOpen(false)
     setEditingContact(null)
     setContactFormValues(EMPTY_CONTACT_FORM_VALUES)
+    setPendingContactImage(null)
+    setContactImagePreview('')
     setFormError(null)
   }
 
   function closePriorityEditor() {
-    if (isSaving) {
-      return
-    }
-
+    abortPendingSave()
     setPriorityStorageTarget(null)
     setPriorityValue('')
     setFormError(null)
@@ -1191,20 +1223,23 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
     setError(null)
     setFormError(null)
+    const controller = startAbortableSave()
 
     try {
       const nextSettings = await updateSeoPage({
         ...selectedPageRow.page,
         ...pageFormValues,
         Locale: selectedPageRow.page.Locale || selectedPageRow.locale,
-      })
+      }, controller.signal)
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('SEO сторінки оновлено') })
+      finishAbortableSave(controller)
       closePageEditor()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти SEO сторінки'))
+      reportSaveError(controller, saveError, t('Не вдалося зберегти SEO сторінки'), setFormError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1219,6 +1254,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }, [canEditGeneralInfo, canEditPaymentInfo, setEditingGeneralLocale, setFormError])
 
   function closeGeneralLocaleEditor() {
+    abortPendingSave()
     setEditingGeneralLocale(null)
     setFormError(null)
   }
@@ -1233,19 +1269,34 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
     setError(null)
     setFormError(null)
+    const controller = startAbortableSave()
 
     try {
-      const nextSettings = await updateSeoContactInfo({
+      const targetLocale = contactInfo?.Locale || locale
+      let nextSettings = await updateSeoContactInfo({
         ...(contactInfo || {}),
         ...values,
-        Locale: contactInfo?.Locale || locale,
-      })
+        Locale: targetLocale,
+      }, controller.signal)
+      const created = !contactInfo?.NetUid
+        ? nextSettings.find((entry) => entry.locale === locale)?.settings.EcommerceContactInfo
+        : null
+
+      // The server's first save (INSERT) drops PixelId; a follow-up update of the new record stores it.
+      if (created?.NetUid && values.PixelId.trim() && !created.PixelId) {
+        nextSettings = await updateSeoContactInfo({
+          ...created,
+          ...values,
+          Locale: created.Locale || targetLocale,
+        }, controller.signal)
+      }
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Контактну інформацію оновлено') })
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти контактну інформацію'))
+      reportSaveError(controller, saveError, t('Не вдалося зберегти контактну інформацію'), setFormError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1260,19 +1311,21 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
     setError(null)
     setFormError(null)
+    const controller = startAbortableSave()
 
     try {
       const nextSettings = await updateSeoPaymentInfo({
         ...(payment || {}),
         ...values,
         CultureCode: payment?.CultureCode || locale,
-      })
+      }, controller.signal)
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Інформацію про оплату оновлено') })
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інформацію про оплату'))
+      reportSaveError(controller, saveError, t('Не вдалося зберегти інформацію про оплату'), setFormError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1296,20 +1349,46 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
     setError(null)
     setFormError(null)
+    const controller = startAbortableSave()
 
     try {
+      let imageUrl = contactFormValues.ImgUrl
+
+      // The photo is uploaded only after the form passed validation, so failed attempts leave no orphan files.
+      if (pendingContactImage) {
+        setImageUploading(true)
+
+        try {
+          imageUrl = await uploadSeoContactImage(pendingContactImage, editingContact ? 'edit' : 'create', controller.signal)
+        } finally {
+          setImageUploading(false)
+        }
+
+        if (!imageUrl) {
+          throw new Error(t('Сервер не повернув посилання на фото'))
+        }
+
+        setContactField('ImgUrl', imageUrl)
+        setPendingContactImage(null)
+      }
+
       const payload = {
         ...(editingContact || {}),
         ...contactFormValues,
+        ImgUrl: imageUrl,
       }
-      const nextSettings = editingContact ? await updateSeoContact(payload) : await createSeoContact(payload)
+      const nextSettings = editingContact
+        ? await updateSeoContact(payload, controller.signal)
+        : await createSeoContact(payload, controller.signal)
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: editingContact ? t('Контакт оновлено') : t('Контакт створено') })
+      finishAbortableSave(controller)
       closeContactEditor()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти контакт'))
+      reportSaveError(controller, saveError, t('Не вдалося зберегти контакт'), setFormError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1317,29 +1396,29 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   async function handleContactImageChange(file: File | null) {
     const mode = editingContact ? 'edit' : 'create'
 
-    if (!file || (mode === 'edit' ? !canEditContact : !canCreateContact)) {
+    if (mode === 'edit' ? !canEditContact : !canCreateContact) {
       return
     }
 
-    if (!tryStartImageUploading()) {
-      return
-    }
     setFormError(null)
 
-    try {
-      const imageUrl = await uploadSeoContactImage(file, mode)
-
-      if (!imageUrl) {
-        throw new Error(t('Сервер не повернув посилання на фото'))
-      }
-
-      setContactField('ImgUrl', imageUrl)
-      notifications.show({ color: 'green', message: t('Фото контакту завантажено') })
-    } catch (uploadError) {
-      setFormError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити фото контакту'))
-    } finally {
-      setImageUploading(false)
+    if (!file) {
+      setPendingContactImage(null)
+      setContactImagePreview('')
+      return
     }
+
+    const imageError = await validateSeoContactImage(file)
+
+    if (imageError) {
+      setPendingContactImage(null)
+      setContactImagePreview('')
+      setFormError(imageError)
+      return
+    }
+
+    setPendingContactImage(file)
+    setContactImagePreview(typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : '')
   }
 
   async function handleRemoveContact() {
@@ -1351,16 +1430,18 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       return
     }
     setError(null)
+    const controller = startAbortableSave()
 
     try {
-      const nextSettings = await removeSeoContact(removeContactTarget.NetUid)
+      const nextSettings = await removeSeoContact(removeContactTarget.NetUid, controller.signal)
 
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Контакт видалено') })
       setRemoveContactTarget(null)
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити контакт'))
+      reportSaveError(controller, removeError, t('Не вдалося видалити контакт'), setError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1446,17 +1527,19 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       return
     }
     setError(null)
+    const controller = startAbortableSave()
 
     try {
-      const nextStorages = sortStoragesByPriority(await removeEcommerceStorage(removeStorageTarget.NetUid))
+      const nextStorages = sortStoragesByPriority(await removeEcommerceStorage(removeStorageTarget.NetUid, controller.signal))
 
       setEcommerceStorages(nextStorages)
       setAllStorages((currentStorages) => markEcommerceStorages(currentStorages, nextStorages))
       setRemoveStorageTarget(null)
       notifications.show({ color: 'green', message: t('Склад видалено зі списку') })
     } catch (removeError) {
-      setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити склад зі списку'))
+      reportSaveError(controller, removeError, t('Не вдалося видалити склад зі списку'), setError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1480,10 +1563,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
     setError(null)
     setFormError(null)
+    const controller = startAbortableSave()
 
     try {
       const nextStorages = sortStoragesByPriority(
-        await updateEcommerceStoragePriority(priorityStorageTarget.Id, Number(priorityValue)),
+        await updateEcommerceStoragePriority(priorityStorageTarget.Id, Number(priorityValue.trim()), controller.signal),
       )
 
       setEcommerceStorages(nextStorages)
@@ -1492,8 +1576,9 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       setPriorityValue('')
       notifications.show({ color: 'green', message: t('Пріоритет складу оновлено') })
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити пріоритет складу'))
+      reportSaveError(controller, saveError, t('Не вдалося оновити пріоритет складу'), setFormError)
     } finally {
+      finishAbortableSave(controller)
       setSaving(false)
     }
   }
@@ -1506,7 +1591,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     availableStorages, cardSearchDraft, cards, clientColumns, clientSearchDraft, clients,
     contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
-    isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
+    contactImagePreview, isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving, pendingContactImage,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
     retailConfigurationValid, shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
@@ -1522,7 +1607,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     resetContactSearch, resetPageSearch, resetStorageSearch, setActiveTab, setContactField, setFormError,
     setShopDataSearchTarget,
     setPageField, setPriorityValue, setRemoveContactTarget, setRemoveStorageTarget,
-    setStorageDrawerOpen,
+    setStorageDrawerOpen, abortPendingSave,
   }
 }
 
@@ -1579,7 +1664,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     canSetStoragePriority, canToggleClient,
     contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
-    isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
+    contactImagePreview, isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving, pendingContactImage,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
     retailConfigurationValid, shopDataCards, shopDataClientColumns, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
@@ -1593,7 +1678,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetShopDataSearch,
     resetStorageSearch, setActiveTab, setContactField, setFormError, setPageField, setPriorityValue,
     setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
-    setShopDataSearchTarget,
+    setShopDataSearchTarget, abortPendingSave,
   } = model
   const commandSearch = getSeoCommandSearchConfig(activeTab, {
     cardSearchDraft,
@@ -2103,18 +2188,21 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               />
               <TextInput
                 label="URL"
+                maxLength={SEO_FIELD_MAX_LENGTH.PageUrl}
                 value={pageFormValues.Url}
                 onChange={(event) => setPageField('Url', event.currentTarget.value)}
               />
             </SimpleGrid>
             <TextInput
               label="Title"
+              maxLength={SEO_FIELD_MAX_LENGTH.PageTitle}
               value={pageFormValues.Title}
               onChange={(event) => setPageField('Title', event.currentTarget.value)}
             />
             <Textarea
               autosize
               label="Description"
+              maxLength={SEO_FIELD_MAX_LENGTH.PageDescription}
               minRows={3}
               value={pageFormValues.Description}
               onChange={(event) => setPageField('Description', event.currentTarget.value)}
@@ -2122,6 +2210,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             <Textarea
               autosize
               label="Keywords"
+              maxLength={SEO_FIELD_MAX_LENGTH.PageKeyWords}
               minRows={3}
               value={pageFormValues.KeyWords}
               onChange={(event) => setPageField('KeyWords', event.currentTarget.value)}
@@ -2129,12 +2218,13 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             <Textarea
               autosize
               label="LD JSON"
+              maxLength={SEO_FIELD_MAX_LENGTH.PageLdJson}
               minRows={6}
               value={pageFormValues.LdJson}
               onChange={(event) => setPageField('LdJson', event.currentTarget.value)}
             />
             <AppModalFooter>
-              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={closePageEditor}>
+              <Button color="gray" type="button" variant="default" onClick={closePageEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
@@ -2179,13 +2269,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               />
             </SimpleGrid>
             <Group align="end" gap="sm" wrap="nowrap" className="app-filter-fields clients-filter-row">
-              <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
+              <Avatar color="gray" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactImagePreview || contactFormValues.ImgUrl || undefined}>
                 {getContactInitials(contactFormValues)}
               </Avatar>
               <FileInput
-                accept="image/*"
+                accept={SEO_CONTACT_IMAGE_ACCEPT}
                 clearable
                 disabled={isSaving || isImageUploading}
+                value={pendingContactImage}
                 label={t('Фото')}
                 leftSection={<Image size={16} />}
                 placeholder={t('Оберіть файл')}
@@ -2208,7 +2299,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               />
             </SimpleGrid>
             <AppModalFooter>
-              <Button color="gray" disabled={isSaving || isImageUploading} type="button" variant="default" onClick={closeContactEditor}>
+              <Button color="gray" type="button" variant="default" onClick={closeContactEditor}>
                 {t('Скасувати')}
               </Button>
               <Button
@@ -2229,14 +2320,20 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         centered
         opened={Boolean(removeContactTarget && canDeleteContact)}
         title={t('Видалити контакт')}
-        onClose={() => setRemoveContactTarget(null)}
+        onClose={() => {
+          abortPendingSave()
+          setRemoveContactTarget(null)
+        }}
       >
         <Stack gap={10}>
           <Text>
             {t('Видалити контакт')} <Text span fw={600}>{displayValue(getSeoContactDisplayName(removeContactTarget))}</Text>?
           </Text>
           <AppModalFooter>
-            <Button color="gray" disabled={isSaving} variant="default" onClick={() => setRemoveContactTarget(null)}>
+            <Button color="gray" variant="default" onClick={() => {
+              abortPendingSave()
+              setRemoveContactTarget(null)
+            }}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveContact}>
@@ -2256,7 +2353,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
             <TextInput
               label={displayValue(priorityStorageTarget?.Name, t('Склад'))}
+              max={2147483647}
               min={1}
+              step={1}
               type="number"
               value={priorityValue}
               onChange={(event) => {
@@ -2267,7 +2366,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               }}
             />
             <AppModalFooter>
-              <Button color="gray" disabled={isSaving} type="button" variant="default" onClick={closePriorityEditor}>
+              <Button color="gray" type="button" variant="default" onClick={closePriorityEditor}>
                 {t('Скасувати')}
               </Button>
               <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} type="submit">
@@ -2282,14 +2381,20 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         centered
         opened={Boolean(removeStorageTarget && canRemoveStorage)}
         title={t('Видалити склад зі списку')}
-        onClose={() => setRemoveStorageTarget(null)}
+        onClose={() => {
+          abortPendingSave()
+          setRemoveStorageTarget(null)
+        }}
       >
         <Stack gap={10}>
           <Text>
             {t('Видалити склад')} <Text span fw={600}>{displayValue(removeStorageTarget?.Name)}</Text> {t('зі списку інтернет-магазину?')}
           </Text>
           <AppModalFooter>
-            <Button color="gray" disabled={isSaving} variant="default" onClick={() => setRemoveStorageTarget(null)}>
+            <Button color="gray" variant="default" onClick={() => {
+              abortPendingSave()
+              setRemoveStorageTarget(null)
+            }}>
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<Trash2 size={16} />} loading={isSaving} onClick={handleRemoveStorage}>
@@ -3203,17 +3308,13 @@ function isStorageActive(storage: OnlineShopStorage, activeStorages: OnlineShopS
 }
 
 function validateStoragePriority(value: string, selectedStorage: OnlineShopStorage, storages: OnlineShopStorage[]) {
-  const trimmedValue = value.trim()
+  const rangeError = validatePriorityRange(value)
 
-  if (!trimmedValue) {
-    return translate('Вкажіть пріоритет')
+  if (rangeError) {
+    return rangeError
   }
 
-  const priority = Number(trimmedValue)
-
-  if (!Number.isInteger(priority) || priority < 1) {
-    return translate('Пріоритет має бути цілим додатним числом')
-  }
+  const priority = Number(value.trim())
 
   const hasDuplicatePriority = storages.some((storage) => {
     const sameStorage = getEntityKey(storage) === getEntityKey(selectedStorage)
