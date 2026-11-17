@@ -49,6 +49,7 @@ import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscount
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { type ClientFormErrors, validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
 import { findInvertedAgreement } from '../components/pricing/clientAgreementDraft'
+import { errorsForStep, hasNewClientDraftContent, newClientRequiredErrors } from './newClientWizardRules'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 import './client-new-page.css'
 
@@ -273,6 +274,9 @@ export function ClientNewPage() {
     canRestoreSession && savedSession?.draft
       ? restoreClientDraftFromSession(savedSession.draft, routeState)
       : createEmptyDraft(Boolean(routeState?.parentClientId)),
+  )
+  const [isDraftRestored, setDraftRestored] = useValueState(
+    () => canRestoreSession && hasNewClientDraftContent(savedSession?.draft),
   )
   const [error, setError] = useValueState<string | null>(null)
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
@@ -664,7 +668,38 @@ export function ClientNewPage() {
     })
   }
 
+  function startOver() {
+    pendingDocumentsRef.current = []
+    pendingDiscountDraftRef.current = null
+    setFormErrors({})
+    setError(null)
+    setDraftRestored(false)
+    setDraft(initializeDraftRole(createEmptyDraft(Boolean(routeState?.parentClientId)), clientTypes, routeState?.clientType))
+    goToStep('role')
+  }
+
   function goNext() {
+    if (currentStep === 'role' && !draft.ClientInRole.ClientTypeRole) {
+      setError(t('Оберіть роль'))
+      return
+    }
+
+    const stepErrors = errorsForStep(
+      {
+        ...newClientRequiredErrors(draft, t('Вкажіть назву клієнта')),
+        ...validateClientForm(draft, role, t('Забагато символів'), { t }),
+      },
+      currentStep,
+      NEW_CLIENT_FIELD_STEPS,
+    )
+
+    if (Object.keys(stepErrors).length > 0) {
+      setFormErrors(stepErrors)
+      setError(t('Перевірте правильність заповнення форми'))
+      return
+    }
+
+    setError(null)
     const currentIndex = visibleSteps.indexOf(currentStep)
     const nextStep = visibleSteps[currentIndex + 1]
 
@@ -706,7 +741,10 @@ export function ClientNewPage() {
     }
 
     const draftToSubmit = applyPendingDiscountDraft(draft, pendingDiscountDraftRef.current) as ClientDraft
-    const validationErrors = validateClientForm(draftToSubmit, role, t('Забагато символів'), { t })
+    const validationErrors = {
+      ...newClientRequiredErrors(draftToSubmit, t('Вкажіть назву клієнта')),
+      ...validateClientForm(draftToSubmit, role, t('Забагато символів'), { t }),
+    }
     setFormErrors(validationErrors)
 
     if (Object.keys(validationErrors).length > 0) {
@@ -828,6 +866,22 @@ export function ClientNewPage() {
       onClose={closeWizard}
     >
       <Stack gap="md">
+        {isDraftRestored && (
+          <Alert color="blue" variant="light">
+            <Group justify="space-between" gap="xs" wrap="wrap">
+              <Text size="sm">{t('Відновлено незавершену чернетку клієнта.')}</Text>
+              <Group gap="xs">
+                <Button size="xs" variant="subtle" onClick={() => setDraftRestored(false)}>
+                  {t('Продовжити')}
+                </Button>
+                <Button size="xs" variant="light" color="gray" onClick={startOver}>
+                  {t('Почати спочатку')}
+                </Button>
+              </Group>
+            </Group>
+          </Alert>
+        )}
+
         {(error || lookupsError) && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error || lookupsError}
@@ -921,7 +975,6 @@ export function ClientNewPage() {
                 <Button
                   color={CREATE_ACTION_COLOR}
                   rightSection={<ChevronRight size={16} />}
-                  disabled={currentStep === 'role' && !draft.ClientInRole.ClientTypeRole}
                   onClick={goNext}
                 >
                   {t('Далі')}

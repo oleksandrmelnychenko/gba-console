@@ -238,9 +238,13 @@ function prepareAgreementSavePayload(agreement: Agreement): Agreement {
     ...payload,
     ...(payload.Currency ? { Currency: compactCurrency(payload.Currency) } : {}),
     ...(payload.Organization ? { Organization: compactOrganization(payload.Organization) } : {}),
-    ...(payload.Pricing ? { Pricing: compactPricing(payload.Pricing) } : {}),
+    ...(payload.Pricing ? { Pricing: compactPricing(payload.Pricing), PricingId: payload.Pricing.Id } : {}),
     ...(payload.ProviderPricing ? { ProviderPricing: compactProviderPricing(payload.ProviderPricing) } : {}),
-    ...(payload.PromotionalPricing ? { PromotionalPricing: compactPricing(payload.PromotionalPricing) } : {}),
+    /* The picked «Акційний тип ціни» is the source of truth: the new-client route stores
+       only PromotionalPricingId, and a stale id next to another object is refused. */
+    ...(payload.PromotionalPricing
+      ? { PromotionalPricing: compactPricing(payload.PromotionalPricing), PromotionalPricingId: payload.PromotionalPricing.Id }
+      : { PromotionalPricing: undefined, PromotionalPricingId: undefined }),
   }
 }
 

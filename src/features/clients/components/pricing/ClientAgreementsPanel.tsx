@@ -612,7 +612,9 @@ function createAgreementDraft(
     AmountDebt: 0,
     NumberDaysDebt: 0,
     PrePaymentPercentages: 0,
-    IsPrePaymentFull: true,
+    /* Buyers have no prepayment control in the form; «full prepayment» is only a
+       supplier term the user picks (seed buyer agreements carry false). */
+    IsPrePaymentFull: isProvider,
     FromDate: now,
     ToDate: nextYear,
     Organization: organizations[0],

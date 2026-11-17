@@ -157,6 +157,24 @@ describe('client form API contracts', () => {
     })
   })
 
+  it('sends the picked promotional price type as PromotionalPricingId (the create route reads only the id)', async () => {
+    const promo = { Id: 11, Name: 'QA ЦО2' }
+    const client: Client = {
+      FullName: 'Client',
+      ClientAgreements: [
+        { Agreement: { Name: 'A', Pricing: { Id: 10, Name: 'ЦО2' }, PricingId: 99, PromotionalPricing: promo } },
+        { Agreement: { Name: 'B', Pricing: { Id: 10, Name: 'ЦО2' }, PromotionalPricingId: 11 } },
+      ],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await createClient(client)
+
+    const body = apiRequestMock.mock.calls[0][1]?.body as Client
+    expect(body.ClientAgreements?.[0].Agreement).toMatchObject({ PricingId: 10, PromotionalPricingId: 11 })
+    expect(body.ClientAgreements?.[1].Agreement?.PromotionalPricingId).toBeUndefined()
+  })
+
   it('creates a root client without a parent id query value', async () => {
     const client: Client = { FullName: 'Client' }
     apiRequestMock.mockResolvedValueOnce(client)

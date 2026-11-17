@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { withLookupTimeout } from './lookupTimeout'
 import { currencyCreateOperation } from './currencyMutationOperation'
 import { transporterCreateOperation } from '../../transporters/api/transporterMutationOperation'
 import {
@@ -207,7 +208,10 @@ export async function deleteClientResourceOrganization(netId: string): Promise<C
 }
 
 export async function getClientResourcePricings(): Promise<ClientResourcePricing[]> {
-  return getResourceList<ClientResourcePricing>('/pricings/all')
+  return withLookupTimeout(
+    getResourceList<ClientResourcePricing>('/pricings/all'),
+    'Сервер не повернув список типів цін. Спробуйте ще раз.',
+  )
 }
 
 export async function getClientResourceBasePricings(): Promise<ClientResourcePricing[]> {

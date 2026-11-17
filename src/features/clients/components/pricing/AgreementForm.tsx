@@ -28,6 +28,7 @@ import {
 } from './pricingNames'
 import type { Agreement, Currency, Organization, Pricing, ProviderPricing } from '../../types'
 import { organizationHasVat } from './organizationVat'
+import { filterPricingsByVat, toOptions, toMoneyAmount, toWholeDays, vatAccountingPatch } from './agreementFormRules'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDateInput } from '../../../../shared/ui/AppDateInput'
 
@@ -76,13 +77,20 @@ export function AgreementForm({
     () =>
       isProvider || (canOverridePricingScope && isRetailClient)
         ? pricings
-        : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting)),
+        : filterPricingsByVat(pricings, agreement.WithVATAccounting),
     [agreement.WithVATAccounting, canOverridePricingScope, isProvider, isRetailClient, pricings],
   )
   const organizationOptions = useMemo(() => toOptions(organizations), [organizations])
   const currencyOptions = useMemo(() => toOptions(currencies), [currencies])
   const pricingOptions = useMemo(() => toOptions(visiblePricings), [visiblePricings])
-  const promotionalPricingOptions = useMemo(() => toOptions(promotionalPricings), [promotionalPricings])
+  const visiblePromotionalPricings = useMemo(
+    () =>
+      isProvider || (canOverridePricingScope && isRetailClient)
+        ? promotionalPricings
+        : filterPricingsByVat(promotionalPricings, agreement.WithVATAccounting),
+    [agreement.WithVATAccounting, canOverridePricingScope, isProvider, isRetailClient, promotionalPricings],
+  )
+  const promotionalPricingOptions = useMemo(() => toOptions(visiblePromotionalPricings), [visiblePromotionalPricings])
 
   const providerPricing = agreement.ProviderPricing
 
@@ -248,15 +256,19 @@ export function AgreementForm({
               <Group grow align="flex-start">
                 <NumberInput
                   allowNegative={false}
+                  decimalScale={2}
                   label={t('Сума боргу')}
+                  min={0}
                   value={agreement.AmountDebt ?? ''}
-                  onChange={(value) => onChange({ AmountDebt: toNumber(value) })}
+                  onChange={(value) => onChange({ AmountDebt: toMoneyAmount(value) })}
                 />
                 <NumberInput
+                  allowDecimal={false}
                   allowNegative={false}
                   label={t('Кількість днів боргу')}
+                  min={0}
                   value={agreement.NumberDaysDebt ?? ''}
-                  onChange={(value) => onChange({ NumberDaysDebt: toNumber(value) })}
+                  onChange={(value) => onChange({ NumberDaysDebt: toWholeDays(value) })}
                 />
               </Group>
             )}
@@ -344,7 +356,7 @@ export function AgreementForm({
                     checked={Boolean(agreement.WithVATAccounting)}
                     disabled={!canEditAccountingSettings}
                     label={t('Облік з ПДВ')}
-                    onChange={(event) => onChange({ WithVATAccounting: event.currentTarget.checked, Pricing: undefined })}
+                    onChange={(event) => onChange(vatAccountingPatch(event.currentTarget.checked, pricings, promotionalPricings))}
                   />
                 )}
 
@@ -473,19 +485,6 @@ export function AgreementForm({
       PromotionalPricing: findByName(promotionalPricings, PRICING_NAME_BULK_TWO),
     })
   }
-}
-
-function toOptions(items: Array<{ Id?: number; Name?: string }>): Array<{ label: string; value: string }> {
-  return items.reduce<Array<{ label: string; value: string }>>((options, item) => {
-    if (typeof item.Id === 'number' && item.Id > 0) {
-      options.push({
-        label: item.Name || '',
-        value: String(item.Id),
-      })
-    }
-
-    return options
-  }, [])
 }
 
 function findById<T extends { Id?: number }>(items: T[], value: string | null): T | undefined {

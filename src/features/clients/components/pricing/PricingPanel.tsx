@@ -116,6 +116,7 @@ export function PricingPanel({
   const [pricings, setPricings] = useState<Pricing[]>([])
   const [isLoadingLookups, setLoadingLookups] = useState(true)
   const [lookupsError, setLookupsError] = useState<string | null>(null)
+  const [lookupsAttempt, setLookupsAttempt] = useState(0)
   const [selectedAgreementNetId, setSelectedAgreementNetId] = useState<string | undefined>(undefined)
   const [exportDocument, setExportDocument] = useState<ClientPrintDocument | null>(null)
   const [isExporting, setIsExporting, tryStartIsExporting] = useBusyState()
@@ -170,7 +171,7 @@ export function PricingPanel({
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [t, lookupsAttempt])
 
   const highlightedAgreement = useMemo(
     () => clientAgreements.find((clientAgreement) => clientAgreement.Agreement?.NetUid === selectedAgreementNetId),
@@ -522,7 +523,12 @@ export function PricingPanel({
     <Stack className="app-compact-form" gap={10}>
       {lookupsError && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-          {lookupsError}
+          <Group justify="space-between" gap="xs" wrap="wrap">
+            <Text size="sm">{lookupsError}</Text>
+            <Button size="xs" variant="light" color="red" onClick={() => setLookupsAttempt((value) => value + 1)}>
+              {t('Повторити завантаження')}
+            </Button>
+          </Group>
         </Alert>
       )}
 

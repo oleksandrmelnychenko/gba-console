@@ -1046,7 +1046,10 @@ export function ClientEditPage() {
           : t('Картку збережено'),
       })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти картку'))
+      const message = saveError instanceof Error ? saveError.message : t('Не вдалося зберегти картку')
+      setError(message)
+      /* The page alert can be scrolled out of view; the unsaved changes stay in the form. */
+      notifications.show({ color: 'red', message })
     } finally {
       setSaving(false)
     }
