@@ -1050,6 +1050,21 @@
     box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.25);
     padding-left: 4px;
   }
+
+  /* The sticky Документи / Дії cell covers the right part of the first column, so the client name, sale
+     number and date are kept to the visible width and wrap instead of disappearing under it. */
+  .sales-ukraine-grid .sg-client-body {
+    max-width: calc(100vw - 220px);
+  }
+
+  .sales-ukraine-grid .sg-meta {
+    flex-wrap: wrap;
+  }
+
+  /* the wrapped rows are taller than the 58px minimum: the scrolling column must not squeeze them back */
+  .sales-ukraine-grid > .sales-grid-row {
+    flex-shrink: 0;
+  }
 }
 
 .sg-status {
