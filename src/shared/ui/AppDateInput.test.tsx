@@ -39,6 +39,12 @@ function setup(props: Partial<Parameters<typeof Harness>[0]> = {}) {
 }
 
 describe('AppDateInput', () => {
+  it('names the clear button for screen readers', () => {
+    setup({ initial: '2026-10-01' })
+    expect(screen.queryAllByRole('button').every((button) => Boolean(button.getAttribute('aria-label') || button.textContent?.trim()))).toBe(true)
+    expect(screen.getByRole('button', { name: 'Очистити дату' })).toBeTruthy()
+  })
+
   it('shows a native date value in the Ukrainian format', () => {
     const { input } = setup({ initial: '2026-10-01' })
     expect(input.value).toBe('01.10.2026')

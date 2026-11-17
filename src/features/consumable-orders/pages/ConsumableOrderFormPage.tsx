@@ -14,7 +14,9 @@ import {
   Stack,
   Text,
   Textarea,
-  TextInput } from '@mantine/core'
+  TextInput,
+  type ComboboxParsedItem,
+} from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, FileText, Plus, Save, Upload, X } from 'lucide-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
@@ -675,6 +677,22 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   const responsibleOptions = useMemo(() => toEntityOptions(responsibleUsers), [responsibleUsers])
   const productSelectOptions = useMemo(() => toProductOptions(productOptions), [productOptions])
   const productArticleOptions = useMemo(() => toProductArticleOptions(productOptions), [productOptions])
+  const productOptionLabels = useMemo(
+    () => new Map(productOptions.map((product) => [getEntityValue(product), joinTruthyParts([product.VendorCode, product.Name], ' - ')])),
+    [productOptions],
+  )
+  const renderProductOption = ({ option }: { option: { label: string; value: string } }) =>
+    productOptionLabels.get(option.value) || option.label
+  // Typing a code in Назва (or a name in Артикул) still finds the product.
+  const filterProductOptions = ({ options, search }: { options: ComboboxParsedItem[]; search: string }) => {
+    const query = search.trim().toLocaleLowerCase('uk')
+
+    return query
+      ? options.filter((option) =>
+          'value' in option
+          && (productOptionLabels.get(option.value) || option.label).toLocaleLowerCase('uk').includes(query))
+      : options
+  }
   const costMovementOptions = useMemo(() => toEntityOptions(costMovements, (item) => item?.OperationName || ''), [costMovements])
   const documentRows = order.ConsumablesOrderDocuments || []
   const currencyLabel = selectedAgreement?.Currency?.Code || selectedAgreement?.Currency?.Name || ''
@@ -1007,6 +1025,8 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
               disabled={isMutationLocked}
               label={t('Назва товару / послуги')}
               nothingFoundMessage={t('Нічого не знайдено')}
+              filter={filterProductOptions}
+              renderOption={renderProductOption}
               searchable
               searchValue={itemEditor.productSearch}
               value={getEntityValue(itemEditor.item.ConsumableProduct) || null}
@@ -1037,6 +1057,8 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
               disabled={isMutationLocked}
               label={t('Артикул')}
               nothingFoundMessage={t('Нічого не знайдено')}
+              filter={filterProductOptions}
+              renderOption={renderProductOption}
               searchable
               searchValue={itemEditor.articleSearch}
               value={getEntityValue(itemEditor.item.ConsumableProduct) || null}
@@ -1538,12 +1560,13 @@ function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = get
   return options
 }
 
+// The fields show only their own part (Назва / Артикул); the dropdown shows both.
 function toProductOptions(products: ConsumableProduct[]): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const product of products) {
     const value = getEntityValue(product)
-    const label = joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
+    const label = product.Name || joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
 
     if (value) {
       options.push({ label, value })
@@ -1558,7 +1581,7 @@ function toProductArticleOptions(products: ConsumableProduct[]): SelectOption[] 
 
   for (const product of products) {
     const value = getEntityValue(product)
-    const label = joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
+    const label = product.VendorCode || joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
 
     if (value) {
       options.push({ label, value })

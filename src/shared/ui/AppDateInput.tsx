@@ -106,6 +106,8 @@ export function AppDateInput({
       className={['app-date-input', rest.className].filter(Boolean).join(' ')}
       // Native date inputs can always be emptied; `required` is enforced by the form.
       clearable={!readOnly && !disabled}
+      // The clear button was announced as a bare «button».
+      clearButtonProps={{ 'aria-label': 'Очистити дату', ...rest.clearButtonProps }}
       data-mantine-stop-propagation={calendarOpen || undefined}
       dateParser={(input) => parseTypedDate(input, withTime)}
       disabled={disabled}
