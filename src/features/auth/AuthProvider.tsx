@@ -11,6 +11,7 @@ import {
   AUTH_SESSION_CHANGED_EVENT,
   AUTH_UNAUTHORIZED_EVENT,
   clearSession,
+  isSessionStorageEvent,
   readSession,
   saveSession,
 } from '../../shared/auth/session'
@@ -143,13 +144,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     const handleSessionChanged = () => syncSessionRef.current()
     const handleUnauthorized = () => unauthorizedLogoutRef.current()
+    // Sign-out or sign-in in another tab changes localStorage; follow it here.
+    const handleStorage = (event: StorageEvent) => {
+      if (isSessionStorageEvent(event)) syncSessionRef.current()
+    }
 
     window.addEventListener(AUTH_SESSION_CHANGED_EVENT, handleSessionChanged)
     window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+    window.addEventListener('storage', handleStorage)
 
     return () => {
       window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, handleSessionChanged)
       window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized)
+      window.removeEventListener('storage', handleStorage)
     }
   }, [])
 

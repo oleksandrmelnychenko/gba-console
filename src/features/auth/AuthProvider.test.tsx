@@ -161,4 +161,24 @@ describe('AuthProvider permission refresh', () => {
     })
     expect(localStorage.getItem('gba_console_session')).toBeNull()
   })
+it('follows a sign-out made in another tab', async () => {
+    mocks.getMyPermissions.mockResolvedValue({ catalogVersion: null, permissionKeys: [] })
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <AuthProvider>
+          <AuthLifecycleProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(screen.getByTestId('authenticated').textContent).toBe('true'))
+
+    act(() => {
+      localStorage.removeItem('gba_console_session')
+      window.dispatchEvent(new StorageEvent('storage', { key: 'gba_console_session', newValue: null }))
+    })
+
+    await waitFor(() => expect(screen.getByTestId('authenticated').textContent).toBe('false'))
+  })
 })
