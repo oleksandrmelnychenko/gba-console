@@ -177,7 +177,7 @@
 
 .competitor-radar__source-rank {
   color: var(--mantine-color-gray-6);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -186,7 +186,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 4px;
   color: var(--mantine-color-gray-6);
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 1px 4px;
@@ -276,7 +276,7 @@
 .competitor-radar__prompt-kicker {
   color: var(--mantine-color-orange-7);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
 }
@@ -298,7 +298,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 8px;
   white-space: nowrap;
@@ -309,7 +309,7 @@
   color: var(--mantine-color-gray-6);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 4px;
   white-space: nowrap;
@@ -356,7 +356,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 4px;
 }
@@ -376,7 +376,7 @@
   cursor: pointer;
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 4px;
   min-height: 28px;
@@ -404,7 +404,7 @@
 .competitor-radar__prompt-code {
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.65;
   margin: 0;
   max-height: 308px;
@@ -424,7 +424,7 @@
   border-top: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-6);
   display: flex;
-  font-size: 9px;
+  font-size: 10px;
   gap: 8px;
   padding: 8px 8px;
 }
@@ -493,7 +493,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 4px;
   padding: 4px 8px;
@@ -510,7 +510,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 8px;
 }
@@ -560,7 +560,7 @@
   color: var(--mantine-color-gray-6);
   display: flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   gap: 4px;
   margin: 4px 0 0 16px;
 }
@@ -591,7 +591,7 @@
 .competitor-radar__stat-label {
   color: var(--mantine-color-gray-6);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -638,7 +638,7 @@
 
 .competitor-radar__insight-label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -681,7 +681,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -704,7 +704,7 @@
 
 .competitor-radar__offer-meta {
   color: var(--mantine-color-gray-6);
-  font-size: 9px;
+  font-size: 10px;
   margin-top: 2px;
 }
 
@@ -729,7 +729,7 @@
 
 .competitor-radar__offer-price small {
   color: var(--mantine-color-gray-6);
-  font-size: 8px;
+  font-size: 10px;
   margin-top: 1px;
 }
 
@@ -776,7 +776,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 4px;
   padding: 4px 8px;
@@ -793,7 +793,7 @@
 }
 
 .competitor-radar__safe-note {
-  font-size: 9px;
+  font-size: 10px;
 }
 
 @media (max-width: 760px) {
@@ -850,7 +850,7 @@
   }
 
   .competitor-radar__prompt-code {
-    font-size: 9px;
+    font-size: 10px;
     max-height: 260px;
     padding: 8px;
   }

@@ -1483,7 +1483,7 @@ html[data-gba-env='qa'] .console-header {
 @media (max-width: 600px) {
   .console-footer .qa-build-label,
   .console-footer .qa-build-count { display: none; }
-  .console-footer .qa-build-ticker strong { font-size: 9px; }
+  .console-footer .qa-build-ticker strong { font-size: 10px; }
   .console-footer .data-sync-progress { min-width: 0; flex: 0 0 auto; max-width: 140px; }
   .console-footer .data-sync-progress-message { display: none; }
 }
@@ -1573,7 +1573,7 @@ html[data-gba-env='qa'] .console-header {
   border: 1px solid transparent;
   border-radius: 999px;
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 14px;
   font-weight: 600;
 }
@@ -1592,7 +1592,7 @@ html[data-gba-env='qa'] .console-header {
   color: var(--mantine-color-gray-6);
   background: var(--mantine-color-gray-1);
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 

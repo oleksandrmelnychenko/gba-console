@@ -340,7 +340,7 @@
 }
 
 .accounting-cash-flow-return__metric small {
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
@@ -486,7 +486,7 @@
 }
 
 .accounting-cash-flow-return__cell small {
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .accounting-cash-flow-return__storage {
@@ -551,7 +551,7 @@
     color: var(--mantine-color-gray-6);
     content: attr(data-label);
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
   }
 }

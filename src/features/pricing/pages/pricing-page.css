@@ -75,7 +75,7 @@
   color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   padding: 4px 8px;
 }
@@ -133,7 +133,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 4px;
   padding: 4px 8px;

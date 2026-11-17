@@ -355,7 +355,7 @@
   color: var(--mantine-color-gray-6);
   display: grid;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   grid-template-columns: 1fr 1fr 1fr;
 }
 
@@ -424,7 +424,7 @@
 
 .ai-fleet-matrix small {
   color: var(--mantine-color-gray-6);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
   margin-top: 2px;
 }

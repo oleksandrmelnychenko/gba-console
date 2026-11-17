@@ -240,7 +240,7 @@
 
 .sale-detail-info-section {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: var(--app-radius-md);
   min-width: 0;
   overflow: hidden;
 }
@@ -409,7 +409,7 @@
 
 .sale-detail-products {
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
+  border-radius: var(--app-radius-md);
   min-width: 0;
   overflow: hidden;
 }
