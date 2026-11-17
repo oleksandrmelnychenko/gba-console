@@ -746,10 +746,10 @@ function ClientSourceTreeNode({
           {shortName && shortName !== sourceName ? (
             <Text className="client-source-card__source-short-name">{shortName}</Text>
           ) : null}
-          <Group gap={8} mt={4}>
-            <TableChip tone="source" value={`${t('Код 1С')}: ${snapshot.SourceCode}`} />
-            {snapshot.RegionCode?.trim() && <TableChip value={`${t('Код регіону')}: ${snapshot.RegionCode.trim()}`} />}
-          </Group>
+          <div className="client-source-card__facts">
+            <span>{`${t('Код 1С')}: ${snapshot.SourceCode}`}</span>
+            {snapshot.RegionCode?.trim() && <span>{`${t('Код регіону')}: ${snapshot.RegionCode.trim()}`}</span>}
+          </div>
         </div>
       </div>
       <div className="client-source-card__agreements">
@@ -1078,11 +1078,11 @@ function SourceAgreementDetails({ agreement, t }: { agreement: ClientSourceAgree
   const period = from && to ? `${from} — ${to}` : from ? `${t('з')} ${from}` : to ? `${t('до')} ${to}` : null
 
   return (
-    <div className="client-source-card__agreement-details">
-      {agreement.OrganizationName?.trim() && <TableChip tone="product" value={`${t('Організація')}: ${agreement.OrganizationName.trim()}`} />}
-      {currency && <TableChip tone="source" value={`${t('Валюта')}: ${currencies[currency] || currency}`} />}
-      {agreement.TypePriceName?.trim() && <TableChip tone="product" value={`${t('Тип ціни')}: ${agreement.TypePriceName.trim()}`} />}
-      {period && <TableChip tone="document" value={`${t('Період')}: ${period}`} />}
+    <div className="client-source-card__agreement-details client-source-card__facts">
+      {agreement.OrganizationName?.trim() && <span>{`${t('Організація')}: ${agreement.OrganizationName.trim()}`}</span>}
+      {currency && <span>{`${t('Валюта')}: ${currencies[currency] || currency}`}</span>}
+      {agreement.TypePriceName?.trim() && <span>{`${t('Тип ціни')}: ${agreement.TypePriceName.trim()}`}</span>}
+      {period && <span>{`${t('Період')}: ${period}`}</span>}
     </div>
   )
 }

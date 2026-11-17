@@ -488,15 +488,25 @@
 
 
 
+/* Agreement state is carried by its badge alone; the row stays neutral so
+   an expired contract does not paint the whole card red. */
 .client-source-card__agreement.is-deleted,
 .client-source-card__agreement.is-expired {
-  border-color: var(--mantine-color-red-2);
-  color: var(--mantine-color-red-9);
+  color: var(--mantine-color-gray-6);
 }
 
-.client-source-card__agreement.is-future {
-  border-color: var(--mantine-color-yellow-3);
-  color: var(--mantine-color-yellow-9);
+/* Codes and agreement terms read as one muted line of plain facts, not as a
+   row of coloured chips. */
+.client-source-card__facts {
+  color: var(--mantine-color-gray-6);
+  column-gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 4px;
+  row-gap: 4px;
 }
 
 .client-source-card__agreement-state {

@@ -50,7 +50,6 @@ import {
   getClientCount,
   getClientFilterItems,
   getClientIdentityAttentionBatchForRegistry,
-  getClientSourceQualityBatchForRegistry,
   getClientsForRegistry,
   getClientTypes,
   switchClientActiveStateForRegistry,
@@ -61,18 +60,15 @@ import type {
   ClientFilterItem,
   ClientIdentityAttentionSummary,
   ClientPrintDocument,
-  ClientSourceQualitySummary,
   ClientType,
 } from '../types'
 import { getClientSolvencyGaugeScores } from '../api/clientSolvencyApi'
 import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
-import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScoreSlim } from '../solvencyTypes'
 import { clientNetUidKey, indexByClientNetUid } from '../clientNetUidIndex'
 import { getClientIdentityAttentionTitle } from '../clientIdentityAttentionMessage'
 import { getClientFolderSelection, isClientFolder } from '../clientFolder'
 import { useClientSourceOwnership } from '../clientSourceOwnership'
-import { useSystemOfRecordCutover } from '../../../shared/system-of-record/systemOfRecordCutover'
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -110,7 +106,6 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnOrder: [
     'status',
     'client',
-    'sourceQuality',
     'solvency',
     'role',
     'tin',
@@ -123,7 +118,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
     'actions',
   ],
   columnPinning: {
-    left: ['status', 'client', 'sourceQuality', 'solvency'],
+    left: ['status', 'client', 'solvency'],
   },
   columnVisibility: {
     actions: false,
@@ -172,10 +167,6 @@ function useClientsPageModel() {
     () => new Map(),
   )
   const [identityAttentionError, setIdentityAttentionError] = useValueState<string | null>(null)
-  const [sourceQuality, setSourceQuality] = useValueState<Map<string, ClientSourceQualitySummary>>(
-    () => new Map(),
-  )
-  const [sourceQualityError, setSourceQualityError] = useValueState<string | null>(null)
   const [attentionSelection, setAttentionSelection] = useValueState<ClientAttentionSelection | null>(null)
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
@@ -281,11 +272,7 @@ function useClientsPageModel() {
     solvencyScoresError,
     identityAttention,
     openIdentityAttention,
-    sourceQuality,
-    openClientStructure,
     canOpenActions,
-    canOpenIdentityReview,
-    canOpenStructure,
   )
   const solvencyClientIds = useMemo(
     () => clients.map((client) => client.Id).filter((id): id is number => typeof id === 'number'),
@@ -407,45 +394,6 @@ function useClientsPageModel() {
       controller.abort()
     }
   }, [canOpenIdentityReview, identityClientNetIdsKey, setIdentityAttention, setIdentityAttentionError, t])
-  useEffect(() => {
-    if (!canOpenIdentityReview || !identityClientNetIdsKey) {
-      setSourceQuality(new Map())
-      setSourceQualityError(null)
-      return
-    }
-
-    const controller = new AbortController()
-    let cancelled = false
-
-    async function loadSourceQuality() {
-      try {
-        const items = await getClientSourceQualityBatchForRegistry(
-          identityClientNetIdsKey.split(','),
-          controller.signal,
-        )
-        if (cancelled) {
-          return
-        }
-
-        setSourceQuality(indexByClientNetUid(items))
-        setSourceQualityError(null)
-      } catch (loadError) {
-        if (!cancelled) {
-          setSourceQuality(new Map())
-          setSourceQualityError(
-            loadError instanceof Error ? loadError.message : t('Маркери походження даних недоступні'),
-          )
-        }
-      }
-    }
-
-    void loadSourceQuality()
-
-    return () => {
-      cancelled = true
-      controller.abort()
-    }
-  }, [canOpenIdentityReview, identityClientNetIdsKey, setSourceQuality, setSourceQualityError, t])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -747,7 +695,6 @@ function useClientsPageModel() {
     searchInputRef,
     searchValue,
     selectedClient,
-    sourceQualityError,
     sorting,
     structureClient,
     handleExport,
@@ -839,7 +786,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     searchInputRef,
     searchValue,
     selectedClient,
-    sourceQualityError,
     sorting,
     structureClient,
     handleExport,
@@ -933,11 +879,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         {identityAttentionError && (
           <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
             {identityAttentionError}
-          </Alert>
-        )}
-        {sourceQualityError && (
-          <Alert className="clients-page__alert" color="orange" icon={<CircleAlert size={18} />} variant="light">
-            {sourceQualityError}
           </Alert>
         )}
 
@@ -1193,14 +1134,9 @@ function useClientColumns(
   solvencyScoresError: string | null,
   identityAttention: Map<string, ClientIdentityAttentionSummary>,
   onOpenIdentityAttention: (client: Client, attention: ClientIdentityAttentionSummary) => void,
-  sourceQuality: Map<string, ClientSourceQualitySummary>,
-  onOpenStructure: (client: Client) => void,
   canOpenActions: boolean,
-  canOpenIdentityReview: boolean,
-  canOpenStructure: boolean,
 ) {
   const { t } = useI18n()
-  const { isActive: afterCutover } = useSystemOfRecordCutover()
 
   return useMemo<DataTableColumn<Client>[]>(
     () => [
@@ -1239,24 +1175,6 @@ function useClientColumns(
             />
           )
         },
-      },
-      {
-        id: 'sourceQuality',
-        header: afterCutover ? t('Походження') : t('Дані 1С'),
-        width: 118,
-        minWidth: 108,
-        maxWidth: 132,
-        align: 'center',
-        enableSorting: false,
-        cell: (client) => canOpenIdentityReview ? (
-          <ClientSourceQualityBadge
-            quality={client.NetUid
-              ? sourceQuality.get(clientNetUidKey(client.NetUid))
-              : undefined}
-            t={t}
-            onClick={canOpenStructure ? () => onOpenStructure(client) : undefined}
-          />
-        ) : null,
       },
       {
         id: 'solvency',
@@ -1382,17 +1300,12 @@ function useClientColumns(
       },
     ],
     [
-      afterCutover,
       identityAttention,
       canOpenActions,
-      canOpenIdentityReview,
-      canOpenStructure,
       onOpenActions,
       onOpenIdentityAttention,
-      onOpenStructure,
       solvencyScores,
       solvencyScoresError,
-      sourceQuality,
       t,
     ],
   )
