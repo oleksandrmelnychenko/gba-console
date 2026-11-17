@@ -130,6 +130,7 @@ export function SyncControl() {
   const isSessionStartBlocked = isStartBlocked || !minimumDate
   const activeRange = state.dateRanges[state.mode]
   const activeRangeErrors = validateSyncDateRange(activeRange, today, minimumDate)
+  const hasNoSyncTypes = getSessionDocumentTypes(state.mode, state.selectedDailyDocumentTypes).length === 0
 
   function requestSync(mode: SyncMode) {
     const types = getSessionDocumentTypes(mode, state.selectedDailyDocumentTypes)
@@ -334,9 +335,15 @@ export function SyncControl() {
             />
           ) : (
             <Group justify="flex-end" className="sync-action-bar">
+              {hasNoSyncTypes ? (
+                <Text id="sync-no-types-hint" size="xs" c="dimmed" role="status">
+                  {t('Оберіть хоча б один тип документів для синхронізації')}
+                </Text>
+              ) : null}
               <Button
+                aria-describedby={hasNoSyncTypes ? 'sync-no-types-hint' : undefined}
                 color={CREATE_ACTION_COLOR}
-                disabled={isSessionStartBlocked}
+                disabled={isSessionStartBlocked || hasNoSyncTypes}
                 leftSection={<Play size={16} strokeWidth={1.9} />}
                 loading={state.isStarting}
                 onClick={() => requestSync(state.mode)}
