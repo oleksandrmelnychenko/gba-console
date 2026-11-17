@@ -47,19 +47,24 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-it('asks before deleting a rule and deletes nothing when the user declines', async () => {
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+it('asks in the console dialog (not window.confirm) and deletes nothing when the user declines', async () => {
+  const confirm = vi.spyOn(window, 'confirm')
   renderPanel()
   fireEvent.click(await screen.findByRole('button', { name: 'Видалити' }))
 
-  expect(confirm).toHaveBeenCalledWith('Видалити правило списання «Списати по вазі»?')
+  expect(await screen.findByText('Видалити правило списання «Списати по вазі»?')).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
   expect(deleteProductWriteOffRule).not.toHaveBeenCalled()
 
-  confirm.mockReturnValue(true)
-  // The app-wide click guard releases the button once the first (declined) handler settles.
+  // The app-wide click guard releases the button once the first handler settles.
   await act(async () => {})
-  fireEvent.click(screen.getByRole('button', { name: 'Видалити' }))
+  fireEvent.click(screen.getAllByRole('button', { name: 'Видалити' })[0])
+  await screen.findByText('Видалити правило списання «Списати по вазі»?')
+  const dialogButtons = screen.getAllByRole('button', { name: 'Видалити' })
+  fireEvent.click(dialogButtons[dialogButtons.length - 1])
+
   await waitFor(() => expect(deleteProductWriteOffRule).toHaveBeenCalledWith('rule-1'))
+  expect(confirm).not.toHaveBeenCalled()
 })
 
 it('sends one rule for a double click on Додати', async () => {

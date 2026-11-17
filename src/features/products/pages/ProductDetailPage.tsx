@@ -2335,6 +2335,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [removingNetUid, setRemovingNetUid] = useState<string | null>(null)
   const removingRuleRef = useRef(false)
+  const [ruleToDelete, setRuleToDelete] = useState<ProductWriteOffRule | null>(null)
   const selectedProductGroup = useMemo(
     () => productGroups.find((group) => group.NetUid === selectedProductGroupNetUid) || null,
     [productGroups, selectedProductGroupNetUid],
@@ -2553,11 +2554,8 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         return
       }
 
-      if (!window.confirm(t('Видалити правило списання «{rule}»?', { rule: t(formatRuleType(rule.RuleType)) }))) {
-        return
-      }
-
       removingRuleRef.current = true
+      setRuleToDelete(null)
       setRemovingNetUid(rule.NetUid)
       setError(null)
 
@@ -2593,12 +2591,12 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
             disabled={!row.NetUid || Boolean(removingNetUid)}
             label={t('Видалити')}
             loading={removingNetUid === row.NetUid}
-            onClick={() => removeRule(row)}
+            onClick={() => setRuleToDelete(row)}
           />
         </PermissionGate>
       ),
     },
-  ], [removingNetUid, removeRule, t])
+  ], [removingNetUid, t])
 
   return (
     <div className="console-table-shell product-data-table-shell">
@@ -2656,6 +2654,20 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
           />
         </div>
       ) : null}
+      {/* The console's own confirmation instead of the browser's window.confirm. */}
+      <AppModal centered opened={Boolean(ruleToDelete)} size={420} title={t('Видалити правило списання')} onClose={() => setRuleToDelete(null)}>
+        <Stack gap={10}>
+          <Text size="sm">
+            {ruleToDelete ? t('Видалити правило списання «{rule}»?', { rule: t(formatRuleType(ruleToDelete.RuleType)) }) : ''}
+          </Text>
+          <AppModalFooter>
+            <Button variant="default" onClick={() => setRuleToDelete(null)}>{t('Скасувати')}</Button>
+            <Button color="red" loading={Boolean(removingNetUid)} onClick={() => { if (ruleToDelete) void removeRule(ruleToDelete) }}>
+              {t('Видалити')}
+            </Button>
+          </AppModalFooter>
+        </Stack>
+      </AppModal>
     </div>
   )
 }
