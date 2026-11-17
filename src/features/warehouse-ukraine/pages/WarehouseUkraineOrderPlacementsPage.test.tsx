@@ -245,4 +245,28 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
     expect(screen.queryByText('Ви впевнені?')).toBeNull()
     expect(apiMocks.createIncome).toHaveBeenCalledTimes(1)
   })
+
+  it('posts the income once while the reloaded order has not arrived yet', async () => {
+    renderPage()
+    expect(await screen.findByText('SKU-1')).toBeTruthy()
+
+    const openOrder = await apiMocks.getOrder.mock.results[0].value
+    let resolveReload: (order: unknown) => void = () => {}
+    apiMocks.getOrder.mockImplementationOnce(() => new Promise((resolve) => { resolveReload = resolve }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Оприходувати' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Підтвердити' }))
+    await waitFor(() => expect(apiMocks.createIncome).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(apiMocks.getOrder).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Оприходувати' }))
+    const confirm = screen.queryByRole('button', { name: 'Підтвердити' })
+    if (confirm) {
+      fireEvent.click(confirm)
+    }
+
+    expect(apiMocks.createIncome).toHaveBeenCalledTimes(1)
+    resolveReload({ ...openOrder, IsPlaced: true })
+    expect(await screen.findByText('Оприходувано')).toBeTruthy()
+  })
 })

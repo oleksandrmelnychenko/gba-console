@@ -247,6 +247,7 @@ function useOrderPlacementsModel() {
       } finally {
         if (!cancelled) {
           setLoading(false)
+          setPlacing(false)
         }
       }
     }
@@ -256,7 +257,7 @@ function useOrderPlacementsModel() {
     return () => {
       cancelled = true
     }
-  }, [id, reloadKey, setDirty, setError, setLoading, setNotFound, setOrder, setSelectedStorageId, setStorages, t])
+  }, [id, reloadKey, setDirty, setError, setLoading, setNotFound, setOrder, setPlacing, setSelectedStorageId, setStorages, t])
 
   const gridRows = useMemo(() => (order ? buildGridRows(order) : []), [order])
   const isBusy = isSaving || isPlacing
@@ -653,15 +654,16 @@ function useOrderPlacementsModel() {
         )
         notifications.show({ color: 'green', message: t('Оприходування виконано') })
         setConfirmPlacement(null)
+        /* The lock stays on until the reloaded order arrives (released by the
+           loader): until then the screen still shows the order as open. */
         setReloadKey((key) => key + 1)
       } catch (placeError) {
         /* Settle the «Ви впевнені?» confirm and say why it failed. */
         const message = userErrorText(placeError, t('Не вдалося виконати оприходування'))
+        setPlacing(false)
         setConfirmPlacement(null)
         setError(message)
         notifications.show({ color: 'red', message })
-      } finally {
-        setPlacing(false)
       }
     },
     [
