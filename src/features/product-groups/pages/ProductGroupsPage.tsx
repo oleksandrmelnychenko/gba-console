@@ -43,7 +43,7 @@ const PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['status', 'name'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300

@@ -79,7 +79,7 @@ const PRODUCT_DELIVERY_PROTOCOLS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['protocol'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function useProtocolsPageModel() {

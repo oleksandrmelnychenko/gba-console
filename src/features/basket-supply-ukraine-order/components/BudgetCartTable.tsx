@@ -67,7 +67,7 @@ export function BudgetCartTable({ items, maxHeight = 'calc(100vh - 300px)', prod
           quadrant: false,
           budgetPriority: false,
         },
-        density: 'normal',
+        density: 'compact',
       }}
       distributeAvailableWidth
       emptyText={t('Немає позицій')}

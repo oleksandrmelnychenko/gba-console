@@ -40,7 +40,7 @@ const ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function OnlineShopClientsPage() {

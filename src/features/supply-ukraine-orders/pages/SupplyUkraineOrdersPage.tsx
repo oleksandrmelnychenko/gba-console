@@ -102,7 +102,7 @@ const ORDERS_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
     additionalPercent: false,
     responsible: false,
   },
-  density: 'normal',
+  density: 'compact',
 }
 const ORDER_INVOICES_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
   columnOrder: ['invoice', 'invoiceDate', 'qty', 'netPrice', 'vatAmount', 'grossPrice', 'isPlaced'],
@@ -115,7 +115,7 @@ const ORDER_INVOICES_TABLE_DEFAULT_LAYOUT: DataTableDefaultLayout = {
     qty: 110,
     vatAmount: 120,
   },
-  density: 'normal',
+  density: 'compact',
 }
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

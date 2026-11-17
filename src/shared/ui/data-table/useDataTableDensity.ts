@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import type { DataTableDensity } from './types'
 
 const STORAGE_PREFIX = 'gba-data-table'
-const STANDARD_DENSITY_DEFAULT_VERSION = '1'
+const STANDARD_DENSITY_DEFAULT_VERSION = '2'
 
 function densityStorageKey(tableId: string) {
   return `${STORAGE_PREFIX}:${tableId}:density`
@@ -26,14 +26,15 @@ function readStoredDensity(tableId: string, fallback: DataTableDensity): DataTab
   if (!migrated) {
     // These page-level density controls predate the standard-density default
     // and use a standalone storage key instead of DataTable's layout object.
-    // Drop the old compact value once; compact choices made afterwards carry
-    // the version marker and remain an explicit user preference.
-    if (stored === 'compact') {
+    // Compact is now the standard: drop the old normal value once; normal
+    // choices made afterwards carry the version marker and remain an explicit
+    // user preference.
+    if (stored === 'normal') {
       window.localStorage.removeItem(storageKey)
     }
     window.localStorage.setItem(versionKey, STANDARD_DENSITY_DEFAULT_VERSION)
 
-    return stored === 'normal' ? stored : fallback
+    return stored === 'compact' ? stored : fallback
   }
 
   return stored === 'compact' || stored === 'normal' ? stored : fallback
@@ -44,7 +45,7 @@ function readStoredDensity(tableId: string, fallback: DataTableDensity): DataTab
  * Pass `density` to <DataTable density=... showDensityToggle={false} /> and render
  * a <DataTableDensityToggle /> wherever the page keeps its action buttons.
  */
-export function useDataTableDensity(tableId: string, fallback: DataTableDensity = 'normal') {
+export function useDataTableDensity(tableId: string, fallback: DataTableDensity = 'compact') {
   const [density, setDensityState] = useState<DataTableDensity>(() => readStoredDensity(tableId, fallback))
 
   const setDensity = useCallback(

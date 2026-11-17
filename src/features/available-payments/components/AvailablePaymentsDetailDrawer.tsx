@@ -1436,7 +1436,7 @@ function AvailablePaymentTaskList({
       <DataTable
         columns={columns}
         data={models}
-        defaultLayout={{ density: 'normal' }}
+        defaultLayout={{ density: 'compact' }}
         expandColumnLabels={{
           collapseRow: t('Згорнути деталі'),
           expandRow: t('Розгорнути деталі'),
@@ -1954,7 +1954,7 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
         <DataTable
           columns={columns}
           data={model.rows}
-          defaultLayout={{ density: 'normal' }}
+          defaultLayout={{ density: 'compact' }}
           emptyText={t('Дані рахунку відсутні')}
           getRowId={(row, rowIndex) => getInvoiceRowKey(model, row, rowIndex)}
           layoutVersion={4}
@@ -2138,7 +2138,7 @@ function CashFlowTab({
         <DataTable
           columns={columns}
           data={items}
-          defaultLayout={{ density: 'normal' }}
+          defaultLayout={{ density: 'compact' }}
           emptyText={t('Рух коштів відсутній')}
           getRowId={(item) => item.id}
           isLoading={!state || state.isLoading}

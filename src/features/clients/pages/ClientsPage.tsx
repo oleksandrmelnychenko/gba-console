@@ -128,7 +128,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnVisibility: {
     actions: false,
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 const CLIENT_CODE_SUBTEXT_STYLE = {
   display: 'block',

@@ -76,14 +76,14 @@ const RETURN_ITEMS_TABLE_LAYOUT = {
     left: ['vendorCode', 'product'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const BATCH_TABLE_LAYOUT = {
   columnPinning: {
     left: ['number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function SalesReturnClientPage() {

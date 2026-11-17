@@ -44,7 +44,7 @@
   position: relative;
   scroll-behavior: auto;
   scrollbar-color: var(--mantine-color-gray-4) transparent;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
 
@@ -346,16 +346,28 @@
   padding: var(--app-table-cell-py) var(--app-table-cell-px);
 }
 
-.data-table-density-compact .data-table-cell {
-  font-size: 12px;
+/* Both densities share one type size; density only changes row height. */
+.data-table-density-compact .data-table-cell,
+.data-table-density-normal .data-table-cell {
+  font-size: var(--app-table-font-size);
 }
 
-.data-table-density-normal .data-table-cell {
-  font-size: 13px;
+/* The secondary line under a value (date under a number, currency under a
+   sum, patronymic under a name) has one size everywhere: 12px. The
+   doubled class outranks feature rules such as `.x-amount-cell small`. */
+.data-table .data-table-cell :is(small, .app-table-meta) {
+  font-size: var(--app-table-meta-font-size);
+  line-height: var(--app-table-line-height);
 }
 
 .data-table-actions-column {
   text-align: center !important;
+}
+
+/* Icon buttons carry their own 4px hit-area inset, so the actions cell needs
+   only a 4px gutter: two icons fit a 60px column instead of 68px. */
+.data-table .data-table-actions-column.data-table-cell {
+  padding-inline: 4px;
 }
 
 .data-table-row-actions {
@@ -397,7 +409,7 @@
 }
 
 .data-table-cell .mantine-Badge-label {
-  font-size: 10px;
+  font-size: var(--app-table-chip-font-size);
   line-height: 1;
 }
 
@@ -548,7 +560,10 @@
   z-index: 4;
 }
 
+/* The chevron cell shares the row separator, so the grid line runs to the
+   table edge instead of starting after the expand column. */
 .data-table-expand-cell {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   box-shadow: none;
 }
 
@@ -574,8 +589,11 @@
   color: var(--brand-orange);
 }
 
+/* Expanded detail sits on white with a hairline frame: the striped and
+   hover fills belong to data rows, not to the nested content. */
 .data-table-expanded-cell {
-  background: var(--mantine-color-gray-0);
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
   padding: 0;
 }
 

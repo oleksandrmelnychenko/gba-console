@@ -273,28 +273,28 @@ const MOVEMENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['incomeDocumentNumber', 'documentType'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const INCOME_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['storageName', 'incomeToStorageNumber'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const OUTCOME_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'documentTypeName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const STORAGE_LOCATION_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['created', 'product'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const movementItemTypes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -1122,7 +1122,7 @@ export function HistoricalSourceMovementPanel({
         <DataTable
           columns={columns}
           data={activeError ? [] : anchors}
-          defaultLayout={{ columnPinning: { left: ['state', 'batchNumber'] }, density: 'normal' }}
+          defaultLayout={{ columnPinning: { left: ['state', 'batchNumber'] }, density: 'compact' }}
           emptyText={t('Архівних партій 1С у вибраному періоді не знайдено')}
           getRowCanExpand={(row) => row.Documents.length > 0}
           getRowId={(row) => row.AnchorKey}
@@ -1335,7 +1335,7 @@ function InformationalMovementContent({
           <DataTable
             columns={columns}
             data={rows}
-            defaultLayout={{ columnPinning: { left: ['state', 'product'] }, density: 'normal' }}
+            defaultLayout={{ columnPinning: { left: ['state', 'product'] }, density: 'compact' }}
             emptyText={getInformationalQueueEmptyText(queue, t)}
             getRowId={(row) => row.InfoKey}
             isLoading={isLoading}

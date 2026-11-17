@@ -28,7 +28,7 @@ const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150', '500']
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'productCode'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type FilterDraft = {

@@ -83,7 +83,7 @@ const ACCOUNTABLE_EXPENSES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['document'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function AccountableExpensesPage() {

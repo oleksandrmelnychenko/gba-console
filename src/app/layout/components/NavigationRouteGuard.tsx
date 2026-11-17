@@ -1,10 +1,11 @@
-import { Alert, Card, Stack, Text, Title, type MantineColor } from '@mantine/core'
+import { type MantineColor } from '@mantine/core'
 import { TriangleAlert } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import { isNavigationPathAllowed } from '../../../features/navigation/navigationUtils'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AccessState } from '../../../shared/ui/access-state/AccessState'
 
 type NavigationLocationState = {
   backgroundLocation?: {
@@ -60,7 +61,6 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
 function NavigationRouteState({
   color,
   description,
-  icon,
   title,
 }: {
   color: MantineColor
@@ -68,18 +68,5 @@ function NavigationRouteState({
   icon: ReactNode
   title: string
 }) {
-  return (
-    <Stack gap="lg">
-      <Card withBorder padding="lg" radius="md">
-        <Alert color={color} icon={icon} variant="light">
-          <Title order={3} size="h4">
-            {title}
-          </Title>
-          <Text mt={8} size="sm">
-            {description}
-          </Text>
-        </Alert>
-      </Card>
-    </Stack>
-  )
+  return <AccessState description={description} title={title} tone={color === 'red' ? 'danger' : 'neutral'} />
 }

@@ -45,7 +45,7 @@ const PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT = {
     left: ['type', 'name'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type TypeFilter = 'all' | '0' | '1' | '2'

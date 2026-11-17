@@ -210,7 +210,7 @@ type ResourceAction<T> =
 
 const CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {},
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ResourceDataTableProps<TData extends ClientResourceEntity> = {

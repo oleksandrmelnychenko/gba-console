@@ -157,7 +157,6 @@ export function DashboardPage() {
           {showsSharedPeriod && (
             <Group className="role-dashboard-period" gap={8} wrap="nowrap">
               <Box className="app-filter-field role-dashboard-period-presets">
-                <Text className="app-filter-label">{t('Період')}</Text>
                 <SegmentedControl
                   aria-label={t('Період')}
                   data={[

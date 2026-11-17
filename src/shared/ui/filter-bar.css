@@ -499,3 +499,20 @@
     margin-left: 0;
   }
 }
+
+/* Filter bars show no visible field labels: one label lifts the whole bar by
+   a row, and the value or placeholder already names the filter. The label
+   stays in the accessibility tree (screen readers, getByLabelText); put the
+   same text into the placeholder when the field can be empty. A bar of
+   bare numbers (limits, day counts) opts out with `.is-labelled`. */
+.app-filter-bar:not(.is-labelled) .mantine-InputWrapper-label {
+  block-size: 1px;
+  border: 0;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+}

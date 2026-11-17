@@ -24,7 +24,7 @@ import type { DashboardWorkspaceKey, DashboardWorkspaceMetric, DashboardWorkspac
 import { formatMetricValue, isAttentionMetric } from '../utils/metricView'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { MetricIcon } from './MetricIcon'
-import { hasCompleteMetricCoverage, metricTimeLabel } from '../utils/metricScope'
+import { hasCompleteMetricCoverage } from '../utils/metricScope'
 
 type WorkspaceAction = {
   description: string
@@ -176,13 +176,11 @@ function AttentionStatus({ error, summary, attention }: { error?: string | null;
       <CircleCheck aria-hidden="true" size={20} />
       <div>
         <Text fw={650} size="sm">{t('Відхилень у доступних показниках немає')}</Text>
-        <Text size="xs">{t('Перевірено лише наведені показники')}</Text>
       </div>
     </div>
   )
   return (
     <>
-      {!complete && <Text size="sm" c="orange">{t('Частину показників не вдалося перевірити')}</Text>}
       {attention.map((metric) => <AttentionItem key={metric.key} metric={metric} />)}
     </>
   )
@@ -210,12 +208,11 @@ function QueueAction({
 }
 
 function AttentionItem({ metric }: { metric: DashboardWorkspaceMetric }) {
-  const { t } = useI18n()
   const formatted = formatMetricValue(metric)
   const content = (
     <>
       <span aria-hidden="true" className="role-dashboard-attention-icon"><MetricIcon metric={metric} size={16} /></span>
-      <span className="role-dashboard-attention-label">{metric.label}<Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text></span>
+      <span className="role-dashboard-attention-label">{metric.label}</span>
       <span className="role-dashboard-attention-value">
         {formatted.value}
         {formatted.unit && <small>{formatted.unit}</small>}

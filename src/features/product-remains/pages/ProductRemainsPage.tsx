@@ -79,7 +79,7 @@ const BATCHES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'productIncomeNumber'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
@@ -87,21 +87,21 @@ const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'vendorCode', 'productName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCT_REMAIN_MOVEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['incomeDocumentNumber', 'documentType'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const BATCH_DETAILS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function getProductRemainsInitialTab(routeTab: string | undefined): ProductRemainsTab {

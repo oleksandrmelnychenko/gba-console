@@ -3557,7 +3557,7 @@ function ProductIncomeMovementsGrid({
       toolbarPortalTarget={toolbarPortalTarget}
       columns={columns}
       data={rows}
-      density="normal"
+      density="compact"
       emptyText={emptyText}
       getRowId={getIncomeMovementGridRowId}
       isLoading={isLoading}
@@ -3677,7 +3677,7 @@ function ProductOutcomeMovementsGrid({
       toolbarPortalTarget={toolbarPortalTarget}
       columns={columns}
       data={rows}
-      density="normal"
+      density="compact"
       emptyText={emptyText}
       fillAvailableWidth
       getRowId={getOutcomeMovementGridRowId}

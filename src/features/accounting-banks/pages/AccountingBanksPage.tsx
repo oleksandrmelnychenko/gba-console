@@ -37,7 +37,7 @@ const ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT = {
     left: ['name'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EMPTY_FORM_VALUES: AccountingBankFormValues = {

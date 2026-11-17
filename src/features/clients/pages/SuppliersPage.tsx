@@ -147,7 +147,7 @@ const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
     updated: false,
     comment: false,
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ActiveFilter = 'all' | 'active' | 'inactive'

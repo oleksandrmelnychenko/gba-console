@@ -92,7 +92,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['fromDate', 'number'],
     right: ['reassign', 'cancel'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -748,7 +748,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
               className="income-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
-              placeholder={t('Без фільтра')}
+              placeholder={t('Усі організації')}
               value={selectedOrganizationIds}
               onChange={onSetSelectedOrganizationIds}
             />

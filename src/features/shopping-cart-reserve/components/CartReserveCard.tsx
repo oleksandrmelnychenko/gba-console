@@ -26,7 +26,7 @@ import {
 } from '../utils'
 
 const TABLE_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function renderReserveExpandToggle({ isExpanded, label, onToggle }: DataTableExpandToggleOptions) {

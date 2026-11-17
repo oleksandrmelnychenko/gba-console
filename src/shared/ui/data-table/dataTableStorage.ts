@@ -17,7 +17,8 @@ export type DataTableLayout = {
 }
 
 const STORAGE_PREFIX = 'gba-data-table'
-const STANDARD_DENSITY_DEFAULT_VERSION = 1
+// v2: compact is the standard row height for every table.
+const STANDARD_DENSITY_DEFAULT_VERSION = 2
 
 export type NormalizedDataTableLayout = {
   columnOrder: ColumnOrderState
@@ -210,7 +211,7 @@ export function createDefaultDataTableLayout(
 }
 
 function normalizeDensity(density?: DataTableDensity): DataTableDensity {
-  return density === 'compact' ? 'compact' : 'normal'
+  return density === 'normal' ? 'normal' : 'compact'
 }
 
 function migrateStandardDensityDefault(
@@ -226,13 +227,13 @@ function migrateStandardDensityDefault(
     densityDefaultVersion: STANDARD_DENSITY_DEFAULT_VERSION,
   }
 
-  // Compact used to be the source default on a number of screens. It was
-  // persisted together with unrelated column preferences, so changing only
-  // defaultLayout could not switch existing browsers to the new standard
-  // density. Drop that stale value once while preserving the whole column
-  // layout. Any compact choice made after this migration is written with the
-  // version marker above and remains a real user preference.
-  if (migratedLayout.density === 'compact') {
+  // Normal used to be the default and was persisted together with unrelated
+  // column preferences, so changing only defaultLayout could not switch
+  // existing browsers to the compact standard. Drop that stale value once
+  // while preserving the whole column layout. Any normal choice made after
+  // this migration is written with the version marker above and remains a
+  // real user preference.
+  if (migratedLayout.density === 'normal') {
     delete migratedLayout.density
   }
 

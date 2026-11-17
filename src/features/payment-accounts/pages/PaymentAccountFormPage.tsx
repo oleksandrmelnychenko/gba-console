@@ -2186,7 +2186,7 @@ function ActivityTable<T>({
       columnPinning: columns.some((column) => column.rowActions)
         ? { right: columns.filter((column) => column.rowActions).map((column) => column.key) }
         : undefined,
-      density: 'normal',
+      density: 'compact',
     }),
     [columns],
   )

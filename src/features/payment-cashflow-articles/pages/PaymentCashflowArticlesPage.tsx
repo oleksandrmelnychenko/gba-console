@@ -33,7 +33,7 @@ const PAYMENT_CASHFLOW_ARTICLES_TABLE_DEFAULT_LAYOUT = {
     left: ['operationName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SEARCH_DEBOUNCE_MS = 350

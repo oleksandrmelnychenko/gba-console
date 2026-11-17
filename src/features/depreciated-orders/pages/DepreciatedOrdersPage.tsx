@@ -57,7 +57,7 @@ const DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

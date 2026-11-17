@@ -16,30 +16,30 @@ describe('readDataTableLayout density compatibility', () => {
     window.localStorage.removeItem(LEGACY_DENSITY_KEY)
   })
 
-  it('drops the legacy compact density during the standard-default migration', () => {
-    window.localStorage.setItem(LEGACY_DENSITY_KEY, 'compact')
+  it('drops the legacy normal density during the standard-default migration', () => {
+    window.localStorage.setItem(LEGACY_DENSITY_KEY, 'normal')
 
     expect(readDataTableLayout(TABLE_ID).density).toBeUndefined()
     expect(window.localStorage.getItem(LEGACY_DENSITY_KEY)).toBeNull()
   })
 
-  it('uses normal as the central table default', () => {
-    expect(createDefaultDataTableLayout(['name']).density).toBe('normal')
+  it('uses compact as the central table default', () => {
+    expect(createDefaultDataTableLayout(['name']).density).toBe('compact')
   })
 
   it('prefers density already stored in the table layout', () => {
-    window.localStorage.setItem(LAYOUT_KEY, JSON.stringify({ density: 'normal' }))
-    window.localStorage.setItem(LEGACY_DENSITY_KEY, 'compact')
+    window.localStorage.setItem(LAYOUT_KEY, JSON.stringify({ density: 'compact' }))
+    window.localStorage.setItem(LEGACY_DENSITY_KEY, 'normal')
 
-    expect(readDataTableLayout(TABLE_ID)).toMatchObject({ density: 'normal' })
+    expect(readDataTableLayout(TABLE_ID)).toMatchObject({ density: 'compact' })
   })
 
-  it('drops stale compact density while preserving versioned column layout state', () => {
+  it('drops stale normal density while preserving versioned column layout state', () => {
     window.localStorage.setItem(
       LAYOUT_KEY,
       JSON.stringify({
         columnOrder: ['obsolete-column'],
-        density: 'compact',
+        density: 'normal',
         version: 'old-version',
       }),
     )
@@ -47,11 +47,11 @@ describe('readDataTableLayout density compatibility', () => {
     expect(readCompatibleDataTableLayout(TABLE_ID, 'new-version').density).toBeUndefined()
   })
 
-  it('keeps compact when the user selects it after the migration', () => {
-    writeDataTableLayout(TABLE_ID, { density: 'compact', version: 'current-version' })
+  it('keeps normal when the user selects it after the migration', () => {
+    writeDataTableLayout(TABLE_ID, { density: 'normal', version: 'current-version' })
 
     expect(readCompatibleDataTableLayout(TABLE_ID, 'current-version')).toMatchObject({
-      density: 'compact',
+      density: 'normal',
       version: 'current-version',
     })
   })
@@ -62,7 +62,7 @@ describe('readDataTableLayout density compatibility', () => {
       columnVisibility: { amount: false, name: true },
       columnPinning: { left: ['status'], right: ['actions'] },
       columnSizing: { amount: 184, name: 312 },
-      density: 'normal',
+      density: 'compact',
       version: 'current-version',
     })
 
@@ -71,7 +71,7 @@ describe('readDataTableLayout density compatibility', () => {
       columnVisibility: { amount: false, name: true },
       columnPinning: { left: ['status'], right: ['actions'] },
       columnSizing: { amount: 184, name: 312 },
-      density: 'normal',
+      density: 'compact',
       version: 'current-version',
     })
   })
@@ -80,12 +80,12 @@ describe('readDataTableLayout density compatibility', () => {
     writeDataTableLayout(TABLE_ID, {
       columnVisibility: { amount: false },
       columnSizing: { amount: 184 },
-      density: 'compact',
+      density: 'normal',
       version: 'old-version',
     })
 
     expect(readCompatibleDataTableLayout(TABLE_ID, 'new-version')).toEqual({
-      density: 'compact',
+      density: 'normal',
     })
   })
 })

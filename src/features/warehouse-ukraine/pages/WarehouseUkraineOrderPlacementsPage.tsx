@@ -61,7 +61,7 @@ const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'name'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function columnKey(column: DynamicProductPlacementColumn): string {
@@ -209,7 +209,7 @@ function useOrderPlacementsModel() {
   const [incomeDate, setIncomeDate] = useValueState(() => formatLocalDate(new Date()))
   const [confirmPlacement, setConfirmPlacement] = useValueState<{ isFullPlaced: boolean } | null>(null)
   const [isPlacing, setPlacing] = useValueState(false)
-  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-placements', 'normal')
+  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-placements', 'compact')
 
   useEffect(() => {
     if (!id) {

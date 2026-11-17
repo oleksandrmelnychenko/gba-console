@@ -56,7 +56,7 @@ export function CockpitToolbar({
         <div className="app-filter-fields">
           <AppDateInput
             className="cockpit-date-filter"
-            label={t('Дата розрахунку плану')}
+            aria-label={t('Дата розрахунку плану')}
             type="date"
             value={asOfDate ?? ''}
             style={{ flex: '0 1 150px' }}

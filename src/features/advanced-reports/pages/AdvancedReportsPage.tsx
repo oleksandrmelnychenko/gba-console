@@ -65,7 +65,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['fromDate', 'number'],
     right: ['operations'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

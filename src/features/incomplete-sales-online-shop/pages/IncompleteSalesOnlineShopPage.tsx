@@ -102,7 +102,7 @@ const INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT = {
     left: ['created', 'client'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const STATUS_COLORS: Record<IncompleteSalesOnlineShopStatus, string> = {

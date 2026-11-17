@@ -31,7 +31,7 @@ const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'name'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ProductGroupProductsPanelProps = {

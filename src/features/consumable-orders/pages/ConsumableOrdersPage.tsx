@@ -77,7 +77,7 @@ const CONSUMABLE_ORDERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['document'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function ConsumableOrdersPage() {

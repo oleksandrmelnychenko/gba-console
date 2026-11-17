@@ -38,7 +38,7 @@ const BALANCES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
@@ -270,7 +270,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
               classNames={{ dropdown: 'balances-toolbar-dropdown' }}
               comboboxProps={{ width: 'max-content', position: 'bottom-start' }}
             data={typeOptions}
-            label={t('Тип контрагента')}
+            aria-label={t('Тип контрагента')}
             value={String(filterDraft.type)}
             onChange={(value) =>
               applyFilters({

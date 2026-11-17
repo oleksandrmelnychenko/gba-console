@@ -393,7 +393,7 @@ function ProcureDashboardTabContent() {
           </div>
         </div>
         <DataTable columns={topItemColumns} data={filteredItems} pagination={{ pageIndex: page - 1, pageSize }}
-          defaultLayout={{ columnPinning: { left: ['product'] }, density: 'normal' }} distributeAvailableWidth
+          defaultLayout={{ columnPinning: { left: ['product'] }, density: 'compact' }} distributeAvailableWidth
           emptyText={t('У добірці таких позицій немає')} getRowId={(item) => String(item.product_id)} isLoading={isLoading}
           layoutVersion={6} maxHeight={520} minWidth={hasProducerData ? 1200 : 1030} showLayoutControls
           tableId="basket-supply-ukraine-order-procure-top-items" toolbarPortalTarget={tableToolbarTarget}

@@ -21,7 +21,7 @@ const SEARCH_DEBOUNCE_MS = 200
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'invoiceNumber'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type FilterDraft = {

@@ -108,7 +108,7 @@ const ACCOUNTING_CASH_FLOW_TABLE_LAYOUT = {
   columnPinning: {
     left: ['document'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const TYPE_LABELS: Record<number, string> = {

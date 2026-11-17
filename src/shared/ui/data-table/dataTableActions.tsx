@@ -75,9 +75,18 @@ export function isDataTableActionColumn<TData>(
   return column.rowActions === true || ACTION_COLUMN_ID_PATTERN.test(column.id)
 }
 
+/** Row ordinal columns (`id: 'index'`, a 1..N counter) are not shown in any
+ *  table: they cost width and repeat what the row position already says. */
+export function isRowOrdinalColumn<TData>(column: DataTableColumn<TData>): boolean {
+  return column.id === 'index'
+}
+
 export function prepareDataTableColumns<TData>(
-  columns: DataTableColumn<TData>[],
+  allColumns: DataTableColumn<TData>[],
 ): DataTableColumn<TData>[] {
+  const columns = allColumns.some(isRowOrdinalColumn)
+    ? allColumns.filter((column) => !isRowOrdinalColumn(column))
+    : allColumns
   const actionColumns = columns.filter(isDataTableActionColumn)
 
   if (actionColumns.length === 0) {

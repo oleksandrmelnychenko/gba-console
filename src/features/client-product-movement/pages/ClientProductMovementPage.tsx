@@ -58,11 +58,11 @@ type SelectOption = {
 }
 
 const MOVEMENT_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const MOVEMENT_ITEMS_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EURO_CURRENCY_CODE = 'EUR'
@@ -341,13 +341,14 @@ export function ClientProductMovementPage() {
               dropdownClassName="client-product-movement-filter-dropdown"
               data={organizationOptions}
               label={t('Організація')}
-              placeholder={t('Усі')}
+              placeholder={t('Усі організації')}
               value={filterDraft.organizationIds}
               onChange={(value) => applyFilters({ ...filterDraft, organizationIds: value })}
             />
             <TextInput
               className="client-product-movement-article-filter"
               label={t('Артикул')}
+              placeholder={t('Артикул')}
               value={filterDraft.article}
               onChange={(event) => setFilterDraft({ ...filterDraft, article: event.currentTarget.value })}
               onKeyDown={(event) => {

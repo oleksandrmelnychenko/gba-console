@@ -69,7 +69,7 @@ const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['name'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function SupplierOrganizationsPage() {

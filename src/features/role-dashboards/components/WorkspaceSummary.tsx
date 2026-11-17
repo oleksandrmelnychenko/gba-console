@@ -12,7 +12,6 @@ import { MetricIcon } from './MetricIcon'
 import { metricDrilldownRoute, metricTimeLabel } from '../utils/metricScope'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
-const updatedAtFormatter = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' })
 
 export function WorkspaceSummary({
   state,
@@ -35,9 +34,6 @@ export function WorkspaceSummary({
 
   const refreshStatus = (
     <div className="role-dashboard-refresh">
-      <Text className="role-dashboard-updated" aria-live="polite">
-        {summary?.generatedAtUtc ? `${t('Розраховано о')} ${formatUpdatedAt(summary.generatedAtUtc)}` : t('Оновлення…')}
-      </Text>
       <Tooltip label={t('Оновити показники')}>
         <ActionIcon
           aria-label={t('Оновити показники')}
@@ -106,7 +102,6 @@ function MetricCard({ metric, onOpen, compact }: { metric: DashboardWorkspaceMet
         <Tooltip multiline w={380} label={<MetricEvidence metric={metric} />}>
           <Text className="role-dashboard-kpi-label" lineClamp={2} title={metric.label}>{metric.label}</Text>
         </Tooltip>
-        {metric.timeBasis !== 'unknown' && metric.timeBasis != null && <Text size="xs" c="dimmed">{t(metricTimeLabel(metric))}</Text>}
         <span className="role-dashboard-kpi-value">
           {metric.hasData ? formatted.value : t(formatted.value)}
           {formatted.unit && <span className="role-dashboard-kpi-unit">{formatted.unit}</span>}
@@ -161,9 +156,3 @@ function kpiColumns(count: number): CSSProperties {
   return { '--role-dashboard-kpi-columns': Math.min(Math.max(count, 1), 5) } as CSSProperties
 }
 
-function formatUpdatedAt(value: string): string {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? '—'
-    : updatedAtFormatter.format(date)
-}

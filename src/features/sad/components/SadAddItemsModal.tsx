@@ -12,7 +12,7 @@ const ADD_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
     left: ['select', 'vendorCode'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', {

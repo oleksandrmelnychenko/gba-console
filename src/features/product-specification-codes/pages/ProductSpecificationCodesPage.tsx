@@ -40,7 +40,7 @@ const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const percentFormatter = new Intl.NumberFormat('uk-UA', {

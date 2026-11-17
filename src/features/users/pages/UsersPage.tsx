@@ -45,7 +45,7 @@ const USER_STATUS_INACTIVE = 'inactive'
 const USER_STATUS_DELETED = 'deleted'
 const USERS_TABLE_CELL_STYLE = {
   display: 'block',
-  lineHeight: '18px',
+  lineHeight: 'var(--app-table-line-height)',
   maxWidth: '100%',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -53,8 +53,7 @@ const USERS_TABLE_CELL_STYLE = {
 } as const
 const USERS_TABLE_SUBTEXT_STYLE = {
   ...USERS_TABLE_CELL_STYLE,
-  fontSize: 11,
-  lineHeight: '14px',
+  fontSize: 'var(--app-table-meta-font-size)',
 } as const
 const USERS_MONO_STYLE = { fontFamily: 'var(--font-mono)', letterSpacing: 0 } as const
 const USERS_TABLE_DEFAULT_LAYOUT = {
@@ -62,7 +61,7 @@ const USERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['status', 'user'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type UserStatus =

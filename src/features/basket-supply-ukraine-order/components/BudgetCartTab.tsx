@@ -237,7 +237,7 @@ function BudgetCartTabContent() {
           <Group align="flex-end" gap={8} wrap="nowrap" className="app-filter-fields budget-cart-filter-row">
             <Tooltip label={t('Дата історії попиту; поточні запаси та спостереження закупівель мають окремий стан')}>
               <AppDateInput
-                label={t('Дата зрізу')}
+                aria-label={t('Дата зрізу')}
                 size="sm"
                 type="date"
                 value={asOfDate}

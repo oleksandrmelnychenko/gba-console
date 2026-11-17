@@ -81,7 +81,7 @@ const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 const ADVANCE_REPORT_ROUTE = '/accounting/outgoing-cashflow'
 
 const TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -726,7 +726,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
               className="outgoing-cashflows-organization-filter"
               data={organizationOptions}
               label={t('Організації')}
-              placeholder={t('Без фільтра')}
+              placeholder={t('Усі організації')}
               value={selectedOrganizationIds}
               onChange={onSetSelectedOrganizationIds}
             />

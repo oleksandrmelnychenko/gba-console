@@ -47,14 +47,14 @@ const SUPPLY_RETURNS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SUPPLY_RETURN_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'code'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {

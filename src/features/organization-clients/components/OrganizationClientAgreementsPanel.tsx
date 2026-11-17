@@ -27,7 +27,7 @@ const AGREEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type AgreementRow = {

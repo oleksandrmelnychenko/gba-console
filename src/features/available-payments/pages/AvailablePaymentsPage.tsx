@@ -78,7 +78,7 @@ const AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'date', 'tasks'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })

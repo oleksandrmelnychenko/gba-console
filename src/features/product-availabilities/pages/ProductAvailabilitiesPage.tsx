@@ -43,7 +43,7 @@ const PRODUCT_AVAILABILITIES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCT_AVAILABILITIES_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:product-availabilities:page-size'

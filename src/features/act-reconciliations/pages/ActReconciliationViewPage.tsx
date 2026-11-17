@@ -349,7 +349,7 @@ function ActReconciliationPermissionDenied() {
 function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof useActReconciliationViewModel> }) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { density } = useDataTableDensity('act-reconciliation-items', 'normal')
+  const { density } = useDataTableDensity('act-reconciliation-items', 'compact')
   const columns = useItemColumns({
     canChangeDisposition: model.canChangeDisposition,
     canCreateAction: model.canCreateAction,

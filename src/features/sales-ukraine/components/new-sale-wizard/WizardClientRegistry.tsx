@@ -56,7 +56,7 @@ const WIZARD_REGISTER_TABLE_LAYOUT: DataTableDefaultLayout = {
     payment: 132,
     qty: 84,
   },
-  density: 'normal',
+  density: 'compact',
 }
 
 const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
@@ -69,7 +69,7 @@ const WIZARD_REGISTER_ITEMS_TABLE_LAYOUT: DataTableDefaultLayout = {
     qty: 96,
     vendorCode: 150,
   },
-  density: 'normal',
+  density: 'compact',
 }
 
 export const WizardClientRegistry = memo(function WizardClientRegistry({

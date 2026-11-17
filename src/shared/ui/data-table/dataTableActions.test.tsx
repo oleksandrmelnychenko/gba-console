@@ -107,6 +107,15 @@ describe('DataTable row-action columns', () => {
     expect(prepared.map((column) => column.id)).toEqual(['name', 'actions'])
   })
 
+  it('drops row ordinal (index) columns from every table', () => {
+    const prepared = prepareDataTableColumns<Row>([
+      { id: 'index', header: '#' },
+      { id: 'name', header: 'Name' },
+    ])
+
+    expect(prepared.map((column) => column.id)).toEqual(['name'])
+  })
+
   it('does not treat a decorative status column as row controls', () => {
     const columns: DataTableColumn<Row>[] = [
       { id: 'name', header: 'Name' },

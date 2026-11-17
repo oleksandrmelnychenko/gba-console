@@ -27,7 +27,7 @@ const CART_EDIT_TABLE_LAYOUT: DataTableDefaultLayout = {
     totalAmount: 132,
     vendorCode: 132,
   },
-  density: 'normal',
+  density: 'compact',
 }
 
 export const WizardCartEditTable = memo(function WizardCartEditTable({

@@ -38,7 +38,7 @@ const CARRIERS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'lastName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EXPORT_COLUMNS: TaxFreeCarrierExportColumn[] = [

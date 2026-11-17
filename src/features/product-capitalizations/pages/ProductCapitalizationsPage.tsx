@@ -70,14 +70,14 @@ const PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCT_CAPITALIZATION_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {

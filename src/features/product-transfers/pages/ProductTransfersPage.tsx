@@ -87,17 +87,17 @@ const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 const PRODUCT_TRANSFERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['index', 'date', 'number'],
+    left: ['date', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PRODUCT_TRANSFER_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'product'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -152,7 +152,6 @@ function useProductTransfersPageModel({
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const pageOffset = (page - 1) * pageSize
   const totalPages = totalQty > 0 ? Math.max(1, Math.ceil(totalQty / pageSize)) : 1
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const resetTransfers = useCallback(() => {
@@ -272,8 +271,7 @@ function useProductTransfersPageModel({
     }
   }, [canExport, setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t])
 
-  const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers, pageOffset), [pageOffset, transfers])
-  const columns = useProductTransferColumns(canOpenDetails, openDetail, transferIndexMap)
+  const columns = useProductTransferColumns(canOpenDetails, openDetail)
 
   useProductTransferStoragesLoader({
     canCreate,
@@ -664,7 +662,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             getRowId={(transfer, index) => String(transfer.NetUid || transfer.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="product-transfers-table-2"
+            layoutVersion="product-transfers-table-3"
             loadingText={t('Завантаження переміщень')}
             minWidth={1780}
             showLayoutControls
@@ -916,39 +914,21 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
 function useProductTransferColumns(
   canOpenDetails: boolean,
   onOpenDetail: (transfer: ProductTransfer) => void,
-  indexMap: Map<ProductTransfer, number>,
 ) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductTransfer>[]>(
     () => [
       {
-        id: 'index',
-        header: '#',
-        width: 56,
-        minWidth: 48,
-        align: 'right',
-        enableHiding: false,
-        accessor: (transfer) => indexMap.get(transfer) || 0,
-        cell: (transfer) => (
-          <Text c="dimmed" size="sm">
-            {indexMap.get(transfer) || ''}
-          </Text>
-        ),
-      },
-      {
         id: 'date',
         header: 'Дата',
-        width: 148,
-        minWidth: 132,
+        width: 136,
+        minWidth: 128,
         accessor: (transfer) => getDateTime(transfer.FromDate),
         cell: (transfer) => (
-          <>
-            <Text fw={600}>{displayValue(formatDate(parseDate(transfer.FromDate)))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(formatTime(parseDate(transfer.FromDate)))}
-            </Text>
-          </>
+          <Text component="span" className="app-table-number" style={{ whiteSpace: 'nowrap' }}>
+            {displayValue(formatDate(parseDate(transfer.FromDate)))} {formatTime(parseDate(transfer.FromDate))}
+          </Text>
         ),
       },
       {
@@ -1057,16 +1037,8 @@ function useProductTransferColumns(
         ) : null,
       },
     ],
-    [canOpenDetails, indexMap, onOpenDetail, t],
+    [canOpenDetails, onOpenDetail, t],
   )
-}
-
-function buildTransferIndexMap(transfers: ProductTransfer[], offset = 0): Map<ProductTransfer, number> {
-  return transfers.reduce((indexMap, transfer, index) => {
-    indexMap.set(transfer, offset + index + 1)
-
-    return indexMap
-  }, new Map<ProductTransfer, number>())
 }
 
 export function TransferDetail({

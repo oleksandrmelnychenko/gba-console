@@ -49,7 +49,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['created'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

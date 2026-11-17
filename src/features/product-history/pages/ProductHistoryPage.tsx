@@ -43,7 +43,7 @@ const PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'created', 'vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SEARCH_DEBOUNCE_MS = 200

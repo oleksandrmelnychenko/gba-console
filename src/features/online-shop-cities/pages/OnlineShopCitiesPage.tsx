@@ -60,7 +60,7 @@ const EMPTY_FORM_VALUES: CityFormValues = {
 
 const CITIES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['city'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -361,7 +361,7 @@ function OnlineShopCitiesRegistry({
 
   return (
     <Box className="online-shop-cities-shell console-table-shell">
-      <div className="app-filter-bar online-shop-cities-command-bar">
+      <div className="app-filter-bar online-shop-cities-command-bar is-labelled">
         <TextInput
           className="online-shop-cities-search-input"
           leftSection={<Search size={15} />}

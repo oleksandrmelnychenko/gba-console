@@ -19,7 +19,7 @@ const PREVIEW_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function PreviewCartItemsModal({

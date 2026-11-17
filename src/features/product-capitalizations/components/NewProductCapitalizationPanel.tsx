@@ -56,7 +56,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'vendorCode'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ItemEntryDraft = {

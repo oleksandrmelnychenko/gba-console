@@ -50,7 +50,7 @@ import './consumable-products-page.css'
 const PRODUCT_TABLE_DEFAULT_LAYOUT = {
   columnOrder: ['name', 'vendorCode', 'measureUnit'],
   columnPinning: {},
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type CategoryEditor =

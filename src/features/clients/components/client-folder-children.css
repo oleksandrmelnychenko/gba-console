@@ -1,6 +1,7 @@
+/* Nested on white (the expanded cell draws the row separator): a heavy
+   gray fill under a striped row read as a second, darker table. */
 .client-folder-children {
-  background: var(--mantine-color-gray-0);
-  border-block: 1px solid var(--mantine-color-gray-2);
+  background: var(--mantine-color-white);
   list-style: none;
   margin: 0;
   padding: 4px 12px 8px 48px;

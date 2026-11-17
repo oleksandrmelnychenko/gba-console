@@ -84,22 +84,22 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'clientName'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'number'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EDIT_SHIPMENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['client', 'saleNumber'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['select', 'saleNumber'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const ALL_TRANSPORTERS_VALUE = '__all_transporters__'

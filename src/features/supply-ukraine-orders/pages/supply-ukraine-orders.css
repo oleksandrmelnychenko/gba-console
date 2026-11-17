@@ -373,7 +373,7 @@
   color: var(--brand-orange);
   flex: 0 0 auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--app-table-meta-font-size);
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
@@ -474,7 +474,7 @@
   display: inline-flex;
   flex: 0 1 auto;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--app-table-chip-font-size);
   font-weight: 650;
   gap: 4px;
   line-height: 1;
@@ -519,10 +519,10 @@
   color: var(--mantine-color-gray-6);
   display: inline-flex;
   flex: 0 1 auto;
-  font-size: 12px;
+  font-size: var(--app-table-meta-font-size);
   font-weight: 500;
   gap: 4px;
-  line-height: 1.2;
+  line-height: var(--app-table-line-height);
   max-width: 208px;
   min-width: 0;
 }
@@ -562,8 +562,8 @@
 
 .supply-order-meta-value.is-tag strong {
   color: var(--mantine-color-gray-7);
-  font-family: var(--font-sans);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: var(--app-table-chip-font-size);
   font-weight: 600;
 }
 

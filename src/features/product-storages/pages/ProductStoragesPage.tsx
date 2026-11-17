@@ -67,7 +67,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const pageSizeOptions = ['50', '100', '150']
@@ -1286,7 +1286,7 @@ function ProductStoragePreviewDrawer({
               left: ['index', 'vendorCode', 'productName'],
               right: ['actions'],
             },
-            density: 'normal',
+            density: 'compact',
           }}
           emptyText={t('Позиції не обрано')}
           getRowId={(row, index) => getAvailabilityKey(row.availability) || String(index)}

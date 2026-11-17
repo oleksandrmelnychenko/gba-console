@@ -132,27 +132,27 @@ const RESALES_TABLE_DEFAULT_LAYOUT = {
     right: ['actions'],
   },
   columnVisibility: { agreement: false, comment: false, currency: false, amountLocal: false, payment: false },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const AVAILABILITIES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['select'] },
   columnVisibility: { created: false, specification: false, group: false, measure: false },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PROCESS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const DETAIL_TABLE_DEFAULT_LAYOUT = {
@@ -160,7 +160,7 @@ const DETAIL_TABLE_DEFAULT_LAYOUT = {
     left: ['vendorCode', 'productName'],
   },
   columnVisibility: { measure: false, specification: false, locations: false, vat: false, profit: false, profitability: false },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
