@@ -6,7 +6,6 @@ import {
   Card,
   FileButton,
   Group,
-  NumberInput,
   SimpleGrid,
   Stack,
   Text,
@@ -31,6 +30,7 @@ import { useAuth } from '../../auth/useAuth'
 import { hasSupplyProForm } from '../proFormHelpers'
 import type { DirectSupplyOrder, SupplyProForm, SupplyProFormDocument } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 
 import './supply-order-document-summary.css'
 
@@ -38,7 +38,8 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
-const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
+// The proforma date is a calendar date: shown without a time.
+const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 type ProFormCardState = {
   draft: SupplyProForm
@@ -213,15 +214,12 @@ export function DirectSupplyOrderProFormCard({
                 value={draft.Number || ''}
                 onChange={(event) => dispatch({ type: 'setDraft', patch: { Number: event.currentTarget.value } })}
               />
-              <NumberInput
-                hideControls
-                allowNegative={false}
-                decimalScale={2}
+              {/* A minus sign is reported under the field instead of being dropped silently («-5» became 5). */}
+              <AmountInput
                 label={t('Сума нетто')}
-                min={0}
                 required
                 value={typeof draft.NetPrice === 'number' ? draft.NetPrice : ''}
-                onChange={(value) => dispatch({ type: 'setDraft', patch: { NetPrice: typeof value === 'number' ? value : Number(value) || undefined } })}
+                onChange={(value) => dispatch({ type: 'setDraft', patch: { NetPrice: value > 0 ? value : undefined } })}
               />
               <AppDateInput
                 label={t('Дата')}
@@ -235,7 +233,7 @@ export function DirectSupplyOrderProFormCard({
             <>
               <InfoBlock label={t('Номер')} document value={draft.Number || ''} />
               <InfoBlock label={t('Сума нетто')} mono value={formatMoney(draft.NetPrice)} />
-              <InfoBlock label={t('Дата')} mono value={formatDateTime(draft.DateFrom)} />
+              <InfoBlock label={t('Дата')} mono value={formatProFormDate(draft.DateFrom)} />
             </>
           )}
         </SimpleGrid>
@@ -245,6 +243,7 @@ export function DirectSupplyOrderProFormCard({
             <Group gap={6} wrap="nowrap">
               <Text className="app-section-title" fw={600} size="sm">
                 {t('Документи')}
+                {isEditing && <span className="supply-order-documents__required" aria-hidden="true"> *</span>}
               </Text>
               <TableChip tone="neutral" value={documents.length} />
             </Group>
@@ -508,18 +507,16 @@ function InfoBlock({ document, label, mono, value }: { document?: boolean, label
 }
 
 /* Empty values render blank (§5/§7.2) — never a dash. */
-function formatDateTime(value?: Date | string): string {
-  if (!value) {
-    return ''
+function formatProFormDate(value?: Date | string): string {
+  const day = toProFormDateInput(value)
+
+  if (!day) {
+    return value ? String(value) : ''
   }
 
-  const date = value instanceof Date ? value : new Date(value)
+  const [year, month, date] = day.split('-').map(Number)
 
-  if (Number.isNaN(date.getTime())) {
-    return String(value)
-  }
-
-  return dateTimeFormatter.format(date)
+  return dateFormatter.format(new Date(year, month - 1, date))
 }
 
 function formatMoney(value?: number): string {

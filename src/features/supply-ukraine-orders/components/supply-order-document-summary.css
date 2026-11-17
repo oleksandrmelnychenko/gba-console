@@ -45,3 +45,7 @@
 .supply-order-documents__empty {
   color: var(--mantine-color-gray-7);
 }
+
+.supply-order-documents__required {
+  color: var(--mantine-color-error);
+}
