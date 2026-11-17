@@ -132,3 +132,16 @@ it('forms a reopened history entry again when the settings settle after the firs
   await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(2))
   expect(await screen.findByRole('rowheader', { name: 'Товар А' })).toBeTruthy()
 })
+
+it.each([false, true])('shows no explanatory sentence and one line only when a quantity is unknown, unknown=%s', async unknown => {
+  vi.clearAllMocks()
+  const result = regionalResult()
+  if (unknown) result.Rows[0].Cells = result.Rows[0].Cells.map(cell => cell.Column === 'Sales' ? { ...cell, Quantity: null } : cell)
+  vi.mocked(readCurrentVparivanieRegional).mockResolvedValue(result)
+  const view = render(panel())
+  fireEvent.click(screen.getByRole('button', { name: 'Показати регіональну форму' }))
+  await screen.findByRole('rowheader', { name: 'Товар А' })
+  expect(view.container.textContent).not.toMatch(/Продажі: 2026|кількість невідома\.|на кінець періоду/)
+  if (unknown) expect(screen.getByText('Кількість невідома: 1 рядок')).toBeTruthy()
+  else expect(screen.queryByText(/^Кількість невідома/)).toBeNull()
+})

@@ -7,8 +7,8 @@ export const salesByResponsiblesDataset: ReportDataset = {
   PeriodRequired: true,
   PeriodSupported: true,
   Groupings: [
-    { Type: 4, Name: 'Організація' }, { Type: 22, Name: 'Документ продажу. Відповідальний' },
-    { Type: 23, Name: 'Замовлення покупця. Відповідальний' }, { Type: 12, Name: 'Клієнт' },
+    { Type: 4, Name: 'Організація' }, { Type: 22, Name: 'Відповідальний реалізації' },
+    { Type: 23, Name: 'Відповідальний замовлення' }, { Type: 12, Name: 'Клієнт' },
     { Type: 0, Name: 'Рік' }, { Type: 1, Name: 'Квартал' }, { Type: 2, Name: 'Місяць' }, { Type: 3, Name: 'День' },
   ],
   Measurements: [
@@ -16,7 +16,7 @@ export const salesByResponsiblesDataset: ReportDataset = {
   ],
   Filters: [
     { Type: 0, Name: 'Організація' }, { Type: 6, Name: 'Клієнт' },
-    { Type: 62, Name: 'Документ продажу. Відповідальний' }, { Type: 63, Name: 'Замовлення покупця. Відповідальний' },
+    { Type: 62, Name: 'Відповідальний реалізації' }, { Type: 63, Name: 'Відповідальний замовлення' },
   ],
   Limitations: ['ФОП Пархоменко Ганна Юріївна виключена з синхронізації.'],
   configuration: {
