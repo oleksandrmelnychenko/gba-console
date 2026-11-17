@@ -1,3 +1,4 @@
+import { notifications } from '@mantine/notifications'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -231,5 +232,17 @@ describe('outgoing cashflows permissions', () => {
     fireEvent.click(confirm!)
 
     expect(cancelOutgoingCashflow).not.toHaveBeenCalled()
+  })
+
+  it('confirms a cancelled order with a toast', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    allowedPermissions.add(PermissionKeys.OutgoingCashflows.Order.Cancel)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Скасувати' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Скасувати' }).at(-1)!)
+
+    await waitFor(() => expect(cancelOutgoingCashflow).toHaveBeenCalledWith('order-1'))
+    await waitFor(() => expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'green', message: 'Видатковий ордер скасовано' })))
   })
 })

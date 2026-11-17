@@ -475,6 +475,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
     try {
       await cancelOutgoingCashflow(cancelRow.order.NetUid)
       setCancelRow(null)
+      notifications.show({ color: 'green', message: t('Видатковий ордер скасовано') })
       void loadCashflows(page)
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати видатковий ордер'))

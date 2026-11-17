@@ -107,9 +107,10 @@ function OutgoingCashflowCreatePageContent() {
   }
 
   function handleCreated() {
+    // The toast used to repeat the form title instead of saying the order was created.
     notifications.show({
       color: 'green',
-      message: t('Створення нового видаткового ордера'),
+      message: t('Видатковий ордер створено'),
     })
     navigate(OUTGOING_CASHFLOWS_PATH, { replace: true, state: { mutated: true } })
   }

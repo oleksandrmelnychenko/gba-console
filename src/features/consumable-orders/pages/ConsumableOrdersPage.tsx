@@ -1,4 +1,5 @@
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { getPositionsWord } from '../positionsCount'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -488,7 +489,7 @@ function ConsumableOrderSupplierCell({ row }: { row: ConsumableOrderRow }) {
 function ConsumableOrderStorageCell({ row }: { row: ConsumableOrderRow }) {
   const { t } = useI18n()
   const title = displayValue(row.storage)
-  const meta = t('{{count}} позицій').replace('{{count}}', formatAmount(row.itemCount))
+  const meta = `${formatAmount(row.itemCount)} ${t(getPositionsWord(Number(row.itemCount) || 0))}`
   const tooltip = compactStrings([title, meta]).join('\n')
 
   return (
