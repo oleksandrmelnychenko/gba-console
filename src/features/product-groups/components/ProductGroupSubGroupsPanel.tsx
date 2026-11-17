@@ -30,7 +30,7 @@ const SUB_GROUPS_TABLE_DEFAULT_LAYOUT = {
     left: ['name'],
     right: [],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ProductGroupSubGroupsPanelProps = {

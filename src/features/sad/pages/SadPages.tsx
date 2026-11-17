@@ -101,7 +101,7 @@ const SAD_LIST_TABLE_DEFAULT_LAYOUT = {
     left: ['fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SAD_LIST_TABLE_CELL_STYLE = {
@@ -126,7 +126,7 @@ const SAD_ITEMS_TABLE_DEFAULT_LAYOUT = {
     left: ['select', 'vendorCode', 'product'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SAD_SPEC_TABLE_DEFAULT_LAYOUT = {
@@ -134,7 +134,7 @@ const SAD_SPEC_TABLE_DEFAULT_LAYOUT = {
     left: ['vendorCode', 'product'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const numberFormatter = new Intl.NumberFormat('uk-UA', {

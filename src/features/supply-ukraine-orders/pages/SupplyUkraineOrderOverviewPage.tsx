@@ -49,7 +49,7 @@ const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const PLACEMENT_PERMISSION = PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement
@@ -508,7 +508,7 @@ function SupplyUkraineOrderOverviewPageContent() {
   })
   const documentColumns = useDocumentColumns()
   const documents = order?.SupplyOrderUkraineDocuments || []
-  const { density: documentsDensity, toggleDensity: toggleDocumentsDensity } = useDataTableDensity('supply-ukraine-order-documents', 'normal')
+  const { density: documentsDensity, toggleDensity: toggleDocumentsDensity } = useDataTableDensity('supply-ukraine-order-documents', 'compact')
   const { density: overviewDensity, toggleDensity: toggleOverviewDensity } = useDataTableDensity('supply-ukraine-order-overview', TABLE_DEFAULT_LAYOUT.density)
   const orderRecord = asRecord(order)
   const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name || ''

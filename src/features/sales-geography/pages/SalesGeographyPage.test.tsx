@@ -20,12 +20,12 @@ beforeEach(() => { getSummary.mockReset() })
 function mount() { return renderWithMantine(<SalesGeographyPage />) }
 
 describe('geography page', () => {
-  it('shows server boundaries, evidence limits and consistent cents in total, rows and map', async () => {
+  it('shows consistent cents in total, rows and map without explanatory captions', async () => {
     getSummary.mockResolvedValue(geographySummary())
     mount()
     expect(await screen.findByText('2,80 EUR')).toBeTruthy()
-    expect(screen.getByText('Період: 01.01.2025 — 23.10.2026 (включно, Київ)')).toBeTruthy()
-    expect(screen.getByText(/Повноту завантаження історії не підтверджено/)).toBeTruthy()
+    expect(screen.queryByText(/Період: 01.01.2025/)).toBeNull()
+    expect(screen.queryByText(/Повноту завантаження історії/)).toBeNull()
     expect(screen.getAllByText('1,40 EUR').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByRole('img', { name: 'Полтавська: 1,40\u00a0EUR, 2 клієнтів' })).toBeTruthy()
   })
@@ -41,9 +41,7 @@ describe('geography page', () => {
       await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ metric: 'sales', months }, expect.any(AbortSignal)))
     }
     fireEvent.click(screen.getByRole('radio', { name: 'Борг' }))
-    await screen.findByText('Увесь поточний борг, включно з непростроченим')
-    expect(getSummary).toHaveBeenLastCalledWith({ metric: 'debt' }, expect.any(AbortSignal))
-    expect(screen.queryByText(/Період: 01.01.2025/)).toBeNull()
+    await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ metric: 'debt' }, expect.any(AbortSignal)))
     fireEvent.click(screen.getByRole('radio', { name: 'Продажі' }))
     await waitFor(() => expect(getSummary).toHaveBeenLastCalledWith({ metric: 'sales', months: 36 }, expect.any(AbortSignal)))
   })
@@ -73,14 +71,14 @@ describe('geography page', () => {
   it('ignores an older response when switching metrics', async () => {
     let completeSales!: (value: SalesGeographySummary) => void
     getSummary.mockImplementation(params => params?.metric === 'debt'
-      ? Promise.resolve({ ...geographySummary('debt'), AsOfUtc: '2026-10-23T11:00:00Z' })
+      ? Promise.resolve({ ...geographySummary('debt'), TotalEur: 5, KnownTotalEur: 5 })
       : new Promise(resolve => { completeSales = resolve }))
     mount()
     fireEvent.click(screen.getByRole('radio', { name: 'Борг' }))
-    await screen.findByText('Увесь поточний борг, включно з непростроченим')
+    await screen.findByText('5,00 EUR')
     await act(async () => completeSales(geographySummary()))
-    expect(screen.getByText('Увесь поточний борг, включно з непростроченим')).toBeTruthy()
-    expect(screen.queryByText(/Період: 01.01.2025/)).toBeNull()
+    expect(screen.getByText('5,00 EUR')).toBeTruthy()
+    expect(screen.queryByText('2,80 EUR')).toBeNull()
     expect(getSummary.mock.calls[0][1]?.aborted).toBe(true)
   })
 })

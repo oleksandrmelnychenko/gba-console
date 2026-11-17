@@ -84,6 +84,11 @@
   --app-table-cell-py: 4px;
   --app-table-cell-px: 8px;
   --app-table-line-height: 16px;
+  /* One type scale for every data table: primary text and numbers, the
+     secondary line under a value, and chips. */
+  --app-table-font-size: 13px;
+  --app-table-meta-font-size: 12px;
+  --app-table-chip-font-size: 11px;
 }
 
 html,

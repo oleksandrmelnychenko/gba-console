@@ -34,7 +34,7 @@ const DEPRECIATED_ORDER_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'name'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

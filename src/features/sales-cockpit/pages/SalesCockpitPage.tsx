@@ -1,5 +1,4 @@
 import { userErrorText } from '../../../shared/api/userErrorText'
-import { CockpitSourceStatus } from '../components/CockpitSourceStatus'
 import { Button, Stack } from '@mantine/core'
 import { ClipboardList, FileText, ListPlus, MessagesSquare, RefreshCw, Users } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
@@ -226,7 +225,6 @@ function SalesCockpitPageContent() {
 
   return (
     <Stack className="cockpit-page" gap={8}>
-      <CockpitSourceStatus />
       <div className="app-screen-tabs" role="tablist" aria-label={t('Розділи кокпіта')}>
         {(
           [

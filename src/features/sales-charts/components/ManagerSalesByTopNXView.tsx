@@ -124,7 +124,7 @@ export function ManagerSalesByTopNXView() {
             allowDeselect={false}
             className="sales-chart-filter-control"
             data={TYPE_OPTIONS}
-            label={t('Тип')}
+            aria-label={t('Тип')}
             value={String(typeTop)}
             onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
           />

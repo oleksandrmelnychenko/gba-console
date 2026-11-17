@@ -69,7 +69,7 @@ const SALES_DEBTORS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -231,7 +231,7 @@ export function SalesDebtorsPage() {
   return (
     <Stack className="sales-debtors-page console-table-page" gap={0}>
       <div className="sales-dashboard-tab-content">
-        <div className="sales-debtors-command-bar app-filter-bar">
+        <div className="sales-debtors-command-bar app-filter-bar is-labelled">
           <Select
             comboboxProps={DEBTORS_FILTER_COMBOBOX_PROPS}
             clearable

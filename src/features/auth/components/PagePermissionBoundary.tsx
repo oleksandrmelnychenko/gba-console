@@ -1,8 +1,8 @@
-import { Alert, Center, Loader } from '@mantine/core'
-import { TriangleAlert } from 'lucide-react'
+import { Center, Loader } from '@mantine/core'
 import type { ReactNode } from 'react'
 import type { PermissionKey } from '../../../shared/auth/permissionKeys'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AccessState } from '../../../shared/ui/access-state/AccessState'
 import { usePermissions } from '../usePermissions'
 
 type PagePermissionBoundaryProps = {
@@ -27,9 +27,10 @@ export function PagePermissionBoundary({
 
   if (!can(permissionKey)) {
     return (
-      <Alert color="yellow" icon={<TriangleAlert size={20} />} title={t('Доступ заборонено')} variant="light">
-        {t('Ця сторінка недоступна для вашого облікового запису.')}
-      </Alert>
+      <AccessState
+        description={t('Ця сторінка недоступна для вашого облікового запису.')}
+        title={t('Доступ заборонено')}
+      />
     )
   }
 

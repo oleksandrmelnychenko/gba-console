@@ -12,30 +12,30 @@ describe('useDataTableDensity standard-default migration', () => {
     window.localStorage.removeItem(VERSION_KEY)
   })
 
-  it('uses normal when no preference was stored', () => {
+  it('uses compact when no preference was stored', () => {
     const { result } = renderHook(() => useDataTableDensity(TABLE_ID))
 
-    expect(result.current.density).toBe('normal')
+    expect(result.current.density).toBe('compact')
   })
 
-  it('drops compact stored before the standard-density migration', () => {
-    window.localStorage.setItem(DENSITY_KEY, 'compact')
+  it('drops normal stored before the standard-density migration', () => {
+    window.localStorage.setItem(DENSITY_KEY, 'normal')
 
     const { result } = renderHook(() => useDataTableDensity(TABLE_ID))
 
-    expect(result.current.density).toBe('normal')
+    expect(result.current.density).toBe('compact')
     expect(window.localStorage.getItem(DENSITY_KEY)).toBeNull()
-    expect(window.localStorage.getItem(VERSION_KEY)).toBe('1')
+    expect(window.localStorage.getItem(VERSION_KEY)).toBe('2')
   })
 
-  it('keeps compact selected after the migration', () => {
+  it('keeps normal selected after the migration', () => {
     const firstMount = renderHook(() => useDataTableDensity(TABLE_ID))
 
-    act(() => firstMount.result.current.setDensity('compact'))
+    act(() => firstMount.result.current.setDensity('normal'))
     firstMount.unmount()
 
     const reopened = renderHook(() => useDataTableDensity(TABLE_ID))
 
-    expect(reopened.result.current.density).toBe('compact')
+    expect(reopened.result.current.density).toBe('normal')
   })
 })

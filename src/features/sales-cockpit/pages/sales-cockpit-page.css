@@ -1046,7 +1046,7 @@
   color: var(--mantine-color-gray-7);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   height: 20px;
   justify-content: center;
@@ -1397,24 +1397,6 @@
   .cockpit-panel-card .cockpit-panel-bar .app-filter-actions { flex-shrink: 1; flex-wrap: wrap; }
 }
 
-/* Workday uses the same neutral toolbar and compact status chips as registries. */
-.cockpit-source-status {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  min-width: 0;
-  padding: 8px 8px;
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  background: var(--mantine-color-white);
-}
-.cockpit-source-status__summary { min-width: 0; }
-.cockpit-source-status__summary .mantine-Text-root {
-  color: var(--mantine-color-gray-6);
-  font: 11px var(--font-mono);
-}
 .cockpit-source-details { margin-left: auto; }
 .cockpit-source-details[open] { flex-basis: 100%; margin-left: 0; }
 .cockpit-source-details summary {

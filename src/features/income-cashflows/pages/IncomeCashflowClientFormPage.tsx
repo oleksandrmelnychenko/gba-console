@@ -166,7 +166,7 @@ type PendingIncomeCashflowSubmission = {
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
 const CLIENT_DEBTS_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {

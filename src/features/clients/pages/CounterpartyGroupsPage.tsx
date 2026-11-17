@@ -260,7 +260,8 @@ function CounterpartyGroupsPageContent() {
               <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields counterparty-groups-filter-row">
                 <TextInput
                   className="counterparty-groups-search"
-                  label={t('Пошук групи')}
+                  aria-label={t('Пошук групи')}
+                  placeholder={t('Пошук групи')}
                   leftSection={<Search size={16} />}
                   value={treeSearchDraft}
                   onChange={(event) => setTreeSearchDraft(event.currentTarget.value)}

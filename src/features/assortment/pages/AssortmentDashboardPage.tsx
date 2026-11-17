@@ -635,7 +635,7 @@ function AssortmentHeader({
 
   return (
     <Card className="assort-dash__header" withBorder radius="md" padding={0}>
-      <div className="app-filter-bar assort-dash__bar">
+      <div className="app-filter-bar assort-dash__bar is-labelled">
         <div className="assort-dash__summary">
           <Group gap="xs" wrap="nowrap">
             <Text className="app-section-title assort-dash__title">{t('Аналітика асортименту')}</Text>
@@ -961,7 +961,7 @@ function AssortmentDetailTable({
             : t('Показано позицій') + ': ' + formatInt(rows.length)}
         </span>
       </div>
-      <div className="app-filter-bar assort-filter">
+      <div className="app-filter-bar assort-filter is-labelled">
         <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields assort-filter-row">
           <Select
             clearable

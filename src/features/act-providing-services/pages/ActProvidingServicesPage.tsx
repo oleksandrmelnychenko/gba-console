@@ -37,7 +37,7 @@ const ACT_PROVIDING_SERVICES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['act'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

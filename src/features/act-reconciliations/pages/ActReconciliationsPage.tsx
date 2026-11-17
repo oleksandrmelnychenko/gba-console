@@ -42,7 +42,7 @@ const RECONCILIATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'fromDate', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -242,7 +242,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
                 { value: 'dismissed', label: t('Закрито без руху') },
                 { value: 'resolved', label: t('Опрацьовано') },
               ]}
-              label={t('Стан')}
+              aria-label={t('Стан')}
               value={statusFilter}
               onChange={(value) => setStatusFilter((value as StatusFilter) || 'all')}
             />

@@ -95,14 +95,14 @@ const BASKET_CART_TABLE_DEFAULT_LAYOUT = {
     left: ['select', 'priority', 'vendorCode'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const BASKET_DESTINATION_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['select', 'vendorCode'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const BASKET_SALES_TABLE_DEFAULT_LAYOUT = {
@@ -110,7 +110,7 @@ const BASKET_SALES_TABLE_DEFAULT_LAYOUT = {
     left: ['date', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
@@ -1320,7 +1320,8 @@ function SalesWorkflowTab() {
             onChange={({ from, to }) => applyFilters({ ...filterDraft, from, to })}
           />
           <TextInput
-            label={t('Пошук')}
+            aria-label={t('Пошук')}
+            placeholder={t('Пошук')}
             leftSection={<Search size={16} />}
             value={filterDraft.value}
             onChange={(event) => {

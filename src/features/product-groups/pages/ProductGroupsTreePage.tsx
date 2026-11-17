@@ -130,7 +130,8 @@ function ProductGroupsTreePageContent() {
             <div className="app-filter-bar product-groups-tree-filter-bar">
               <Group align="end" gap={8} wrap="nowrap" className="app-filter-fields product-groups-tree-filter-row">
                 <TextInput
-                  label={t('Пошук групи')}
+                  aria-label={t('Пошук групи')}
+                  placeholder={t('Пошук групи')}
                   leftSection={<Search size={16} />}
                   className="product-groups-tree-search"
                   value={searchDraft}

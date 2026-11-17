@@ -82,7 +82,7 @@ const PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT = {
     left: ['create', 'saleCreate', 'saleNumber'],
     right: ['incomeCashOrder', 'view'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })

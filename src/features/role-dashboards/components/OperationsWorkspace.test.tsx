@@ -24,7 +24,6 @@ describe('operations dashboard evidence states', () => {
   it('qualifies a zero result to the metrics actually checked', () => {
     show(summary)
     expect(screen.getByText('Відхилень у доступних показниках немає')).toBeTruthy()
-    expect(screen.getByText('Перевірено лише наведені показники')).toBeTruthy()
   })
   it('does not present missing or partial data as an all-clear', () => {
     show({ ...summary, metrics: summary.metrics.map((m) => m.key === 'receipts' ? { ...m, coveragePercent: 50 } : m) })

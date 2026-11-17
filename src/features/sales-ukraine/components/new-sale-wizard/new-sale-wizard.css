@@ -755,7 +755,7 @@
 .new-sale-wizard-header-badge__label,
 .new-sale-client-metric span {
   color: var(--mantine-color-gray-6);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.15;
@@ -1016,7 +1016,7 @@
   border-radius: 999px;
   color: #087f5b;
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   padding: 4px 8px;
@@ -1026,7 +1026,7 @@
   align-items: center;
   color: #0ca678;
   display: inline-flex;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 750;
   gap: 4px;
   line-height: 1;
@@ -1086,7 +1086,7 @@
 .new-sale-hero-agreement__metric > span {
   color: var(--mantine-color-gray-5);
   flex-shrink: 0;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 650;
   line-height: 1;
   text-transform: uppercase;
@@ -1224,7 +1224,7 @@
   color: var(--mantine-color-blue-8);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 0;
   justify-content: flex-start;
@@ -1548,7 +1548,7 @@
   border-radius: 999px;
   color: #087f5b;
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   padding: 4px 8px;
@@ -1604,7 +1604,7 @@
 .new-sale-agreement-card__metric span {
   color: var(--mantine-color-gray-5);
   flex-shrink: 0;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 650;
   line-height: 1;
   min-width: 0;
@@ -2463,7 +2463,7 @@
 
 .new-sale-cart__money-pair em {
   color: var(--mantine-color-gray-5);
-  font-size: 9px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 700;
   line-height: 1;
@@ -3331,7 +3331,7 @@
 .new-sale-product-card__legacy-line span {
   color: var(--mantine-color-gray-5);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 650;
   letter-spacing: 0;
   line-height: 1;
@@ -4725,7 +4725,7 @@
   border-radius: var(--mantine-radius-sm);
   color: var(--mantine-color-blue-8);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   gap: 0;
   justify-content: flex-start;
@@ -4767,7 +4767,7 @@
   background: var(--mantine-color-teal-0);
   border: 1px solid var(--mantine-color-teal-2);
   color: var(--mantine-color-teal-8);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 650;
   padding: 4px 8px;
 }
@@ -4823,7 +4823,7 @@
 .new-sale-hero-agreement__metric > span {
   color: var(--mantine-color-gray-7);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1;
@@ -5462,7 +5462,7 @@
 
 .new-sale-agreement-card__status {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 

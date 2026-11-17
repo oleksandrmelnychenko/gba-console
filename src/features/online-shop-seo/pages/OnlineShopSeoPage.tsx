@@ -146,12 +146,12 @@ const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
 
 const SEO_SHOP_DATA_CLIENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SEO_SHOP_DATA_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const EMPTY_PAGE_FORM_VALUES = pageToFormValues(null)

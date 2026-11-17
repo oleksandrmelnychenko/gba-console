@@ -69,7 +69,10 @@ for (const file of files) {
     if (/grid-exempt/.test(rawLines[i] ?? '')) return
     if (kind === 'font') {
       // Whole pixels only (fractional sizes blur); the scale itself is free.
-      const frac = [...value.matchAll(/(\d+\.\d+)px/g)].map((m) => m[0])
+      // …and nothing below the 10px floor of the type scale.
+      const frac = [...value.matchAll(/(\d+(?:\.\d+)?)px/g)]
+        .filter((m) => m[1].includes('.') || parseFloat(m[1]) < 10)
+        .map((m) => m[0])
       if (frac.length) rows.push({ file: relative(root, file).split(sep).join('/'), line: i + 1, kind, prop, value: value.trim(), bad: frac })
       return
     }

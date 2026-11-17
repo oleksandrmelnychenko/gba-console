@@ -85,12 +85,12 @@ const EMPTY_SUMMARY: VehicleRegistrySummary = {
 const VEHICLE_TABLE_LAYOUT = {
   columnOrder: ['vehicle', 'owner', 'client', 'year', 'region', 'workflow', 'quality', 'source', 'actions'],
   columnPinning: { left: ['vehicle'], right: ['actions'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 const IMPORT_TABLE_LAYOUT = {
   columnOrder: ['file', 'status', 'rows', 'quality', 'changes', 'date', 'actions'],
   columnPinning: { left: ['file'], right: ['actions'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 const ISSUE_TABLE_LAYOUT = {
   columnOrder: ['row', 'severity', 'vehicle', 'field', 'message'],

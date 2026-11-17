@@ -26,7 +26,7 @@ const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const ADVANCE_PAYMENTS_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:advance-payments:page-size'

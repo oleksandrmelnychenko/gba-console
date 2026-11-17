@@ -58,14 +58,14 @@ const PLACEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'created', 'vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const RETURNED_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {

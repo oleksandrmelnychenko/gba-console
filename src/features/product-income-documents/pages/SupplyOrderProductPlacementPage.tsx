@@ -36,7 +36,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'vendorCode', 'productName'],
     right: ['placementDetails'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })

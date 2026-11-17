@@ -59,7 +59,7 @@ export function ContactsPanel({ onOpen, revision }: { onOpen: (client: ContactCl
     </Group>
     <div className="app-filter-bar cockpit-workday-toolbar">
       <div className="app-filter-field cockpit-workday-search">
-        <TextInput leftSection={<Search size={16} />} label={t('Пошук контакту')} placeholder={t('Клієнт або наступна дія')} maxLength={200} value={filter.search} onChange={(event) => setFilter({ ...filter, search: event.currentTarget.value, page: 1 })} />
+        <TextInput leftSection={<Search size={16} />} aria-label={t('Пошук контакту')} placeholder={t('Клієнт або наступна дія')} maxLength={200} value={filter.search} onChange={(event) => setFilter({ ...filter, search: event.currentTarget.value, page: 1 })} />
       </div>
       <Button leftSection={<RotateCcw size={16} />} variant="default" disabled={filter.bucket === 'today' && !filter.search && filter.page === 1} onClick={() => setFilter({ bucket: 'today', search: '', page: 1 })}>{t('Скинути')}</Button>
       <Button leftSection={<RefreshCw size={16} />} variant="default" onClick={refresh}>{t('Оновити')}</Button>

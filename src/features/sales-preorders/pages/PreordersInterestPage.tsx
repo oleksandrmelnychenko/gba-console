@@ -18,7 +18,7 @@ import './preorders-interest-page.css'
 const PREORDERS_PAGE_SIZE = 30
 
 const PREORDERS_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function composeContact(preOrder: PreOrder): string {

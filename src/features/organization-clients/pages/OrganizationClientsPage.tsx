@@ -30,7 +30,7 @@ const ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT = {
     left: ['fullName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type OrganizationClientsPermissions = {

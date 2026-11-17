@@ -45,7 +45,7 @@ const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
     phone: false,
     email: false,
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 export function NewEcommerceClientsPage() {

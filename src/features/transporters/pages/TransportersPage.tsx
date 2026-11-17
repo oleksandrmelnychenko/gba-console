@@ -56,7 +56,7 @@ type TransporterFormValues = {
 const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
   columnOrder: ['transporter', 'params', 'image', 'status'],
   columnPinning: { left: ['transporter'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function useTransporterColumns({

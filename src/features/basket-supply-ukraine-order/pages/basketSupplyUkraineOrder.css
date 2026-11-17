@@ -1233,7 +1233,7 @@
 .procure-cockpit-product__oe-label {
   color: inherit;
   font-family: Onest, sans-serif;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -1710,7 +1710,7 @@
 .procure-proof-history__current {
   color: var(--brand-orange);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   margin-left: 8px;
 }
@@ -1904,7 +1904,7 @@
 .procure-cockpit__basket-unpriced {
   color: var(--mantine-color-orange-8);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1.1;
 }

@@ -72,7 +72,7 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['packListNumber', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const TAX_FREE_TABLE_CELL_STYLE = {
@@ -96,7 +96,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {

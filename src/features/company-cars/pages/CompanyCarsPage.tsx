@@ -41,7 +41,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['carBrand'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type CompanyCarsPageState = {

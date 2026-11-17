@@ -1896,7 +1896,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   const [isLoading, setLoading] = useState(false)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, setDensity } = useDataTableDensity('product-storage-history', 'normal')
+  const { density, setDensity } = useDataTableDensity('product-storage-history', 'compact')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії місця зберігання')
   const activeError = filterError || missingNetUidError || error
@@ -2009,7 +2009,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
 // Keep document identity pinned while the shared toolbar manages columns and density.
 const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
   columnPinning: { left: ['document', 'number'] },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 function ProductMovementPanel({ product, siblingCards }: { product: Product; siblingCards: ProductSiblingCard[] }) {
@@ -2080,7 +2080,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
   })
   const { document: exportDocument, error: exportError, isExporting } = exportState
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
-  const { density, setDensity } = useDataTableDensity('product-movement', 'normal')
+  const { density, setDensity } = useDataTableDensity('product-movement', 'compact')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -2264,7 +2264,7 @@ function CurrentProductMovementPanel({ product, siblingCards }: { product: Produ
 function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => void; product: Product }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const { density, setDensity } = useDataTableDensity('product-writeoff-rules', 'normal')
+  const { density, setDensity } = useDataTableDensity('product-writeoff-rules', 'compact')
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const productNetUid = product.NetUid?.trim()
   const fallbackProductGroups = useMemo(() => getProductGroupsFromProduct(product), [product])

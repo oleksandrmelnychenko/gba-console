@@ -104,7 +104,7 @@ const RETURNS_TABLE_LAYOUT = {
     // the pinned actions on horizontal scroll and its tail was cut off.
     right: ['total', 'actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type SaleItemRow = {

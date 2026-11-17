@@ -12,6 +12,17 @@
   --button-height-compact-lg: 32px;
 }
 
+/* Mantine trims the inline padding next to a left/right icon to 2/3, which
+   leaves an icon button visibly off-centre (10px vs 15px). Keep both sides
+   equal, as the toolbar buttons already are. */
+.mantine-Button-root.mantine-Button-root:where([data-with-left-section]) {
+  padding-inline-start: var(--button-padding-x);
+}
+
+.mantine-Button-root.mantine-Button-root:where([data-with-right-section]) {
+  padding-inline-end: var(--button-padding-x);
+}
+
 .mantine-ActionIcon-root.mantine-ActionIcon-root {
   --ai-size-xs: 16px;
   --ai-size-sm: 20px;

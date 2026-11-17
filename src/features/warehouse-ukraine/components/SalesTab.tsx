@@ -54,7 +54,7 @@ const TABLE_DEFAULT_LAYOUT = {
     status: 128,
     transporter: 192,
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type FilterDraft = {
@@ -436,7 +436,8 @@ export function SalesTab({ canCreateShipment, canPrintEditAct, canPrintInvoice, 
           <ToolbarDateRangeFilter from={model.filterDraft.from} to={model.filterDraft.to} onChange={({ from, to }) => model.applyFilters({ ...model.filterDraft, from, to })} />
           <TextInput
             className="warehouse-ukraine-filter-input"
-            label={t('Пошук по товару')}
+            aria-label={t('Пошук по товару')}
+            placeholder={t('Пошук по товару')}
             value={model.filterDraft.value}
             onChange={(event) => model.setFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
           />
