@@ -58,6 +58,7 @@ it('keeps a same-named product with another article as its own row, not a repeat
 })
 
 it('rejects an article that is not text', () => {
-  expect(() => show([{ ...row(0, 'Фильтр', '11', 'A', 'Д'), Values: [{ Caption: 'Склад' }, { Caption: 'Фильтр', Article: 5 as unknown as string }, { Caption: 'Д' }] }]))
+  const invalid = { ...row(0, 'Фильтр', '11', 'A', 'Д'), Values: [{ Caption: 'Склад' }, { Caption: 'Фильтр', Article: 5 }, { Caption: 'Д' }] }
+  expect(() => show([invalid as unknown as ReturnType<typeof row>]))
     .toThrow()
 })
