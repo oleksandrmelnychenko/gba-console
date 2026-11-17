@@ -382,6 +382,7 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const columns = useOutgoingCashflowColumns({
     canCancel: hasPermission(PermissionKeys.OutgoingCashflows.Order.Cancel),
     canOpenDocumentStructure: hasPermission(PermissionKeys.AdvancedReports.DocumentStructure.Open),
+    canEditReport: hasPermission(PermissionKeys.AdvancedReports.Report.Edit),
     canOpenReport: hasPermission(PermissionKeys.AdvancedReports.Report.Open),
     onCancel: setCancelRow,
     onEditReport: openAdvanceReport,
@@ -851,6 +852,7 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
 
 function useOutgoingCashflowColumns({
   canCancel,
+  canEditReport,
   canOpenDocumentStructure,
   canOpenReport,
   onCancel,
@@ -859,6 +861,7 @@ function useOutgoingCashflowColumns({
   onOpen,
 }: {
   canCancel: boolean
+  canEditReport: boolean
   canOpenDocumentStructure: boolean
   canOpenReport: boolean
   onCancel: (row: OutgoingCashflowRow) => void
@@ -1017,10 +1020,11 @@ function useOutgoingCashflowColumns({
             )}
             {canOpenReport && row.isUnderReport && (
               <TableRowAction
-                action="edit"
+                action={canEditReport ? 'edit' : 'view'}
                 disabled={!row.order.NetUid || Boolean(getImportedDocumentLockReason(row.order, t))}
                 hint={getImportedDocumentLockReason(row.order, t) ?? undefined}
-                label={t('Редагувати звіт')}
+                // Without report.edit the report opens read-only.
+                label={canEditReport ? t('Редагувати звіт') : t('Переглянути звіт')}
                 onClick={() => onEditReport(row)}
               />
             )}
@@ -1038,7 +1042,7 @@ function useOutgoingCashflowColumns({
         ),
       },
     ],
-    [canCancel, canOpenDocumentStructure, canOpenReport, onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
+    [canCancel, canEditReport, canOpenDocumentStructure, canOpenReport, onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
   )
 }
 

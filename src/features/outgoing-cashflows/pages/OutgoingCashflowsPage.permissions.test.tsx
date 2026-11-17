@@ -158,7 +158,7 @@ describe('outgoing cashflows permissions', () => {
 
     expect(await screen.findByRole('button', { name: 'Новий' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Скасувати' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Редагувати звіт' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Переглянути звіт' })).toBeTruthy()
     const structure = screen.getByRole('button', { name: 'Структура документів' })
     fireEvent.click(structure)
     await waitFor(() => expect(calculateAdvanceReportDocumentStructure).toHaveBeenCalled())
@@ -195,6 +195,7 @@ describe('outgoing cashflows permissions', () => {
 
   it('explains the 1C import lock instead of offering cancel or report edit', async () => {
     allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Edit)
     allowedPermissions.add(PermissionKeys.OutgoingCashflows.Order.Cancel)
     allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Open)
     vi.mocked(getOutgoingCashflows).mockResolvedValue({
