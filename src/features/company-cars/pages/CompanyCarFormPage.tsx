@@ -3,7 +3,6 @@ import {
   Alert,
   Button,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -145,7 +144,9 @@ function CompanyCarFormPageContent() {
         }
 
         const initialCompanyCar = nextCompanyCar || createEmptyCompanyCar()
-        const initialOrganization = initialCompanyCar.Organization || null
+        /* A single organisation is preselected; the field is required either way. */
+        const initialOrganization = initialCompanyCar.Organization
+          || (!id && nextOrganizations.length === 1 ? nextOrganizations[0] : null)
         dispatchPageState({
           companyCar: initialCompanyCar,
           form: toFormState(initialCompanyCar, initialOrganization),
@@ -199,7 +200,7 @@ function CompanyCarFormPageContent() {
 
     const submitErrors = validateCompanyCarForm(form, t, true)
 
-    if (Object.keys(submitErrors).length > 0) {
+    if (Object.keys(submitErrors).length > 0 || !selectedOrganization) {
       dispatchPageState({ type: 'show-required' })
       dispatchPageState({ error: t('Перевірте виділені поля'), type: 'set-error' })
       return
@@ -331,8 +332,10 @@ function CompanyCarFormPageContent() {
             searchable
             data={organizationOptions}
             disabled={isLoading || isSaving}
+            error={showRequired && !selectedOrganization ? t('Оберіть організацію') : undefined}
             label={t('Організація')}
             placeholder={t('Оберіть організацію')}
+            required
             value={form.organizationNetUid || null}
             onChange={(value) => updateForm({ organizationNetUid: value || '' })}
           /></div>
@@ -357,72 +360,60 @@ function CompanyCarFormPageContent() {
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Пальне та пробіг')} stacked>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.tankCapacity}
-              hideControls
               label={t('Вмістимість баку')}
-              max={COMPANY_CAR_LIMITS.tankCapacityMax}
               required
               value={form.tankCapacity}
-              onChange={(value) => updateForm({ tankCapacity: String(value) })}
+              onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
             />
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.fuelAmount}
-              hideControls
               label={t('Кількість пального')}
               required
               value={form.fuelAmount}
-              onChange={(value) => updateForm({ fuelAmount: String(value) })}
+              onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
             />
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.mileage}
-              hideControls
               label={t('Показники одометра')}
-              allowDecimal={false}
-              max={COMPANY_CAR_LIMITS.mileageMax}
               required
               value={form.mileage}
-              onChange={(value) => updateForm({ mileage: String(value) })}
+              onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
             />
               </SimpleGrid>
             </DocumentDetailSection>
             <DocumentDetailSection title={t('Витрати пального')} stacked>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={10}>
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.inCityConsumption}
-              hideControls
               label={t('Розхід по місту на 100 км')}
-              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.inCityConsumption}
-              onChange={(value) => updateForm({ inCityConsumption: String(value) })}
+              onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
             />
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.outsideCityConsumption}
-              hideControls
               label={t('Розхід по трасі на 100 км')}
-              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.outsideCityConsumption}
-              onChange={(value) => updateForm({ outsideCityConsumption: String(value) })}
+              onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
             />
-                <NumberInput
-              allowNegative={false}
+                <TextInput
+              inputMode="decimal"
               disabled={isLoading || isSaving}
               error={fieldErrors.mixedModeConsumption}
-              hideControls
               label={t('Змішаний розхід')}
-              max={COMPANY_CAR_LIMITS.consumptionMax}
               value={form.mixedModeConsumption}
-              onChange={(value) => updateForm({ mixedModeConsumption: String(value) })}
+              onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
             />
               </SimpleGrid>
             </DocumentDetailSection>
