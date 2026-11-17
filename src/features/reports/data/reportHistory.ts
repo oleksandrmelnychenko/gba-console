@@ -7,7 +7,7 @@ import {
   type StockMovementFilterField, type StockMovementFilterRow, type StockMovementFilterWire, type StockMovementLookupItem, type StockMovementRequest,
 } from './warehouseStockMovement'
 import type { WorkbookLaunch } from './bug1274WorkbookLaunch'
-import { bug1274DatasetTitle, workbookMenuName } from './bug1274WorkbookGuide'
+import { bug1274DatasetTitle, workbookDisplayFileName, workbookMenuName } from './bug1274WorkbookGuide'
 import { datasetFilters, datasetGroupings } from './reportDatasets'
 import { readReportFilterExpression, requestFilterExpression } from './reportFilterExpression'
 import { getReportFieldLabel } from './reportOptions'
@@ -18,13 +18,13 @@ import { previousKyivDay } from './cashPeriod'
 
 export const REPORT_HISTORY_RUN_KEY = 'gba.reports.history-run'
 export type ReportHistoryAction = 'open' | 'excel'
-export type ReportHistoryRun = { id: string; action: ReportHistoryAction; at: number }
+export type ReportHistoryRun = { id: string; action: ReportHistoryAction; at: number; report?: string }
 export const MOVEMENT_REPORT_KEY = '1001'
 export const REGIONAL_REPORT_KEY = '1039'
 export const MOVEMENT_REPORT_NAME = 'Рух товару'
 
-export function rememberHistoryRun(id: string, action: ReportHistoryAction, storage: Storage = sessionStorage, now = Date.now()): void {
-  storage.setItem(REPORT_HISTORY_RUN_KEY, JSON.stringify({ id, action, at: now }))
+export function rememberHistoryRun(id: string, action: ReportHistoryAction, storage: Storage = sessionStorage, now = Date.now(), report?: string): void {
+  storage.setItem(REPORT_HISTORY_RUN_KEY, JSON.stringify({ id, action, at: now, ...(report ? { report } : {}) }))
 }
 
 export function takeHistoryRun(storage: Storage = sessionStorage, now = Date.now()): ReportHistoryRun | null {
@@ -35,7 +35,7 @@ export function takeHistoryRun(storage: Storage = sessionStorage, now = Date.now
     const value = JSON.parse(raw) as Partial<ReportHistoryRun>
     if (typeof value.id !== 'string' || (value.action !== 'open' && value.action !== 'excel')
       || typeof value.at !== 'number' || now - value.at > 60_000 || value.at > now + 5_000) return null
-    return { id: value.id, action: value.action, at: value.at }
+    return { id: value.id, action: value.action, at: value.at, ...(typeof value.report === 'string' ? { report: value.report } : {}) }
   } catch { return null }
 }
 
@@ -80,8 +80,26 @@ export function historyReportName(data: ReportRequestBody | null, dataSource: nu
   return (launch ? workbookMenuName(launch) : null) ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
 }
 
+const HISTORY_PROFILE_WORKBOOKS: Readonly<Record<string, string>> = {
+  '41:settlements': 'Взаємороз всі.xls',
+  '41:debtors': 'ДБіторка.xls',
+}
+
+export function historyReportWorkbook(key: string | undefined): string | null {
+  return key ? HISTORY_PROFILE_WORKBOOKS[key] ?? null : null
+}
+
+function historyWorkbookKey(fileName: string): string | null {
+  return Object.entries(HISTORY_PROFILE_WORKBOOKS).find(([, file]) => file === fileName)?.[0] ?? null
+}
+
 export function historyReportKeyName(key: string, datasets: readonly ReportDataset[], launches: readonly WorkbookLaunch[]): string {
   if (key === MOVEMENT_REPORT_KEY) return MOVEMENT_REPORT_NAME
+  const workbook = historyReportWorkbook(key)
+  if (workbook) {
+    const launch = launches.find(item => item.fileName === workbook)
+    return launch ? workbookMenuName(launch) : workbookDisplayFileName(workbook)
+  }
   if (key === REGIONAL_REPORT_KEY) return CURRENT_REGIONAL_TITLE
   const [source, profile] = key.split(':')
   const known = readReportProfile(profile)
@@ -96,9 +114,9 @@ export function historyReportOptions(datasets: readonly ReportDataset[], launche
     const launch = launches.find(item => item.fileName === entry.file)
     if (!launch) continue
     const profile = profileForWorkbook(entry.file)
-    add(profile ? `${launch.dataset.DataSource}:${profile}` : String(launch.dataset.DataSource))
+    add(profile ? `${launch.dataset.DataSource}:${profile}` : historyWorkbookKey(launch.fileName) ?? String(launch.dataset.DataSource))
   }
-  for (const dataset of datasets) if (active.has(dataset.DataSource)) add(String(dataset.DataSource))
+  for (const dataset of datasets) if (active.has(dataset.DataSource) && !Object.keys(HISTORY_PROFILE_WORKBOOKS).some(key => key.startsWith(`${dataset.DataSource}:`))) add(String(dataset.DataSource))
   add(MOVEMENT_REPORT_KEY)
   if (datasets.some(dataset => dataset.DataSource === 39)) add(REGIONAL_REPORT_KEY)
   const items = keys.map(key => ({ id: key, name: historyReportKeyName(key, datasets, launches) }))

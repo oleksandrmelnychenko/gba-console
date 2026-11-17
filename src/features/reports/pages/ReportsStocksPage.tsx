@@ -93,7 +93,7 @@ import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { getReportHistorySettings, type ReportHistorySettings } from '../api/reportHistoryApi'
 import { searchAnalysisValues } from '../api/currentVparivanieAnalysisApi'
-import { clearReportHandoff, droppedSettingsLine, historyReportName, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
+import { clearReportHandoff, droppedSettingsLine, historyReportName, historyReportWorkbook, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
 import type { MovementHistoryRun } from './WarehouseStockMovementPanel'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
@@ -715,7 +715,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     return true
   }
 
-  async function applyHistory(source: ReportRequestBody, action: ReportHistoryAction, regional: boolean) {
+  async function applyHistory(source: ReportRequestBody, action: ReportHistoryAction, regional: boolean, workbookFile: string | null = null) {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (source.dataSource ?? 0))
     if (!nextDataset || !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) {
       setCatalogueNotice({ text: t('Цей звіт більше не можна відкрити.'), failed: true })
@@ -744,7 +744,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     }
     applyConfiguration({ Name: '', Data: data }, nextDataset)
     const profile = readReportProfile(requestReportProfile(data))
-    setActiveWorkbook(profile ? salesConstructorWorkbook(profile) : null)
+    setActiveWorkbook(profile ? salesConstructorWorkbook(profile)
+      : workbookLaunches.some(launch => launch.fileName === workbookFile && launch.dataset.DataSource === nextDataset.DataSource) ? workbookFile : null)
     const line = droppedSettingsLine(sanitized.dropped)
     if (line) setCatalogueNotice({ text: '', failed: false, warning: line })
     if (regional) {
@@ -763,7 +764,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
 
   const loadHistoryRun = useEffectEvent((run: ReportHistoryRun) => {
     getReportHistorySettings(run.id).then(settings => settings.kind === 'movement' ? openHistoryMovement(settings, run.action)
-      : applyHistory(settings.data, run.action, settings.kind === 'regional')).catch(failure => {
+      : applyHistory(settings.data, run.action, settings.kind === 'regional', historyReportWorkbook(run.report))).catch(failure => {
       setCatalogueNotice({ text: failure instanceof Error ? failure.message : t('Цей звіт більше не можна відкрити.'), failed: true })
     })
   })

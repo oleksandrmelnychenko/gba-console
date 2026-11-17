@@ -4,7 +4,7 @@ import { netDataset } from './reportDatasets.test-fixtures'
 import type { StockMovementCapability, StockMovementDraft, StockMovementRequest } from './warehouseStockMovement'
 import {
   clearReportHandoff, defaultHistoryPeriod, distinctLabels, droppedSettingsLine, historyDayTitle, historyPeriodPresets,
-  historyReportKeyName, historyReportName, historyReportOptions, historySummary, MOVEMENT_REPORT_KEY, movementDraftFromHistory,
+  historyReportKeyName, historyReportName, historyReportOptions, historyReportWorkbook, historySummary, MOVEMENT_REPORT_KEY, movementDraftFromHistory,
   movementHistorySummary, peekReportHandoff, REGIONAL_REPORT_KEY, verifyHistoryValues, rememberHistoryRun, rememberWorkbookOpen, sanitizeHistorySettings, takeHistoryRun,
 } from './reportHistory'
 import catalog from './constructorDatasets.dev-fixture.json'
@@ -265,5 +265,31 @@ describe('typed analysis identities in history values', () => {
     const { data, dropped } = await verifyHistoryValues(source, search, 30, () => 'Товар')
     expect(dropped).toEqual([])
     expect(data.selections[0].Values).toHaveLength(1)
+  })
+})
+
+describe('two menu reports over one data source', () => {
+  const settlement = { ...netDataset, DataSource: 41 }
+  const launches = [
+    { fileName: 'Взаємороз всі.xls', label: 'Взаєморозрахунки за період', notice: '', dataset: settlement },
+    { fileName: 'ДБіторка.xls', label: 'Дебіторка за період', notice: '', dataset: settlement },
+  ]
+
+  it('names each history key after its own menu entry and offers both in the report filter', () => {
+    expect(historyReportKeyName('41:settlements', [settlement], launches)).toBe('Взаєморозрахунки всі')
+    expect(historyReportKeyName('41:debtors', [settlement], launches)).toBe('Дебіторська заборгованість')
+    expect(historyReportWorkbook('41:debtors')).toBe('ДБіторка.xls')
+    expect(historyReportWorkbook('41')).toBeNull()
+    const options = historyReportOptions([settlement], launches, new Set([41]))
+    expect(options.map(option => [option.value, option.label])).toEqual([
+      ['41:settlements', 'Взаєморозрахунки всі'], ['41:debtors', 'Дебіторська заборгованість'], [MOVEMENT_REPORT_KEY, 'Рух товару']])
+  })
+
+  it('carries the history report key to the reports page', () => {
+    const storage = new Map<string, string>()
+    const fake = { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => { storage.set(key, value) },
+      removeItem: (key: string) => { storage.delete(key) } } as Storage
+    rememberHistoryRun('11111111-1111-1111-1111-111111111111', 'open', fake, 1000, '41:debtors')
+    expect(takeHistoryRun(fake, 1000)).toMatchObject({ action: 'open', report: '41:debtors' })
   })
 })

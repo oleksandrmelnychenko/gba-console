@@ -112,7 +112,7 @@ export function ReportHistoryPage() {
   }, [opened, dayStates, loadDay, groups])
 
   function run(item: ReportHistoryItem, action: ReportHistoryAction) {
-    rememberHistoryRun(item.id, action)
+    rememberHistoryRun(item.id, action, sessionStorage, Date.now(), item.report)
     navigate('/reports/stocks')
   }
 

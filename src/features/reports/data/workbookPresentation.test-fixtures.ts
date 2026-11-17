@@ -32,8 +32,8 @@ export const presentedDayDataset: ReportDataset = {
   sourceBuyerSubtree: { Version: 1, SourceWorld: 'fenix', BuyerRootId: '8AB2005056C0000811DEFC4535BB4D40',
     RequiresCompletePeriodLineage: true, UsesCurrentCapturedHierarchy: true },
   workbookPresentation: { version: 1, additionalFields: [
-    { type: 2, caption: 'Номенклатура.Артикул (Окремо, Після групування)', placement: 'retainedSetting' },
-    { type: 3, caption: 'Номенклатура.Топ (Вместе, Після групування)', placement: 'retainedSetting' }], orderings: ['MonthAscending'] },
+    { type: 2, caption: 'Артикул', placement: 'retainedSetting' },
+    { type: 3, caption: 'Топ', placement: 'retainedSetting' }], orderings: ['MonthAscending'] },
 }
 export function presentedCashRequest() {
   const request = defaultDatasetRequest(presentedCashDataset, '2026-10-01', '2026-10-04')

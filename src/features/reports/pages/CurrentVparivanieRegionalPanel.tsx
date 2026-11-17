@@ -7,8 +7,7 @@ import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { Map as MapIcon } from 'lucide-react'
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
-import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
-  currentVparivanieStockSentence } from '../data/currentVparivanie'
+import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable } from '../data/currentVparivanie'
 import { currentVparivanieV2CellKey, currentVparivanieV2Columns } from '../data/currentVparivanieV2Export'
 import { currentVparivanieRegionalAvailable, currentVparivanieRegionalRequest, type CurrentVparivanieRegionalResult } from '../data/currentVparivanieRegional'
 import { currentRegionalCellText, currentRegionalColumnCaption, currentRegionalCsv,
@@ -41,6 +40,18 @@ function RegionalTable({ result }: { result: CurrentVparivanieRegionalResult }) 
       })}</tbody></table>
   </ReportTableScrollArea>
     <ReportRowPagination total={result.Rows.length} offset={first} onChange={offset => setPage(offset / 50)} /></Stack>
+}
+
+function unknownQuantityLine(result: CurrentVparivanieRegionalResult): string | null {
+  const count = result.Rows.filter(row => row.Cells.some(cell => cell.Quantity === null)).length
+  if (!count) return null
+  const tail = count % 100 >= 11 && count % 100 <= 14 ? 'рядків' : count % 10 === 1 ? 'рядок' : count % 10 >= 2 && count % 10 <= 4 ? 'рядки' : 'рядків'
+  return `Кількість невідома: ${count} ${tail}`
+}
+
+function UnknownQuantityLine({ result }: { result: CurrentVparivanieRegionalResult }) {
+  const line = unknownQuantityLine(result)
+  return line ? <Text size="sm" c="orange.8" role="status">{line}</Text> : null
 }
 
 function RegionalFullScopeCheckbox({ dataset, checked, disabled, onChange }: {
@@ -139,8 +150,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request: form, enabled
       {rejected ? <Text size="xs" c="gray.7" role="status">{rejected}</Text> : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       {result ? <><PartialCoverageLine coverage={result.PhysicalCoverage} /><PhysicalQuantityExceptionLine exceptions={result.PhysicalQuantityExceptions} />
-        <Text size="xs" c="dimmed">Продажі: {result.From} — {result.To}. {currentVparivanieStockSentence(result.StockAnchor)}
-        ∅ — кількість невідома.</Text><RegionalTable key={requestKey} result={result} /></> : null}
+        <UnknownQuantityLine result={result} /><RegionalTable key={requestKey} result={result} /></> : null}
     </Stack>
   </section>
 }
