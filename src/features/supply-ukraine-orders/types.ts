@@ -395,6 +395,7 @@ export type SupplyOrderUkraine = EntityFields & {
   InvDate?: Date | string
   InvNumber?: string
   IsDirectFromSupplier?: boolean
+  IsPartialPlaced?: boolean
   IsPlaced?: boolean
   Number?: string
   FromDate?: Date | string
@@ -563,6 +564,8 @@ export type SupplyUkraineOrderRow = {
   invoice?: SupplyInvoice
   invoiceDate?: Date | string
   invoiceNumber?: string
+  /** Some columns already received, the order not yet complete. */
+  isPartialPlaced?: boolean
   isPlaced?: boolean
   kind: SupplyUkraineOrderRowKind
   netUid?: string

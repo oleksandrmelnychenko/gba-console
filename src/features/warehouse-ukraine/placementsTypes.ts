@@ -86,6 +86,8 @@ export type PlacementSupplyOrder = EntityFields & {
   InvNumber?: string
   FromDate?: Date | string
   IsPlaced?: boolean
+  /** Some columns already have an income document; IsPlaced turns true once everything is received. */
+  IsPartialPlaced?: boolean
   TotalNetWeight?: number
   Supplier?: { FullName?: string } | null
   SupplyOrderUkraineItems: PlacementOrderItem[]

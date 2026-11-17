@@ -938,9 +938,9 @@ function useSupplyUkraineOrderColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         width: 158,
       },
       {
-        accessor: (row) => (row.isPlaced ? 1 : 0),
+        accessor: (row) => (row.isPlaced ? 2 : row.isPartialPlaced ? 1 : 0),
         align: 'center',
-        cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
+        cell: (row) => <OrderPlacedCell partial={row.isPartialPlaced} value={row.isPlaced} />,
         header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL),
         id: 'isPlaced',
         minWidth: 92,
@@ -1067,9 +1067,9 @@ function useSupplyOrderInvoiceColumns(): DataTableColumn<SupplyUkraineOrderRow>[
         width: 132,
       },
       {
-        accessor: (row) => (row.isPlaced ? 1 : 0),
+        accessor: (row) => (row.isPlaced ? 2 : row.isPartialPlaced ? 1 : 0),
         align: 'center',
-        cell: (row) => <OrderPlacedCell value={row.isPlaced} />,
+        cell: (row) => <OrderPlacedCell partial={row.isPartialPlaced} value={row.isPlaced} />,
         header: t(SUPPLY_ORDER_INCOME_STATUS_LABEL),
         id: 'isPlaced',
         minWidth: 124,
@@ -1663,10 +1663,10 @@ function OrderMetricValue({ label, value }: { label: string; value: string }) {
   )
 }
 
-function OrderPlacedCell({ value }: { value?: boolean }) {
+function OrderPlacedCell({ partial, value }: { partial?: boolean; value?: boolean }) {
   const { t } = useI18n()
 
-  return <span className="supply-order-status-cell">{placedBadge(value, t)}</span>
+  return <span className="supply-order-status-cell">{placedBadge(value, t, partial)}</span>
 }
 
 function OrderKindCell({ row }: { row: SupplyUkraineOrderRow }) {
@@ -2150,6 +2150,7 @@ function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow 
     index: 0,
     invoiceDate: order.InvDate,
     invoiceNumber: order.InvNumber,
+    isPartialPlaced: Boolean(!order.IsPlaced && order.IsPartialPlaced),
     isPlaced: Boolean(order.IsPlaced),
     kind: 'toUkraine',
     netUid: order.NetUid,
@@ -2260,9 +2261,10 @@ function getKindBadge(row: SupplyUkraineOrderRow, t: (key: string) => string) {
   return <OrderStatusTag tone="accent">{t('Поставка')}</OrderStatusTag>
 }
 
-function placedBadge(value: boolean | undefined, t: (key: string) => string) {
-  return value
-    ? <OrderStatusTag tone="success">{t('Так')}</OrderStatusTag>
+function placedBadge(value: boolean | undefined, t: (key: string) => string, partial?: boolean) {
+  if (value) return <OrderStatusTag tone="success">{t('Так')}</OrderStatusTag>
+  return partial
+    ? <OrderStatusTag tone="info">{t('Частково')}</OrderStatusTag>
     : <OrderStatusTag tone="neutral">{t('Ні')}</OrderStatusTag>
 }
 

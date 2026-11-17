@@ -11,7 +11,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
+import { getSupplyOrderIncomePillClass, getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -161,6 +161,8 @@ function buildGridRows(order: PlacementSupplyOrder): PlacementGridRow[] {
     return rows
   }, [])
 }
+
+const RECEIVED_COLUMN_LOCKED_MESSAGE = 'Для решти товару додайте нову колонку: ця колонка вже містить оприбутковані розміщення'
 
 function columnHasAppliedPlacements(column: DynamicProductPlacementColumn): boolean {
   return column.DynamicProductPlacementRows.some((row) =>
@@ -364,6 +366,12 @@ function useOrderPlacementsModel() {
         return
       }
 
+      const column = order?.DynamicProductPlacementColumns.find((candidate) => columnKey(candidate) === columnId)
+      if (column && columnHasAppliedPlacements(column)) {
+        notifications.show({ color: 'blue', message: t(RECEIVED_COLUMN_LOCKED_MESSAGE) })
+        return
+      }
+
       const { item } = gridRow
       const qtyToSet = Math.trunc(value)
       const itemQty = item.Qty || 0
@@ -392,7 +400,7 @@ function useOrderPlacementsModel() {
 
       applyColumnRowQty(columnId, item, qtyToSet, normalizePlacementsForQty(placements, qtyToSet))
     },
-    [applyColumnRowQty, isBusy, order?.IsPlaced, t],
+    [applyColumnRowQty, isBusy, order?.DynamicProductPlacementColumns, order?.IsPlaced, t],
   )
 
   const handleOpenPlacements = useCallback(
@@ -890,7 +898,9 @@ function WarehouseUkraineOrderPlacementsPageContent() {
       (column) => {
         const key = columnKey(column)
         const canEditDynamicColumn = canEditOpenOrder
-        const canDelete = canEditDynamicColumn && !columnHasAppliedPlacements(column)
+        // A column that already has an income document is locked: the rest goes to a new column.
+        const isReceivedColumn = columnHasAppliedPlacements(column)
+        const canDelete = canEditDynamicColumn && !isReceivedColumn
 
         return {
           id: `dynamic-${key}`,
@@ -944,7 +954,8 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                   <NumberInput
                     allowDecimal={false}
                     className="warehouse-order-placement-dynamic-qty"
-                    disabled={!canEditDynamicColumn || model.isBusy}
+                    disabled={!canEditDynamicColumn || model.isBusy || isReceivedColumn}
+                    title={isReceivedColumn ? t(RECEIVED_COLUMN_LOCKED_MESSAGE) : undefined}
                     hideControls
                     min={0}
                     size="xs"
@@ -959,7 +970,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                   />
                   <TableRowAction
                     action="placement"
-                    disabled={!canEditDynamicColumn || model.isBusy}
+                    disabled={!canEditDynamicColumn || model.isBusy || isReceivedColumn}
                     label={t('Оприходування')}
                     onClick={() => model.handleOpenPlacements(gridRow, key, row)}
                   />
@@ -1030,8 +1041,8 @@ function WarehouseUkraineOrderPlacementsPageContent() {
               </Badge>
             )}
             {model.order && (
-              <Badge className={`app-role-pill ${model.order.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
-                {t(getSupplyOrderIncomeStatusLabel(model.order.IsPlaced))}
+              <Badge className={`app-role-pill ${getSupplyOrderIncomePillClass(model.order.IsPlaced, model.order.IsPartialPlaced)}`} variant="light">
+                {t(getSupplyOrderIncomeStatusLabel(model.order.IsPlaced, model.order.IsPartialPlaced))}
               </Badge>
             )}
           </div>

@@ -304,4 +304,35 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
     expect(screen.queryByRole('button', { name: 'Підтвердити' })).toBeNull()
     expect(apiMocks.createIncome).not.toHaveBeenCalled()
   })
+
+  it('reads «Частково оприходувано» while the order is partly received', async () => {
+    const order = await apiMocks.getOrder()
+    apiMocks.getOrder.mockResolvedValue({ ...order, IsPartialPlaced: true })
+
+    renderPage()
+
+    expect(await screen.findByText('Частково оприходувано')).toBeTruthy()
+  })
+
+  it('locks the quantity and placements of a column that already has an income document', async () => {
+    const order = await apiMocks.getOrder()
+    const column = order.DynamicProductPlacementColumns[0]
+    const row = column.DynamicProductPlacementRows[0]
+    apiMocks.getOrder.mockResolvedValue({
+      ...order,
+      IsPartialPlaced: true,
+      DynamicProductPlacementColumns: [{
+        ...column,
+        DynamicProductPlacementRows: [{ ...row, DynamicProductPlacements: [{ ...row.DynamicProductPlacements[0], IsApplied: true }] }],
+      }],
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('SKU-1')).toBeTruthy()
+    const qty = document.querySelector('.warehouse-order-placement-dynamic-qty input') as HTMLInputElement
+    expect(qty.disabled).toBe(true)
+    expect(qty.title).toContain('ця колонка вже містить оприбутковані розміщення')
+    expect((screen.getByRole('button', { name: 'Оприходування' }) as HTMLButtonElement).disabled).toBe(true)
+  })
 })

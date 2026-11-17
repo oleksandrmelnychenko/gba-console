@@ -21,7 +21,7 @@ import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getProductForOrderOverview } from '../../products/api/productsApi'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
+import { getSupplyOrderIncomePillClass, getSupplyOrderIncomeStatusLabel } from '../../../shared/supplyOrderIncomeStatus'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -577,8 +577,8 @@ function SupplyUkraineOrderOverviewPageContent() {
           <Stack gap="md">
             <Group justify="space-between" align="center">
               <Text className="app-section-title" fw={600} size="sm">{t('Замовлення')}</Text>
-              <Badge className={`app-role-pill ${order?.IsPlaced ? 'is-green' : 'is-gray'}`} variant="light">
-                {t(getSupplyOrderIncomeStatusLabel(order?.IsPlaced))}
+              <Badge className={`app-role-pill ${getSupplyOrderIncomePillClass(order?.IsPlaced, order?.IsPartialPlaced)}`} variant="light">
+                {t(getSupplyOrderIncomeStatusLabel(order?.IsPlaced, order?.IsPartialPlaced))}
               </Badge>
             </Group>
 
