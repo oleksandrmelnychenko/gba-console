@@ -10,8 +10,11 @@ describe('excelImportErrorText', () => {
   })
 
   it('hides English parser texts and unfilled placeholders', () => {
+    // A 500 during the import is a server failure, not a broken workbook.
     expect(excelImportErrorText(new ApiError('Product transfer file import failed unexpectedly.', 500, null), 'x'))
-      .toBe('Файл не є коректною книгою Excel (.xlsx).')
+      .toMatch(/помилку сервера/)
+    expect(excelImportErrorText(new ApiError('Product transfer file import failed unexpectedly.', 500, null), 'x'))
+      .not.toMatch(/книгою Excel/)
     expect(excelImportErrorText(new ApiError('The capitalization file could not be parsed.', 400, null), 'x'))
       .toBe('Файл не є коректною книгою Excel (.xlsx).')
     expect(excelImportErrorText(new ApiError("The availability quantity must be a finite non-negative number. (Parameter 'qty')", 400, null), 'x'))
