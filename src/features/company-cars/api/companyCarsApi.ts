@@ -143,8 +143,11 @@ export async function deleteCompanyCarRoadList(netId: string): Promise<CompanyCa
   return normalizeCompanyCar(result)
 }
 
-export async function getOutcomeOrdersByCompanyCar(companyCarNetId: string): Promise<OutcomePaymentOrder[]> {
-  const result = await apiRequest<unknown>('/payments/orders/outcome/all/companycar', {
+export async function getOutcomeOrdersByCompanyCar(
+  companyCarNetId: string,
+  mode: 'create' | 'edit',
+): Promise<OutcomePaymentOrder[]> {
+  const result = await apiRequest<unknown>(`/payments/orders/outcome/company-cars/road-list/${mode}/all`, {
     query: {
       netId: companyCarNetId,
     },

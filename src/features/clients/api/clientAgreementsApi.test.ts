@@ -5,13 +5,13 @@ vi.mock('../../../shared/api/apiClient', () => ({
 }))
 
 vi.mock('../../product-groups/api/productGroupsApi', () => ({
-  getAllProductGroups: vi.fn(),
-  getRootProductGroups: vi.fn(),
+  getAllProductGroupsAt: vi.fn(),
+  getRootProductGroupsAt: vi.fn(),
   getProductGroups: vi.fn(),
 }))
 
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
+import { getAllProductGroupsAt, getRootProductGroupsAt } from '../../product-groups/api/productGroupsApi'
 import { exportAgreementDocument, getAgreementProductGroupDiscounts, mergeProductGroupDiscounts } from './clientAgreementsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import type { ProductGroupDiscount } from '../types'
@@ -25,29 +25,29 @@ describe('getAgreementProductGroupDiscounts', () => {
   })
 
   it('loads the full product-group catalog (all-groups endpoint) and builds discount rows', async () => {
-    vi.mocked(getAllProductGroups).mockResolvedValue([
+    vi.mocked(getAllProductGroupsAt).mockResolvedValue([
       { Id: 1, NetUid: 'g1', Name: 'Group 1', SubProductGroups: [] },
       { Id: 2, NetUid: 'g2', Name: 'Group 2', SubProductGroups: [] },
     ])
 
-    const result = await getAgreementProductGroupDiscounts([])
+    const result = await getAgreementProductGroupDiscounts([], undefined, 'details')
 
-    expect(getAllProductGroups).toHaveBeenCalledTimes(1)
-    expect(getRootProductGroups).not.toHaveBeenCalled()
+    expect(getAllProductGroupsAt).toHaveBeenCalledWith('/products/groups/clients-card/details/all')
+    expect(getRootProductGroupsAt).not.toHaveBeenCalled()
     expect(result).toHaveLength(2)
     expect(result[0]).toMatchObject({ ProductGroupId: 1, DiscountRate: 0 })
     expect(result[1]).toMatchObject({ ProductGroupId: 2, DiscountRate: 0 })
   })
 
   it('uses the root-scoped catalog when a root net id is supplied', async () => {
-    vi.mocked(getRootProductGroups).mockResolvedValue([
+    vi.mocked(getRootProductGroupsAt).mockResolvedValue([
       { Id: 3, NetUid: 'g3', Name: 'Group 3', SubProductGroups: [] },
     ])
 
-    const result = await getAgreementProductGroupDiscounts([], 'root-net')
+    const result = await getAgreementProductGroupDiscounts([], 'root-net', 'create')
 
-    expect(getRootProductGroups).toHaveBeenCalledWith('root-net')
-    expect(getAllProductGroups).not.toHaveBeenCalled()
+    expect(getRootProductGroupsAt).toHaveBeenCalledWith('/products/groups/clients-card/create/root/groups', 'root-net')
+    expect(getAllProductGroupsAt).not.toHaveBeenCalled()
     expect(result).toHaveLength(1)
     expect(result[0]).toMatchObject({ ProductGroupId: 3 })
   })

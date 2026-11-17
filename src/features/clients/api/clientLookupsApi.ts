@@ -4,7 +4,6 @@ import {
   getClientResourceBasePricings,
   getClientResourceCurrencies,
   getClientResourceOrganizations,
-  getClientResourcePerfectClients,
   getClientResourcePricingTypes,
   getClientResourcePricings,
   getClientResourceRegions,
@@ -14,6 +13,7 @@ import {
   getProductGroups,
   getRootProductGroups,
 } from '../../product-groups/api/productGroupsApi'
+import type { ClientResourcePerfectClient } from '../../client-resources/types'
 import type {
   ClientGroup,
   ClientWorkplace,
@@ -32,13 +32,26 @@ export {
   getClientResourceBasePricings,
   getClientResourceCurrencies,
   getClientResourceOrganizations,
-  getClientResourcePerfectClients,
   getClientResourcePricingTypes,
   getClientResourcePricings,
   getClientResourceRegions,
   getProductGroupWithRoot,
   getProductGroups,
   getRootProductGroups,
+}
+
+/** Perfect-client definitions for the client card (`details`) or the new-client form (`create`). */
+export async function getClientCardPerfectClients(
+  clientTypeRoleId: number,
+  context: 'create' | 'details',
+): Promise<ClientResourcePerfectClient[]> {
+  const result = await apiRequest<unknown>(`/clients/perfect/clients-card/${context}/role`, {
+    query: {
+      id: clientTypeRoleId,
+    },
+  })
+
+  return normalizeLookupList<ClientResourcePerfectClient>(result)
 }
 
 export async function getSupplierCountries(): Promise<Country[]> {
@@ -75,7 +88,8 @@ export async function getAvailableRegionCode(region: Region): Promise<RegionCode
 }
 
 export async function checkRegionCodeAvailability(regionNetUid: string, code: string): Promise<boolean> {
-  const result = await apiRequest<unknown>('/regions/codes/availability/check', {
+  // Only the new-client form checks code availability, so it reads the client-create facade.
+  const result = await apiRequest<unknown>('/regions/codes/clients/create/availability/check', {
     query: {
       code,
       netId: regionNetUid,

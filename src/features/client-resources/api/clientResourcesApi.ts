@@ -384,7 +384,7 @@ export async function updateClientResourceClientTypeRole(
 export async function getClientResourcePerfectClients(
   clientTypeRoleId: number,
 ): Promise<ClientResourcePerfectClient[]> {
-  const result = await apiRequest<unknown>('/clients/perfect/all/role', {
+  const result = await apiRequest<unknown>('/clients/perfect/client-resources/page/role', {
     query: {
       id: clientTypeRoleId,
     },

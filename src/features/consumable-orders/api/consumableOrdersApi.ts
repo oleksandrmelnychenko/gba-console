@@ -82,7 +82,8 @@ export async function getUnpaidConsumableOrdersByOrganization(organizationNetId:
     return []
   }
 
-  const result = await apiRequest<unknown>('/consumables/orders/all/unpaid', {
+  // Only the outgoing group payment form (outgoing order create key) loads unpaid consumable orders.
+  const result = await apiRequest<unknown>('/consumables/orders/outgoing-cashflows/create/unpaid', {
     query: {
       organizationNetId,
     },
@@ -221,8 +222,15 @@ export async function searchConsumableProductCategories(
   return normalizeConsumableProductCategories(result)
 }
 
-export async function searchConsumableProductsByVendorCode(value: string): Promise<ConsumableProduct[]> {
-  const result = await apiRequest<unknown>('/consumables/products/search/vendorcode', {
+/** Each caller reads the facade of its own context; the shared legacy route is retired. */
+export async function searchConsumableProductsByVendorCode(
+  value: string,
+  scope: 'consumable-order' | 'advanced-report-edit',
+): Promise<ConsumableProduct[]> {
+  const route = scope === 'advanced-report-edit'
+    ? '/consumables/products/advanced-reports/report/edit/search/vendorcode'
+    : '/consumables/products/consumable-orders/page/search/vendorcode'
+  const result = await apiRequest<unknown>(route, {
     query: {
       value,
     },

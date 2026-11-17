@@ -117,6 +117,23 @@ export async function getProductAnalytics(
   return normalizeProductAnalytics(result, asOfDate)
 }
 
+/**
+ * The purchase cockpit's analytics rows. Product intelligence is pinned to the assortment-analytics page key, so the
+ * cockpit reads the same analytics through its own procurement route (purchase cockpit page key).
+ */
+export async function getPurchaseCockpitProductAnalytics(
+  productId: number,
+  asOfDate?: string,
+  months = 12,
+  signal?: AbortSignal,
+): Promise<ProductAnalytics> {
+  const result = await apiRequest<unknown>(`/procurement/cockpit/product/${productId}/analytics`, {
+    query: { asOfDate, months },
+    signal,
+  })
+  return normalizeProductAnalytics(result, asOfDate)
+}
+
 export async function getProductRegions(
   productId: number,
   asOfDate?: string,

@@ -49,7 +49,7 @@ describe('counterparty groups API', () => {
       IsPlaced: true, IsManuallyPlaced: true })
     await expect(getClientCounterpartyGroup(client)).resolves.toEqual({ ClientNetUid: client, GroupNetUid: group,
       GroupName: 'Харків', GroupPath: 'Покупці / Харків', IsPlaced: true, IsManuallyPlaced: true })
-    expect(api).toHaveBeenLastCalledWith('/clients/counterparty-groups/client', { query: { clientNetUid: client } })
+    expect(api).toHaveBeenLastCalledWith('/clients/counterparty-groups/clients-card/client', { query: { clientNetUid: client } })
     api.mockResolvedValue(null)
     await expect(getClientCounterpartyGroup(client)).resolves.toBeNull()
   })

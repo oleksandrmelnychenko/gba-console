@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { getClientSubClients } from '../../../clients/api/clientCabinetApi'
+import { getSalesWizardClientSubClients } from '../../../clients/api/clientCabinetApi'
 import type { Client, ClientAgreement, ClientIdentityAttentionSummary, ClientInDebt } from '../../../clients/types'
 import type { SalesUkraineClientAgreement } from '../../types'
 import { getWizardClientAgreements, getWizardClientGroupedDebts, getWizardClientIdentityAttention, type WizardSaleRegisterQuery } from './wizardClientStepApi'
@@ -276,7 +276,7 @@ export function useWizardClientSelection(options: Options) {
         if (!isCurrent() || !client || (client.Id ?? 0) <= 0) return
         let restored = client
         if (!isWizardSaleClientSelectable(client)) {
-          const children = await getClientSubClients(clientNetId).catch(() => null)
+          const children = await getSalesWizardClientSubClients(clientNetId, permissionFlow).catch(() => null)
           if (children) restored = { ...client, SubClients: children }
         }
         if (!isCurrent()) return

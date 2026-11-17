@@ -1,6 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { hasExportDocumentUrl, normalizeExportDocument } from '../../../shared/documents/exportDocument'
-import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
+import { getAllProductGroupsAt, getRootProductGroupsAt } from '../../product-groups/api/productGroupsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import { updateClient } from './clientFormApi'
 import type {
@@ -25,17 +25,6 @@ export async function getClientAgreements(netId: string, signal?: AbortSignal): 
     query: {
       netId,
       includeDebts: false,
-    },
-    ...(signal ? { signal } : {}),
-  })
-
-  return normalizeAgreementList(result)
-}
-
-export async function getRetailClientAgreements(netId: string, signal?: AbortSignal): Promise<ClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/retail/client/all', {
-    query: {
-      netId,
     },
     ...(signal ? { signal } : {}),
   })
@@ -115,13 +104,17 @@ export async function exportAgreementWarrantyConditions(netId: string): Promise<
   return exportAgreementDocument(netId, AgreementDownloadDocumentType.WarrantyConditions)
 }
 
+/** `create` on the new-client form (client create key), `details` on the client card (card open key). */
+export type ClientCardLookupContext = 'create' | 'details'
+
 export async function getAgreementProductGroupDiscounts(
   productGroupDiscounts: ProductGroupDiscount[] = [],
-  rootNetId?: string,
+  rootNetId: string | undefined,
+  context: ClientCardLookupContext,
 ): Promise<ProductGroupDiscount[]> {
   const productGroups = rootNetId
-    ? await getRootProductGroups(rootNetId)
-    : await getAllProductGroups()
+    ? await getRootProductGroupsAt(`/products/groups/clients-card/${context}/root/groups`, rootNetId)
+    : await getAllProductGroupsAt(`/products/groups/clients-card/${context}/all`)
 
   return mergeProductGroupDiscounts(productGroups, productGroupDiscounts)
 }

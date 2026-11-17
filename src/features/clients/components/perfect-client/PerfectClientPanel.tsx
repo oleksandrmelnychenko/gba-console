@@ -21,7 +21,7 @@ import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   createClientResourcePerfectClient,
-  getClientResourcePerfectClients,
+  getClientCardPerfectClients,
 } from '../../api/clientLookupsApi'
 import type { ClientResourcePerfectClient } from '../../../client-resources/types'
 import { PerfectClientType } from '../../types'
@@ -36,6 +36,7 @@ export type PerfectClientPanelProps = {
   canCreateDefinition?: boolean
   client: Client
   disabled?: boolean
+  lookupContext: 'create' | 'details'
   onChange: (client: Client) => void
 }
 
@@ -153,6 +154,7 @@ export function PerfectClientPanel({
   canCreateDefinition = false,
   client,
   disabled = false,
+  lookupContext,
   onChange,
 }: PerfectClientPanelProps) {
   const runActionOnce = useSingleFlight()
@@ -179,7 +181,7 @@ export function PerfectClientPanel({
       setError(null)
 
       try {
-        const definitions = await getClientResourcePerfectClients(id)
+        const definitions = await getClientCardPerfectClients(id, lookupContext)
 
         if (!cancelled) {
           setPerfectClients(
@@ -205,7 +207,7 @@ export function PerfectClientPanel({
     return () => {
       cancelled = true
     }
-  }, [roleId, setPerfectClients, setLoading, setError, t])
+  }, [lookupContext, roleId, setPerfectClients, setLoading, setError, t])
 
   const visibleClients = perfectClients.filter((item) => (item.Lable || '').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()))
   const checkboxClients = visibleClients.filter((item) => item.Type === PerfectClientType.Checkbox)

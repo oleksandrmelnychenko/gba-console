@@ -267,8 +267,12 @@ function normalizePersistedNetUid(value: string | null | undefined): string {
 
 // --- Delivery recipients ---------------------------------------------------
 
-export async function getClientDeliveryRecipients(clientNetId: string): Promise<WizardDeliveryRecipient[]> {
-  const result = await apiRequest<unknown>('/deliveries/recipients/all/client', {
+export async function getClientDeliveryRecipients(
+  clientNetId: string,
+  flow: 'create' | 'edit',
+): Promise<WizardDeliveryRecipient[]> {
+  // The wizard's own facade (sale create/edit key) instead of the client-structure card route.
+  const result = await apiRequest<unknown>(`/deliveries/recipients/sales-ukraine/${flow}/client`, {
     query: { netId: clientNetId },
   })
 
@@ -456,12 +460,3 @@ export async function createFutureReservation(
   })
 }
 
-// --- Sub-clients (merged) --------------------------------------------------
-
-export async function getSubClients(clientNetId: string): Promise<WizardSubClient[]> {
-  const result = await apiRequest<unknown>('/clients/all/subclients/client', {
-    query: { netId: clientNetId },
-  })
-
-  return asArray<WizardSubClient>(result)
-}

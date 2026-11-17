@@ -139,7 +139,7 @@ export async function calculateAvailablePaymentConvertedAmount(params: {
   fromCurrencyId: number
   toCurrencyId: number
 }): Promise<number> {
-  const result = await apiRequest<unknown>('/payments/orders/income/exchange/calculate', {
+  const result = await apiRequest<unknown>('/payments/orders/income/available-payments/page/exchange/calculate', {
     query: {
       amount: params.amount,
       exchangeRate: params.exchangeRate,

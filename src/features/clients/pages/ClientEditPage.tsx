@@ -1889,6 +1889,7 @@ function EditStepContent({
   if (step === 'perfect-client') {
     return (
       <PerfectClientPanel
+        lookupContext="details"
         canCreateDefinition={canCreatePerfectClientDefinition}
         client={client}
         disabled={!canEditClient}

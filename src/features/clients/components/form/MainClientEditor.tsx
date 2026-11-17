@@ -4,7 +4,7 @@ import { CircleAlert, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getRootClientBySubClientNetId } from '../../api/clientCabinetApi'
-import { getClientsForRegistry, getSuppliers } from '../../api/clientsApi'
+import { searchMainClientCandidates } from '../../api/clientsApi'
 import type { Client } from '../../types'
 import { getMainClientCandidateName, isMainClientCandidate } from './mainClientCandidate'
 
@@ -61,7 +61,7 @@ export function MainClientEditor({
     }
 
     let cancelled = false
-    getRootClientBySubClientNetId(clientNetUid)
+    getRootClientBySubClientNetId(clientNetUid, 'client-card')
       .then((link) => {
         if (!cancelled) {
           const root = link?.RootClient ?? null
@@ -86,9 +86,7 @@ export function MainClientEditor({
 
     const controller = new AbortController()
     const params = { value: debouncedSearch, limit: MAIN_CLIENT_SEARCH_LIMIT, offset: 0 }
-    const request = isProvider
-      ? getSuppliers(params, controller.signal)
-      : getClientsForRegistry(params, controller.signal)
+    const request = searchMainClientCandidates(isProvider ? 'suppliers' : 'clients', params, controller.signal)
 
     request
       .then((found) => {

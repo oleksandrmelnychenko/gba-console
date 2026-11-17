@@ -282,7 +282,7 @@ function useRoadListFormModel({
 
     let cancelled = false
 
-    void getOutcomeOrdersByCompanyCar(companyCarNetUid)
+    void getOutcomeOrdersByCompanyCar(companyCarNetUid, isEditMode ? 'edit' : 'create')
       .then((nextOrders) => {
         if (!cancelled) {
           dispatchState({ outcomeOrders: mergeOutcomeOrders(editedRoadList?.OutcomePaymentOrder, nextOrders), type: 'loaded-outcome-orders' })
@@ -300,7 +300,7 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [canSave, companyCarNetUid, editedRoadList, opened, t])
+  }, [canSave, companyCarNetUid, editedRoadList, isEditMode, opened, t])
 
   useEffect(() => {
     if (!opened || !canSave) {

@@ -3,7 +3,7 @@ import { Info } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { useEffect, useState } from 'react'
 import { describeSyncSource } from './syncSourceEvidence'
-import { getSyncStatus } from '../../header-actions/api/syncApi'
+import { getDashboardSyncStatus } from '../../header-actions/api/syncApi'
 import type { DataSyncStatus } from '../../header-actions/types'
 import { useSystemOfRecordCutover } from '../../../shared/system-of-record/systemOfRecordCutover'
 
@@ -27,7 +27,7 @@ function SyncSourceStatusContent() {
       if (pending) return
       pending = true
       try {
-        const next = await getSyncStatus()
+        const next = await getDashboardSyncStatus()
         if (!cancelled) { setStatus(next); setError(null) }
       } catch (failure) {
         if (!cancelled) { setStatus(null); setError(failure instanceof Error ? failure.message : 'Статус синхронізації недоступний') }

@@ -311,7 +311,7 @@ export async function exportProductMovementsDocument(
 }
 
 export async function getNonDefectiveStorages(): Promise<Storage[]> {
-  const result = await apiRequest<unknown>('/storages/all/nondefective', {
+  const result = await apiRequest<unknown>('/storages/products-assortment/upload/nondefective', {
     errorMessages: {
       default: 'Не вдалося завантажити склади',
       network: 'Сервер складів недоступний',

@@ -492,6 +492,7 @@ export function PricingPanel({
       {showDiscountsTree && highlightedAgreement?.Agreement?.NetUid && (
         <Card className="app-section-card" withBorder padding="md" radius="md">
           <DiscountsTree
+            lookupContext={mode === 'new' ? 'create' : 'details'}
             clientAgreementNetId={highlightedAgreement.Agreement.NetUid}
             disabled={disabled}
             productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts ?? EMPTY_PRODUCT_GROUP_DISCOUNTS}

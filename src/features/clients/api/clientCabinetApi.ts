@@ -147,6 +147,17 @@ export async function searchServicePayers(
   return normalizeCabinetList<ServicePayer>(result)
 }
 
+/** Sub-clients for the sales wizard; read through the wizard's create/edit facade, not the structure card. */
+export async function getSalesWizardClientSubClients(netId: string, flow: 'create' | 'edit'): Promise<ClientSubClient[]> {
+  const result = await apiRequest<unknown>(`/clients/sales-ukraine/${flow}/subclients`, {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeCabinetList<ClientSubClient>(result)
+}
+
 export async function getClientSubClients(netId: string): Promise<ClientSubClient[]> {
   const result = await apiRequest<unknown>('/clients/structure/card/subclients', {
     query: {
@@ -157,8 +168,13 @@ export async function getClientSubClients(netId: string): Promise<ClientSubClien
   return normalizeCabinetList<ClientSubClient>(result)
 }
 
-export async function getRootClientBySubClientNetId(netId: string): Promise<Client | null> {
-  const result = await apiRequest<unknown>('/clients/get/subclient', {
+/** `client-card`: the card's main-client block (card open key); `sale-reassign`: the sale reassign modal. */
+export async function getRootClientBySubClientNetId(
+  netId: string,
+  context: 'client-card' | 'sale-reassign',
+): Promise<Client | null> {
+  const route = context === 'sale-reassign' ? '/clients/sales-ukraine/reassign/subclient' : '/clients/clients-card/details/subclient'
+  const result = await apiRequest<unknown>(route, {
     query: {
       netId,
     },

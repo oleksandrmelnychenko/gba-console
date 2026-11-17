@@ -498,8 +498,9 @@ export async function getIncomeCashflowRetailClients(): Promise<RetailClient[]> 
   throw new Error('Retail-client initial lookup exceeded its safe pagination limit.')
 }
 
+/** Used only by the shop income (client payment) form, so it reads the client-payment facade. */
 export async function getIncomeCashflowRetailClientAgreements(netId: string): Promise<ClientAgreement[]> {
-  const result = await apiRequest<unknown>('/agreements/retail/client/all', {
+  const result = await apiRequest<unknown>('/agreements/income-cashflows/client-payment/retail/all', {
     query: {
       netId,
     },
@@ -547,8 +548,12 @@ export async function calculateIncomeCashflowExchange(params: {
   exchangeRate?: number
   fromCurrencyId?: number
   toCurrencyId?: number
-}): Promise<IncomeExchangeCalculation | null> {
-  const result = await apiRequest<unknown>('/payments/orders/income/exchange/calculate', {
+}, scope: 'income-form' | 'income-client-payment'): Promise<IncomeExchangeCalculation | null> {
+  // Income-page forms sit behind the income page key; the shop drawer only holds the client-payment key.
+  const route = scope === 'income-client-payment'
+    ? '/payments/orders/income/income-cashflows/client-payment/exchange/calculate'
+    : '/payments/orders/income/income-cashflows/form/exchange/calculate'
+  const result = await apiRequest<unknown>(route, {
     query: {
       amount: params.amount,
       exchangeRate: params.exchangeRate || undefined,

@@ -3,22 +3,22 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { theme } from '../../../shared/theme/theme'
-import { getProductAnalytics } from '../../assortment/api/assortmentApi'
+import { getPurchaseCockpitProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ReorderSuggestion } from '../procurementTypes'
 import { ProcurementProofPanel } from './ProcurementConstructor'
 import { clearProductAnalyticsResource } from './productAnalyticsResource'
 import { clearSession, saveSession } from '../../../shared/auth/session'
 
 vi.mock('../../assortment/api/assortmentApi', () => ({
-  getProductAnalytics: vi.fn(),
+  getPurchaseCockpitProductAnalytics: vi.fn(),
 }))
 
 const t = (key: string) => key
 
 describe('ProcurementProofPanel', () => {
-  beforeEach(() => { clearSession(); clearProductAnalyticsResource(); vi.mocked(getProductAnalytics).mockReset() })
+  beforeEach(() => { clearSession(); clearProductAnalyticsResource(); vi.mocked(getPurchaseCockpitProductAnalytics).mockReset() })
   it('presents the recommendation as a user-facing decision with evidence', async () => {
-    vi.mocked(getProductAnalytics).mockResolvedValueOnce({
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockResolvedValueOnce({
       sales_series: [
         {
           avg_price_eur: 66.67,
@@ -31,7 +31,7 @@ describe('ProcurementProofPanel', () => {
           units: 18,
         },
       ],
-    } as Awaited<ReturnType<typeof getProductAnalytics>>)
+    } as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>)
 
     render(
       <MantineProvider theme={theme}>
@@ -45,45 +45,45 @@ describe('ProcurementProofPanel', () => {
 
     expect(screen.getByText('Змінено вручну')).not.toBeNull()
     expect(await screen.findByRole('button', { name: 'Дані' })).not.toBeNull()
-    await waitFor(() => expect(getProductAnalytics).toHaveBeenCalledWith(100, undefined, 12, expect.any(AbortSignal)))
+    await waitFor(() => expect(getPurchaseCockpitProductAnalytics).toHaveBeenCalledWith(100, undefined, 12, expect.any(AbortSignal)))
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(await screen.findByText('черв. 2026 р.')).not.toBeNull()
     expect(screen.queryByText('croston')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Розрахунок' }))
     expect(screen.getByText('Мінімальне замовлення')).not.toBeNull()
     expect(screen.getByText('Обґрунтування вартості')).not.toBeNull()
-    expect(getProductAnalytics).toHaveBeenCalledTimes(1)
+    expect(getPurchaseCockpitProductAnalytics).toHaveBeenCalledTimes(1)
   })
   it('shows request failures as failures and permits retry', async () => {
-    vi.mocked(getProductAnalytics).mockRejectedValueOnce(new Error('network'))
-    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockRejectedValueOnce(new Error('network'))
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockResolvedValueOnce({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>)
     render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
     expect((await screen.findByRole('alert')).textContent).toContain('Не вдалося завантажити продажі')
     expect(screen.queryByText('За цей період даних немає')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Повторити' }))
     expect(await screen.findByText('За цей період даних немає')).not.toBeNull()
-    expect(getProductAnalytics).toHaveBeenCalledTimes(2)
+    expect(getPurchaseCockpitProductAnalytics).toHaveBeenCalledTimes(2)
   })
 
   it('ignores an old range response and distinguishes missing price from zero', async () => {
-    let resolveOld!: (data: Awaited<ReturnType<typeof getProductAnalytics>>) => void
-    vi.mocked(getProductAnalytics).mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve }))
-    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [{ month: '2026-10', units: 0, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: false }] } as Awaited<ReturnType<typeof getProductAnalytics>>)
+    let resolveOld!: (data: Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>) => void
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve }))
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockResolvedValueOnce({ sales_series: [{ month: '2026-10', units: 0, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: false }] } as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>)
     render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
     fireEvent.click(screen.getByRole('button', { name: '3 міс.' }))
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(await screen.findByText('жовт. 2026 р.')).not.toBeNull()
-    resolveOld({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    resolveOld({ sales_series: [] } as unknown as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>)
     await waitFor(() => expect(screen.getByText('жовт. 2026 р.')).not.toBeNull())
     expect(screen.getByText('Є неповні місяці')).not.toBeNull()
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 
   it('keeps unavailable table values distinct from real zero', async () => {
-    vi.mocked(getProductAnalytics).mockResolvedValueOnce({ sales_series: [{
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockResolvedValueOnce({ sales_series: [{
       month: '2026-10', units: 0, revenue_eur: null, order_count: null,
       avg_price_eur: undefined, is_complete: true,
-    }] } as unknown as Awaited<ReturnType<typeof getProductAnalytics>>)
+    }] } as unknown as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>)
     render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     const table = await screen.findByRole('table')
@@ -93,15 +93,15 @@ describe('ProcurementProofPanel', () => {
 
   it('replaces already visible history when the authenticated session changes', async () => {
     saveSession({ userNetUid: 'user-a', csrfToken: 'session-a' })
-    const payload = (units: number) => ({ sales_series: [{ month: '2026-10', units, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: true }] }) as Awaited<ReturnType<typeof getProductAnalytics>>
-    vi.mocked(getProductAnalytics).mockResolvedValueOnce(payload(123)).mockResolvedValueOnce(payload(456))
+    const payload = (units: number) => ({ sales_series: [{ month: '2026-10', units, revenue_eur: 0, order_count: 0, avg_price_eur: null, is_complete: true }] }) as Awaited<ReturnType<typeof getPurchaseCockpitProductAnalytics>>
+    vi.mocked(getPurchaseCockpitProductAnalytics).mockResolvedValueOnce(payload(123)).mockResolvedValueOnce(payload(456))
     render(<MantineProvider theme={theme}><ProcurementProofPanel row={suggestion()} selectedQty={30} t={t} /></MantineProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Дані' }))
     expect(await screen.findByRole('cell', { name: '123' })).not.toBeNull()
     act(() => { saveSession({ userNetUid: 'user-b', csrfToken: 'session-b' }) })
     expect(screen.queryByRole('cell', { name: '123' })).toBeNull()
     expect(await screen.findByRole('cell', { name: '456' })).not.toBeNull()
-    expect(getProductAnalytics).toHaveBeenCalledTimes(2)
+    expect(getPurchaseCockpitProductAnalytics).toHaveBeenCalledTimes(2)
   })
 
 })

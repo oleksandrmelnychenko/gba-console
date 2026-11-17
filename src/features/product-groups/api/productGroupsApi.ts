@@ -58,7 +58,12 @@ export async function getProductGroupDetailsRootGroups(netId: string): Promise<P
 }
 
 export async function getRootProductGroups(netId?: string): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/page/root/groups/get', {
+  return getRootProductGroupsAt('/products/groups/page/root/groups/get', netId)
+}
+
+/** Same root-group catalog read through another context's facade (for example the client card). */
+export async function getRootProductGroupsAt(route: string, netId?: string): Promise<ProductGroup[]> {
+  const result = await apiRequest<unknown>(route, {
     query: {
       netId: netId || undefined,
     },
@@ -68,7 +73,12 @@ export async function getRootProductGroups(netId?: string): Promise<ProductGroup
 }
 
 export async function getAllProductGroups(): Promise<ProductGroup[]> {
-  const result = await apiRequest<unknown>('/products/groups/page/all')
+  return getAllProductGroupsAt('/products/groups/page/all')
+}
+
+/** Same full catalog read through another context's facade (for example the client card). */
+export async function getAllProductGroupsAt(route: string): Promise<ProductGroup[]> {
+  const result = await apiRequest<unknown>(route)
 
   return normalizeList<ProductGroup>(result, 'ProductGroups').items.map(ensureProductGroup)
 }

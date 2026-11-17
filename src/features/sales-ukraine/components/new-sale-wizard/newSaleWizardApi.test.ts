@@ -8,7 +8,6 @@ import {
   getProductCalculatedPricingsByAgreement,
   getProductCurrentPriceByAgreement,
   getProductReservationsByAgreement,
-  getSubClients,
   newDeliveryRecipient,
   newDeliveryRecipientAddress,
   searchSaleProductsWithAvailability,
@@ -155,13 +154,13 @@ describe('new sale wizard pricing API contracts', () => {
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'recipient-2' })
     apiRequestMock.mockResolvedValueOnce({ NetUid: 'address-1' })
 
-    await expect(getClientDeliveryRecipients('client-1')).resolves.toEqual([{ NetUid: 'recipient-1' }])
+    await expect(getClientDeliveryRecipients('client-1', 'edit')).resolves.toEqual([{ NetUid: 'recipient-1' }])
     await expect(newDeliveryRecipient({ FullName: 'Buyer' })).resolves.toEqual({ NetUid: 'recipient-2' })
     await expect(newDeliveryRecipientAddress({ City: 'Kyiv', RecipientNetId: 'recipient-2' })).resolves.toEqual({
       NetUid: 'address-1',
     })
 
-    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/deliveries/recipients/all/client', {
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/deliveries/recipients/sales-ukraine/edit/client', {
       query: { netId: 'client-1' },
     })
     expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/deliveries/recipients/new', {
@@ -267,15 +266,6 @@ describe('new sale wizard pricing API contracts', () => {
     })).rejects.toThrow()
 
     expect(apiRequestMock).not.toHaveBeenCalled()
-  })
-
-  it('normalizes sub-client list responses', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Collection: [{ NetUid: 'sub-client-1' }] })
-
-    await expect(getSubClients('client-1')).resolves.toEqual([{ NetUid: 'sub-client-1' }])
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/subclients/client', {
-      query: { netId: 'client-1' },
-    })
   })
 
   it('moves an order item without dropping discount or provenance metadata', async () => {

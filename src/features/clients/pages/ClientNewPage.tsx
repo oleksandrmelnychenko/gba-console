@@ -1046,6 +1046,7 @@ function NewStepContent({
   if (step === 'perfect-client') {
     return (
       <PerfectClientPanel
+        lookupContext="create"
         canCreateDefinition={hasPermission(PermissionKeys.ClientResources.PerfectClient.Create)}
         client={draft}
         onChange={onDraftChange}

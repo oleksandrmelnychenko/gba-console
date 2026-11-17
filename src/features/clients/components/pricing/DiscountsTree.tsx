@@ -3,7 +3,7 @@ import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState }
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import './discounts-tree.css'
 import { useAuth } from '../../../auth/useAuth'
-import { getAgreementProductGroupDiscounts } from '../../api/clientAgreementsApi'
+import { getAgreementProductGroupDiscounts, type ClientCardLookupContext } from '../../api/clientAgreementsApi'
 import {
   DISCOUNT_PERCENT_INPUT_PERMISSION,
   DISCOUNT_ROW_CHECKBOX_PERMISSION,
@@ -38,6 +38,7 @@ export type DiscountsTreeProps = {
   selectedAgreementName: string
   productGroupDiscounts: ProductGroupDiscount[]
   rootProductGroupNetId?: string
+  lookupContext: ClientCardLookupContext
   disabled?: boolean
   onApplyChanges: (updatedProductGroupDiscounts: ProductGroupDiscount[]) => void
   onDraftChange?: (draft: DiscountsTreeDraft) => void
@@ -124,6 +125,7 @@ export function DiscountsTree({
   selectedAgreementName,
   productGroupDiscounts,
   rootProductGroupNetId,
+  lookupContext,
   disabled = false,
   onApplyChanges,
   onDraftChange,
@@ -155,7 +157,7 @@ export function DiscountsTree({
       setError(null)
 
       try {
-        const result = await getAgreementProductGroupDiscounts(productGroupDiscounts, rootProductGroupNetId)
+        const result = await getAgreementProductGroupDiscounts(productGroupDiscounts, rootProductGroupNetId, lookupContext)
 
         if (cancelled || requestIdRef.current !== requestId) {
           return
@@ -194,7 +196,7 @@ export function DiscountsTree({
     return () => {
       cancelled = true
     }
-  }, [productGroupDiscounts, rootProductGroupNetId, t])
+  }, [lookupContext, productGroupDiscounts, rootProductGroupNetId, t])
 
   const isDirty = useMemo(() => {
     if (!initialValue) {

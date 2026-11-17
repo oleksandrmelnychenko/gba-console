@@ -6,7 +6,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   getClientCounterpartyGroup,
-  getCounterpartyGroupTree,
+  getCounterpartyGroupTreeForClientCardEdit,
   moveClientsToCounterpartyGroup,
   type ClientCounterpartyGroupPlacement,
   type CounterpartyGroupNode,
@@ -37,7 +37,7 @@ export function ClientCounterpartyGroupCard({ clientNetUid, canEdit }: { clientN
   const openPicker = async () => {
     setError(null)
     try {
-      setGroups(await getCounterpartyGroupTree())
+      setGroups(await getCounterpartyGroupTreeForClientCardEdit())
       setOpened(true)
     } catch (loadError) {
       notifications.show({ color: 'red', message: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити групи контрагентів.') })

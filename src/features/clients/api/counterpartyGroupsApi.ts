@@ -89,7 +89,16 @@ function toMember(value: unknown): CounterpartyGroupMember | null {
 }
 
 export async function getCounterpartyGroupTree(signal?: AbortSignal): Promise<CounterpartyGroupNode[]> {
-  const result = await apiRequest<unknown>(`${BASE}/tree`, signal ? { signal } : {})
+  return readCounterpartyGroupTree(`${BASE}/tree`, signal)
+}
+
+/** The client card's «change group» picker; gated by the client edit key, not the clients page. */
+export async function getCounterpartyGroupTreeForClientCardEdit(signal?: AbortSignal): Promise<CounterpartyGroupNode[]> {
+  return readCounterpartyGroupTree(`${BASE}/clients-card/edit/tree`, signal)
+}
+
+async function readCounterpartyGroupTree(route: string, signal?: AbortSignal): Promise<CounterpartyGroupNode[]> {
+  const result = await apiRequest<unknown>(route, signal ? { signal } : {})
   if (!Array.isArray(result)) throw new Error('Сервер повернув некоректний довідник груп контрагентів.')
   return result.map(toCounterpartyGroupNode).filter((node): node is CounterpartyGroupNode => node !== null)
 }
@@ -109,7 +118,7 @@ export async function getCounterpartyGroupMembers(groupNetUid: string, search: s
 
 export async function getClientCounterpartyGroup(clientNetUid: string,
   signal?: AbortSignal): Promise<ClientCounterpartyGroupPlacement | null> {
-  const result = await apiRequest<unknown>(`${BASE}/client`, {
+  const result = await apiRequest<unknown>(`${BASE}/clients-card/client`, {
     query: { clientNetUid },
     ...(signal ? { signal } : {}),
   })

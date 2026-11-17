@@ -185,8 +185,8 @@ function WizardSaleHeaderContent({
     if (next && clientNetId) {
       try {
         const [clients, debt] = await Promise.all([
-          getWizardClientStructure(clientNetId),
-          getWizardClientStructureDebtTotal(clientNetId),
+          getWizardClientStructure(clientNetId, permissionFlow),
+          getWizardClientStructureDebtTotal(clientNetId, permissionFlow),
         ])
 
         setStructureClients(clients)

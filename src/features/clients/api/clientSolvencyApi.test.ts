@@ -101,7 +101,7 @@ describe('clientSolvencyApi canonical AI contract', () => {
         { currency_id: 1, turnover_eur: 1234.56, exposure_eur: 100.01 },
       ],
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/get', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/clients-card/get', {
       query: { clientNetId: CLIENT_NET_ID },
     })
 
@@ -267,7 +267,7 @@ describe('current observation proof for every serving response', () => {
     await expect(getClientSolvencyScore(CLIENT_NET_ID)).resolves.toMatchObject({
       score: 0, as_of_date: '2026-07-25', fx_date: '2026-07-25', window_months: 12,
     })
-    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/get', { query: { clientNetId: CLIENT_NET_ID } })
+    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/clients-card/get', { query: { clientNetId: CLIENT_NET_ID } })
   })
 
   it.each([undefined, null, 0, 1, 11, 13, 60, 12.5, '12', true])('rejects score window %s, including batch', async (windowMonths) => {
@@ -281,7 +281,7 @@ describe('current observation proof for every serving response', () => {
   it.each([1, 12, 60])('accepts chart transaction window %i without fabricating history', async (windowMonths) => {
     apiRequestMock.mockResolvedValueOnce({ ...charts(), window_months: windowMonths })
     await expect(getClientSolvencyCharts(42)).resolves.toMatchObject({ window_months: windowMonths, score_sparkline: [] })
-    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/charts', { query: { clientId: 42 } })
+    expect(apiRequestMock).toHaveBeenCalledWith('/solvency/clients-card/charts', { query: { clientId: 42 } })
   })
 
   it.each([undefined, null, 0, -1, 61, 1.5, '12', true])('rejects chart transaction window %s', async (windowMonths) => {

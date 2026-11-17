@@ -85,6 +85,34 @@ async function getClientsFromRoute(
   return normalizeClients(result)
 }
 
+/**
+ * Main-client search on the client card (only while the card can be edited); gated by the client edit key instead of
+ * the clients/suppliers registry page keys.
+ */
+export async function searchMainClientCandidates(
+  kind: 'clients' | 'suppliers',
+  params: ClientSearchParams,
+  signal?: AbortSignal,
+): Promise<Client[]> {
+  if (kind === 'clients') {
+    return getClientsFromRoute('/clients/clients-card/edit/main-client/clients', params, signal)
+  }
+
+  const result = await apiRequest<unknown>('/clients/clients-card/edit/main-client/suppliers', {
+    query: {
+      active: params.active,
+      filterSql: params.filterSql || SUPPLIER_SEARCH_SQL,
+      limit: params.limit,
+      offset: params.offset,
+      typeRoleFilter: params.typeRoleFilter,
+      value: normalizeClientSearchValue(params.value),
+    },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeClients(result)
+}
+
 export async function getSuppliers(
   params: ClientSearchParams,
   signal?: AbortSignal,

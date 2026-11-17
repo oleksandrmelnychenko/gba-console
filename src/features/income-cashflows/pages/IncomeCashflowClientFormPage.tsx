@@ -532,7 +532,7 @@ function IncomeCashflowClientFormPageContent() {
       exchangeRate: form.exchangeRate || undefined,
       fromCurrencyId,
       toCurrencyId,
-    })
+    }, 'income-form')
       .then((calculation) => {
         if (!cancelled) {
           setForm((current) => ({ ...current, calculatedValue: calculation?.ConvertedAmount || 0 }))

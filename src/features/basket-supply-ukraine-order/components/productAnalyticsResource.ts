@@ -1,4 +1,4 @@
-import { getProductAnalytics } from '../../assortment/api/assortmentApi'
+import { getPurchaseCockpitProductAnalytics } from '../../assortment/api/assortmentApi'
 import type { ProductAnalytics } from '../../assortment/types'
 import { AUTH_SESSION_CHANGED_EVENT, AUTH_UNAUTHORIZED_EVENT, readSession } from '../../../shared/auth/session'
 
@@ -53,7 +53,7 @@ export function loadProductAnalytics(productId: number, months: number, asOfDate
   const entry: Entry = {
     controller,
     expiresAt: Number.POSITIVE_INFINITY,
-    promise: getProductAnalytics(productId, asOfDate, months, controller.signal).then((data) => {
+    promise: getPurchaseCockpitProductAnalytics(productId, asOfDate, months, controller.signal).then((data) => {
       synchronizeSessionScope()
       if (controller.signal.aborted || requestGeneration !== generation) {
         throw new DOMException('Analytics session changed', 'AbortError')

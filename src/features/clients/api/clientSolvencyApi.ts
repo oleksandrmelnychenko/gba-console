@@ -34,7 +34,7 @@ export async function getClientSolvencyScore(
   signal?: AbortSignal,
 ): Promise<SolvencyScore> {
   const requestedNetId = requireGuid(clientNetId, 'request.client_net_uid')
-  const result = await apiRequest<unknown>('/solvency/get', {
+  const result = await apiRequest<unknown>('/solvency/clients-card/get', {
     query: {
       clientNetId: requestedNetId,
     },
@@ -49,7 +49,7 @@ export async function getClientSolvencyCharts(
   signal?: AbortSignal,
 ): Promise<SolvencyCharts> {
   requirePositiveInteger(clientId, 'request.client_id')
-  const result = await apiRequest<unknown>('/solvency/charts', {
+  const result = await apiRequest<unknown>('/solvency/clients-card/charts', {
     query: {
       clientId,
     },

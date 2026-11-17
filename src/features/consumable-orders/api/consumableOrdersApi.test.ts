@@ -154,7 +154,7 @@ describe('consumableOrdersApi', () => {
 
     const result = await getUnpaidConsumableOrdersByOrganization('supplier-1')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/all/unpaid', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/outgoing-cashflows/create/unpaid', {
       query: {
         organizationNetId: 'supplier-1',
       },

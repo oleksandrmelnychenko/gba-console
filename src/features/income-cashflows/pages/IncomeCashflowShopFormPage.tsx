@@ -518,7 +518,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
       exchangeRate: form.exchangeRate || undefined,
       fromCurrencyId,
       toCurrencyId,
-    })
+    }, 'income-client-payment')
       .then((calculation) => {
         if (!cancelled) {
           setExchangeCalculation({

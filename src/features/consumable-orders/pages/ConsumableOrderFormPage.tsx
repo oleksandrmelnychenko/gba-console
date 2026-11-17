@@ -307,7 +307,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
         return
       }
 
-      void searchConsumableProductsByVendorCode(value).then((nextProducts) => {
+      void searchConsumableProductsByVendorCode(value, 'consumable-order').then((nextProducts) => {
         if (searchRequestRef.current.productArticle === requestId) {
           setProductOptions(nextProducts)
         }

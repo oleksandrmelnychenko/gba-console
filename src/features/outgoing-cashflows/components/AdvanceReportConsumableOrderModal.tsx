@@ -325,7 +325,7 @@ export function AdvanceReportConsumableOrderModal({
         return
       }
 
-      void searchConsumableProductsByVendorCode(value)
+      void searchConsumableProductsByVendorCode(value, 'advanced-report-edit')
         .then((nextProducts) => {
           if (productSearchSeq.current === requestId) {
             setProductOptions(nextProducts)

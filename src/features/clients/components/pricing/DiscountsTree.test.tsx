@@ -14,7 +14,7 @@ vi.mock('../../api/clientAgreementsApi', () => ({
 it('keeps the agreement and discount visible when selecting rows', async () => {
   const apply = vi.fn()
   render(<MantineProvider env="test"><I18nProvider>
-    <DiscountsTree clientAgreementNetId="agreement" selectedAgreementName="Основний договір" productGroupDiscounts={[]} onApplyChanges={apply} />
+    <DiscountsTree clientAgreementNetId="agreement" lookupContext="details" selectedAgreementName="Основний договір" productGroupDiscounts={[]} onApplyChanges={apply} />
   </I18nProvider></MantineProvider>)
   expect(await screen.findByText('16 %')).toBeTruthy()
   expect(screen.getByText('Основний договір')).toBeTruthy()

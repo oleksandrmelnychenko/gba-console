@@ -50,7 +50,7 @@ vi.mock('../api/procurementApi', () => ({
 }))
 
 vi.mock('../../assortment/api/assortmentApi', () => ({
-  getProductAnalytics: vi.fn().mockResolvedValue({ sales_series: [] }),
+  getPurchaseCockpitProductAnalytics: vi.fn().mockResolvedValue({ sales_series: [] }),
 }))
 
 describe('ProcurementConstructor', () => {

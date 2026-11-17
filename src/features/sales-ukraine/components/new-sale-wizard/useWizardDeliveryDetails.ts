@@ -151,7 +151,7 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
 
     async function load(id: string) {
       try {
-        const next = await getClientDeliveryRecipients(id)
+        const next = await getClientDeliveryRecipients(id, submitFlow)
 
         if (!cancelled) {
           setRecipientData({ clientNetId: id, items: next })
@@ -168,7 +168,7 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
     return () => {
       cancelled = true
     }
-  }, [clientNetId])
+  }, [clientNetId, submitFlow])
 
   useEffect(() => {
     const { onChange: change, sale: currentSale, value: current } = latestRef.current

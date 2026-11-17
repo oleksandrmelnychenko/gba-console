@@ -3,17 +3,17 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
-import { getClientResourcePerfectClients } from '../../api/clientLookupsApi'
+import { getClientCardPerfectClients } from '../../api/clientLookupsApi'
 import { PerfectClientType } from '../../types'
 import { PerfectClientPanel } from './PerfectClientPanel'
 
 vi.mock('../../api/clientLookupsApi', () => ({
-  getClientResourcePerfectClients: vi.fn(),
+  getClientCardPerfectClients: vi.fn(),
   createClientResourcePerfectClient: vi.fn(),
 }))
 
 beforeEach(() => {
-  vi.mocked(getClientResourcePerfectClients).mockResolvedValue([
+  vi.mocked(getClientCardPerfectClients).mockResolvedValue([
     { Id: 1, Lable: 'Приміщення', Type: PerfectClientType.Toggle, Values: [{ Value: 'Орендоване' }, { Value: 'Власне' }] },
     { Id: 2, Lable: 'Товарна марка', Type: PerfectClientType.Checkbox },
   ])
@@ -22,7 +22,7 @@ beforeEach(() => {
 function setup(disabled = false) {
   const onChange = vi.fn()
   render(<MantineProvider env="test" theme={theme}><I18nProvider>
-    <PerfectClientPanel disabled={disabled} client={{ ClientInRole: { ClientTypeRole: { Id: 1 } }, PerfectClients: [
+    <PerfectClientPanel lookupContext="details" disabled={disabled} client={{ ClientInRole: { ClientTypeRole: { Id: 1 } }, PerfectClients: [
       { Id: 1, Type: PerfectClientType.Toggle, IsSelected: true, Value: 'Збережена примітка', Values: [{ IsSelected: false }, { IsSelected: false }] },
     ] }} onChange={onChange} />
   </I18nProvider></MantineProvider>)

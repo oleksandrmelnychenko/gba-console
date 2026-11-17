@@ -51,6 +51,17 @@ export function createSyncOperationId(): string {
   return crypto.randomUUID().replaceAll('-', '').toLowerCase()
 }
 
+/** The dashboard's system/GBA workspace shows the sync status read-only; gated by the dashboard page key. */
+export function getDashboardSyncStatus(): Promise<DataSyncStatus> {
+  return apiRequest<DataSyncStatus>('/data/sync/dashboard/status', {
+    dedupe: false,
+    errorMessages: {
+      default: 'Не вдалося отримати статус синхронізації',
+      network: 'Сервер синхронізації недоступний',
+    },
+  })
+}
+
 export function getSyncStatus(): Promise<DataSyncStatus> {
   return apiRequest<DataSyncStatus>('/data/sync/online-shop-seo/status', {
     dedupe: false,

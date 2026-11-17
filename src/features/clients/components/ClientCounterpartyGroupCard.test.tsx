@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ placement: vi.fn(), tree: vi.fn(), move: vi.fn
 
 vi.mock('../api/counterpartyGroupsApi', () => ({
   getClientCounterpartyGroup: mocks.placement,
-  getCounterpartyGroupTree: mocks.tree,
+  getCounterpartyGroupTreeForClientCardEdit: mocks.tree,
   moveClientsToCounterpartyGroup: mocks.move,
 }))
 

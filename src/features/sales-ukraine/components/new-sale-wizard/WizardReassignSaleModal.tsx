@@ -85,13 +85,13 @@ function WizardReassignSaleForm({
         let rootNetId = getReassignRootClientNetId(subject)
 
         if (needsReassignRootLookup(subject) && subject.NetUid) {
-          const rootLink = await getRootClientBySubClientNetId(subject.NetUid)
+          const rootLink = await getRootClientBySubClientNetId(subject.NetUid, 'sale-reassign')
 
           rootNetId = rootLink?.RootClient?.NetUid ?? rootLink?.NetUid ?? rootNetId
         }
 
         const root = rootNetId ? await getWizardHeaderClient(rootNetId, permissionFlow) : null
-        const structure = root?.NetUid ? await getWizardClientStructure(root.NetUid) : []
+        const structure = root?.NetUid ? await getWizardClientStructure(root.NetUid, 'reassign') : []
 
         if (!cancelled) {
           setRootClient(root)
