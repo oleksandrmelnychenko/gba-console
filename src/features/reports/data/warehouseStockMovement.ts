@@ -23,7 +23,7 @@ export type StockMovementArticleMatch = typeof STOCK_MOVEMENT_ARTICLE_MATCHES[nu
 
 export const STOCK_MOVEMENT_LEVEL_LABELS: Record<StockMovementLevel, string> = {
   warehouse: 'Склад',
-  product: 'Номенклатура.Артикул',
+  product: 'Артикул',
   month: 'Місяць',
   day: 'День',
   registrar: 'Документ руху (реєстратор)',
@@ -570,7 +570,7 @@ export function summarizeStockMovementFilters(draft: StockMovementDraft, warehou
     switch (wire.Field) {
       case 'organization': lines.push(`Організація складу У списку (${values})`); break
       case 'product': lines.push(`Номенклатура У списку (${values})`); break
-      case 'article': lines.push(`Номенклатура.Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[wire.ArticleMatch ?? 'equals']} ${values}`); break
+      case 'article': lines.push(`Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[wire.ArticleMatch ?? 'equals']} ${values}`); break
       case 'top': lines.push(`Топ У списку (${values})`); break
       case 'group': lines.push(`Товарна група У групі (${values})`); break
       case 'unit': lines.push(`Одиниця виміру У списку (${values})`); break

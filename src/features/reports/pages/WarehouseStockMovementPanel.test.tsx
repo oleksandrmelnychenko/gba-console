@@ -357,7 +357,7 @@ describe('native warehouse stock movement', () => {
   it('validates grouping before calling the server', async () => {
     render(panel())
     fireEvent.click(await screen.findByLabelText('Склад'))
-    fireEvent.click(screen.getByLabelText('Номенклатура.Артикул'))
+    fireEvent.click(screen.getByLabelText('Артикул'))
     fireEvent.click(screen.getByLabelText('Документ руху (реєстратор)'))
     expect(screen.getByText('Оберіть хоча б одне групування рядків.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Застосувати й показати' }) as HTMLButtonElement).disabled).toBe(true)

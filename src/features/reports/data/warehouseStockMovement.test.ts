@@ -123,7 +123,7 @@ describe('warehouse stock movement request', () => {
       row('documentKind', { values: ['sale'] })],
     conditions: [{ Measure: 'closing', Comparison: 'less', Value: 0 }] }, [{ Id: 2968, Name: 'СКЛАД -1', Detail: null }], [],
     stockMovementCapability.DocumentKinds)).toEqual([
-      'Номенклатура.Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
+      'Артикул Дорівнює 94000', 'Склад У списку (#5; СКЛАД -1)', 'Вид документа руху У списку (Продаж)', 'Кількість кінцевий залишок Менше 0',
     ])
   })
 
