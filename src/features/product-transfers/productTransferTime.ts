@@ -43,3 +43,15 @@ export function getTransferTimeSource(transfer: TransferDates): Date | null {
 
   return created && isSameDay(created, fromDate) && !isMidnight(created) ? created : null
 }
+
+function toTime(value: Date | string | undefined): number {
+  return toDate(value)?.getTime() ?? 0
+}
+
+/** Newest first (date, then creation time, then number): a new transfer is on top (WH2-13). */
+export function sortTransfersNewestFirst<T extends TransferDates & { Number?: string }>(transfers: readonly T[]): T[] {
+  return [...transfers].sort((left, right) =>
+    toTime(right.FromDate) - toTime(left.FromDate)
+    || toTime(right.Created) - toTime(left.Created)
+    || (right.Number || '').localeCompare(left.Number || ''))
+}

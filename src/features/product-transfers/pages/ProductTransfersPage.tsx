@@ -64,7 +64,7 @@ import type {
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE, EXCEL_IMPORT_LAYOUT_HINT, excelImportErrorText } from '../../../shared/excel/excelImportMessages'
 import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
-import { getTransferTimeSource } from '../productTransferTime'
+import { getTransferTimeSource, sortTransfersNewestFirst } from '../productTransferTime'
 import './product-transfers-page.css'
 
 type FilterDraft = {
@@ -531,7 +531,7 @@ function useProductTransfersLoader({
         })
 
         if (!cancelled) {
-          setTransfers(result.items)
+          setTransfers(sortTransfersNewestFirst(result.items))
           setTotalQty(result.totalQty)
         }
       } catch (loadError) {
@@ -1333,7 +1333,8 @@ function getFilterError(from: string, to: string): string | null {
 }
 
 function toStorageOption(storage: ProductTransferStorage): { label: string; value: string } | null {
-  if (!storage.NetUid) {
+  /* A storage without a name would be a blank, unpickable line (WH2-14). */
+  if (!storage.NetUid || !storage.Name?.trim()) {
     return null
   }
 

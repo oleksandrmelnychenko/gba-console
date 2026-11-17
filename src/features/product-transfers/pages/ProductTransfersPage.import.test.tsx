@@ -147,4 +147,15 @@ describe('ProductTransfersPage import dialog', () => {
 
     expect(await screen.findByText('Файл не є коректною книгою Excel (.xlsx).')).toBeTruthy()
   })
+
+  it('does not offer storages without a name in «Зі складу»', async () => {
+    vi.mocked(getProductTransferStorages).mockResolvedValue([...storages, { Id: 13, Name: '  ', NetUid: '55555555-5555-4555-8555-555555555555', OrganizationId: 7 }])
+    await openDialog()
+
+    fireEvent.click(screen.getAllByLabelText('Зі складу')[0])
+
+    const options = await screen.findAllByRole('option', { hidden: true })
+    expect(options.length).toBeGreaterThan(0)
+    expect(options.map((option) => option.textContent?.trim())).not.toContain('')
+  })
 })
