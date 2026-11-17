@@ -1,5 +1,7 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
-import { RESALE_AMOUNT_INPUT_PROPS, RESALE_MARKUP_INPUT_PROPS, RESALE_PRICE_INPUT_PROPS, resaleQtyInputProps } from '../resaleInputLimits'
+import { useDebouncedValue } from '@mantine/hooks'
+import { AmountInput } from '../../../shared/ui/AmountInput'
+import { RESALE_MAX_EXTRA_CHARGE_PERCENT, RESALE_MAX_INVOICE_AMOUNT, RESALE_MIN_SALE_PRICE, resaleQtyLimits } from '../resaleInputLimits'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -13,7 +15,6 @@ import {
   Card,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -1011,28 +1012,26 @@ function NewResalePageContent({
           <Stack gap={8}>
             <Text className="app-section-title">{t('Налаштування підбору')}</Text>
             <div className="resales-new-primary-grid">
-              <NumberInput
-                hideControls
+              <AmountInput
                 className="resales-new-control is-number"
                 label={t('Сума для рахунку')}
-                {...RESALE_AMOUNT_INPUT_PROPS}
+                max={RESALE_MAX_INVOICE_AMOUNT}
                 value={form.amount}
-                onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: toNumber(value) }))}
+                onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: value }))}
               />
-              <NumberInput
-                hideControls
+              <AmountInput
                 className="resales-new-control is-number"
                 label={`${t('Похибка')} +/-`}
+                max={RESALE_MAX_INVOICE_AMOUNT}
                 value={form.infelicity}
-                onChange={(value) => setForm((currentForm) => ({ ...currentForm, infelicity: toNumber(value) }))}
+                onChange={(value) => setForm((currentForm) => ({ ...currentForm, infelicity: value }))}
               />
-              <NumberInput
-                hideControls
+              <AmountInput
                 className="resales-new-control is-number"
                 label={t('Націнка, %')}
-                {...RESALE_MARKUP_INPUT_PROPS}
+                max={RESALE_MAX_EXTRA_CHARGE_PERCENT}
                 value={form.extraChargePercent}
-                onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: toNumber(value) }))}
+                onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: value }))}
               />
               <CheckboxMultiSelect
                 searchable
@@ -2480,8 +2479,10 @@ function useProcessColumns({
         width: 132,
         accessor: (row) => row.QtyToReSale,
         cell: (row) => (
-          <NumberInput
-            {...resaleQtyInputProps(row.Qty)}
+          <AmountInput
+            aria-label={`${t('Кількість')} · ${row.VendorCode ?? ''}`}
+            decimalScale={3}
+            {...resaleQtyLimits(row.Qty)}
             value={row.QtyToReSale}
             onChange={(value) => onChangeQty(row.__rowIndex, value)}
           />
@@ -2494,8 +2495,9 @@ function useProcessColumns({
         width: 140,
         accessor: (row) => row.SalePrice,
         cell: (row) => (
-          <NumberInput
-            {...RESALE_PRICE_INPUT_PROPS}
+          <AmountInput
+            aria-label={`${t('Ціна продажу')} · ${row.VendorCode ?? ''}`}
+            min={RESALE_MIN_SALE_PRICE}
             value={row.SalePrice}
             onChange={(value) => onChangeSalePrice(row.__rowIndex, value)}
           />
@@ -2517,8 +2519,8 @@ function useProcessColumns({
         width: 140,
         accessor: (row) => row.Amount,
         cell: (row) => (
-          <NumberInput
-            min={0}
+          <AmountInput
+            aria-label={`${t('Сума')} · ${row.VendorCode ?? ''}`}
             value={row.Amount}
             onChange={(value) => onChangeAmount(row.__rowIndex, value)}
           />
@@ -2688,7 +2690,7 @@ function useResaleDetailColumns({
         width: 132,
         accessor: (row) => row.QtyToReSale,
         cell: (row) => changedToInvoice ? formatAmount(row.QtyToReSale) : (
-          <NumberInput disabled={isBusy} {...resaleQtyInputProps(row.Qty)} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
+          <AmountInput aria-label={`${t('Кількість')} · ${row.ConsignmentItem?.Product?.VendorCode ?? ''}`} decimalScale={3} disabled={isBusy} {...resaleQtyLimits(row.Qty)} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
         ),
       },
       {
@@ -2698,7 +2700,7 @@ function useResaleDetailColumns({
         width: 140,
         accessor: (row) => row.SalePrice,
         cell: (row) => isCompleted ? formatMoney(row.SalePrice) : (
-          <NumberInput disabled={isBusy} {...RESALE_PRICE_INPUT_PROPS} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
+          <AmountInput aria-label={`${t('Ціна продажу')} · ${row.ConsignmentItem?.Product?.VendorCode ?? ''}`} disabled={isBusy} min={RESALE_MIN_SALE_PRICE} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
         ),
       },
       {
@@ -2717,7 +2719,7 @@ function useResaleDetailColumns({
         width: 140,
         accessor: (row) => row.Amount,
         cell: (row) => isCompleted ? formatMoney(row.Amount) : (
-          <NumberInput disabled={isBusy} min={0} value={row.Amount} onChange={(value) => onChangeAmount(row.__rowIndex, value)} />
+          <AmountInput aria-label={`${t('Сума')} · ${row.ConsignmentItem?.Product?.VendorCode ?? ''}`} disabled={isBusy} value={row.Amount} onChange={(value) => onChangeAmount(row.__rowIndex, value)} />
         ),
       },
       {
@@ -2923,7 +2925,7 @@ function ProcessSelectionConfirmDrawer({
   )
 }
 
-function ResaleProcessDrawer({
+export function ResaleProcessDrawer({
   canOpenProductDetails,
   fromStorageId,
   isSaving,
@@ -2946,6 +2948,7 @@ function ResaleProcessDrawer({
 }) {
   const { t } = useI18n()
   const [processForm, setProcessForm] = useValueState<ProcessDrawerState>(() => createProcessDrawerState(processData))
+  const [discardConfirmOpened, setDiscardConfirmOpened] = useValueState(false)
   const [isRecalculating, setRecalculating, tryStartRecalculating] = useBusyState()
   const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const recalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -3110,7 +3113,18 @@ function ResaleProcessDrawer({
     })
   }
 
+  function requestCloseProcessDrawer() {
+    // Edited quantities/prices are not saved anywhere else: ask before dropping them.
+    if (processForm.isDirty) {
+      setDiscardConfirmOpened(true)
+      return
+    }
+
+    closeProcessDrawer()
+  }
+
   function closeProcessDrawer() {
+    setDiscardConfirmOpened(false)
     cancelPendingProcessRecalculate()
     setRecalculating(false)
     onClose()
@@ -3132,8 +3146,20 @@ function ResaleProcessDrawer({
       position="right"
       size="min(1180px, 96vw)"
       title={t('Обробка перепродажу')}
-      onClose={closeProcessDrawer}
+      onClose={requestCloseProcessDrawer}
     >
+      <AppModal
+        centered
+        opened={discardConfirmOpened}
+        title={t('Закрити без перерахунку?')}
+        onClose={() => setDiscardConfirmOpened(false)}
+      >
+        <Text size="sm">{t('Змінені кількості та ціни не перераховано і не збережено. Закрити й відкинути зміни?')}</Text>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={() => setDiscardConfirmOpened(false)}>{t('Повернутися')}</Button>
+          <Button color="red" onClick={closeProcessDrawer}>{t('Закрити без змін')}</Button>
+        </AppModalFooter>
+      </AppModal>
       <Stack className="app-compact-form" gap={10}>
         {processForm.warning && (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
@@ -3237,6 +3263,8 @@ export function ResaleClientSelect({
 }) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
+  // One request per pause in typing, not per keystroke.
+  const [debouncedSearch] = useDebouncedValue(search, RESALE_CLIENT_SEARCH_DEBOUNCE_MS)
   const [clients, setClients] = useValueState<ResaleClient[]>(selectedClient ? [selectedClient] : [])
   const [isLoading, setLoading] = useValueState(false)
   const clientOptions = useMemo(() => buildClientOptions(clients), [clients])
@@ -3250,7 +3278,7 @@ export function ResaleClientSelect({
       setLoading(true)
 
       try {
-        const nextClients = await searchResaleClients(search, controller.signal)
+        const nextClients = await searchResaleClients(debouncedSearch, controller.signal)
 
         if (!cancelled) {
           setClients(mergeClients(selectedClient ? [selectedClient, ...nextClients] : nextClients))
@@ -3272,7 +3300,7 @@ export function ResaleClientSelect({
       cancelled = true
       controller.abort()
     }
-  }, [search, selectedClient, setClients, setLoading])
+  }, [debouncedSearch, selectedClient, setClients, setLoading])
 
   return (
     <Select
@@ -3708,11 +3736,11 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
-            <NumberInput label={t('Ширина, мм')} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
-            <NumberInput label={t('Висота, мм')} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
+            <AmountInput decimalScale={0} label={t('Довжина, мм')} max={100000} value={noteState.setting.CarLength} onChange={(value) => updateNumberField('CarLength', value)} />
+            <AmountInput decimalScale={0} label={t('Ширина, мм')} max={100000} value={noteState.setting.CarWidth} onChange={(value) => updateNumberField('CarWidth', value)} />
+            <AmountInput decimalScale={0} label={t('Висота, мм')} max={100000} value={noteState.setting.CarHeight} onChange={(value) => updateNumberField('CarHeight', value)} />
+            <AmountInput label={t('Вага нетто, т')} max={1000} value={noteState.setting.CarNetWeight} onChange={(value) => updateNumberField('CarNetWeight', value)} />
+            <AmountInput label={t('Вага брутто, т')} max={1000} value={noteState.setting.CarGrossWeight} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
           </SimpleGrid>
         </Box>
 
@@ -3725,11 +3753,11 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
-            <NumberInput label={t('Ширина, мм')} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
-            <NumberInput label={t('Висота, мм')} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
+            <AmountInput decimalScale={0} label={t('Довжина, мм')} max={100000} value={noteState.setting.TrailerLength} onChange={(value) => updateNumberField('TrailerLength', value)} />
+            <AmountInput decimalScale={0} label={t('Ширина, мм')} max={100000} value={noteState.setting.TrailerWidth} onChange={(value) => updateNumberField('TrailerWidth', value)} />
+            <AmountInput decimalScale={0} label={t('Висота, мм')} max={100000} value={noteState.setting.TrailerHeight} onChange={(value) => updateNumberField('TrailerHeight', value)} />
+            <AmountInput label={t('Вага нетто, т')} max={1000} value={noteState.setting.TrailerNetWeight} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
+            <AmountInput label={t('Вага брутто, т')} max={1000} value={noteState.setting.TrailerGrossWeight} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
         </Box>
         </div>
@@ -4451,6 +4479,8 @@ function displayValue(value?: string | number | null): string {
 
   return value || ''
 }
+
+const RESALE_CLIENT_SEARCH_DEBOUNCE_MS = 300
 
 function toNumber(value: number | string): number {
   const parsedValue = typeof value === 'number' ? value : Number(value)

@@ -1,31 +1,48 @@
-import { MantineProvider, NumberInput } from '@mantine/core'
+import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { useState } from 'react'
+import { describe, expect, it } from 'vitest'
 import { theme } from '../../shared/theme/theme'
-import { RESALE_MARKUP_INPUT_PROPS, RESALE_PRICE_INPUT_PROPS, resaleQtyInputProps } from './resaleInputLimits'
+import { AmountInput } from '../../shared/ui/AmountInput'
+import { RESALE_MAX_EXTRA_CHARGE_PERCENT, RESALE_MIN_SALE_PRICE, resaleQtyLimits } from './resaleInputLimits'
 
-function renderInput(props: object, label: string) {
-  const onChange = vi.fn()
-  render(<MantineProvider theme={theme}><NumberInput label={label} {...props} onChange={onChange} /></MantineProvider>)
-  return { input: screen.getByLabelText(label) as HTMLInputElement, onChange }
+function Markup() {
+  const [value, setValue] = useState(0)
+  return (
+    <MantineProvider theme={theme}>
+      <AmountInput label="Націнка, %" max={RESALE_MAX_EXTRA_CHARGE_PERCENT} value={value} onChange={setValue} />
+      <output>{value}</output>
+    </MantineProvider>
+  )
 }
 
 describe('resale input limits', () => {
-  it('limits the quantity to the available stock and never below zero', () => {
-    expect(resaleQtyInputProps(9)).toMatchObject({ allowNegative: false, max: 9, min: 0 })
-    expect(resaleQtyInputProps(undefined)).not.toHaveProperty('max')
-
-    const { input, onChange } = renderInput(resaleQtyInputProps(9), 'Кількість')
-    fireEvent.change(input, { target: { value: '999' } })
-    expect(onChange).not.toHaveBeenCalledWith(999)
+  it('limits the quantity to the available stock', () => {
+    expect(resaleQtyLimits(9)).toEqual({ max: 9, min: 0 })
+    expect(resaleQtyLimits(undefined)).toEqual({ min: 0 })
   })
 
-  it('rejects a negative markup and a negative sale price', () => {
-    expect(RESALE_MARKUP_INPUT_PROPS).toMatchObject({ allowNegative: false, min: 0, max: 1000 })
-    expect(RESALE_PRICE_INPUT_PROPS.allowNegative).toBe(false)
+  it('a cleared markup stays empty, so typing 7 gives 7 and not 70', () => {
+    render(<Markup />)
+    const input = screen.getByLabelText('Націнка, %') as HTMLInputElement
 
-    const { input, onChange } = renderInput(RESALE_MARKUP_INPUT_PROPS, 'Націнка, %')
-    fireEvent.change(input, { target: { value: '-50' } })
-    expect(onChange).not.toHaveBeenCalledWith(-50)
+    fireEvent.change(input, { target: { value: '' } })
+    expect(input.value).toBe('')
+    fireEvent.change(input, { target: { value: '7' } })
+    expect(screen.getByRole('status').textContent).toBe('7')
+  })
+
+  it('flags a negative markup and a zero sale price instead of accepting them silently', () => {
+    render(
+      <MantineProvider theme={theme}>
+        <AmountInput label="price" min={RESALE_MIN_SALE_PRICE} value="" onChange={() => {}} />
+        <AmountInput label="markup" max={RESALE_MAX_EXTRA_CHARGE_PERCENT} value="" onChange={() => {}} />
+      </MantineProvider>,
+    )
+    fireEvent.change(screen.getByLabelText('markup'), { target: { value: '-50' } })
+    fireEvent.change(screen.getByLabelText("price"), { target: { value: "0" } })
+
+    expect(screen.getByText('Від’ємне значення не допускається')).toBeTruthy()
+    expect(screen.getByText('Не менше 0,01')).toBeTruthy()
   })
 })

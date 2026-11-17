@@ -1,29 +1,11 @@
-/** Same limits the server enforces (ReSaleSelectionPolicy): no negative markup, qty or price, qty within stock. */
+/** Same limits the server enforces (ReSaleSelectionPolicy): markup 0..1000 %, qty within stock, price > 0. */
 export const RESALE_MAX_EXTRA_CHARGE_PERCENT = 1_000
 export const RESALE_MAX_INVOICE_AMOUNT = 1_000_000_000
+export const RESALE_MIN_SALE_PRICE = 0.01
 
-export const RESALE_MARKUP_INPUT_PROPS = {
-  allowNegative: false,
-  clampBehavior: 'strict',
-  max: RESALE_MAX_EXTRA_CHARGE_PERCENT,
-  min: 0,
-} as const
-
-export const RESALE_AMOUNT_INPUT_PROPS = {
-  allowNegative: false,
-  clampBehavior: 'strict',
-  max: RESALE_MAX_INVOICE_AMOUNT,
-  min: 0,
-} as const
-
-export const RESALE_PRICE_INPUT_PROPS = { allowNegative: false, min: 0 } as const
-
-/** Quantity input limited to what is available for this line (unlimited when the stock is unknown). */
-export function resaleQtyInputProps(available: number | null | undefined) {
-  return {
-    allowNegative: false,
-    clampBehavior: 'strict',
-    min: 0,
-    ...(typeof available === 'number' && Number.isFinite(available) && available >= 0 ? { max: available } : {}),
-  } as const
+/** Quantity limits for a resale line: never negative, never above what is available. */
+export function resaleQtyLimits(available: number | null | undefined): { max?: number; min: number } {
+  return typeof available === 'number' && Number.isFinite(available) && available >= 0
+    ? { max: available, min: 0 }
+    : { min: 0 }
 }

@@ -48,6 +48,18 @@ describe('ResaleClientSelect', () => {
     expect(screen.queryByText('Клієнтів не знайдено')).toBeNull()
   })
 
+  it('searches once per pause in typing instead of once per keystroke', async () => {
+    const user = userEvent.setup()
+    renderClientSelect()
+    await waitFor(() => expect(searchResaleClientsMock).toHaveBeenCalled())
+    searchResaleClientsMock.mockClear()
+
+    await user.type(screen.getByRole('combobox', { name: 'Клієнт' }), 'QA Пок')
+
+    await waitFor(() => expect(searchResaleClientsMock).toHaveBeenCalledWith('QA Пок', expect.any(AbortSignal)))
+    expect(searchResaleClientsMock).toHaveBeenCalledTimes(1)
+  })
+
   it('does not retain clients from an older search when the server returns no matches', async () => {
     const user = userEvent.setup()
     renderClientSelect()
