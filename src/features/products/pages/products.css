@@ -1,6 +1,6 @@
 .products-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px);
+  height: calc(100vh - var(--app-shell-header-offset, 96px) - var(--app-shell-footer-offset, 36px) - 16px);
   min-height: 0;
   overflow: hidden;
   padding: 8px 4px 0;
@@ -687,7 +687,7 @@
 }
 
 .product-inline-price-table th {
-  padding: 0 12px 4px;
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   color: var(--mantine-color-gray-6);
   font-size: 12px;
   font-weight: 600;
@@ -695,7 +695,7 @@
 }
 
 .product-inline-price-table td {
-  padding: 8px 12px;
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   background: #f8faf9;
   font-size: 13px;
 }

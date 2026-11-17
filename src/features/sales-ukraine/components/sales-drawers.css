@@ -501,10 +501,10 @@
 }
 
 .sale-carrier-drawer .sale-carrier-history-table :is(.mantine-Table-td, .mantine-Table-th) {
-  padding: 8px 8px;
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   font-family: var(--font-sans);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: var(--app-table-line-height);
   letter-spacing: 0;
   white-space: normal;
   overflow-wrap: anywhere;

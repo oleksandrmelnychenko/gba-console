@@ -1,4 +1,4 @@
-import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
+import { Alert, Autocomplete, Badge, Combobox, createTheme, Drawer, FileInput, Loader, Modal, MultiSelect, Select, Table, Tooltip, parseThemeColor, type MantineColorsTuple } from '@mantine/core'
 import './alerts.css'
 import './table-chips.css'
 import './static-tables.css'
@@ -118,6 +118,11 @@ export const theme = createTheme({
           blur: 2,
         },
       },
+    }),
+    // Plain Mantine tables follow the same compact rhythm as DataTable
+    // (--app-table-cell-py / --app-table-cell-px in index.css).
+    Table: Table.extend({
+      defaultProps: { verticalSpacing: 4, horizontalSpacing: 8 },
     }),
     Tooltip: Tooltip.extend({
       styles: {

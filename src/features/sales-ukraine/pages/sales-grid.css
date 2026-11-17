@@ -600,11 +600,14 @@
 .sales-grid-row {
   background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  contain-intrinsic-size: auto 56px;
+  contain-intrinsic-size: auto 44px;
   content-visibility: auto;
   cursor: pointer;
-  min-height: 56px;
-  padding: 8px 12px 8px 8px;
+  /* Rows live in a flex column: never shrink below their content. */
+  flex-shrink: 0;
+  /* Same compact rhythm as DataTable rows (--app-table-* tokens). */
+  min-height: var(--app-table-row-height-relaxed);
+  padding: var(--app-table-cell-py) 12px var(--app-table-cell-py) var(--app-table-cell-px);
   position: relative;
 }
 
@@ -786,7 +789,7 @@
   overflow: hidden;
   font-size: 13px;
   font-weight: 600;
-  line-height: 18px;
+  line-height: var(--app-table-line-height);
   /* §5.1 — names are Onest 600 gray-8, not near-black gray-9 */
   color: var(--mantine-color-gray-8);
 }
@@ -797,8 +800,8 @@
 }
 
 .app-table-chip.sg-client-code {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 13px; /* BUG-1394: the client code reads larger than document metadata */
+  line-height: var(--app-table-line-height);
 }
 
 .sg-client-name-text {
@@ -910,7 +913,7 @@
   border-left: 1px dashed var(--mantine-color-gray-2);
   display: grid;
   font-size: 13px;
-  line-height: 1.1;
+  line-height: var(--app-table-line-height); /* two 16px lines = 32px cell */
   min-height: 32px;
   padding-left: 8px;
   text-align: right;
@@ -926,7 +929,7 @@
 
 .sg-amt > .app-table-chip {
   justify-self: end;
-  margin-top: 4px;
+  margin-top: 0; /* value line + chip line = 32px, same as DataTable two-line cells */
 }
 
 .sg-amt-unit {
@@ -1037,7 +1040,8 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 0; /* chip + status line = two 16px table lines */
+  line-height: var(--app-table-line-height);
   text-align: right;
   min-width: 0;
 }

@@ -28,8 +28,9 @@ describe('shared DataTable body-row density contract', () => {
     const normalRoot = findRule(root, '.data-table-density-normal')
     const bodyRow = findRule(root, '.data-table-row')
 
-    expect(declarations(compactRoot)).toMatchObject({ [ROW_HEIGHT_VARIABLE]: '35px' })
-    expect(declarations(normalRoot)).toMatchObject({ [ROW_HEIGHT_VARIABLE]: '45px' })
+    // 32px compact / 36px relaxed rows come from the shared table tokens (index.css).
+    expect(declarations(compactRoot)).toMatchObject({ [ROW_HEIGHT_VARIABLE]: 'var(--app-table-row-height)' })
+    expect(declarations(normalRoot)).toMatchObject({ [ROW_HEIGHT_VARIABLE]: 'var(--app-table-row-height-relaxed)' })
     expect(declarations(bodyRow)).toMatchObject({ height: `var(${ROW_HEIGHT_VARIABLE})` })
   })
 

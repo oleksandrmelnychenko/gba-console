@@ -9,6 +9,10 @@
   letter-spacing: 0;
   text-transform: none;
   --badge-padding-x: 8px;
+  /* Chips sit on the 16px table line (14px text + 1px border each side). */
+  --badge-height-xs: 16px;
+  --badge-height-sm: 16px;
+  --badge-height-md: 16px;
 }
 
 :is(.data-table, .app-table-chips, table, [role='table'], [role='grid'], .app-sheet-body, .app-modal, .document-detail-drawer) .mantine-Badge-root:not(.app-role-pill) {
@@ -31,7 +35,7 @@
   font-weight: 600;
   gap: 4px;
   letter-spacing: 0;
-  line-height: 16px;
+  line-height: 14px; /* + 1px border top/bottom = 16px, the table line */
   max-width: 100%;
   min-width: 0;
   padding: 0 8px;

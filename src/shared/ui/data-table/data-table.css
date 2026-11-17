@@ -7,11 +7,11 @@
 /* Row geometry belongs to the nearest DataTable root. Nested tables can use a
    different density without inheriting the outer table's body-row height. */
 .data-table-density-compact {
-  --data-table-row-height: 35px;
+  --data-table-row-height: var(--app-table-row-height);
 }
 
 .data-table-density-normal {
-  --data-table-row-height: 45px;
+  --data-table-row-height: var(--app-table-row-height-relaxed);
 }
 
 .data-table-toolbar {
@@ -170,12 +170,10 @@
   text-align: left !important;
 }
 
-.data-table-density-compact .data-table-th {
-  padding: 4px 8px;
-}
-
-.data-table-density-normal .data-table-th {
-  padding: 4px 8px;
+.data-table .data-table-th {
+  height: var(--app-table-header-height);
+  line-height: var(--app-table-line-height);
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
 }
 
 .data-table-th.is-dragging {
@@ -342,16 +340,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+.data-table-density-compact .data-table-cell,
+.data-table-density-normal .data-table-cell {
+  line-height: var(--app-table-line-height);
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
+}
+
 .data-table-density-compact .data-table-cell {
   font-size: 12px;
-  line-height: 1.2;
-  padding: 4px 8px;
 }
 
 .data-table-density-normal .data-table-cell {
   font-size: 13px;
-  line-height: 1.3;
-  padding: 8px;
 }
 
 .data-table-actions-column {
@@ -376,11 +376,13 @@
 
 .data-table-cell .mantine-Text-root {
   font-size: inherit;
-  line-height: 1.25;
+  line-height: var(--app-table-line-height);
 }
 
+/* Chips sit exactly on the 16px table line, so a chip never makes its row
+   taller than a plain text row. */
 .data-table-cell .mantine-Badge-root {
-  height: 18px;
+  height: var(--app-table-line-height);
   padding-inline: 8px;
 }
 

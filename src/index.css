@@ -73,6 +73,17 @@
   --app-control-height: 32px;
   --app-control-height-sm: 28px;
   --app-control-height-xs: 24px;
+
+  /* Table geometry — one compact rhythm for DataTable, static tables, plain
+     Mantine tables and tables inside modals/drawers. 4px + 16px line + 4px
+     = 24px content, centred in a 32px row; the «Висота рядків» toggle only
+     switches to the 36px relaxed row. */
+  --app-table-row-height: 32px;
+  --app-table-row-height-relaxed: 36px;
+  --app-table-header-height: 32px;
+  --app-table-cell-py: 4px;
+  --app-table-cell-px: 8px;
+  --app-table-line-height: 16px;
 }
 
 html,

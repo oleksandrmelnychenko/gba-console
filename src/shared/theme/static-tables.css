@@ -1,4 +1,4 @@
-/* Static tables share DataTable's compact geometry. Only direct cells are
+/* Static tables share DataTable's compact geometry (--app-table-* tokens). Only direct cells are
    targeted: nested tables, controls, subtotals and heat-map cells keep ownership
    of their own layout and state. Column borders and sticky positioning remain
    with the consumer. */
@@ -8,14 +8,14 @@
   color: var(--mantine-color-gray-8);
   font-size: 13px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--app-table-line-height);
   width: 100%;
 }
 
 .app-static-table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  height: 36px;
-  padding: 8px 8px;
+  height: var(--app-table-row-height);
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   vertical-align: middle;
 }
 
@@ -24,7 +24,8 @@
   color: var(--mantine-color-gray-7);
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
+  height: var(--app-table-header-height);
+  line-height: var(--app-table-line-height);
 }
 
 .app-static-table > tbody > tr:nth-child(even) {

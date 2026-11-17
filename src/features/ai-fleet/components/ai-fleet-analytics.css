@@ -397,7 +397,7 @@
 .ai-fleet-matrix th,
 .ai-fleet-matrix td {
   border-top: 1px solid var(--mantine-color-gray-2);
-  padding: 8px 8px;
+  padding: var(--app-table-cell-py) var(--app-table-cell-px);
   text-align: left;
   vertical-align: middle;
 }

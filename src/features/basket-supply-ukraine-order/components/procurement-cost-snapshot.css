@@ -84,7 +84,7 @@
 .procure-cost-snapshot__table-scroll { overflow: auto; max-height: 260px; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; }
 .procure-cost-snapshot__table { white-space: nowrap; }
 .procure-cost-snapshot__table > thead { position: sticky; top: 0; z-index: 1; }
-.procure-cost-snapshot__table > :is(thead, tbody) > tr > :is(th, td) { padding: 8px 12px; font-size: 12px; }
+.procure-cost-snapshot__table > :is(thead, tbody) > tr > :is(th, td) { padding: var(--app-table-cell-py) var(--app-table-cell-px); font-size: 12px; }
 .procure-cost-snapshot__table > tbody > tr:last-child > td { border-bottom: 0; }
 .procure-cost-snapshot__table code,
 .procure-cost-snapshot__time { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; }

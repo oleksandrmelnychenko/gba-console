@@ -136,7 +136,10 @@ describe('BUG-1394 identifiers in the sales registry and its product card', () =
   it('enlarges the client code without enlarging document metadata', async () => {
     const code = await renderRegistry()
     expect(getComputedStyle(code).fontSize).toBe('13px')
-    expect(getComputedStyle(code).lineHeight).toBe('18px')
+    // The code sits on the shared 16px table line; jsdom does not resolve var(),
+    // so assert the rule itself.
+    const salesGridCss = readFileSync('src/features/sales-ukraine/pages/sales-grid.css', 'utf8')
+    expect(salesGridCss).toMatch(/\.app-table-chip\.sg-client-code \{[^}]*line-height: var\(--app-table-line-height\);/)
     const number = screen.getByText('Ок00000003')
     expect(getComputedStyle(number).fontSize).toBe('11px')
   })
