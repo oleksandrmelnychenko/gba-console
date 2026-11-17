@@ -18,7 +18,6 @@ export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Prop
       <ThresholdToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
         descriptionId={reason ? reasonId : undefined} onChange={onChange} />
     </Group>
-    <Text size="xs" c="dimmed">Об’єднує групи з малою часткою суми в «Інше (поріг)».</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}
     {draft && cap && dataset ? <ThresholdFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}

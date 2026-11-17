@@ -25,13 +25,10 @@ export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, 
       {<AbcToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
         descriptionId={prerequisites.reasons ? reasonId : undefined} onChange={onChange} />}
     </Group>
-    <Text size="xs" c="dimmed">Ділить групи на класи A, B і C.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Text role="status" size="sm">{notice}</Text> : null}
     <ReportRankingPrerequisites kind="ABC" reasonId={reasonId} {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />
-    {raw != null ? <Text size="xs" c="dimmed">Вимкнення ABC прибере його правило, поле «ABC-клас» і сортування лише цього поля. Інші налаштування залишаться.</Text>
-      : cap ? <Text size="xs" c="dimmed">Увімкнення додасть поле «ABC-клас» першим у рядках; його порядок можна змінити кнопками групування.</Text> : null}
     {draft && cap && dataset ? <AbcFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
   </Stack>
 }

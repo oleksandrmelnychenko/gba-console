@@ -1,3 +1,4 @@
+import { previewCaptionText, previewSharedNames } from '../data/nativeReportPreview'
 import { Button, Checkbox, CloseButton, Combobox, Group, InputBase, Loader, ScrollArea, Stack, Text, useCombobox } from '@mantine/core'
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -52,7 +53,9 @@ export function ReportValuePicker({
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
   const failed = !selectedOnly && !busy && !!lookupError
   const retrying = failed && !!onRetry
-  const shown = (item: ReportValueOption) => item.label
+  const serverItems = new Set<ReportValueOption>(data)
+  const storedShared = previewSharedNames(selected.map(item => item.label))
+  const shown = (item: ReportValueOption) => serverItems.has(item) ? item.label : previewCaptionText(item.label, storedShared)
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))

@@ -9,7 +9,7 @@ import type { ReportSelectedValue } from '../types'
 import { priceDatasetFixture, priceSelectionFixture } from '../data/nativePriceFilterLookup.test-fixtures'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 vi.mock('../../../shared/api/apiClient',()=>({apiRequest:vi.fn()}))
-const api=vi.mocked(apiRequest),row={Id:'2132454',Name:'Документ GBA [2132454]'},selected=[{Data:{Id:row.Id},Name:row.Name,Value:0}]
+const api=vi.mocked(apiRequest),row={Id:'2132454',Name:'Документ 2132454'},selected=[{Data:{Id:row.Id},Name:row.Name,Value:0}]
 function Form({initial=[],error,from='2026-10-01'}:{initial?:ReportSelectedValue[];error?:string;from?:string}) {
  const [values,setValues]=useState(initial)
  return <MantineProvider env="test"><I18nProvider><NativePriceFilterValuePicker dataSource={46} dataset={priceDatasetFixture()} selection={{...priceSelectionFixture(12),Values:values}} from={from} to="2026-10-31" label="Значення" error={error} onChange={setValues}/><output data-testid="values">{JSON.stringify(values)}</output></I18nProvider></MantineProvider>

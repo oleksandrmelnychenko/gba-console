@@ -94,7 +94,7 @@ it("preserves the preset product group under nomenclature and accepts several ex
   const group = within(screen.getByRole("group", { name: "Умова відбору 1" }))
   expect(group.getByRole("combobox", { name: "Поле" })).toHaveProperty("value", "Товар")
   expect(group.getByRole("combobox", { name: "Тип порівняння" })).toHaveProperty("value", "В групі")
-  expect(group.getByText("Група: AL-KO [4317]")).toBeTruthy()
+  expect(group.getByText("Група: AL-KO")).toBeTruthy()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   const row = within(screen.getByRole("group", { name: "Умова відбору 2" }))
   fireEvent.click(row.getByRole("combobox", { name: "Поле" }))

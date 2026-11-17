@@ -29,7 +29,6 @@ export function ReportTopGroupsPanel({ data, dataset, disabled, onChange, onConf
         <Button type="button" variant="default" size="compact-sm" disabled={disabled || !initial}
           aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => { if (initial) onChange(initial) }}>Увімкнути TOP цілих груп</Button> : null}
     </Group>
-    <Text size="xs" c="dimmed">Залишає групи з найбільшим показником; підсумки — лише за ними.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     <ReportRankingPrerequisites kind="TOP" reasonId={reasonId} {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />

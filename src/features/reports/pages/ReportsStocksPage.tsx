@@ -191,7 +191,7 @@ import { requestFilterExpression } from '../data/reportFilterExpression'
 import { FULL_REPORT_MAX_DATE, FULL_REPORT_MIN_DATE, isFullRangeReportDate } from '../data/reportDateRange'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
-import type { NativeReportPreview } from '../data/nativeReportPreview'
+import { previewCaptionText, previewSharedNames, type NativeReportPreview } from '../data/nativeReportPreview'
 import { useReportFilterExpression, type ReportSelectionEdit } from '../hooks/useReportFilterExpression'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { requestThreshold } from '../data/reportThreshold'
@@ -1311,7 +1311,7 @@ function LegacyReportBuilder({
         onOpenPicker={() => setGroupingPickerTarget('columns')}
         onRemove={(index) => onColGroupsChange((current) => current.filter((_, itemIndex) => itemIndex !== index))}
         onReorder={(type, direction) => onColGroupsChange(current => reorderReportGrouping(current, type, direction, allowedGroupingTypes))}
-        onTransfer={type => transferGrouping('Col', type)} /> : <Text size="sm" c="dimmed">Вибрані показники відображаються у стовпцях.</Text>}
+        onTransfer={type => transferGrouping('Col', type)} /> : null}
       {supportsFinancialExportLayout(dataset) && colGroups.length > 0 ? <div className="reports-stocks-export-layout">
         {onExportLayoutChange ? <SegmentedControl size="xs" aria-label={t('Файл Excel')} value={exportLayout}
           data={FINANCIAL_EXPORT_LAYOUT_OPTIONS.map(option => ({ value: option.value, label: t(option.label) }))}
@@ -1912,7 +1912,8 @@ function getSelectionValuesSummary(selection: ReportSelection, t: TranslateFunct
     return t('Значення не вибрано')
   }
 
-  const visibleValues = selection.Values.slice(0, 2).map((value) => value.Name).join(', ')
+  const shared = previewSharedNames(selection.Values.map((value) => value.Name))
+  const visibleValues = selection.Values.slice(0, 2).map((value) => previewCaptionText(value.Name, shared)).join(', ')
   const hiddenCount = selection.Values.length - 2
 
   return hiddenCount > 0 ? `${visibleValues} · +${hiddenCount}` : visibleValues
@@ -2433,7 +2434,8 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 }
 
 function getSelectionLookupMinLength(fieldType: number): number {
-  if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit) return 0
+  if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit
+    || fieldType === REPORT_FILTER_FIELD_TYPES.warehouse) return 0
   return fieldType === REPORT_FILTER_FIELD_TYPES.product || fieldType === REPORT_FILTER_FIELD_TYPES.productArticle ? 2 : 1
 }
 

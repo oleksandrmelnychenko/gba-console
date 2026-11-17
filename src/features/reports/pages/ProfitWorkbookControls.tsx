@@ -85,10 +85,10 @@ export function DayProfitControls({ part, dataset, disabled, profitReadMode, day
         ? <Text size="xs" c="orange">{t('Шаблон містить відбір «Послуги». Увімкнення перемикача замінить його на «Товар без послуг».')}</Text> : null}
     </> : null}
     {shows('organizations') && profitReadMode !== 1 && sourceOrganizations != null ? <Stack gap={6} mt="sm">
-      <Text size="xs" c="orange">{t('Шаблон обмежує організації за довідником 1С. Звіт рахує організації GBA: залиште всі або оберіть потрібні у відборі організацій.')}</Text>
+      <Text size="xs" c="orange">{t('Шаблон містить інший перелік організацій. Залиште всі організації або оберіть потрібні у відборі.')}</Text>
       <Group gap="xs">
         <Button size="xs" variant="light" disabled={disabled} onClick={() => setSourceOrganizations(undefined)}>
-          {t('Перейти на організації GBA')}</Button>
+          {t('Залишити всі організації')}</Button>
       </Group>
     </Stack> : null}
     {shows('organizations') && profitReadMode === 1 ? <>

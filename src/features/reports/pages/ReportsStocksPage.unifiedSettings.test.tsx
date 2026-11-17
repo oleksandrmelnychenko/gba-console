@@ -204,15 +204,15 @@ it('does not resurrect a deleted template when cancelling edits to its applied r
 
 const screenshotChoices = [
   { field: 0, name: 'Організація', condition: 0, values: [
-    { id: 'id:10562', name: 'Фенікс [10562]', data: { Id: 10562 } },
+    { id: 'id:10562', name: 'Фенікс', data: { Id: 10562 } },
     { id: 'id:10563', name: 'ФОП Самолюк Алла Дмитрівна [10563]', data: { Id: 10563 } },
   ] },
   { field: 5, name: 'Покупець', condition: 0, values: [
-    { id: 'id:626852', name: 'АФРАКО ТЗОВ · BRI00104 [626852]', data: { Id: 626852 } },
+    { id: 'id:626852', name: 'АФРАКО ТЗОВ · BRI00104', data: { Id: 626852 } },
     { id: 'id:628676', name: 'АФЕКС АВТОЗАПЧАСТИНИ ТОВ · BXN02404 [628676]', data: { Id: 628676 } },
   ] },
   { field: 60, name: 'Основний менеджер покупця', condition: 0, values: [
-    { id: '5608315DD4C6B3419948F4C603F71C9B', name: 'Крицький Олег Русланович [10184]', data: { Id: '5608315DD4C6B3419948F4C603F71C9B' } },
+    { id: '5608315DD4C6B3419948F4C603F71C9B', name: 'Крицький Олег Русланович', data: { Id: '5608315DD4C6B3419948F4C603F71C9B' } },
     { id: 'AB04BE440FA9D34490714004C8951C7E', name: 'Баранов Віталій Васильович [10146]', data: { Id: 'AB04BE440FA9D34490714004C8951C7E' } },
   ] },
   { field: 14, name: 'Повернення від клієнта', condition: 1, values: [

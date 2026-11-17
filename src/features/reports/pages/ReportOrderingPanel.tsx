@@ -21,7 +21,6 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
       {raw != null ? <Button type="button" variant="default" size="compact-sm" disabled={disabled}
         aria-describedby={reason ? reasonId : undefined} onClick={() => onChange(undefined)}>Очистити збережене сортування</Button> : null}
     </Group>
-    <Text size="xs" c="dimmed">Упорядковує групи всередині їхнього рівня.</Text>
     {error ? <Alert color="red">{error}</Alert> : null}
     {notice ? <Text role="status" size="sm">{notice}</Text> : null}
     {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}

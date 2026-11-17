@@ -72,6 +72,13 @@ describe('dropdown', () => {
     expect(keys()).toEqual(['1'])
   })
 
+  it('shows a saved value without its id unless two saved names coincide, also in the remove label', () => {
+    render(<Harness data={[]} selected={[{ value: '631698', label: 'NINGBO CHINA [631698]' }, { value: '10184', label: 'Крицький О. Р. [10184]' }, { value: '1', label: 'Same [1]' }, { value: '2', label: 'Same [2]' }]} />)
+    expect(screen.getByRole('button', { name: 'Видалити NINGBO CHINA' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Видалити Крицький О. Р.' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Видалити Same [1]' })).toBeTruthy()
+  })
+
   it('keeps the id the server sent for a name that two values share', async () => {
     render(<Harness data={[{ value: '2990', label: 'Автопарк Конкорд [2990]' }, { value: '3001', label: 'Автопарк Конкорд [3001]' }]} />)
     await userEvent.click(box())

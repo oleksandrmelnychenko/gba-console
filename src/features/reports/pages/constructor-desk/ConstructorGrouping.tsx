@@ -57,7 +57,6 @@ export function ConstructorGroupingPanels(props: ConstructorGroupingProps & { me
     </div>
     {rowsOnly ? <section className="constructor-panel" aria-label={TITLES.Col}>
       <h3 className="constructor-panel__title">{TITLES.Col}</h3>
-      <Text size="sm" c="dimmed" className="constructor-panel__empty">Вибрані показники відображаються у колонках.</Text>
     </section> : <GroupingPanel {...props} axis="Col" selected={current} onSelect={setSelected} onOpen={() => setDialog('Col')} />}
     <ConstructorFieldDialog key={dialog ?? 'closed'} opened={dialog !== null} title={dialog ? DIALOG_TITLES[dialog] : ''}
       fields={dialog ? props.available(dialog) : []} onClose={() => setDialog(null)}
