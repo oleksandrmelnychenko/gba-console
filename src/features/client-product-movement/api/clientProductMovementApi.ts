@@ -36,8 +36,12 @@ export async function getClientProductMovements(
 export async function exportClientProductMovementDocument(
   filters: ClientProductMovementFilters,
 ): Promise<ClientProductMovementDocumentResult> {
+  // The export covers every matching document, not the page shown in the grid.
+  const query: Partial<ReturnType<typeof buildMovementQuery>> = buildMovementQuery(filters)
+  delete query.limit
+  delete query.offset
   const result = await apiRequest<unknown>('/consignments/info/client/movement/document/export', {
-    query: buildMovementQuery(filters),
+    query,
   })
 
   return extractDocumentResult(result)
