@@ -7,7 +7,7 @@ import {
 } from '@mantine/core'
 import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { Check, Plus } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { TableChip } from '../../../shared/ui/TableChip'
 import type { Currency, OrganizationClientAgreement } from '../types'
@@ -72,6 +72,8 @@ export function OrganizationClientAgreementsPanel({
   const [currencyId, setCurrencyId] = useState('')
   const [fromDate, setFromDate] = useState(getTodayInputDate)
   const [error, setError] = useState<string | null>(null)
+  /* A double click on «Додати» added two identical rows before the modal closed. */
+  const addLatchRef = useRef(false)
   const canAddAgreement = !disabled && !isLoadingCurrencies && currencyOptions.length > 0
   const agreementRows = useMemo<AgreementRow[]>(
     () => agreements.map((agreement, index) => ({ agreement, index })),
@@ -130,10 +132,15 @@ export function OrganizationClientAgreementsPanel({
     setCurrencyId(currencyOptions[0]?.value || '')
     setFromDate(getTodayInputDate())
     setError(null)
+    addLatchRef.current = false
     setModalOpened(true)
   }
 
   function handleAddAgreement() {
+    if (addLatchRef.current) {
+      return
+    }
+
     const selectedCurrency = currencies.find((currency) => String(currency.Id) === currencyId)
 
     if (!selectedCurrency) {
@@ -146,6 +153,7 @@ export function OrganizationClientAgreementsPanel({
       return
     }
 
+    addLatchRef.current = true
     onAddAgreement(createAgreement(selectedCurrency, fromDate))
     setModalOpened(false)
   }

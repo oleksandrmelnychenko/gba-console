@@ -27,10 +27,46 @@ export async function getOrganizationClient(netId: string): Promise<Organization
   return normalizeOrganizationClient(result)
 }
 
+/* Agreement «Дата» is a calendar date. The server converts the sent time from the
+   user's zone to UTC and then keeps only the date, so midnight (or a bare
+   "2026-11-17") became the previous day — and every re-save lost another day.
+   Noon survives the conversion in any zone within ±12 h. */
+export function toAgreementDatePayload(value: Date | string | undefined): Date | string | undefined {
+  if (!value) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const match = /^(\d{4}-\d{2}-\d{2})/.exec(value)
+    return match ? `${match[1]}T12:00:00` : value
+  }
+
+  if (Number.isNaN(value.getTime())) {
+    return value
+  }
+
+  const pad = (part: number) => String(part).padStart(2, '0')
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T12:00:00`
+}
+
+function prepareOrganizationClientPayload(client: OrganizationClient): OrganizationClient {
+  if (!Array.isArray(client.OrganizationClientAgreements)) {
+    return client
+  }
+
+  return {
+    ...client,
+    OrganizationClientAgreements: client.OrganizationClientAgreements.map((agreement) => ({
+      ...agreement,
+      FromDate: toAgreementDatePayload(agreement.FromDate),
+    })),
+  }
+}
+
 export async function createOrganizationClient(client: OrganizationClient): Promise<OrganizationClient | null> {
   const result = await apiRequest<unknown>('/clients/organizations/create', {
     method: 'POST',
-    body: client,
+    body: prepareOrganizationClientPayload(client),
   })
 
   return normalizeOrganizationClient(result)
@@ -39,7 +75,7 @@ export async function createOrganizationClient(client: OrganizationClient): Prom
 export async function updateOrganizationClient(client: OrganizationClient): Promise<OrganizationClient | null> {
   const result = await apiRequest<unknown>('/clients/organizations/edit', {
     method: 'POST',
-    body: client,
+    body: prepareOrganizationClientPayload(client),
   })
 
   return normalizeOrganizationClient(result)
