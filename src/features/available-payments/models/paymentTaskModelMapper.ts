@@ -775,7 +775,7 @@ function consumableOrderColumns(t: Translate): AvailablePaymentColumn[] {
     { format: 'text', header: t('Назва'), key: 'name' },
     { format: 'text', header: t('Категорія'), key: 'category' },
     { format: 'text', header: t('Кількість'), key: 'quantity' },
-    { align: 'right', format: 'price', header: t('Ціна за одиницю'), key: 'pricePerUnit' },
+    { align: 'right', format: 'price', header: t('Ціна за одиницю з ПДВ'), key: 'pricePerUnit' },
     { align: 'right', format: 'price', header: t('Сума'), key: 'totalWithoutVat' },
     { align: 'right', format: 'text', header: `${t('ПДВ')} %`, key: 'vatPercent' },
     { align: 'right', format: 'price', header: t('Сума ПДВ'), key: 'vatAmount' },

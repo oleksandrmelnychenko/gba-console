@@ -1923,6 +1923,13 @@ export function PaymentAccountExchangeModal({
                 data={exchangeTraderOptions}
                 disabled={!selectedFromRegister || !selectedToRegister || isLoading || isLoadingTraders || isSubmitting}
                 label={t('Курс трейдера')}
+                // Traders get rates outside this form; with none the picker used to open as an empty box.
+                description={
+                  !isLoadingTraders && selectedFromRegister && selectedToRegister && exchangeTraderOptions.length === 0
+                    ? t('Немає трейдерів з курсом для цієї валюти — введіть курс вручну')
+                    : undefined
+                }
+                nothingFoundMessage={t('Немає трейдерів з курсом для цієї валюти')}
                 searchable
                 value={draft.currencyTraderNetId || null}
                 onChange={(value) => {

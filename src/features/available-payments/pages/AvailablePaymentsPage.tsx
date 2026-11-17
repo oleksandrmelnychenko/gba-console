@@ -814,6 +814,10 @@ function AvailablePaymentsTotalsRow({
 
   return (
     <Group className="available-payments-summary" gap="xs" justify="flex-end" wrap="nowrap">
+      {/* The totals count only tasks still to pay; an already paid task stays visible in Деталі. */}
+      <Text c="dimmed" size="xs">
+        {t('Разом неоплачені')}
+      </Text>
       <TotalCell label={t('К-сть')} value={String(totalNotDoneTasks)} />
       {CURRENCY_CODES.map((code) => (
         <TotalCell key={code} label={code} value={formatAmount(totalsByCurrency[code] || 0)} />

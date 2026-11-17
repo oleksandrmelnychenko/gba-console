@@ -98,6 +98,8 @@ describe('payment task model mapper', () => {
 
     expect(models[0].mergeKind).toBeUndefined()
     expect(models[0].mergeOrganizationNetUid).toBeUndefined()
+    // PricePerItem is gross (10 x 150 = Сума з ПДВ 1 500), next to a net Сума: the header says so.
+    expect(models[0].columns.find((column) => column.key === 'pricePerUnit')?.header).toBe('Ціна за одиницю з ПДВ')
   })
 
   it('keeps service detail rows for supplier services', () => {
