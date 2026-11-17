@@ -198,7 +198,9 @@ function UserEditPageContent() {
     }
 
     if (!isSaving && hasUnsavedChanges) {
-      setConfirmCloseOpened(true)
+      // Deferred: opened synchronously from the sheet's Escape handler, the confirmation would
+      // register its own Escape listener while the same keydown is still dispatching and close at once.
+      window.setTimeout(() => setConfirmCloseOpened(true), 0)
       return
     }
 
@@ -345,7 +347,6 @@ function UserEditPageContent() {
       // A nested confirmation owns Escape / outside clicks while it is open.
       closeOnClickOutside={!isSaving && !isDeleting && !isResettingPassword && !deleteModalOpened && !confirmCloseOpened}
       closeOnEscape={!deleteModalOpened && !confirmCloseOpened}
-      trapFocus={!deleteModalOpened && !confirmCloseOpened}
       keepMounted={false}
       size={780}
       aria-label={user ? getUserFullName(user) : t('Користувач')}
