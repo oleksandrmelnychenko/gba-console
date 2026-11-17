@@ -88,4 +88,18 @@ describe('new supply to Ukraine selections', () => {
       }) }),
     ))
   })
+
+  it('hides the «choose supplier, organization, agreement» alert once all three are chosen', async () => {
+    renderPage()
+    await waitFor(() => expect((screen.getByRole('combobox', { name: 'Постачальник' }) as HTMLInputElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
+    expect(await screen.findByText('Оберіть постачальника, організацію та договір')).toBeTruthy()
+
+    select('Постачальник', 'Постачальник QA')
+    select('Організація', 'Фенікс')
+    expect(screen.getByText('Оберіть постачальника, організацію та договір')).toBeTruthy()
+    select('Договір', 'Договір EUR')
+
+    expect(screen.queryByText('Оберіть постачальника, організацію та договір')).toBeNull()
+  })
 })

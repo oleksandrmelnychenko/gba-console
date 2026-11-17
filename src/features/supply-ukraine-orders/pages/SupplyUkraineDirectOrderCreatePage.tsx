@@ -169,6 +169,8 @@ function createInitialDirectOrderForm(): DirectOrderForm {
   }
 }
 
+const REQUIRED_SELECTION_MESSAGE = 'Оберіть постачальника, організацію та договір'
+
 function directOrderFormReducer(state: DirectOrderForm, action: DirectOrderFormAction): DirectOrderForm {
   switch (action.type) {
     case 'patch':
@@ -333,6 +335,11 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     [availableAgreements, form.clientAgreementKey],
   )
 
+  // The «choose supplier / organization / agreement» alert goes away as soon as all three are chosen.
+  const shownError = error === t(REQUIRED_SELECTION_MESSAGE) && selectedSupplier && selectedOrganization && selectedClientAgreement
+    ? null
+    : error
+
   function updateForm(patch: Partial<DirectOrderForm>) {
     if (
       patch.comment !== undefined
@@ -389,7 +396,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       }
 
       if (!selectedSupplier || !selectedOrganization || !selectedClientAgreement) {
-        dispatchPage({ type: 'setError', error: t('Оберіть постачальника, організацію та договір') })
+        dispatchPage({ type: 'setError', error: t(REQUIRED_SELECTION_MESSAGE) })
         return
       }
 
@@ -486,9 +493,9 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       <form id="supply-ukraine-order-create-form" onSubmit={submitForm}>
         <Stack gap="md">
           {/* The comment field shows its own error; repeating it in the alert doubled it. */}
-          {error && error !== commentValidationError && (
+          {shownError && shownError !== commentValidationError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-              {error}
+              {shownError}
             </Alert>
           )}
 
