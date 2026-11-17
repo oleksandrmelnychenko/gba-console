@@ -5,6 +5,7 @@ import { useLocation } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import { isNavigationPathAllowed } from '../../../features/navigation/navigationUtils'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { isKnownConsolePath } from '../../routes/knownConsolePaths'
 
 type NavigationLocationState = {
   backgroundLocation?: {
@@ -41,6 +42,11 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
         title={t('Меню недоступне')}
       />
     )
+  }
+
+  // An unknown address is a missing page (the fallback route says so), not a permission problem.
+  if (!isKnownConsolePath(navigationLocation.pathname)) {
+    return children
   }
 
   if (!isNavigationPathAllowed(modules, targetPath)) {

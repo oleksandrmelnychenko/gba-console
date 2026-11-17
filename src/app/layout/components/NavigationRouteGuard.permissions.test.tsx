@@ -48,9 +48,9 @@ const rolesNavigation: NavigationModule[] = [
 
 const RolesPage = vi.fn(() => <div>Керування ролями</div>)
 
-function renderRolesRoute(modules: NavigationModule[]) {
+function renderRolesRoute(modules: NavigationModule[], path = '/users/roles') {
   return render(
-    <MemoryRouter initialEntries={['/users/roles']}>
+    <MemoryRouter initialEntries={[path]}>
       <MantineProvider>
         <I18nProvider>
           <NavigationContext.Provider
@@ -103,6 +103,14 @@ describe('NavigationRouteGuard page permissions', () => {
     expect(screen.getByRole('alert').textContent).toContain('Доступ заборонено')
     expect(screen.getByRole('alert').textContent).toContain('Ця сторінка недоступна для вашого облікового запису.')
     expect(screen.queryByText('Немає доступу')).toBeNull()
+  })
+
+  it('lets an unknown address reach the not-found page instead of reporting a denied access', () => {
+    rolesPagePermissionGranted = true
+
+    renderRolesRoute([], '/sales/ukraine/does-not-exist')
+
+    expect(screen.queryByText('Доступ заборонено')).toBeNull()
   })
 
   it('renders /users/roles when both navigation and page permission allow it', () => {
