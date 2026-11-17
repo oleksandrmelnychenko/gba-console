@@ -1,6 +1,13 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH } from '../salesFieldLimits'
+import {
+  isValidOwnTtnNumber,
+  isValidRecipientPhone,
+  OWN_TTN_FORMAT_MESSAGE,
+  RECIPIENT_PHONE_FORMAT_MESSAGE,
+  SALE_COMMENT_MAX_LENGTH,
+  SALE_OWN_TTN_MAX_LENGTH,
+} from '../salesFieldLimits'
 import {
   Anchor,
   Alert,
@@ -274,6 +281,20 @@ function SaleDetailsContent({
   }
 
   async function save() {
+    if (!fileMutation.reconciliationRequired) {
+      const formatError = !isValidRecipientPhone(mobilePhone)
+        ? RECIPIENT_PHONE_FORMAT_MESSAGE
+        : hasOwnTtn && !isValidOwnTtnNumber(ownTtnNumber)
+          ? OWN_TTN_FORMAT_MESSAGE
+          : null
+
+      if (formatError) {
+        notifications.show({ color: 'red', message: t(formatError) })
+
+        return
+      }
+    }
+
     if (!tryStartSaving()) {
       return
     }

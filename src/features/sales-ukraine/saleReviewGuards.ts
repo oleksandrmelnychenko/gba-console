@@ -1,3 +1,4 @@
+import { isValidOwnTtnNumber, isValidRecipientPhone } from './salesFieldLimits'
 import type { SalesUkraineRetailPaymentStatus, SalesUkraineSale } from './types'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -6,8 +7,10 @@ const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
 export type SaleReviewIssueCode =
   | 'cashOnDeliveryAmount'
   | 'ownTtnNumber'
+  | 'ownTtnNumberFormat'
   | 'recipient'
   | 'recipientPhone'
+  | 'recipientPhoneFormat'
   | 'retailPaymentAmount'
   | 'retailPaymentConfirmation'
   | 'retailPaymentStatus'
@@ -38,6 +41,8 @@ export function getSaleReviewIssues(sale: SalesUkraineSale, context: SaleReviewC
 
     if (!hasText(recipient?.MobilePhone)) {
       issues.push('recipientPhone')
+    } else if (!isValidRecipientPhone(recipient?.MobilePhone)) {
+      issues.push('recipientPhoneFormat')
     }
 
   }
@@ -48,6 +53,8 @@ export function getSaleReviewIssues(sale: SalesUkraineSale, context: SaleReviewC
 
   if (sale.CustomersOwnTtn && !hasText(sale.CustomersOwnTtn.Number)) {
     issues.push('ownTtnNumber')
+  } else if (sale.CustomersOwnTtn && !isValidOwnTtnNumber(sale.CustomersOwnTtn.Number)) {
+    issues.push('ownTtnNumberFormat')
   }
 
   if (sale.RetailClient) {

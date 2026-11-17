@@ -43,7 +43,12 @@ import { getSaleReviewIssues, type SaleReviewIssueCode } from '../../saleReviewG
 import { getSalesTtnFileValidationError } from '../../salesPayloadGuards'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
-import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH } from '../../salesFieldLimits'
+import {
+  OWN_TTN_FORMAT_MESSAGE,
+  RECIPIENT_PHONE_FORMAT_MESSAGE,
+  SALE_COMMENT_MAX_LENGTH,
+  SALE_OWN_TTN_MAX_LENGTH,
+} from '../../salesFieldLimits'
 import {
   getSaleFileMutationOperationIdentity,
   isPersistedSaleFileMutationRecord,
@@ -87,12 +92,18 @@ const LOCAL_ORDER_SOURCE = 1
 const SALE_REVIEW_ISSUE_MESSAGES: Record<SaleReviewIssueCode, string> = {
   cashOnDeliveryAmount: 'Вкажіть коректну суму наложеного платежу',
   ownTtnNumber: 'Вкажіть номер власної ТТН',
+  ownTtnNumberFormat: OWN_TTN_FORMAT_MESSAGE,
   recipient: 'Не вибраний одержувач',
   recipientPhone: 'Вкажіть мобільний телефон одержувача',
+  recipientPhoneFormat: RECIPIENT_PHONE_FORMAT_MESSAGE,
   retailPaymentAmount: 'Замовлення не можна відвантажити без передплати',
   retailPaymentConfirmation: 'Оплату інтернет-магазину ще не підтверджено менеджером',
   retailPaymentStatus: 'Не вдалося перевірити оплату роздрібного клієнта',
   transporter: 'Не вибраний перевізник',
+}
+
+export function formatSaleReviewIssues(issues: SaleReviewIssueCode[], t: (value: string) => string): string {
+  return [...new Set(issues)].map((issue) => t(SALE_REVIEW_ISSUE_MESSAGES[issue])).join('; ')
 }
 
 type FinalCreateSaleFlow = 'merged-split' | 'ordinary-split'
@@ -484,10 +495,15 @@ export function useWizardSaleSubmission({
     }
 
     const issues = getSaleReviewIssues(payload, { retailPaymentStatus: retailStatus })
-    const firstIssue = issues[0]
 
-    if (firstIssue) {
-      notifications.show({ color: 'red', message: t(SALE_REVIEW_ISSUE_MESSAGES[firstIssue]) })
+    if (issues.length > 0) {
+      /* Every missing field at once (one toast per click used to reveal them one by one). */
+      notifications.show({
+        autoClose: 10_000,
+        color: 'red',
+        message: formatSaleReviewIssues(issues, t),
+        title: issues.length > 1 ? t('Заповніть обовʼязкові поля') : undefined,
+      })
 
       return false
     }

@@ -49,6 +49,7 @@ import {
   updateSaleFromData,
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
+import { OWN_TTN_FORMAT_MESSAGE, RECIPIENT_PHONE_FORMAT_MESSAGE } from '../salesFieldLimits'
 import {
   SALES_TTN_FILE_ACCEPT,
   getOrderItemQuantityLimit,
@@ -786,6 +787,10 @@ function getReviewIssueLabel(issue: SaleReviewIssueCode, t: (message: string) =>
       return t('Вкажіть суму накладеного платежу')
     case 'ownTtnNumber':
       return t('Вкажіть номер власної ТТН')
+    case 'ownTtnNumberFormat':
+      return t(OWN_TTN_FORMAT_MESSAGE)
+    case 'recipientPhoneFormat':
+      return t(RECIPIENT_PHONE_FORMAT_MESSAGE)
     case 'retailPaymentStatus':
       return t('Не вдалося перевірити оплату інтернет-магазину')
     case 'retailPaymentConfirmation':

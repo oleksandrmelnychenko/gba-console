@@ -715,7 +715,7 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
 
   it('lets the user discard an unconfirmed delivery save and edit again', async () => {
     mocks.updateSaleFromData.mockRejectedValue(new ApiError('Sales data is temporarily unavailable.', 503, null))
-    const { onSaved } = renderStep({ value: { ...reviewValue(), hasOwnTtn: true, ttnNumber: '1'.repeat(40) } })
+    const { onSaved } = renderStep({ value: { ...reviewValue(), hasOwnTtn: true, ttnNumber: '20450123456789' } })
 
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await screen.findByRole('button', { name: 'Перевірити результат' })
