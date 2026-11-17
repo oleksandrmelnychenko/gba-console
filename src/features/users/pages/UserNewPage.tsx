@@ -169,7 +169,7 @@ function UserNewPageContent() {
         color: 'green',
         message: t('Користувача створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити користувача'))
     } finally {

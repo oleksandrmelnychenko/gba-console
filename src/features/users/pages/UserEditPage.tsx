@@ -15,7 +15,7 @@ import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import { Check, CircleAlert, Key, Save, Trash2, UserRound } from 'lucide-react'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -84,6 +84,8 @@ function UserEditPageContent() {
   const { netid } = useParams<{ netid?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
+  // Set after a save or password reset so the users list reloads when this sheet closes.
+  const hasMutatedRef = useRef(false)
   const routeState = location.state as UserEditRouteState | null
   const returnPath = routeState?.returnPath || '/users'
   const [user, setUser] = useValueState<UserProfile | null>(null)
@@ -161,7 +163,7 @@ function UserEditPageContent() {
       return
     }
 
-    navigate(returnPath, { replace: true })
+    navigate(returnPath, { replace: true, state: { mutated: hasMutatedRef.current } })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -192,6 +194,7 @@ function UserEditPageContent() {
     try {
       const updatedUser = await updateUser(payload)
       setUser(updatedUser || payload)
+      hasMutatedRef.current = true
       notifications.show({
         color: 'green',
         message: t('Користувача збережено'),
@@ -224,7 +227,7 @@ function UserEditPageContent() {
         color: 'green',
         message: t('Користувача видалено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити користувача'))
     } finally {
@@ -551,6 +554,7 @@ function UserPasswordPanel({
           </Group>
           <Checkbox
             checked={isPasswordChangeEnabled}
+            description={isPasswordChangeEnabled ? undefined : t('Поставте позначку, щоб розблокувати поля пароля')}
             disabled={isResettingPassword}
             label={t('Дозволити зміну пароля?')}
             onChange={(event) => setPasswordChangeEnabled(event.currentTarget.checked)}

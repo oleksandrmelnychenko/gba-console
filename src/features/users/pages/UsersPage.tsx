@@ -18,6 +18,7 @@ import {
   Shield,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -111,6 +112,8 @@ function UsersPageContent() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  // The user sheets return here with { mutated: true } after a save, password reset or delete.
+  useMutatedListRefresh(reload)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isBusy = isLoading || isSearchSettling
