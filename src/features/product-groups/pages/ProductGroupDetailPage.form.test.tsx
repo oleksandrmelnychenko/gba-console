@@ -50,7 +50,7 @@ function renderCard() {
 
 describe('product group card form', () => {
   beforeEach(() => {
-    vi.mocked(getProductGroupWithRoot).mockResolvedValue(GROUP)
+    vi.mocked(getProductGroupWithRoot).mockReset().mockResolvedValue(GROUP)
     vi.mocked(getProductGroupDetailsRootGroups).mockResolvedValue([])
     vi.mocked(updateProductGroup).mockReset()
   })
@@ -67,6 +67,18 @@ describe('product group card form', () => {
     expect(await screen.findByText('Вкажіть назву групи')).toBeTruthy()
     expect(name.getAttribute('aria-invalid')).toBe('true')
     expect(updateProductGroup).not.toHaveBeenCalled()
+  })
+
+  it('reports a save conflict in Ukrainian with a reload action', async () => {
+    vi.mocked(updateProductGroup).mockRejectedValueOnce(Object.assign(new Error('The product group changed after it was loaded.'), { status: 409 }))
+    renderCard()
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Опис' }), { target: { value: 'Нове' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText(/Групу змінив інший користувач/)).toBeTruthy()
+    expect(screen.queryByText(/changed after it was loaded/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Перезавантажити' }))
+    await waitFor(() => expect(getProductGroupWithRoot).toHaveBeenCalledTimes(2))
   })
 
   it('asks before closing with unsaved changes', async () => {

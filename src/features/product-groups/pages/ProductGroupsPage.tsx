@@ -83,6 +83,7 @@ function ProductGroupsPageContent() {
   const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
+  const [createNameError, setCreateNameError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(false)
   const [isCreating, setCreating, tryStartCreating] = useBusyState()
@@ -186,11 +187,15 @@ function ProductGroupsPageContent() {
   function closeCreateModal() {
     setCreateModalOpened(false)
     setCreateError(null)
+    setCreateNameError(null)
     setCreateDraft(createEmptyProductGroup())
     setSelectedRootNetUid(null)
   }
 
   function setCreateField<TKey extends keyof ProductGroup>(key: TKey, value: ProductGroup[TKey]) {
+    if (key === 'Name') {
+      setCreateNameError(null)
+    }
     setCreateDraft((currentDraft) => ({
       ...currentDraft,
       [key]: value,
@@ -210,7 +215,8 @@ function ProductGroupsPageContent() {
     const validationError = validateProductGroup(payload)
 
     if (validationError) {
-      setCreateError(validationError)
+      // Same pattern as the group card: the required-name message sits under «Назва».
+      setCreateNameError(validationError)
       return
     }
 
@@ -335,6 +341,7 @@ function ProductGroupsPageContent() {
       <ProductGroupCreateModal
         createDraft={createDraft}
         createError={createError}
+        createNameError={createNameError}
         isCreating={isCreating}
         isLoadingRootGroups={isLoadingRootGroups}
         opened={createModalOpened}
@@ -443,6 +450,7 @@ function useProductGroupColumns() {
 function ProductGroupCreateModal({
   createDraft,
   createError,
+  createNameError,
   isCreating,
   isLoadingRootGroups,
   opened,
@@ -455,6 +463,7 @@ function ProductGroupCreateModal({
 }: {
   createDraft: ProductGroup
   createError: string | null
+  createNameError: string | null
   isCreating: boolean
   isLoadingRootGroups: boolean
   opened: boolean
@@ -476,7 +485,7 @@ function ProductGroupCreateModal({
       title={t('Нова група товарів')}
       onClose={onClose}
     >
-      <form id="product-group-create-form" onSubmit={onSubmit}>
+      <form id="product-group-create-form" noValidate onSubmit={onSubmit}>
         <Stack className="app-compact-form" gap={12}>
           {createError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
@@ -489,6 +498,7 @@ function ProductGroupCreateModal({
               compact
               disabled={isCreating}
               isLoadingRootGroups={isLoadingRootGroups}
+              nameError={createNameError}
               productGroup={createDraft}
               rootGroups={rootGroups}
               selectedRootNetUid={selectedRootNetUid}
@@ -501,7 +511,7 @@ function ProductGroupCreateModal({
             <Button color="gray" type="button" variant="default" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} loading={isCreating} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={isCreating} leftSection={<Plus size={16} />} loading={isCreating} type="submit">
               {t('Створити')}
             </Button>
           </AppModalFooter>

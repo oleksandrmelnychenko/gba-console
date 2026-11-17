@@ -34,6 +34,8 @@ import {
   normalizeProductGroupForSave,
   validateProductGroup,
 } from '../utils'
+import { isConflictError, isNotFoundError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
 import './product-group-detail-page.css'
 import '../../../shared/ui/screen-tabs.css'
 
@@ -80,6 +82,8 @@ function ProductGroupDetailPageContent() {
   const [activeTab, setActiveTab] = useValueState<ProductGroupContentTab>('subGroups')
   const [error, setError] = useValueState<string | null>(null)
   const [nameError, setNameError] = useValueState<string | null>(null)
+  const [conflict, setConflict] = useValueState<string | null>(null)
+  const [reloadKey, setReloadKey] = useValueState(0)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(true)
@@ -120,6 +124,7 @@ function ProductGroupDetailPageContent() {
     let cancelled = false
 
     async function loadProductGroup() {
+      setConflict(null)
       setLoading(true)
       setLoadingRootGroups(true)
       setError(null)
@@ -157,7 +162,7 @@ function ProductGroupDetailPageContent() {
     return () => {
       cancelled = true
     }
-  }, [id, setError, setFormProductGroup, setLoading, setLoadingRootGroups, setProductGroup, setRootGroups, setSelectedRootNetUid, t])
+  }, [id, reloadKey, setConflict, setError, setFormProductGroup, setLoading, setLoadingRootGroups, setProductGroup, setRootGroups, setSelectedRootNetUid, t])
 
   if (!id) {
     return <Navigate to="/product-groups" replace />
@@ -220,7 +225,13 @@ function ProductGroupDetailPageContent() {
         message: t('Групу товарів збережено'),
       })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти групу товарів'))
+      if (isConflictError(saveError)) {
+        setConflict(t('Групу змінив інший користувач після того, як ви її відкрили. Перезавантажте групу; ваші незбережені зміни буде втрачено.'))
+        return
+      }
+      setError(isNotFoundError(saveError)
+        ? t('Групу товарів видалено або не знайдено. Зміни не збережено.')
+        : saveError instanceof Error ? saveError.message : t('Не вдалося зберегти групу товарів'))
     } finally {
       setSaving(false)
     }
@@ -274,6 +285,9 @@ function ProductGroupDetailPageContent() {
       onClose={closeSheet}
     >
     <Stack className="product-group-detail-content" gap={10}>
+      {conflict && (
+        <StaleRecordAlert message={conflict} onReload={() => setReloadKey((key) => key + 1)} />
+      )}
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
