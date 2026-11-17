@@ -1,6 +1,7 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { getClientDisplayName } from '../clientDisplayName'
 import { ClientActionsModal, ClientStructureModal, ReserveDaysModal } from '../components/ClientActionModals'
+import { parseReserveDays } from '../components/reserveDays'
 export { ClientActionsModal } from '../components/ClientActionModals'
 import {
   ActionIcon,
@@ -189,7 +190,7 @@ function useClientsPageModel() {
   const [selectedClient, setSelectedClient] = useValueState<Client | null>(null)
   const [structureClient, setStructureClient] = useValueState<Client | null>(null)
   const [reserveClient, setReserveClient] = useValueState<Client | null>(null)
-  const [reserveDays, setReserveDays] = useValueState(0)
+  const [reserveDays, setReserveDays] = useValueState<number | string>(0)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readClientTablePageSize)
   const urlActiveFilter = useMemo(() => parseActiveFilterSearchParams(urlSearchParams), [urlSearchParams])
@@ -650,7 +651,11 @@ function useClientsPageModel() {
       return
     }
 
-    const nextDays = Math.max(0, Math.trunc(reserveDays))
+    const nextDays = parseReserveDays(reserveDays)
+
+    if (nextDays === null) {
+      return
+    }
     setClientAction('reserve')
     setError(null)
 

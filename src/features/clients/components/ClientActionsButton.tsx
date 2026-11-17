@@ -13,6 +13,7 @@ import { switchClientActiveStateForRegistry, updateClientOrderExpireDaysForRegis
 import { useClientSourceOwnership } from '../clientSourceOwnership'
 import type { Client } from '../types'
 import { ClientActionsModal, ClientStructureModal, ReserveDaysModal } from './ClientActionModals'
+import { parseReserveDays } from './reserveDays'
 
 /** The registry's client actions, available without leaving a client report. */
 export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onChanged: () => void }) {
@@ -25,7 +26,7 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
   const [panel, setPanel] = useState<'actions' | 'reserve' | 'structure' | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving, tryStartSaving] = useBusyState()
-  const [days, setDays] = useState(0)
+  const [days, setDays] = useState<number | string>(0)
   const request = useRef(0)
   const keys = PermissionKeys.Clients
   const canView = hasPermission(keys.Details.Open)
@@ -111,8 +112,8 @@ export function ClientActionsButton({ netUid, onChanged }: { netUid: string; onC
       onSubmit={async (event) => {
         event.preventDefault()
         if (saving || !hasPermission(keys.ReservationDays.Edit) || !client?.NetUid) return
-        const nextDays = Math.max(0, Math.trunc(days))
-        if (!tryStartSaving()) {
+        const nextDays = parseReserveDays(days)
+        if (nextDays === null || !tryStartSaving()) {
           return
         }
         try {

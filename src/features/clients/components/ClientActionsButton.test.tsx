@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { ClientActionsButton } from './ClientActionsButton'
+import { parseReserveDays } from './reserveDays'
 import { getClientForAccountingCashFlow } from '../api/clientFormApi'
 import { updateClientOrderExpireDaysForRegistry } from '../api/clientsApi'
 
@@ -63,5 +64,34 @@ describe('client actions from a report', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Дні резерву' })).toBeTruthy())
     expect(updateClientOrderExpireDaysForRegistry).not.toHaveBeenCalled()
+  })
+  it('rejects out-of-range or empty reservation days inline and sends only a valid value', async () => {
+    permissions.add(PermissionKeys.Clients.ReservationDays.Edit)
+    vi.mocked(updateClientOrderExpireDaysForRegistry).mockResolvedValue()
+    mount()
+    fireEvent.click(screen.getByRole('button', { name: 'Дії клієнта' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Дні резерву' }))
+    const field = await screen.findByRole('textbox', { name: 'Днів резерву' })
+    for (const value of ['-5', '99999999', '']) {
+      fireEvent.change(field, { target: { value } })
+      fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+      expect(await screen.findByText('Вкажіть ціле число днів від 0 до 365')).toBeTruthy()
+    }
+    expect(updateClientOrderExpireDaysForRegistry).not.toHaveBeenCalled()
+    fireEvent.change(field, { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(updateClientOrderExpireDaysForRegistry).toHaveBeenCalledWith('client-1', 30))
+  })
+})
+
+describe('parseReserveDays', () => {
+  it('accepts whole days 0..365 only', () => {
+    expect(parseReserveDays(0)).toBe(0)
+    expect(parseReserveDays('365')).toBe(365)
+    expect(parseReserveDays(-5)).toBeNull()
+    expect(parseReserveDays(99999999)).toBeNull()
+    expect(parseReserveDays('abc')).toBeNull()
+    expect(parseReserveDays('')).toBeNull()
+    expect(parseReserveDays(2.5)).toBeNull()
   })
 })

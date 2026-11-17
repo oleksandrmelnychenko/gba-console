@@ -10,6 +10,7 @@ import { getClientCommercialStructureForRegistry, mutateClientIdentityForStructu
 import { useClientSourceOwnership } from '../clientSourceOwnership'
 import { ClientCommercialStructureView } from './structure/ClientCommercialStructureView'
 import type { Client, ClientCommercialStructure } from '../types'
+import { MAX_RESERVE_DAYS, parseReserveDays } from './reserveDays'
 import '../pages/clients-page.css'
 
 type ClientActionsModalProps = {
@@ -214,13 +215,30 @@ export function ReserveDaysModal({
   onSubmit,
 }: {
   client: Client | null
-  days: number
+  days: number | string
   isSaving: boolean
-  onChangeDays: (value: number) => void
+  onChangeDays: (value: number | string) => void
   onClose: () => void
+  /** Called only with a valid value (see parseReserveDays). */
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const { t } = useI18n()
+  const [daysError, setDaysError] = useState<string | null>(null)
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (parseReserveDays(days) === null) {
+      event.preventDefault()
+      setDaysError(t('Вкажіть ціле число днів від 0 до 365'))
+      return
+    }
+
+    setDaysError(null)
+    if (!isSaving) {
+      onSubmit(event)
+    } else {
+      event.preventDefault()
+    }
+  }
 
   return (
     <AppModal
@@ -229,20 +247,26 @@ export function ReserveDaysModal({
       title={client ? `${t('Резерв')}: ${getClientDisplayName(client)}` : t('Резерв')}
       onClose={onClose}
     >
-      <form onSubmit={onSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <Stack className="app-compact-form" gap="md">
           <NumberInput
             allowDecimal={false}
+            clampBehavior="none"
+            error={daysError}
             label={t('Днів резерву')}
+            max={MAX_RESERVE_DAYS}
             min={0}
             value={days}
-            onChange={(value) => onChangeDays(Number(value) || 0)}
+            onChange={(value) => {
+              setDaysError(null)
+              onChangeDays(value)
+            }}
           />
           <AppModalFooter>
             <Button variant="default" color="gray" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color={CREATE_ACTION_COLOR} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} type="submit">
               {t('Зберегти')}
             </Button>
           </AppModalFooter>
