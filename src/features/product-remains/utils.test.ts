@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateTime, getProductRemainMovementDefaultRange } from './utils'
+import { DELETED_PRODUCT_LABEL, formatDateTime, getProductRemainMovementDefaultRange, isDeletedProduct } from './utils'
 
 describe('product remains utils', () => {
   it('formats SQL/ISO datetime strings without timezone shifting', () => {
@@ -26,5 +26,14 @@ describe('product remains utils', () => {
     expect(getProductRemainMovementDefaultRange(undefined, now)).toEqual({ dateFrom: '2026-11-01', dateTo: '2026-11-06' })
     expect(getProductRemainMovementDefaultRange('2026-12-01', now)).toEqual({ dateFrom: '2026-11-01', dateTo: '2026-11-06' })
     expect(getProductRemainMovementDefaultRange('not-a-date', now)).toEqual({ dateFrom: '2026-11-01', dateTo: '2026-11-06' })
+  })
+})
+
+describe('deleted product marker', () => {
+  it('marks only lots whose product was deleted', () => {
+    expect(isDeletedProduct({ VendorCode: 'F3-PRD-002', Deleted: true })).toBe(true)
+    expect(isDeletedProduct({ VendorCode: 'F3-PRD-001', Deleted: false })).toBe(false)
+    expect(isDeletedProduct(null)).toBe(false)
+    expect(DELETED_PRODUCT_LABEL).toBe('видалений')
   })
 })

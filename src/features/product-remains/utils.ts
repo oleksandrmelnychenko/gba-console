@@ -142,3 +142,11 @@ function toFiniteNumber(value?: number): number | null {
 
   return value
 }
+
+/** Label of a lot whose product was deleted from the catalog while it still had stock. */
+export const DELETED_PRODUCT_LABEL = 'видалений'
+
+/** The lot's product was soft-deleted; «Залишки по партіям» keeps counting it and marks it «видалений». */
+export function isDeletedProduct(product?: ProductRemainProduct | null): boolean {
+  return product?.Deleted === true
+}

@@ -49,6 +49,7 @@ import type {
   GroupedConsignment,
   GroupedConsignmentItem,
   ProductRemainMovement,
+  ProductRemainProduct,
   ProductRemainStorage,
   ProductRemainSupplier,
   ProductRemainsExportDocument,
@@ -64,6 +65,8 @@ import {
   getProductRemainMovementDefaultRange,
   getSupplierDisplayName,
   getVendorCode,
+  isDeletedProduct,
+  DELETED_PRODUCT_LABEL,
 } from '../utils'
 import { ProductRemainsStatisticsSheet } from '../components/ProductRemainsStatisticsSheet'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1106,11 +1109,7 @@ function useProductRemainProductColumns(onOpenMovement?: (row: RemainingConsignm
       minWidth: 240,
       fill: true,
       accessor: (row) => getProductName(row.Product),
-      cell: (row) => (
-        <Text fw={600} lineClamp={1}>
-          {getProductName(row.Product)}
-        </Text>
-      ),
+      cell: (row) => <RemainProductNameCell product={row.Product} />,
     },
     {
       id: 'supplier',
@@ -1219,11 +1218,7 @@ function useProductRemainBatchDetailColumns() {
       width: 300,
       minWidth: 220,
       accessor: (item) => getProductName(item.Product),
-      cell: (item) => (
-        <Text fw={600} lineClamp={1}>
-          {getProductName(item.Product)}
-        </Text>
-      ),
+      cell: (item) => <RemainProductNameCell product={item.Product} />,
     },
     {
       id: 'fromDate',
@@ -1845,4 +1840,20 @@ function getFilterError(dateFrom: string, dateTo: string): string | null {
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+/** Product name of a lot; a product deleted from the catalog while it still has stock carries a «видалений» chip. */
+function RemainProductNameCell({ product }: { product?: ProductRemainProduct | null }) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap={6} wrap="nowrap">
+      <Text fw={600} lineClamp={1}>
+        {getProductName(product)}
+      </Text>
+      {isDeletedProduct(product) && (
+        <TableChip tone="danger" value={t(DELETED_PRODUCT_LABEL)} title={t('Товар видалено з каталогу, але залишок на складі є')} />
+      )}
+    </Group>
+  )
 }

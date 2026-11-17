@@ -22,6 +22,7 @@ export type ProductStoragePlacement = {
 }
 
 export type ProductStorageProduct = {
+  Deleted?: boolean
   Id?: number
   MeasureUnit?: { Name?: string } | null
   Name?: string

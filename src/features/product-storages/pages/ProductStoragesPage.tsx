@@ -65,6 +65,7 @@ import type {
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { parseQuantityInput } from '../../../shared/units/quantityInput'
 import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
+import { DELETED_PRODUCT_LABEL, isDeletedProductAvailability } from '../deletedProduct'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
@@ -1161,11 +1162,7 @@ function ProductStoragePreviewDrawer({
         width: 300,
         minWidth: 240,
         accessor: (row) => getProductName(row.availability),
-        cell: (row) => (
-          <Text fw={600} lineClamp={2}>
-            {displayValue(getProductName(row.availability))}
-          </Text>
-        ),
+        cell: (row) => <ProductNameCell availability={row.availability} />,
       },
       {
         id: 'placing',
@@ -1739,11 +1736,7 @@ function useProductStoragesColumns({
         width: 360,
         minWidth: 260,
         accessor: getProductName,
-        cell: (availability) => (
-          <Text fw={600} lineClamp={2}>
-            {displayValue(getProductName(availability))}
-          </Text>
-        ),
+        cell: (availability) => <ProductNameCell availability={availability} />,
       },
       {
         id: 'placing',
@@ -2231,6 +2224,22 @@ function getProductCode(availability: ProductStorageAvailability): string | unde
 
 function getProductName(availability: ProductStorageAvailability): string | undefined {
   return availability.Product?.Name || availability.ProductName
+}
+
+/** Product name; a product deleted from the catalog while it still has stock carries a «видалений» chip. */
+function ProductNameCell({ availability }: { availability: ProductStorageAvailability }) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap={6} wrap="nowrap">
+      <Text fw={600} lineClamp={2}>
+        {displayValue(getProductName(availability))}
+      </Text>
+      {isDeletedProductAvailability(availability) && (
+        <TableChip tone="danger" value={t(DELETED_PRODUCT_LABEL)} title={t('Товар видалено з каталогу, але залишок на складі є')} />
+      )}
+    </Group>
+  )
 }
 
 function getStorageName(availability: ProductStorageAvailability): string | undefined {
