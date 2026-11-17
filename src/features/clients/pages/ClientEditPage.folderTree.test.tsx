@@ -292,6 +292,20 @@ describe('ClientEditPage root folder form', () => {
     expect(within(structuralUnitsPanel).getByText('commercial-structure:XM05200:2')).toBeTruthy()
   })
 
+  it('opens a card deep-linked with an upper-case GUID (GUIDs are case-insensitive)', async () => {
+    const lowerNetUid = 'abcdef12-3456-4abc-8def-0123456789ab'
+    apiMocks.getClientForRegistryById.mockResolvedValue({ ...ORDINARY_CLIENT, NetUid: lowerNetUid })
+
+    renderPage(lowerNetUid.toUpperCase())
+
+    expect(await screen.findByText(`general:${lowerNetUid}`)).toBeTruthy()
+    await waitFor(() => expect(apiMocks.getClientCommercialStructureForRegistry).toHaveBeenCalledWith(
+      lowerNetUid.toUpperCase(),
+      expect.any(AbortSignal),
+    ))
+    expect(screen.queryByText('Завантаження картки')).toBeNull()
+  })
+
   it('keeps the standard flat form for a client that is not a root folder', async () => {
     renderPage(ORDINARY_NET_UID)
 

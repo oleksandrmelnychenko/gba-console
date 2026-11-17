@@ -126,6 +126,7 @@ import {
 import { getProductAnalyticsId, ProductAnalyticsPanel } from '../components/ProductAnalyticsPanel'
 import { ProductSiblingScopeControl } from '../components/ProductSiblingCards'
 import { createProductSiblingCardColumn } from '../components/productSiblingCardColumn'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import { getProductSiblingRowKey, hasProductSiblingCards, type ProductSiblingScope } from '../productSiblings'
 import {
   HistoricalSourceMovementPanel,
@@ -790,7 +791,7 @@ function FreshProductPlacements({ availability, productNetId, onClose, onProduct
         if (!productNetId || !storageId) throw new Error(t('Не вдалося визначити товар або склад'))
         const product = await getProductByNetId(productNetId, controller.signal)
         const current = product?.ProductAvailabilities?.find(item => (item.StorageId ?? item.Storage?.Id) === storageId)
-        if (product?.NetUid !== productNetId || !current) throw new Error(t('Склад більше не доступний у даних товару. Оновіть картку.'))
+        if (!sameGuid(product?.NetUid, productNetId) || !current) throw new Error(t('Склад більше не доступний у даних товару. Оновіть картку.'))
         if (!cancelled) setSnapshot(current)
       } catch (loadError) {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : t('Не вдалося оновити розміщення'))

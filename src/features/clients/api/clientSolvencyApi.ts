@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import type {
   CurrencyExposure,
   ForwardRisk,
@@ -216,7 +217,7 @@ function normalizeScore(value: unknown, expectedNetId: string | null, path: stri
     ? null
     : requireGuid(score.client_net_uid, `${path}.client_net_uid`)
 
-  if (expectedNetId !== null && clientNetUid !== expectedNetId) {
+  if (expectedNetId !== null && !sameGuid(clientNetUid, expectedNetId)) {
     throw new SolvencyContractError(`${path}.client_net_uid`, 'does not echo the requested client')
   }
 

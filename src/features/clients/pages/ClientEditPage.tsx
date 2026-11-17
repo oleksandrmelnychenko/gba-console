@@ -81,6 +81,7 @@ import {
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { sameGuid } from '../../../shared/guid/sameGuid'
 import type {
   Client,
   ClientCommercialStructure,
@@ -364,7 +365,7 @@ export function ClientEditPage() {
   ])
 
   useEffect(() => {
-    if (!netid || client?.NetUid !== netid) {
+    if (!netid || !sameGuid(client?.NetUid, netid)) {
       return
     }
 
