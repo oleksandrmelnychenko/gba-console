@@ -180,7 +180,7 @@ describe('Sales cockpit workspace', () => {
     expect(await screen.findByText(/Дата документа не визначена: 3 · 250 EUR/)).toBeTruthy()
     expect(screen.getByText('Відомий прострочений борг')).toBeTruthy()
     expect(screen.getByText('0 EUR')).toBeTruthy()
-    expect(screen.getByText(/Поточний зріз: 24\.07\.2026\./)).toBeTruthy()
+    expect(screen.getByText(/Поточний зріз: 24\.07\.2026/)).toBeTruthy()
     expect(screen.queryByTestId('aging-chart')).toBeNull()
   })
 

@@ -10,7 +10,8 @@ it('deduplicates purchase document evidence and does not imply paid attribution'
     2: { order_id: 123, purchased_on: '2026-10-22', date_basis: 'source_document_date' },
   } })
   expect(screen.getAllByText(/Замовлення #123/)).toHaveLength(1)
-  expect(screen.getByText(/це не підтвердження оплати/)).toBeTruthy()
+  // Purchase evidence names the order only; nothing claims payment or revenue.
+  expect(screen.queryByText(/оплачен|сплачен|виручк/i)).toBeNull()
 })
 it('preserves identified settled debt evidence including zero balance', () => {
   show({ kind: 'debt_settled', debts: { 45: '0.00', 46: '-1.00' } })
