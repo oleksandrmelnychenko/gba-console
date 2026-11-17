@@ -164,6 +164,25 @@ describe('sync session presentation', () => {
     ])
   })
 
+  it('names the settlement stage and shows a failed step in Ukrainian', () => {
+    const progress = getCompositeSyncProgress({
+      ForAmg: false,
+      From: '2026-07-01',
+      Mode: 'Daily',
+      Stages: [
+        { AttemptCount: 1, FailedStep: 'DailySession.MasterData.ExchangeRates', Kind: 'MasterData', Ordinal: 0, Status: 'Failed' },
+        { AttemptCount: 0, Kind: 'SettlementState', Ordinal: 3, Status: 'Pending' },
+      ],
+      To: '2026-07-02',
+      TotalStages: 2,
+    })
+
+    expect(progress?.stages.map((stage) => [stage.label, stage.failedStep])).toEqual([
+      ['Довідники та основні дані', 'Щоденна синхронізація → Довідники та основні дані → Курси валют'],
+      ['Взаєморозрахунки', ''],
+    ])
+  })
+
   it('summarizes the accepted composite scope by range and document count', () => {
     expect(getSyncOperationLabel('DailySession')).toBe('Щоденна синхронізація')
     expect(

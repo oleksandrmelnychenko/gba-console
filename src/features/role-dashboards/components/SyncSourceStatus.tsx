@@ -3,6 +3,7 @@ import { Info } from 'lucide-react'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { useEffect, useState } from 'react'
 import { describeSyncSource } from './syncSourceEvidence'
+import { formatSyncStepLabel } from '../../../shared/realtime/syncStepLabel'
 import { getDashboardSyncStatus } from '../../header-actions/api/syncApi'
 import type { DataSyncStatus } from '../../header-actions/types'
 import { useSystemOfRecordCutover } from '../../../shared/system-of-record/systemOfRecordCutover'
@@ -53,7 +54,7 @@ function SyncSourceStatusContent() {
       <div><dt>Завершено етапів</dt><dd><TableChip value={evidence?.total == null ? 'Невідомо' : `${evidence.completed} / ${evidence.total}`} /></dd></div>
       <div><dt>Збоїв у сесії</dt><dd><TableChip value={evidence?.total == null ? 'Невідомо' : evidence.failed} tone={evidence?.failed ? 'danger' : 'neutral'} /></dd></div>
     </dl>
-    {evidence?.failedStep && <Text size="xs" c="red">Етап збою: {evidence.failedStep}</Text>}
+    {evidence?.failedStep && <Text size="xs" c="red">Етап збою: {formatSyncStepLabel(evidence.failedStep)}</Text>}
     <details className="role-dashboard-source-details">
       <summary><Info size={14} />Про дані</summary>
       {!evidence?.lastSuccess && <Text size="xs" c="dimmed">Підтвердженого успішного запуску в доступному журналі не надано.</Text>}

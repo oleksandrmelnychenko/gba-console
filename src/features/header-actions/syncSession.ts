@@ -1,3 +1,4 @@
+import { formatSyncStepLabel } from '../../shared/realtime/syncStepLabel'
 import type {
   DataSyncAcceptedScope,
   DataSyncPipelineRun,
@@ -198,7 +199,7 @@ function mapCompositeSyncStage(
 ): CompositeSyncStageView {
   return {
     attemptCount: stage.AttemptCount,
-    failedStep: stage.FailedStep || '',
+    failedStep: formatSyncStepLabel(stage.FailedStep),
     isCurrent: stage.Ordinal === currentOrdinal,
     label: getCompositeSyncStageLabel(stage.Kind, stage.Ordinal),
     ordinal: stage.Ordinal,
@@ -216,6 +217,12 @@ function getCompositeSyncStageLabel(kind: string, ordinal: number): string {
       return 'Документи'
     case 'CurrentState':
       return 'Поточний стан: залишки й баланси'
+    case 'SettlementState':
+      return 'Взаєморозрахунки'
+    case 'PhysicalHistoryRefresh':
+      return 'Оновлення історії фізичних рухів'
+    case 'WarehousePhysicalDocuments':
+      return 'Складські фізичні документи'
     default:
       return `Етап ${ordinal + 1}`
   }

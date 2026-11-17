@@ -184,7 +184,7 @@ describe('dataSyncProgressStore', () => {
     expect(getDataSyncProgressSnapshot()).toMatchObject({
       isActive: false,
       isError: true,
-      message: 'Помилка синхронізації (DailySession.MasterData.Clients)',
+      message: 'Помилка синхронізації (Щоденна синхронізація → Довідники та основні дані → Клієнти)',
     })
   })
 

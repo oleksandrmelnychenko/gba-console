@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { DataSyncNotification } from './events'
+import { humanizeSyncStepKeys } from './syncStepLabel'
 
 export type DataSyncProgressState = {
   finishedAt?: number
@@ -95,7 +96,7 @@ export function applyDataSyncNotification(notification: DataSyncNotification): v
     return
   }
 
-  const nextMessage = notification.DisplayMessage?.trim() || ''
+  const nextMessage = humanizeSyncStepKeys(notification.DisplayMessage).trim()
 
   updateState({
     finishedAt: isFinished ? Date.now() : undefined,

@@ -1,6 +1,7 @@
 import { ActionIcon, Badge, Box, Group, Loader, Progress, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { CircleAlert, CircleCheck, Clock3, RefreshCw } from 'lucide-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { formatSyncStepLabel } from '../../../shared/realtime/syncStepLabel'
 import {
   cleanStartedBy,
   getCompositeSyncProgress,
@@ -115,7 +116,7 @@ export function SyncSessionPanel({
 
           {tone === 'error' && run.FailedStep ? (
             <Text size="xs" c="red.7">
-              {t('Крок із помилкою')}: {run.FailedStep}
+              {t('Крок із помилкою')}: {formatSyncStepLabel(run.FailedStep)}
             </Text>
           ) : null}
         </Stack>
