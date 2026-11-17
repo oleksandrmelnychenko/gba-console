@@ -18,10 +18,12 @@ export function HeaderActionBar() {
     && hasPermission(PermissionKeys.Resales.Page.View)
   // The global write-off rules (and their counter badge) need products.assortment.write_off_rules.open.
   const canOpenWriteOffRules = hasPermission(PermissionKeys.ProductsAssortment.WriteOffRules.Open)
+  // AI service status has its own key (inherited by every dashboard holder on the server).
+  const canSeeAiFleet = hasPermission(PermissionKeys.Operational.AiFleet.View)
 
   return (
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
-      <AiFleetControl canRunWarmup={canOpenSync} />
+      {canSeeAiFleet && <AiFleetControl canRunWarmup={canOpenSync} />}
       {canOpenSync && !afterCutover && <SyncControl />}
       {canOpenResale && <ResaleControl />}
       {canExportToOneC && <OneCExportControl />}

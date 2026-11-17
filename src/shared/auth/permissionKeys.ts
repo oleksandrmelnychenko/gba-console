@@ -110,6 +110,9 @@ export const PermissionKeys = {
     },
   },
   Operational: {
+    AiFleet: {
+      View: 'dashboard.ai_fleet.view',
+    },
     SchedulerTasks: {
       MergeAllSales: 'administration.scheduler_tasks.sales.merge_all',
       ClearInvalidShoppingCarts:
@@ -1271,6 +1274,7 @@ export type SystemPagePermissionKey = {
 }[keyof typeof PermissionKeys.SystemPages]
 
 export type OperationalPermissionKey =
+  | Values<typeof PermissionKeys.Operational.AiFleet>
   | Values<typeof PermissionKeys.Operational.SchedulerTasks>
   | Values<typeof PermissionKeys.Operational.ShopOrders>
   | Values<typeof PermissionKeys.Operational.GbaData>
@@ -1642,6 +1646,7 @@ export type PermissionKey =
   | WarehousesPermissionKey
 
 const eventPermissionKeyList = [
+  ...Object.values(PermissionKeys.Operational.AiFleet),
   ...Object.values(PermissionKeys.Operational.SchedulerTasks),
   ...Object.values(PermissionKeys.Operational.ShopOrders),
   ...Object.values(PermissionKeys.Operational.GbaData),
