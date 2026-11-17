@@ -33,6 +33,7 @@ import {
   updateTransporter,
 } from '../api/transportersApi'
 import type { Transporter, TransporterType } from '../types'
+import { validateTransporterForm } from '../transporterFormValidation'
 import '../../../shared/ui/console-table-page.css'
 import './transporters-page.css'
 
@@ -355,7 +356,7 @@ function TransportersPageContent({
     const validationError = validateTransporterForm(values)
 
     if (validationError) {
-      setFormError(validationError)
+      setFormError(translate(validationError))
       return
     }
 
@@ -719,6 +720,7 @@ function TransporterEditorModal({
           />
           <TextInput
             label={translate('Пріоритет')}
+            min={0}
             type="number"
             value={values.Priority}
             onChange={(event) => setField('Priority', event.currentTarget.value)}
@@ -734,7 +736,7 @@ function TransporterEditorModal({
             onChange={(event) => setField('ImageUrl', event.currentTarget.value)}
           />
           <FileInput
-            accept="image/*"
+            accept="image/png,image/jpeg,image/gif,image/webp"
             clearable
             label={translate('Зображення')}
             leftSection={<Upload size={16} />}
@@ -914,18 +916,6 @@ function transporterToFormValues(transporter?: Transporter): TransporterFormValu
     Name: transporter?.Name || '',
     Priority: typeof transporter?.Priority === 'number' ? String(transporter.Priority) : '',
   }
-}
-
-function validateTransporterForm(values: TransporterFormValues): string | null {
-  if (!values.Name.trim()) {
-    return translate('Вкажіть назву перевізника')
-  }
-
-  if (values.Priority.trim() && !Number.isFinite(Number(values.Priority))) {
-    return translate('Вкажіть коректний пріоритет')
-  }
-
-  return null
 }
 
 function buildTransporterPayload(

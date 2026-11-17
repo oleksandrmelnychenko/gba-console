@@ -114,6 +114,35 @@ describe('PaymentAccount transfer and exchange inputs', () => {
   })
 })
 
+describe('PaymentAccount transfer article', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getPaymentAccounts).mockResolvedValue({ paymentRegisters: [account], totalEuroAmount: 0 })
+    vi.mocked(getPaymentAccountsByBank).mockResolvedValue([])
+    vi.mocked(calculatePaymentAccountExchange).mockResolvedValue(50)
+  })
+
+  it('does not preselect an unrelated (income) article when the transfer article is missing', async () => {
+    vi.mocked(getPaymentAccountPaymentMovements).mockResolvedValue([
+      { NetUid: 'movement-income', OperationName: 'QA Оплата від покупця' },
+    ])
+    renderModal(
+      <PaymentAccountTransferModal
+        account={account}
+        canCreate
+        opened
+        onClose={vi.fn()}
+        onMutationComplete={vi.fn().mockResolvedValue(undefined)}
+      />,
+    )
+
+    await waitFor(() => expect(getPaymentAccountPaymentMovements).toHaveBeenCalled())
+    await waitFor(() => expect(getPaymentAccounts).toHaveBeenCalled())
+
+    expect(screen.queryByDisplayValue('QA Оплата від покупця')).toBeNull()
+  })
+})
+
 describe('PaymentAccount currency activity', () => {
   it('explains that the balance is stored and the period movement comes from GBA documents', () => {
     renderModal(<PaymentCurrencyActivityView activity={null} isLoading={false} />)

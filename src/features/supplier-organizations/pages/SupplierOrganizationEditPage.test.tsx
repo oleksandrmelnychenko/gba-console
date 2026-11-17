@@ -199,3 +199,31 @@ describe('SupplierOrganizationEditPage bank details', () => {
     expect(screen.queryByText('BankAccount')).toBeNull()
   })
 })
+
+describe('SupplierOrganizationEditPage agreement documents', () => {
+  it('keeps documents and drops an executable before upload', async () => {
+    const agreement: SupplyOrganizationAgreement = {
+      Currency: { Code: 'EUR', Id: 2 },
+      ExistFrom: '2026-07-24',
+      ExistTo: '2027-07-24',
+      Name: 'Основний договір',
+      NetUid: 'agreement-1',
+      Organization: { Id: 3, Name: 'GBA' },
+      SupplyOrganizationDocuments: [],
+      SupplyOrganizationId: 1,
+    }
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue({ ...EXISTING_SUPPLIER, SupplyOrganizationAgreements: [agreement] })
+    const { container } = renderPage('/accounting/supplier-organizations/edit/supplier-1')
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Договори' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Основний договір' }))
+    await screen.findByRole('button', { name: 'Зберегти' })
+    const fileInput = container.ownerDocument.querySelector('input[type="file"]') as HTMLInputElement
+    const pdf = new File(['%PDF'], 'qa-cf-doc.pdf', { type: 'application/pdf' })
+    const exe = new File(['MZ'], 'qa-cf-evil.exe', { type: 'application/x-msdownload' })
+    fireEvent.change(fileInput, { target: { files: [pdf, exe] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(editSupplierOrganizationAgreement).toHaveBeenCalledWith(expect.anything(), [pdf]))
+  })
+})

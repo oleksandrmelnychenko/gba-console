@@ -2568,7 +2568,9 @@ function findEntity<T extends { Id?: number; NetUid?: string }>(items: T[], valu
 }
 
 function findDefaultPaymentMovement(movements: PaymentMovement[], defaultName: string): PaymentMovement | null {
-  return movements.find((movement) => getPaymentMovementLabel(movement) === defaultName) || movements[0] || null
+  // Without the transfer / exchange article the user picks one: the first article
+  // in the list is usually an income article and saved transfers under it.
+  return movements.find((movement) => getPaymentMovementLabel(movement) === defaultName) || null
 }
 
 function toCurrencyRegisterSelectOptions(registers: PaymentCurrencyRegister[]): Array<{ label: string; value: string }> {

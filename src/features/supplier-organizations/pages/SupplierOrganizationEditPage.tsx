@@ -1061,12 +1061,28 @@ function AgreementDrawer({
               </Stack>
 
               <FileInput
+                accept={AGREEMENT_DOCUMENT_ACCEPT}
                 clearable
+                description={t('PDF, зображення, Word або Excel')}
                 label={t('Додати файли')}
                 leftSection={<Upload size={16} />}
                 multiple
                 value={values.files}
-                onChange={(files) => setField('files', files || [])}
+                onChange={(files) => {
+                  const picked = files || []
+                  const accepted = picked.filter(isAgreementDocumentFile)
+
+                  if (accepted.length < picked.length) {
+                    notifications.show({
+                      color: 'red',
+                      message: t('Пропущено файли непідтримуваного типу: {names}', {
+                        names: picked.filter((file) => !isAgreementDocumentFile(file)).map((file) => file.name).join(', '),
+                      }),
+                    })
+                  }
+
+                  setField('files', accepted)
+                }}
               />
 
             </Stack>
@@ -1288,4 +1304,14 @@ function displayValue(value?: string | number | null): string {
   }
 
   return value || '—'
+}
+
+const AGREEMENT_DOCUMENT_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.doc', '.docx', '.xls', '.xlsx', '.txt']
+const AGREEMENT_DOCUMENT_ACCEPT = AGREEMENT_DOCUMENT_EXTENSIONS.join(',')
+
+/** Agreement documents are office documents and scans; executables and archives are not accepted. */
+function isAgreementDocumentFile(file: File): boolean {
+  const name = file.name.toLowerCase()
+
+  return AGREEMENT_DOCUMENT_EXTENSIONS.some((extension) => name.endsWith(extension))
 }
