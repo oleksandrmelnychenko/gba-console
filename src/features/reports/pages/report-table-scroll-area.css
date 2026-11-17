@@ -1,5 +1,5 @@
 .report-table-scroll-area {
-  --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 180px), 38rem);
+  --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 180px), 38rem);
   min-width: 0;
   isolation: isolate;
   border: 1px solid var(--mantine-color-gray-2);
@@ -16,7 +16,7 @@
 .report-table-scroll-area__content > table > thead > tr > th { background: var(--mantine-color-white); }
 .report-table-scroll-area__content > table > tfoot > tr > :is(th, td) { position: sticky; bottom: 0; z-index: 2; background: var(--mantine-color-gray-1); border-top: 1px solid var(--mantine-color-gray-3); }
 @media (max-width: 600px) {
-  .report-table-scroll-area { --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 360px), 38rem); }
+  .report-table-scroll-area { --report-table-max-height: clamp(12rem, calc(100dvh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 360px), 38rem); }
 }
 
 /* Keep wide report grids inside their panel, including flex and grid parents. */

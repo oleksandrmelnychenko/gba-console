@@ -9,7 +9,7 @@
 }
 
 .warehouse-ukraine-page.console-table-page {
-  height: calc(100vh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   padding: 4px 4px 0;
 }
 

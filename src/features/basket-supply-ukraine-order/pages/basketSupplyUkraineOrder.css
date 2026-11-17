@@ -2,7 +2,7 @@
    тримає сама: таб-стрічка зверху, контент таба скролиться у своїй зоні. */
 .basket-supply-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   min-width: 0;
   overflow: hidden;

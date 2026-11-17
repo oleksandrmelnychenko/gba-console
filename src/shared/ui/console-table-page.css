@@ -1,6 +1,6 @@
 .console-table-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 92px) - var(--app-shell-footer-offset, 36px) - 12px);
+  height: calc(100vh - var(--app-shell-header-offset, 88px) - var(--app-shell-footer-offset, 36px) - 12px);
   min-height: 0;
   overflow: hidden;
   /* docs/console-page-shell-spacing-pattern.md: 4px gap between the frame and
