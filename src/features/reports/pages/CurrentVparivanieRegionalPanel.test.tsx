@@ -100,3 +100,20 @@ it('pages the same complete regional result locally and keeps later rows reachab
   expect(readCurrentVparivanieRegional).toHaveBeenCalledOnce()
   expect((screen.getByRole('button', { name: 'Завантажити XLSX' }) as HTMLButtonElement).disabled).toBe(false)
 })
+
+it('builds the regional form from history once, marking an Excel request so it is kept as one Excel entry', async () => {
+  vi.clearAllMocks(); vi.mocked(readCurrentVparivanieRegional).mockResolvedValue(regionalResult())
+  const request = regionalRequest()
+  const view = render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={regionalDataset} request={request}
+    enabled disabled={false} historyRun={{ token: 1, excel: false }} /></I18nProvider></MantineProvider>)
+  await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(1))
+  expect(readCurrentVparivanieRegional).toHaveBeenCalledWith(regionalDataset, request, expect.any(AbortSignal))
+  await screen.findByText('9007199254740993.00000001')
+  view.rerender(<MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={regionalDataset} request={request}
+    enabled disabled={false} historyRun={{ token: 1, excel: false }} /></I18nProvider></MantineProvider>)
+  expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(1)
+  view.rerender(<MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={regionalDataset} request={request}
+    enabled disabled={false} historyRun={{ token: 2, excel: true }} /></I18nProvider></MantineProvider>)
+  await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(readCurrentVparivanieRegional).mock.calls[1]).toEqual([regionalDataset, request, expect.any(AbortSignal), true])
+})

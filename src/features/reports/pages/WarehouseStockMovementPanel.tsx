@@ -24,6 +24,7 @@ import {
   type StockMovementRequest, type StockMovementResult, type StockMovementSelection, type StockMovementFilterField, type StockMovementFilterRow,
 } from '../data/warehouseStockMovement'
 import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
+import { droppedSettingsLine, movementDraftFromHistory, type ReportHistoryAction } from '../data/reportHistory'
 import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
@@ -36,7 +37,9 @@ import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { WorkbookPeriodField, WorkbookSettings } from './workbook-desk/WorkbookSettings'
 import './warehouse-stock-movement.css'
 
-type Props = { callerKey: string | null; canGenerate: boolean; onBusyChange?: (busy: boolean) => void }
+export type MovementHistoryRun = { token: number; action: ReportHistoryAction; request: StockMovementRequest
+  products: StockMovementLookupItem[]; groups: StockMovementLookupItem[] }
+type Props = { callerKey: string | null; canGenerate: boolean; onBusyChange?: (busy: boolean) => void; history?: MovementHistoryRun | null }
 type Setup = { capability: StockMovementCapability; warehouses: StockMovementLookupItem[]; organizations: StockMovementLookupItem[] }
 type Run = { request: StockMovementRequest; result: StockMovementResult }
 
@@ -112,19 +115,19 @@ function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>
 }
 
 function useMovementList<T>(enabled: boolean, load: (signal: AbortSignal) => Promise<T[]>) {
-  const [state, setState] = useState<{ items: T[]; failed: boolean; attempt: number }>({ items: [], failed: false, attempt: 0 })
+  const [state, setState] = useState<{ items: T[]; failed: boolean; attempt: number; loaded?: boolean }>({ items: [], failed: false, attempt: 0 })
   const loader = useEffectEvent(load)
   useEffect(() => {
     if (!enabled) return
     const controller = new AbortController()
     loader(controller.signal).then(items => {
-      if (!controller.signal.aborted) setState(current => ({ ...current, items, failed: false }))
+      if (!controller.signal.aborted) setState(current => ({ ...current, items, failed: false, loaded: true }))
     }).catch(() => {
-      if (!controller.signal.aborted) setState(current => ({ ...current, failed: true }))
+      if (!controller.signal.aborted) setState(current => ({ ...current, failed: true, loaded: true }))
     })
     return () => controller.abort()
   }, [enabled, state.attempt])
-  return { items: state.items, failed: state.failed, retry: () => setState(current => ({ ...current, failed: false, attempt: current.attempt + 1 })) }
+  return { items: state.items, failed: state.failed, loaded: state.loaded === true, retry: () => setState(current => ({ ...current, failed: false, attempt: current.attempt + 1 })) }
 }
 
 function useMovementAttributes(enabled: boolean) {
@@ -138,7 +141,8 @@ function useMovementAttributes(enabled: boolean) {
     return codes
   })
   const units = useMovementList(enabled, signal => getStockMovementMeasureUnits(signal))
-  return { tops: tops.items, topsFailed: tops.failed, retryTops: tops.retry, units: units.items, unitsFailed: units.failed, retryUnits: units.retry }
+  return { tops: tops.items, topsFailed: tops.failed, retryTops: tops.retry, units: units.items, unitsFailed: units.failed, retryUnits: units.retry,
+    loaded: tops.loaded && units.loaded }
 }
 
 function QuantityCell({ value, negativeRed, reason }: { value: number | null; negativeRed: boolean; reason: string }) {
@@ -223,7 +227,7 @@ function LevelsEditor({ levels, disabled, onChange }: { levels: StockMovementLev
   </Stack>
 }
 
-export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChange }: Props) {
+export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChange, history }: Props) {
   const [setup, setSetup] = useState<{ value: Setup | null; error: string | null; attempt: number }>({ value: null, error: null, attempt: 0 })
   const [draft, setDraft] = useState<StockMovementDraft | null>(null)
   const [run, setRun] = useState<Run | null>(null)
@@ -231,6 +235,8 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   const [error, setError] = useState<string | null>(null)
   const [file, setFile] = useState<StockMovementExport | null>(null)
   const [fileOpened, setFileOpened] = useState(false)
+  const [historyNotice, setHistoryNotice] = useState<string | null>(null)
+  const handledHistory = useRef(0)
   const active = useRef<AbortController | null>(null)
   const alive = useRef(true)
   const enabled = canGenerate && !!callerKey
@@ -303,14 +309,41 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
 
   async function exportFile() {
     if (!enabled || !run || busy) return
+    await exportRequest(run.request)
+  }
+
+  async function exportRequest(request: StockMovementRequest) {
+    if (!enabled) return
     const owner = begin('exporting')
     try {
-      const value = await exportStockMovement({ ...run.request, Offset: 0, Limit: 1 }, owner.signal)
+      const value = await exportStockMovement({ ...request, Offset: 0, Limit: 1 }, owner.signal)
       if (alive.current && !owner.signal.aborted) { setFile(value); setFileOpened(true) }
     } catch (failure) {
       if (alive.current && !owner.signal.aborted) setError(errorText(failure, 'Не вдалося сформувати файл Excel.'))
     } finally { finish(owner) }
   }
+
+  const applyHistory = useEffectEvent((run: MovementHistoryRun) => {
+    const value = setup.value
+    if (!value) return
+    handledHistory.current = run.token
+    const restored = movementDraftFromHistory(run.request, value.capability, defaultStockMovementDraft(value.capability), {
+      warehouses: value.warehouses, organizations: value.organizations, units: attributes.unitsFailed ? null : attributes.units,
+      tops: attributes.topsFailed ? null : attributes.tops, products: run.products, groups: run.groups })
+    setDraft(restored.draft)
+    setRun(null)
+    setHistoryNotice(droppedSettingsLine(restored.dropped))
+    const invalid = stockMovementDraftError(restored.draft, value.capability)
+    if (invalid) { setError(invalid); return }
+    const request = buildStockMovementRequest(restored.draft)
+    if (run.action === 'excel') void exportRequest(request)
+    else void load(request)
+  })
+
+  useEffect(() => {
+    if (!history || history.token === handledHistory.current || !setup.value || !attributes.loaded) return
+    applyHistory(history)
+  }, [history, setup.value, attributes.loaded])
 
   const searchChanged = useEffectEvent((settled: string) => {
     if (!draft || appliedSearch.current === null || settled !== stockMovementTypedText(draft)) return
@@ -385,6 +418,8 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     <Group justify="space-between" gap={8} wrap="wrap">
       <Text fw={600}>{WAREHOUSE_STOCK_MOVEMENT_TITLE}</Text>
     </Group>
+    {historyNotice ? <Alert color="yellow" role="status" withCloseButton closeButtonLabel="Закрити повідомлення"
+      onClose={() => setHistoryNotice(null)}>{historyNotice}</Alert> : null}
     <WorkbookSettings unified disabled={locked}
       period={<WorkbookPeriodField required from={draft.from} to={draft.to} minDate={capability.MinimumFrom} maxDate={capability.Today}
         presets={presets} error={null} disabled={locked}

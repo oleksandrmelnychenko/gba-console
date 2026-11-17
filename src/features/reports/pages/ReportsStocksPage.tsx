@@ -91,8 +91,9 @@ import { requestCashReadMode } from '../data/cashReadMode'
 import { Suspense, type FormEvent, type ReactNode, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
-import { getReportHistorySettings } from '../api/reportHistoryApi'
-import { clearReportHandoff, droppedSettingsLine, peekReportHandoff, sanitizeHistorySettings, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
+import { getReportHistorySettings, type ReportHistorySettings } from '../api/reportHistoryApi'
+import { clearReportHandoff, droppedSettingsLine, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
+import type { MovementHistoryRun } from './WarehouseStockMovementPanel'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -382,6 +383,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [handoff] = useState(() => peekReportHandoff())
   const historyRun = useRef(handoff.history)
   const historyAction = useRef<ReportHistoryAction | null>(null)
+  const [regionalHistory, setRegionalHistory] = useState<{ token: number; excel: boolean } | null>(null)
+  const [movementHistory, setMovementHistory] = useState<MovementHistoryRun | null>(null)
   const [historyRevision, setHistoryRevision] = useState(0)
   const [initialWorkbook, setInitialWorkbook] = useState<'pending' | 'opening' | 'settled'>(handoff.history ? 'settled' : 'pending')
   if (initialWorkbook === 'opening' && !workbookResolving) setInitialWorkbook('settled')
@@ -559,7 +562,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       const controller = new AbortController()
       jobAbort.current = controller
       const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession
-        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal }) : null
+        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal, ...(showPreview ? {} : { excelIntent: true }) }) : null
       setJobProgress(null)
       if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
         ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
@@ -711,14 +714,22 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     return true
   }
 
-  function applyHistory(source: ReportRequestBody, action: ReportHistoryAction) {
+  async function applyHistory(source: ReportRequestBody, action: ReportHistoryAction, regional: boolean) {
     const nextDataset = datasetStorage.datasets.find(item => item.DataSource === (source.dataSource ?? 0))
     if (!nextDataset || !BUG_1274_ACTIVE_DATA_SOURCES.has(nextDataset.DataSource)) {
       setCatalogueNotice({ text: t('Цей звіт більше не можна відкрити.'), failed: true })
       return
     }
     const unified = upgradeCurrentVparivanieAnalysis(withUnifiedSource(source, nextDataset), nextDataset)
-    const sanitized = sanitizeHistorySettings(unified, nextDataset)
+    const structural = sanitizeHistorySettings(unified, nextDataset)
+    const lookupMode = (nextDataset.DataSource === 35 || nextDataset.DataSource === 38) && nextDataset.profitReadModeLookup === true
+      && (requestProfitReadMode(structural.data) === 0 || requestProfitReadMode(structural.data) === 1) ? requestProfitReadMode(structural.data) as 0 | 1 : undefined
+    const fieldLabels = datasetFilters(nextDataset, structural.data)
+    const checked = await verifyHistoryValues(structural.data, (field, text) => loadSelectionLookupOptions(nextDataset.DataSource, field, text,
+      structural.data.from, structural.data.to, undefined, undefined, reportLookupSourceWorld(nextDataset.DataSource, requestGroupedSettlementPeriod(structural.data)),
+      lookupMode), LOOKUP_SEARCH_LIMIT,
+      selection => fieldLabels.find(option => option.field.Type === selection.SelectedField.Type)?.label ?? selection.SelectedField.Name)
+    const sanitized = { data: checked.data, dropped: [...structural.dropped, ...checked.dropped] }
     const reviewed = productClassificationReviewError(sanitized.data, nextDataset) ? withoutProductClassification(sanitized.data) : sanitized.data
     const data = withCurrentVparivanieMovementScope(withDefaultReadModes(reviewed, nextDataset))
     const incompatible = datasetConfigurationError(editableProductColumnsTemplate(data, nextDataset), nextDataset, 'workspace')
@@ -732,12 +743,23 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setActiveWorkbook(profile ? salesConstructorWorkbook(profile) : null)
     const line = droppedSettingsLine(sanitized.dropped)
     if (line) setCatalogueNotice({ text: '', failed: false, warning: line })
+    if (regional) {
+      setRegionalHistory(current => ({ token: (current?.token ?? 0) + 1, excel: action === 'excel' }))
+      return
+    }
     historyAction.current = action
     setHistoryRevision(value => value + 1)
   }
 
+  function openHistoryMovement(settings: Extract<ReportHistorySettings, { kind: 'movement' }>, action: ReportHistoryAction) {
+    setMovementHistory(current => ({ token: (current?.token ?? 0) + 1, action, request: settings.movement,
+      products: settings.products, groups: settings.groups }))
+    openPublishedReport('movement')
+  }
+
   const loadHistoryRun = useEffectEvent((run: ReportHistoryRun) => {
-    getReportHistorySettings(run.id).then(data => applyHistory(data, run.action)).catch(failure => {
+    getReportHistorySettings(run.id).then(settings => settings.kind === 'movement' ? openHistoryMovement(settings, run.action)
+      : applyHistory(settings.data, run.action, settings.kind === 'regional')).catch(failure => {
       setCatalogueNotice({ text: failure instanceof Error ? failure.message : t('Цей звіт більше не можна відкрити.'), failed: true })
     })
   })
@@ -1030,7 +1052,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     {dataSource === 40 || dataSource === 41 ? cashSettlementPanels('source') : null}
     {dataSource === 39 ? <CurrentVparivanieRegionalPanel dataset={dataset ?? null} request={reportBody}
       enabled={canGenerateReport} disabled={comparisonSettingsDisabled}
-      fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} /> : null}
+      fullScope={currentVparivanieFullScope(reportBody)} onFullScopeChange={setFullCurrentVparivanie} historyRun={regionalHistory} /> : null}
     {!hasFixedReportAxes(dataSource) ? <>
       {analysisPanels.topGroups}
       {analysisPanels.threshold}
@@ -1117,7 +1139,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         published={publishedTab} onOpenPublished={openPublishedReport} extra={quietActions} onOpen={openNavigationWorkbook} />
       {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
         <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
-          <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} />
+          <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} history={movementHistory} />
         </Suspense>
       </div>) : null}
       <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>

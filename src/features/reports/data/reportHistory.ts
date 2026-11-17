@@ -1,4 +1,11 @@
-import type { ReportDataset, ReportFilterNode, ReportRequestBody, ReportSelection } from '../types'
+import type { ReportDataset, ReportEntity, ReportFilterNode, ReportRequestBody, ReportSelection } from '../types'
+import { CURRENT_REGIONAL_TITLE } from './currentVparivanieRegionalExport'
+import { profileForWorkbook } from './salesConstructorProfiles'
+import { deskPeriodText } from './workbookDesk'
+import {
+  STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, type StockMovementCapability, type StockMovementDraft,
+  type StockMovementFilterField, type StockMovementFilterRow, type StockMovementFilterWire, type StockMovementLookupItem, type StockMovementRequest,
+} from './warehouseStockMovement'
 import type { WorkbookLaunch } from './bug1274WorkbookLaunch'
 import { bug1274DatasetTitle } from './bug1274WorkbookGuide'
 import { datasetFilters, datasetGroupings } from './reportDatasets'
@@ -12,6 +19,9 @@ import { previousKyivDay } from './cashPeriod'
 export const REPORT_HISTORY_RUN_KEY = 'gba.reports.history-run'
 export type ReportHistoryAction = 'open' | 'excel'
 export type ReportHistoryRun = { id: string; action: ReportHistoryAction; at: number }
+export const MOVEMENT_REPORT_KEY = '1001'
+export const REGIONAL_REPORT_KEY = '1039'
+export const MOVEMENT_REPORT_NAME = 'Рух товару'
 
 export function rememberHistoryRun(id: string, action: ReportHistoryAction, storage: Storage = sessionStorage, now = Date.now()): void {
   storage.setItem(REPORT_HISTORY_RUN_KEY, JSON.stringify({ id, action, at: now }))
@@ -64,9 +74,35 @@ export function historyReportName(data: ReportRequestBody | null, dataSource: nu
   launches: readonly WorkbookLaunch[]): string {
   const profile = data ? readReportProfile(requestReportProfile(data)) : undefined
   if (profile) return salesConstructorTitle(profile)
-  const entry = ALL_NAVIGATION_ENTRIES.find(item => item.file !== null
+  const entry = ALL_NAVIGATION_ENTRIES.find(item => item.file !== null && !profileForWorkbook(item.file)
     && launches.some(launch => launch.fileName === item.file && launch.dataset.DataSource === dataSource))
   return entry?.label ?? bug1274DatasetTitle(dataSource) ?? datasets.find(item => item.DataSource === dataSource)?.Name ?? 'Звіт'
+}
+
+export function historyReportKeyName(key: string, datasets: readonly ReportDataset[], launches: readonly WorkbookLaunch[]): string {
+  if (key === MOVEMENT_REPORT_KEY) return MOVEMENT_REPORT_NAME
+  if (key === REGIONAL_REPORT_KEY) return CURRENT_REGIONAL_TITLE
+  const [source, profile] = key.split(':')
+  const known = readReportProfile(profile)
+  return known ? salesConstructorTitle(known) : historyReportName(null, Number(source), datasets, launches)
+}
+
+export function historyReportOptions(datasets: readonly ReportDataset[], launches: readonly WorkbookLaunch[],
+  active: ReadonlySet<number>): Array<{ value: string; label: string }> {
+  const keys: string[] = []
+  const add = (key: string) => { if (!keys.includes(key)) keys.push(key) }
+  for (const entry of ALL_NAVIGATION_ENTRIES) {
+    const launch = launches.find(item => item.fileName === entry.file)
+    if (!launch) continue
+    const profile = profileForWorkbook(entry.file)
+    add(profile ? `${launch.dataset.DataSource}:${profile}` : String(launch.dataset.DataSource))
+  }
+  for (const dataset of datasets) if (active.has(dataset.DataSource)) add(String(dataset.DataSource))
+  add(MOVEMENT_REPORT_KEY)
+  if (datasets.some(dataset => dataset.DataSource === 39)) add(REGIONAL_REPORT_KEY)
+  const items = keys.map(key => ({ id: key, name: historyReportKeyName(key, datasets, launches) }))
+  const labels = distinctLabels(items, item => item.name, item => item.id)
+  return items.map(item => ({ value: item.id, label: labels.get(item.id)! }))
 }
 
 function selectionLabel(selection: ReportSelection, dataset: ReportDataset | undefined, data: ReportRequestBody): string {
@@ -92,6 +128,67 @@ function remapNode(node: ReportFilterNode, indices: ReadonlyMap<number, number>)
   return { Kind: node.Kind, Children: children }
 }
 
+function retainSelections(source: ReportRequestBody, data: ReportRequestBody, keep: (selection: ReportSelection, index: number) => ReportSelection | null): void {
+  const indices = new Map<number, number>()
+  const selections: ReportSelection[] = []
+  ;(Array.isArray(source.selections) ? source.selections : []).forEach((selection, index) => {
+    const kept = keep(selection, index)
+    if (!kept) return
+    indices.set(index, selections.length)
+    selections.push(kept)
+  })
+  data.selections = selections
+  const expression = readReportFilterExpression(requestFilterExpression(source))
+  if (expression && indices.size !== (source.selections ?? []).length) {
+    const root = remapNode(expression.Root, indices)
+    const key = Object.hasOwn(data, 'filterExpression') ? 'filterExpression' : 'FilterExpression'
+    const next = root ? { Version: 1 as const, Root: root.Kind === 3 ? { Kind: 1 as const, Children: [root] } : root } : undefined
+    if (next) (data as Record<string, unknown>)[key] = next
+    else delete (data as Record<string, unknown>)[key]
+  }
+}
+
+export type HistoryValueSearch = (fieldType: number, text: string) => Promise<ReportEntity[]>
+
+function identities(values: readonly unknown[]): string[] {
+  return values.flatMap(value => typeof value === 'number' || typeof value === 'string' && value !== '' ? [String(value)] : [])
+}
+
+export async function verifyHistoryValues(source: ReportRequestBody, search: HistoryValueSearch, limit: number,
+  label: (selection: ReportSelection) => string): Promise<{ data: ReportRequestBody; dropped: string[] }> {
+  const data = structuredClone(source)
+  const dropped: string[] = []
+  const verifiable = new Map<number, Promise<boolean>>()
+  const probe = (field: number) => {
+    if (!verifiable.has(field)) verifiable.set(field, search(field, '').then(items => items.length > 0, () => false))
+    return verifiable.get(field)!
+  }
+  const selections = Array.isArray(source.selections) ? source.selections : []
+  const kept = await Promise.all(selections.map(async selection => {
+    const field = selection.SelectedField.Type
+    if (!selection.Values?.length || !await probe(field)) return structuredClone(selection)
+    const values = await Promise.all(selection.Values.map(async value => {
+      const wanted = new Set(identities([value.Value, value.Data?.Id, value.Data?.NetUid]))
+      if (!wanted.size) return true
+      const texts = [...new Set([value.Data?.Name, value.Name, value.Data?.Code, value.Data?.FullName]
+        .filter((text): text is string => typeof text === 'string' && text.trim() !== '').map(text => text.trim()))]
+      let uncertain = texts.length === 0
+      for (const text of texts) {
+        let items: ReportEntity[]
+        try { items = await search(field, text) } catch { uncertain = true; break }
+        if (items.some(item => identities([item.Id, item.NetUid, item.Value]).some(id => wanted.has(id)))) return true
+        if (items.length >= limit) uncertain = true
+      }
+      if (!uncertain) dropped.push(`${label(selection)}: ${value.Name}`)
+      return uncertain
+    }))
+    const survivors = selection.Values.filter((_, index) => values[index])
+    return survivors.length ? { ...structuredClone(selection), Values: structuredClone(survivors) } : null
+  }))
+  retainSelections(source, data, (_, index) => kept[index])
+  return { data, dropped }
+}
+
 export function sanitizeHistorySettings(source: ReportRequestBody, dataset: ReportDataset): { data: ReportRequestBody; dropped: string[] } {
   const data = structuredClone(source)
   const dropped: string[] = []
@@ -109,25 +206,11 @@ export function sanitizeHistorySettings(source: ReportRequestBody, dataset: Repo
     return false
   })
   const filters = new Set(datasetFilters(dataset, source).map(option => option.field.Type))
-  const indices = new Map<number, number>()
-  const selections: ReportSelection[] = []
-  ;(Array.isArray(source.selections) ? source.selections : []).forEach((selection, index) => {
-    if (!filters.has(selection.SelectedField.Type)) {
-      if (selection.IsChecked !== false) dropped.push(getReportFieldLabel(selection.SelectedField.Name))
-      return
-    }
-    indices.set(index, selections.length)
-    selections.push(structuredClone(selection))
+  retainSelections(source, data, selection => {
+    if (filters.has(selection.SelectedField.Type)) return structuredClone(selection)
+    if (selection.IsChecked !== false) dropped.push(getReportFieldLabel(selection.SelectedField.Name))
+    return null
   })
-  data.selections = selections
-  const expression = readReportFilterExpression(requestFilterExpression(source))
-  if (expression && indices.size !== (source.selections ?? []).length) {
-    const root = remapNode(expression.Root, indices)
-    const key = Object.hasOwn(data, 'filterExpression') ? 'filterExpression' : 'FilterExpression'
-    const next = root ? { Version: 1 as const, Root: root.Kind === 3 ? { Kind: 1 as const, Children: [root] } : root } : undefined
-    if (next) (data as Record<string, unknown>)[key] = next
-    else delete (data as Record<string, unknown>)[key]
-  }
   return { data, dropped: [...new Set(dropped.filter(Boolean))] }
 }
 
@@ -171,4 +254,103 @@ export function distinctLabels<T>(items: readonly T[], name: (item: T) => string
   const counts = new Map<string, number>()
   for (const item of items) counts.set(name(item), (counts.get(name(item)) ?? 0) + 1)
   return new Map(items.map(item => [id(item), (counts.get(name(item)) ?? 0) > 1 ? `${name(item)} (${id(item)})` : name(item)]))
+}
+
+const MOVEMENT_LEGACY: ReadonlyArray<[StockMovementFilterField, (request: StockMovementRequest) => StockMovementFilterWire | null]> = [
+  ['warehouse', request => request.WarehouseIds?.length ? { Field: 'warehouse', Ids: request.WarehouseIds } : null],
+  ['organization', request => request.OrganizationIds?.length ? { Field: 'organization', Ids: request.OrganizationIds } : null],
+  ['product', request => request.ProductIds?.length ? { Field: 'product', Ids: request.ProductIds } : null],
+  ['article', request => request.Articles?.length ? { Field: 'article', Values: request.Articles, ArticleMatch: request.ArticleMatch || 'equals' } : null],
+  ['group', request => request.ProductGroupIds?.length ? { Field: 'group', Ids: request.ProductGroupIds } : null],
+  ['top', request => request.ProductTops?.length ? { Field: 'top', Values: request.ProductTops } : null],
+  ['unit', request => request.MeasureUnitIds?.length ? { Field: 'unit', Ids: request.MeasureUnitIds } : null],
+  ['documentKind', request => request.DocumentKinds?.length ? { Field: 'documentKind', Values: request.DocumentKinds } : null],
+  ['documentText', request => request.DocumentText ? { Field: 'documentText', Text: request.DocumentText } : null],
+]
+
+function movementWires(request: StockMovementRequest): StockMovementFilterWire[] {
+  if (request.Filters?.length) return request.Filters.filter(wire => STOCK_MOVEMENT_FILTER_FIELDS.includes(wire.Field))
+  return MOVEMENT_LEGACY.flatMap(([, read]) => { const wire = read(request); return wire ? [wire] : [] })
+}
+
+export type MovementHistoryLists = {
+  warehouses: readonly StockMovementLookupItem[]
+  organizations: readonly StockMovementLookupItem[]
+  units: readonly StockMovementLookupItem[] | null
+  tops: readonly string[] | null
+  products: readonly StockMovementLookupItem[]
+  groups: readonly StockMovementLookupItem[]
+}
+
+function valueCount(count: number): string {
+  const tail = count % 100 >= 11 && count % 100 <= 14 ? 'значень' : count % 10 === 1 ? 'значення' : count % 10 >= 2 && count % 10 <= 4 ? 'значення' : 'значень'
+  return `${count} ${tail}`
+}
+
+type MovementTreeNode = { Kind: number; Children?: MovementTreeNode[]; SelectionIndex?: number; Filter?: string }
+
+export function movementDraftFromHistory(request: StockMovementRequest, capability: StockMovementCapability, base: StockMovementDraft,
+  lists: MovementHistoryLists): { draft: StockMovementDraft; dropped: string[] } {
+  const dropped: string[] = []
+  const wires = movementWires(request)
+  const listed = !!request.Filters?.length
+  const rowOf = new Map<number, number>()
+  const rows: StockMovementFilterRow[] = []
+  const known = (items: readonly StockMovementLookupItem[] | null, ids: readonly number[], field: StockMovementFilterField) => {
+    if (!items) return [...ids]
+    const present = ids.filter(id => items.some(item => item.Id === id))
+    if (present.length < ids.length) dropped.push(`${STOCK_MOVEMENT_FILTER_DEFINITIONS[field].label}: ${valueCount(ids.length - present.length)}`)
+    return present
+  }
+  const kinds = capability.DocumentKinds.map(kind => kind.Code)
+  wires.forEach((wire, index) => {
+    const field = wire.Field
+    let row: StockMovementFilterRow | null = null
+    const id = rows.length + 1
+    if (field === 'warehouse' || field === 'organization' || field === 'unit') {
+      const ids = known(field === 'warehouse' ? lists.warehouses : field === 'organization' ? lists.organizations : lists.units, wire.Ids ?? [], field)
+      row = ids.length ? { id, field, enabled: true, ids } : null
+    } else if (field === 'product' || field === 'group') {
+      const source = field === 'product' ? lists.products : lists.groups
+      const ids = known(source, wire.Ids ?? [], field)
+      row = ids.length ? { id, field, enabled: true, items: ids.map(value => ({ id: value, label: source.find(item => item.Id === value)!.Name })) } : null
+    } else if (field === 'top' || field === 'documentKind') {
+      const allowed = field === 'top' ? lists.tops : kinds
+      const values = (wire.Values ?? []).filter(value => !allowed || allowed.includes(value))
+      if (values.length < (wire.Values ?? []).length) dropped.push(`${STOCK_MOVEMENT_FILTER_DEFINITIONS[field].label}: ${(wire.Values ?? []).filter(value => !values.includes(value)).join(', ')}`)
+      row = values.length ? { id, field, enabled: true, values } : null
+    } else if (field === 'article') {
+      const match = wire.ArticleMatch ?? 'equals'
+      row = { id, field, enabled: true, articleMatch: match, text: match === 'inList' ? (wire.Values ?? []).join('\n') : (wire.Values ?? [])[0] ?? '' }
+    } else if (field === 'documentText') {
+      row = { id, field, enabled: true, text: wire.Text ?? '' }
+    }
+    if (!row) return
+    rowOf.set(index, rows.length)
+    rows.push(row)
+  })
+  const fieldRow = new Map(rows.map((row, index) => [row.field, index]))
+  function convert(node: MovementTreeNode): MovementTreeNode | null {
+    if (node.Kind === 3) {
+      const target = node.SelectionIndex !== undefined ? rowOf.get(node.SelectionIndex) : node.Filter ? fieldRow.get(node.Filter as StockMovementFilterField) : undefined
+      return target === undefined ? null : { Kind: 3, SelectionIndex: target }
+    }
+    const children = (node.Children ?? []).flatMap(child => { const next = convert(child); return next ? [next] : [] })
+    return children.length ? { Kind: node.Kind === 2 ? 2 : 1, Children: children } : null
+  }
+  const root = request.FilterExpression ? convert(request.FilterExpression.Root as MovementTreeNode) : null
+  return { dropped, draft: { ...base, from: request.From, to: request.To, listed: listed || base.listed, filterRows: rows,
+    filterExpression: root ? { Version: 1, Root: root.Kind === 3 ? { Kind: 1, Children: [root] } : root } : null,
+    conditions: structuredClone(request.Conditions ?? []), levels: [...request.Levels], measures: [...request.Measures],
+    grandTotals: request.GrandTotals, negativeRed: request.NegativeRed } }
+}
+
+export function movementHistorySummary(request: StockMovementRequest): { period: string; filters: string } {
+  const filters = movementWires(request).map(wire => {
+    const label = STOCK_MOVEMENT_FILTER_DEFINITIONS[wire.Field].label
+    if (wire.Text) return `${label}: ${wire.Text}`
+    if (wire.Values?.length) return `${label}: ${wire.Values.join(', ')}`
+    return `${label}: ${valueCount(wire.Ids?.length ?? 0)}`
+  })
+  return { period: deskPeriodText(request.From, request.To), filters: filters.join('; ') }
 }

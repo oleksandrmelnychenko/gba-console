@@ -1,4 +1,4 @@
-import { Accordion, Alert, Badge, Button, Group, Loader, MultiSelect, Select, Stack, Text } from '@mantine/core'
+import { Accordion, Alert, Badge, Button, Group, Loader, MultiSelect, SegmentedControl, Select, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -11,8 +11,8 @@ import { getReportHistory, getReportHistoryUsers, type ReportHistoryItem, type R
 import { availableBug1274WorkbookLaunches, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { BUG_1274_ACTIVE_DATA_SOURCES } from '../data/reportMigration'
 import {
-  defaultHistoryPeriod, distinctLabels, historyDayTitle, historyPeriodPresets, historyReportName, historySummary, historyTime,
-  rememberHistoryRun, rememberWorkbookOpen, type ReportHistoryAction,
+  defaultHistoryPeriod, distinctLabels, historyDayTitle, historyPeriodPresets, historyReportKeyName, historyReportOptions, historySummary, historyTime,
+  movementHistorySummary, rememberHistoryRun, rememberWorkbookOpen, type ReportHistoryAction,
 } from '../data/reportHistory'
 import { useReportDatasets } from '../hooks/useReportDatasets'
 import type { ReportDataset } from '../types'
@@ -21,6 +21,11 @@ import { WorkbookPeriodField } from './workbook-desk/WorkbookSettings'
 
 const DAY_PAGE = 50
 type DayState = { items: ReportHistoryItem[]; loading: boolean; error: string | null; done: boolean }
+type Grouping = 'day' | 'report'
+type HistoryGroup = { key: string; title: string; count: number; from: string; to: string; reports: string[] }
+
+const KYIV_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit' })
+const kyivDay = (value: string) => KYIV_DAY.format(new Date(value))
 
 export function ReportHistoryPage() {
   const { t } = useI18n()
@@ -33,7 +38,9 @@ export function ReportHistoryPage() {
   const [to, setTo] = useState(initial.to)
   const [reports, setReports] = useState<string[]>([])
   const [user, setUser] = useState<string | null>(null)
+  const [grouping, setGrouping] = useState<Grouping>('day')
   const [days, setDays] = useState<{ day: string; count: number }[] | null>(null)
+  const [reportCounts, setReportCounts] = useState<{ report: string; count: number }[]>([])
   const [isHead, setIsHead] = useState(false)
   const [users, setUsers] = useState<ReportHistoryUser[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -44,14 +51,14 @@ export function ReportHistoryPage() {
   const datasets = datasetStorage.datasets
   const launches = useMemo(() => availableBug1274WorkbookLaunches(datasets), [datasets])
   const periodError = !from || !to || from > to ? t('Вкажіть правильний період.') : null
-  const sources = useMemo(() => reports.map(Number), [reports])
+  const sources = reports
 
-  const reportOptions = useMemo(() => {
-    const items = datasets.filter(item => BUG_1274_ACTIVE_DATA_SOURCES.has(item.DataSource))
-      .map(item => ({ id: String(item.DataSource), name: t(historyReportName(null, item.DataSource, datasets, launches)) }))
-    const labels = distinctLabels(items, item => item.name, item => item.id)
-    return items.map(item => ({ value: item.id, label: labels.get(item.id)! }))
-  }, [datasets, launches, t])
+  const reportOptions = useMemo(() => historyReportOptions(datasets, launches, BUG_1274_ACTIVE_DATA_SOURCES)
+    .map(item => ({ ...item, label: t(item.label) })), [datasets, launches, t])
+  const groups: HistoryGroup[] = useMemo(() => grouping === 'day'
+    ? (days ?? []).map(day => ({ key: day.day, title: historyDayTitle(day.day), count: day.count, from: day.day, to: day.day, reports: sources }))
+    : reportCounts.map(item => ({ key: item.report, title: t(historyReportKeyName(item.report, datasets, launches)), count: item.count,
+      from, to, reports: [item.report] })), [grouping, days, reportCounts, sources, from, to, datasets, launches, t])
   const userLabels = useMemo(() => distinctLabels(users, item => item.userName || t('Без імені'), item => item.userNetId), [users, t])
 
   useEffect(() => {
@@ -62,13 +69,15 @@ export function ReportHistoryPage() {
     getReportHistory({ from, to, reports: sources, user, limit: 1 }, controller.signal).then(page => {
       if (current !== generation.current) return
       setDays(page.days); setIsHead(page.isHead)
-      if (page.days[0]) setOpened([page.days[0].day])
+      setReportCounts(page.reports.map(item => ({ report: item.report, count: item.count })))
+      const first = grouping === 'day' ? page.days[0]?.day : page.reports[0]?.report
+      if (first) setOpened([first])
     }).catch(failure => {
       if (current === generation.current && !controller.signal.aborted)
         setError(failure instanceof Error ? failure.message : t('Історія звітів тимчасово недоступна. Спробуйте ще раз.'))
     })
     return () => controller.abort()
-  }, [allowed, from, to, sources, user, periodError, t])
+  }, [allowed, from, to, sources, user, periodError, grouping, t])
 
   useEffect(() => {
     if (!allowed || !isHead || periodError) { setUsers([]); return }
@@ -77,11 +86,12 @@ export function ReportHistoryPage() {
     return () => controller.abort()
   }, [allowed, isHead, from, to, periodError])
 
-  const loadDay = useCallback(async (day: string, offset: number) => {
+  const loadDay = useCallback(async (group: HistoryGroup, offset: number) => {
     const current = generation.current
+    const day = group.key
     setDayStates(state => ({ ...state, [day]: { ...(state[day] ?? { items: [], done: false }), loading: true, error: null } }))
     try {
-      const page = await getReportHistory({ from: day, to: day, reports: sources, user, offset, limit: DAY_PAGE })
+      const page = await getReportHistory({ from: group.from, to: group.to, reports: group.reports, user, offset, limit: DAY_PAGE })
       if (current !== generation.current) return
       setDayStates(state => {
         const items = [...(offset ? state[day]?.items ?? [] : []), ...page.items]
@@ -92,11 +102,14 @@ export function ReportHistoryPage() {
       setDayStates(state => ({ ...state, [day]: { ...(state[day] ?? { items: [], done: false }), loading: false,
         error: failure instanceof Error ? failure.message : t('Історія звітів тимчасово недоступна. Спробуйте ще раз.') } }))
     }
-  }, [sources, user, t])
+  }, [user, t])
 
   useEffect(() => {
-    for (const day of opened) if (!dayStates[day]) void loadDay(day, 0)
-  }, [opened, dayStates, loadDay])
+    for (const key of opened) {
+      const group = groups.find(item => item.key === key)
+      if (group && !dayStates[key]) void loadDay(group, 0)
+    }
+  }, [opened, dayStates, loadDay, groups])
 
   function run(item: ReportHistoryItem, action: ReportHistoryAction) {
     rememberHistoryRun(item.id, action)
@@ -112,14 +125,15 @@ export function ReportHistoryPage() {
 
   function entry(item: ReportHistoryItem) {
     const dataset = datasetOf(item.dataSource)
-    const name = t(historyReportName(item.data, item.dataSource, datasets, launches))
-    const summary = item.data ? historySummary(item.data, dataset) : null
-    const usable = Boolean(item.data && dataset && BUG_1274_ACTIVE_DATA_SOURCES.has(item.dataSource))
+    const name = t(historyReportKeyName(item.report, datasets, launches))
+    const summary = item.movement ? movementHistorySummary(item.movement) : item.data ? historySummary(item.data, item.kind === 'regional' ? datasetOf(39) : dataset) : null
+    const usable = item.kind === 'movement' ? Boolean(item.movement)
+      : Boolean(item.data && datasetOf(item.data.dataSource ?? -1) && BUG_1274_ACTIVE_DATA_SOURCES.has(item.data.dataSource ?? -1))
     return <Group key={item.id} justify="space-between" align="flex-start" wrap="nowrap" className="report-history__entry"
       data-testid="report-history-entry">
       <Stack gap={2} style={{ minWidth: 0 }}>
         <Group gap="xs" wrap="nowrap">
-          <Text size="sm" fw={600}>{historyTime(item.formedAtUtc)}</Text>
+          <Text size="sm" fw={600}>{grouping === 'report' ? `${historyDayTitle(kyivDay(item.formedAtUtc))}, ` : ''}{historyTime(item.formedAtUtc)}</Text>
           <Text size="sm" fw={600}>{name}</Text>
           <Badge variant="light" color={item.output === 'excel' ? 'green' : 'gray'}>{item.output === 'excel' ? 'Excel' : t('На екрані')}</Badge>
         </Group>
@@ -149,6 +163,11 @@ export function ReportHistoryPage() {
           error={periodError} onFromChange={setFrom} onToChange={setTo} />
         <MultiSelect label={t('Звіт')} placeholder={reports.length ? undefined : t('Усі звіти')} data={reportOptions}
           value={reports} onChange={setReports} clearable searchable style={{ minWidth: 260 }} />
+        <Stack gap={4}>
+          <Text size="sm" fw={500}>{t('Групувати')}</Text>
+          <SegmentedControl size="xs" value={grouping} onChange={value => setGrouping(value as Grouping)}
+            data={[{ value: 'day', label: t('за днями') }, { value: 'report', label: t('за звітами') }]} />
+        </Stack>
         {isHead ? <Select label={t('Користувач')} placeholder={t('Усі')} clearable searchable value={user} onChange={setUser}
           data={users.map(item => ({ value: item.userNetId, label: userLabels.get(item.userNetId)! }))} style={{ minWidth: 220 }} /> : null}
       </Group>
@@ -156,11 +175,11 @@ export function ReportHistoryPage() {
         : days === null ? periodError ? null : <Group role="status" gap="xs"><Loader size="sm" /><Text size="sm">{t('Завантаження…')}</Text></Group>
         : days.length === 0 ? <Text size="sm" c="dimmed">{t('За вибраний період звітів не формували.')}</Text>
         : <Accordion multiple value={opened} onChange={setOpened} variant="separated">
-          {days.map(day => {
-            const state = dayStates[day.day]
-            return <Accordion.Item key={day.day} value={day.day}>
+          {groups.map(group => {
+            const state = dayStates[group.key]
+            return <Accordion.Item key={group.key} value={group.key}>
               <Accordion.Control>
-                <Group gap="xs"><Text fw={600}>{historyDayTitle(day.day)}</Text><Badge variant="light">{day.count}</Badge></Group>
+                <Group gap="xs"><Text fw={600}>{group.title}</Text><Badge variant="light">{group.count}</Badge></Group>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap="sm">
@@ -168,7 +187,7 @@ export function ReportHistoryPage() {
                   {state?.error ? <Alert color="red" icon={<CircleAlert size={18} />}>{state.error}</Alert> : null}
                   {state?.loading ? <Group role="status" gap="xs"><Loader size="sm" /><Text size="sm">{t('Завантаження…')}</Text></Group> : null}
                   {state && !state.loading && !state.done ? <Button size="xs" variant="subtle"
-                    onClick={() => void loadDay(day.day, state.items.length)}>{t('Показати ще')}</Button> : null}
+                    onClick={() => void loadDay(group, state.items.length)}>{t('Показати ще')}</Button> : null}
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>

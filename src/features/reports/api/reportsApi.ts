@@ -59,7 +59,7 @@ function reportPreviewRowLimit(request: ReportRequestBody): number {
 /** Calculates one bounded on-screen page and file links from the same report run. */
 export const REPORT_JOB_DETACHED = 'report-job-detached'
 export type ReportJobProgress = { state: 'queued' | 'running'; elapsedSeconds: number; queuePosition: number }
-type ReportPreviewOptions = { onProgress?: (progress: ReportJobProgress) => void; signal?: AbortSignal }
+type ReportPreviewOptions = { onProgress?: (progress: ReportJobProgress) => void; signal?: AbortSignal; excelIntent?: boolean }
 
 export async function previewStockReport(body: ReportRequestBody, dataset?: ReportDataset, options: ReportPreviewOptions = {}): Promise<{ result: ReportResult; preview: NativeReportPreview }> {
   const request = prepareStockReportRequest(body, dataset)
@@ -67,12 +67,13 @@ export async function previewStockReport(body: ReportRequestBody, dataset?: Repo
   const version2 = capability !== null
   if (requestPresentationCurrency(request) != null && !version2) throw new Error('Сервер не підтвердив збережений перегляд для вибраної валюти. Експорт не виконувався.')
   const columns = capability?.columnPaging ? { columnOffset: 0, columnLimit: capability.columnPaging.pageColumns } : {}
+  const intent = options.excelIntent ? { historyOutput: 2 } : {}
   const response = capability?.backgroundJobs
-    ? await runReportPreviewJob(request, reportPreviewRowLimit(request), columns, options)
+    ? await runReportPreviewJob(request, reportPreviewRowLimit(request), columns, options, intent)
     : await apiRequest<unknown>('/report/stocks/preview', {
       method: 'POST',
       dedupe: false,
-      query: { rowOffset: 0, rowLimit: reportPreviewRowLimit(request), ...(version2 ? { previewVersion: 2, ...columns } : {}) },
+      query: { rowOffset: 0, rowLimit: reportPreviewRowLimit(request), ...(version2 ? { previewVersion: 2, ...columns } : {}), ...intent },
       body: request,
     })
   const preview = normalizeNativeReportPreview(response, currentVparivanieFullScope(request))
@@ -133,9 +134,9 @@ function reportJobDelay(attempt: number, signal?: AbortSignal): Promise<void> {
 }
 /** Runs the preview as a server background job with the extended budget and returns the first page of its result. */
 async function runReportPreviewJob(request: ReportRequestBody, rowLimit: number, columns: { columnOffset?: number; columnLimit?: number },
-  options: ReportPreviewOptions): Promise<unknown> {
+  options: ReportPreviewOptions, intent: { historyOutput?: number } = {}): Promise<unknown> {
   let job = readReportPreviewJob(await apiRequest<unknown>('/report/stocks/preview/jobs', {
-    method: 'POST', dedupe: false, query: columns, body: request, signal: options.signal }))
+    method: 'POST', dedupe: false, query: { ...columns, ...intent }, body: request, signal: options.signal }))
   let resultRequested = false
   try {
     for (let attempt = 0; ; attempt += 1) {

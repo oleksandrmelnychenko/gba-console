@@ -17,7 +17,7 @@ vi.mock('../api/reportHistoryApi', async original => ({ ...await original<typeof
 
 const data = { dataSource: 2, from: '2026-11-01', to: '2026-11-17', sorted: { Row: [], Col: [], Measurements: [] }, selections: [] }
 const entry = (id: string, user: string, name: string) => ({ id, formedAtUtc: '2026-11-17T08:30:00Z', dataSource: 2, output: 'excel' as const,
-  rowCount: 12, userNetId: user, userName: name, own: false, data })
+  rowCount: 12, userNetId: user, userName: name, own: false, kind: 'report' as const, report: '2', data, movement: null })
 
 beforeEach(() => {
   vi.clearAllMocks(); sessionStorage.clear()
@@ -25,8 +25,10 @@ beforeEach(() => {
   vi.mocked(getReportHistoryUsers).mockResolvedValue([
     { userNetId: 'u-1', userName: 'Іван Петренко', own: false }, { userNetId: 'u-2', userName: 'Іван Петренко', own: false }])
   vi.mocked(getReportHistory).mockImplementation(async query => query.limit === 1
-    ? { isHead: true, total: 3, days: [{ day: '2026-11-17', count: 2 }, { day: '2026-11-16', count: 1 }], items: [] }
-    : { isHead: true, total: 2, days: [{ day: query.from, count: 2 }],
+    ? { isHead: true, total: 3, days: [{ day: '2026-11-17', count: 2 }, { day: '2026-11-16', count: 1 }],
+      reports: [{ report: '2', dataSource: 2, profile: null, kind: 'report' as const, count: 2 },
+        { report: '1001', dataSource: 1001, profile: null, kind: 'movement' as const, count: 1 }], items: [] }
+    : { isHead: true, total: 2, days: [{ day: query.from, count: 2 }], reports: [],
       items: [entry('11111111-1111-1111-1111-111111111111', 'u-1', 'Іван Петренко'), entry('44444444-4444-4444-4444-444444444444', 'u-2', 'Іван Петренко')] })
 })
 
@@ -72,4 +74,14 @@ it('shows the history item in the reports menu right after the special reports',
   await waitFor(() => expect(within(strip).getAllByRole('button').map(button => button.textContent)).toEqual([
     'Продажі', 'Залишки', 'Закупи', 'Грошові кошти', 'Особливі звіти', 'Історія звітів']))
   expect(within(strip).getByRole('button', { name: 'Історія звітів' }).getAttribute('aria-pressed')).toBe('true')
+})
+
+it('switches to grouping by report and loads a report group for the whole period', async () => {
+  render(page())
+  await screen.findByText('17 листопада 2026')
+  fireEvent.click(screen.getByText('за звітами'))
+  expect(await screen.findByText('Рух товару')).toBeTruthy()
+  expect(screen.getAllByText('Продажі з поверненнями').length).toBeGreaterThan(0)
+  await waitFor(() => expect(vi.mocked(getReportHistory).mock.calls.some(([query]) =>
+    query.reports?.length === 1 && query.reports[0] === '2' && query.from !== query.to && query.limit === 50)).toBe(true))
 })

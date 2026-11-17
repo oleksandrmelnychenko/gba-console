@@ -6,7 +6,7 @@ import { movementSelection } from '../data/currentVparivanieMovements'
 import { ReportTableScrollArea } from './ReportTableScrollArea'
 import { Alert, Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { Map as MapIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { readCurrentVparivanieRegional } from '../api/currentVparivanieRegionalApi'
 import { CURRENT_VPARIVANIE_PRODUCT_CAPTIONS, currentVparivanieConfigurationError, currentVparivanieFullScopeAvailable,
   currentVparivanieStockSentence } from '../data/currentVparivanie'
@@ -63,9 +63,9 @@ function regionalConfigurationError(dataset: ReportDataset | null, request: Repo
     : null
 }
 
-export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange }: {
+export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disabled, fullScope, onFullScopeChange, historyRun }: {
   dataset: ReportDataset | null; request: ReportRequestBody; enabled: boolean; disabled: boolean
-  fullScope?: boolean; onFullScopeChange?: (value: boolean) => void
+  fullScope?: boolean; onFullScopeChange?: (value: boolean) => void; historyRun?: { token: number; excel: boolean } | null
 }) {
   const requestKey = JSON.stringify(request)
   const currentKey = useRef(requestKey)
@@ -84,21 +84,36 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
   const busy = busyKey === requestKey, exporting = exportKey === requestKey
   const rejected = regionalConfigurationError(dataset, request)
 
-  async function read() {
-    if (!dataset || !available || !enabled || disabled || busy || rejected) return
+  const handledHistory = useRef(0)
+  const runHistory = useEffectEvent(async (run: { token: number; excel: boolean }) => {
+    handledHistory.current = run.token
+    const next = await read(run.excel)
+    if (next && run.excel) await exportDocument('xlsx', next)
+  })
+  useEffect(() => {
+    if (!historyRun || historyRun.token === handledHistory.current || !dataset || !available || !enabled || disabled || rejected) return
+    void runHistory(historyRun)
+  }, [historyRun, dataset, available, enabled, disabled, rejected])
+
+  async function read(excelIntent = false): Promise<CurrentVparivanieRegionalResult | null> {
+    if (!dataset || !available || !enabled || disabled || busy || rejected) return null
     active.current?.abort()
     const controller = new AbortController(); active.current = controller
     setBusyKey(requestKey); setSnapshot(null); setFailure(null)
     try {
-      const next = await readCurrentVparivanieRegional(dataset, request, controller.signal)
+      const next = excelIntent ? await readCurrentVparivanieRegional(dataset, request, controller.signal, true)
+        : await readCurrentVparivanieRegional(dataset, request, controller.signal)
       if (!controller.signal.aborted) setSnapshot({ key: requestKey, result: next })
+      return controller.signal.aborted ? null : next
     } catch (cause) {
       if (!controller.signal.aborted) setFailure({ key: requestKey,
         message: cause instanceof Error ? cause.message : 'Не вдалося сформувати регіональну форму.' })
     } finally { if (!controller.signal.aborted) setBusyKey(null) }
+    return null
   }
 
-  async function exportDocument(format: 'csv' | 'xlsx' | 'pdf') {
+  async function exportDocument(format: 'csv' | 'xlsx' | 'pdf', source: CurrentVparivanieRegionalResult | null = result) {
+    const result = source
     if (!result || exporting || !enabled || disabled) return
     setExportKey(requestKey); setFailure(null)
     try {
@@ -115,7 +130,7 @@ export function CurrentVparivanieRegionalPanel({ dataset, request, enabled, disa
     <Stack gap="sm"><Text component="h2" fw={600} size="sm"><Group component="span" gap={6} wrap="nowrap"><MapIcon size={16} style={{ flexShrink: 0 }} aria-hidden="true" />{CURRENT_REGIONAL_TITLE}</Group></Text>
       <RegionalFullScopeCheckbox dataset={dataset} checked={fullScope}
         disabled={!enabled || disabled || busy || exporting || !!(request.currentVparivanieMovements ?? request.CurrentVparivanieMovements)} onChange={onFullScopeChange} />
-      <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read()}>
+      <Group><Button loading={busy} disabled={!enabled || disabled || !!rejected || exporting} onClick={() => void read(false)}>
         Показати регіональну форму</Button>
         {(['csv', 'xlsx', 'pdf'] as const).map(format => <Button key={format} variant="default"
           disabled={!result || !enabled || disabled || exporting || busy} onClick={() => void exportDocument(format)}>
