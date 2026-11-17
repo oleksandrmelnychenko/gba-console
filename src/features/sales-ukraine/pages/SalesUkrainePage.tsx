@@ -24,7 +24,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { ArrowLeftRight, Check, ChevronDown, CircleAlert, ClipboardList, FileText, Globe, History, Lock, LockOpen, Pencil, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronDown, CircleAlert, ClipboardList, FileText, Globe, History, Lock, LockOpen, PackageX, Pencil, Plus, Printer, Receipt, RotateCcw, Search, Tag, TriangleAlert, Truck, X } from 'lucide-react'
 import {
   Fragment,
   isValidElement,
@@ -2100,10 +2100,12 @@ const SaleGridRow = memo(function SaleGridRow({
       </div>
 
       <div className="sg-status">
-        <Badge className={`app-role-pill ${getSaleStatusPillClass(sale)}`} size="sm" variant="light">
-          {getSaleStatusLabel(sale)}
-        </Badge>
-        <SaleStockPostingPill sale={sale} />
+        <span style={{ alignItems: 'center', display: 'inline-flex', gap: 4, justifyContent: 'flex-end', minWidth: 0 }}>
+          <SaleStockPostingPill sale={sale} />
+          <Badge className={`app-role-pill ${getSaleStatusPillClass(sale)}`} size="sm" variant="light">
+            {getSaleStatusLabel(sale)}
+          </Badge>
+        </span>
         <span className="sg-status-pay">
           <span
             className="sg-status-pay__indicator"
@@ -2747,15 +2749,31 @@ function SaleStockPostingPill({ detail = false, sale }: { detail?: boolean; sale
   }
 
   return (
-    <Tooltip label={t(marker.hint)} multiline w={320} withArrow>
-      <span
-        aria-label={`${t(marker.label)}. ${t(marker.hint)}`}
-        className={`app-role-pill ${detail ? 'sale-detail-pill ' : ''}${marker.tone === 'danger' ? 'is-red' : 'is-orange'}`}
-        data-stock-posting={marker.tone}
-        tabIndex={0}
-      >
-        {t(marker.label)}
-      </span>
+    <Tooltip label={detail ? t(marker.hint) : `${t(marker.label)}. ${t(marker.hint)}`} multiline w={320} withArrow>
+      {detail ? (
+        <span
+          aria-label={`${t(marker.label)}. ${t(marker.hint)}`}
+          className={`app-role-pill sale-detail-pill ${marker.tone === 'danger' ? 'is-red' : 'is-orange'}`}
+          data-stock-posting={marker.tone}
+          tabIndex={0}
+        >
+          {t(marker.label)}
+        </span>
+      ) : (
+        <span
+          aria-label={`${t(marker.label)}. ${t(marker.hint)}`}
+          data-stock-posting={marker.tone}
+          role="img"
+          style={{
+            color: `var(--mantine-color-${marker.tone === 'danger' ? 'red' : 'orange'}-7)`,
+            display: 'inline-flex',
+            flex: '0 0 auto',
+          }}
+          tabIndex={0}
+        >
+          <PackageX aria-hidden="true" size={16} />
+        </span>
+      )}
     </Tooltip>
   )
 }
