@@ -137,7 +137,7 @@
   display: block;
   font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--app-table-line-height);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -148,7 +148,7 @@
   align-items: center;
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 0;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -165,7 +165,7 @@
   color: var(--mantine-color-gray-6);
   font-size: 11px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: var(--app-table-line-height);
 }
 
 .act-service-meta-value > strong {
@@ -174,7 +174,7 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: var(--app-table-line-height);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -199,22 +199,22 @@
   color: var(--mantine-color-gray-8);
   font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: var(--app-table-line-height);
 }
 
 .act-service-two-line-value > small {
   color: var(--mantine-color-gray-6);
   font-size: 11px;
   font-weight: 500;
-  line-height: 1.2;
-  margin-top: 4px;
+  line-height: var(--app-table-line-height);
+  margin-top: 0;
 }
 
 .act-service-amount-cell {
   align-items: flex-end;
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: var(--app-table-line-height);
 }
 
 .act-service-amount-cell strong {
@@ -231,7 +231,7 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
-  margin-top: 4px;
+  margin-top: 0;
   text-transform: uppercase;
 }
 

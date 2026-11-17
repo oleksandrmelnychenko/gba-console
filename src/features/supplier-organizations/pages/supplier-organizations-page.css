@@ -140,7 +140,7 @@
 .supplier-organizations-agreement-cell {
   display: grid;
   min-width: 0;
-  gap: 4px;
+  gap: 0;
 }
 
 .supplier-organizations-name-title,
@@ -244,7 +244,7 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0;
-  line-height: 1.1;
+  line-height: var(--app-table-line-height);
 }
 
 .supplier-organizations-action-title {

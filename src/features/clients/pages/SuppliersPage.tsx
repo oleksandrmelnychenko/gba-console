@@ -62,12 +62,15 @@ const supplierDateFormatter = new Intl.DateTimeFormat('uk-UA', {
   month: '2-digit',
   year: 'numeric',
 })
+// One line per cell on the shared 16px table line; the full value stays in the
+// title tooltip, so long phone/e-mail lists no longer stretch a row to 7 lines.
 const SUPPLIER_TABLE_CELL_STYLE = {
   display: 'block',
-  lineHeight: '18px',
+  lineHeight: 'var(--app-table-line-height)',
   maxWidth: '100%',
-  overflowWrap: 'anywhere',
-  whiteSpace: 'normal',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 } as const
 const SUPPLIER_TABLE_MONO_STYLE = {
   fontFamily: 'var(--font-mono)',
