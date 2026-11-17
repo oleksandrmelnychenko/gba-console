@@ -3,8 +3,6 @@ import type { SaleConsignmentNoteSetting } from '../types'
 export const CONSIGNMENT_NUMBER_MAX_LENGTH = 50
 export const MAX_DIMENSION_MM = 100_000
 export const MAX_WEIGHT_T = 1_000
-export const DIMENSION_INPUT_PROPS = { allowDecimal: false, allowNegative: false, clampBehavior: 'strict', hideControls: true, max: MAX_DIMENSION_MM, min: 0 } as const
-export const WEIGHT_INPUT_PROPS = { allowNegative: false, clampBehavior: 'strict', decimalScale: 2, hideControls: true, max: MAX_WEIGHT_T, min: 0 } as const
 
 /**
  * Every stored field is loaded back (TTN number and loading point included). Only when the setting has no
@@ -24,7 +22,7 @@ export function applyConsignmentDocumentDefaults(
 }
 
 export function getConsignmentValidationError(setting: SaleConsignmentNoteSetting, t: (value: string) => string): string | null {
-  if (!setting.Name) {
+  if (!setting.Name?.trim()) {
     return t('Вкажіть назву')
   }
 

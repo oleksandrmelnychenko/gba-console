@@ -52,6 +52,7 @@ describe('TTN settings round trip', () => {
     expect(getConsignmentValidationError({ ...stored, CarGrossWeight: 5000 }, t)).toBe('Вага має бути від 0 до 1000 т')
     expect(getConsignmentValidationError({ ...stored, Number: '1'.repeat(300) }, t)).toBe('Номер ТТН не може бути довшим за 50 символів')
     expect(getConsignmentValidationError({ ...stored, Number: '123' }, t)).toBeNull()
+    expect(getConsignmentValidationError({ ...stored, Name: '   ' }, t)).toBe('Вкажіть назву')
   })
 
   it('asks for confirmation before deleting a saved setting', async () => {

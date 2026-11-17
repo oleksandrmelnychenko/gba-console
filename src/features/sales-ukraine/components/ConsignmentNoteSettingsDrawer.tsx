@@ -1,6 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { Alert, Box, Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Box, Button, Group, Modal, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Truck } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
@@ -11,6 +11,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { TableChip } from '../../../shared/ui/TableChip'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import {
   addSaleConsignmentNoteSetting,
@@ -25,9 +26,9 @@ import './sales-drawers.css'
 import {
   applyConsignmentDocumentDefaults,
   CONSIGNMENT_NUMBER_MAX_LENGTH,
-  DIMENSION_INPUT_PROPS,
   getConsignmentValidationError,
-  WEIGHT_INPUT_PROPS,
+  MAX_DIMENSION_MM,
+  MAX_WEIGHT_T,
 } from './consignmentNoteSettingRules'
 
 type ConsignmentNoteDrawerState = {
@@ -424,11 +425,11 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.CarLabel || ''}
             onChange={(event) => updateTextField('CarLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarLength || 0} onChange={(value) => updateNumberField('CarLength', value)} />
-            <NumberInput label={t('Ширина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarWidth || 0} onChange={(value) => updateNumberField('CarWidth', value)} />
-            <NumberInput label={t('Висота, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.CarHeight || 0} onChange={(value) => updateNumberField('CarHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.CarNetWeight || 0} onChange={(value) => updateNumberField('CarNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.CarGrossWeight || 0} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
+            <AmountInput decimalScale={0} label={t('Довжина, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.CarLength} onChange={(value) => updateNumberField('CarLength', value)} />
+            <AmountInput decimalScale={0} label={t('Ширина, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.CarWidth} onChange={(value) => updateNumberField('CarWidth', value)} />
+            <AmountInput decimalScale={0} label={t('Висота, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.CarHeight} onChange={(value) => updateNumberField('CarHeight', value)} />
+            <AmountInput label={t('Вага нетто, т')} max={MAX_WEIGHT_T} value={noteState.setting.CarNetWeight} onChange={(value) => updateNumberField('CarNetWeight', value)} />
+            <AmountInput label={t('Вага брутто, т')} max={MAX_WEIGHT_T} value={noteState.setting.CarGrossWeight} onChange={(value) => updateNumberField('CarGrossWeight', value)} />
           </SimpleGrid>
         </Box>
 
@@ -441,11 +442,11 @@ export function ConsignmentNoteSettingsDrawer({
             value={noteState.setting.TrailerLabel || ''}
             onChange={(event) => updateTextField('TrailerLabel', event.currentTarget.value)}
           />
-            <NumberInput label={t('Довжина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerLength || 0} onChange={(value) => updateNumberField('TrailerLength', value)} />
-            <NumberInput label={t('Ширина, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerWidth || 0} onChange={(value) => updateNumberField('TrailerWidth', value)} />
-            <NumberInput label={t('Висота, мм')} {...DIMENSION_INPUT_PROPS} value={noteState.setting.TrailerHeight || 0} onChange={(value) => updateNumberField('TrailerHeight', value)} />
-            <NumberInput label={t('Вага нетто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.TrailerNetWeight || 0} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
-            <NumberInput label={t('Вага брутто, т')} {...WEIGHT_INPUT_PROPS} value={noteState.setting.TrailerGrossWeight || 0} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
+            <AmountInput decimalScale={0} label={t('Довжина, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.TrailerLength} onChange={(value) => updateNumberField('TrailerLength', value)} />
+            <AmountInput decimalScale={0} label={t('Ширина, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.TrailerWidth} onChange={(value) => updateNumberField('TrailerWidth', value)} />
+            <AmountInput decimalScale={0} label={t('Висота, мм')} max={MAX_DIMENSION_MM} value={noteState.setting.TrailerHeight} onChange={(value) => updateNumberField('TrailerHeight', value)} />
+            <AmountInput label={t('Вага нетто, т')} max={MAX_WEIGHT_T} value={noteState.setting.TrailerNetWeight} onChange={(value) => updateNumberField('TrailerNetWeight', value)} />
+            <AmountInput label={t('Вага брутто, т')} max={MAX_WEIGHT_T} value={noteState.setting.TrailerGrossWeight} onChange={(value) => updateNumberField('TrailerGrossWeight', value)} />
           </SimpleGrid>
         </Box>
         </div>
@@ -560,7 +561,8 @@ function buildConsignmentSettingOptions(settings: SaleConsignmentNoteSetting[]):
     const value = getConsignmentSettingKey(setting)
 
     if (value) {
-      const details = [setting.BrandAndNumberCar, setting.Driver].filter(Boolean).join(', ')
+      const details = [setting.Number ? `№ ${setting.Number}` : '', setting.BrandAndNumberCar, setting.Driver, setting.LoadingPoint]
+        .filter(Boolean).join(', ')
       options.push({ label: setting.Name || (details ? `${translate('Без назви')} (${details})` : translate('Без назви')), value })
     }
 
