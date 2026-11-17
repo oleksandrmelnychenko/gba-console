@@ -62,6 +62,19 @@ describe('new-sale client keyboard navigation', () => {
     await waitFor(() => expect(screen.getByTestId('wizard-selected-client').getAttribute('data-client-net-uid')).toBe(client.NetUid))
   })
 
+  it('asks for at least three characters instead of staying silent on a short query', async () => {
+    render(
+      <MantineProvider><I18nProvider>
+        <NewSaleClientStep clientNetId={null} onAgreementChange={() => {}} onClientChange={() => {}} onOpenSale={() => {}} />
+      </I18nProvider></MantineProvider>,
+    )
+
+    fireEvent.change(screen.getByPlaceholderText('Місце вводу для пошуку'), { target: { value: 'QA' } })
+
+    expect(await screen.findByText('Введіть щонайменше 3 символи, щоб знайти клієнта.')).toBeTruthy()
+    expect(apiMocks.searchWizardClients).not.toHaveBeenCalled()
+  })
+
   it('previews a structural search result with an arrow and opens it only on Enter', async () => {
     const ordinary = createClient(1, 'CN02101')
     const folder = createClient(2, 'VI02100')

@@ -16,7 +16,7 @@ import { useWizardClientCarousel } from './useWizardClientCarousel'
 import { useWizardClientKeyboard } from './useWizardClientKeyboard'
 
 import { useWizardClientSelection } from './useWizardClientSelection'
-import { useWizardClientSearch } from './useWizardClientSearch'
+import { MIN_CLIENT_QUERY_LENGTH, useWizardClientSearch } from './useWizardClientSearch'
 import { useWizardClientSalesRegister } from './useWizardClientSalesRegister'
 
 import { useWizardSalesRegisterActions } from './useWizardSalesRegisterActions'
@@ -202,7 +202,11 @@ export function NewSaleClientStep({
               <Stack align="center" gap={3}>
                 <Text className="new-sale-client-empty__title">{t(focusedGroup ? 'Оберіть картку групи' : 'Оберіть клієнта')}</Text>
                 <Text className="new-sale-client-empty__description">
-                  {t(focusedGroup ? 'Натисніть Enter, щоб відкрити групу, та оберіть потрібну картку стрілками.' : 'Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}
+                  {t(focusedGroup
+                    ? 'Натисніть Enter, щоб відкрити групу, та оберіть потрібну картку стрілками.'
+                    : query.trim().length > 0 && query.trim().length < MIN_CLIENT_QUERY_LENGTH
+                      ? 'Введіть щонайменше 3 символи, щоб знайти клієнта.'
+                      : 'Оберіть клієнта у списку зліва, щоб відкрити договори, борги та реєстр документів.')}
                 </Text>
               </Stack>
             </Stack>

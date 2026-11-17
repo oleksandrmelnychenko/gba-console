@@ -3,7 +3,8 @@ import type { Client } from '../../../clients/types'
 import { searchWizardClients } from './wizardClientStepApi'
 import type { WizardSalesPermissionFlow } from './wizardSaleHeaderApi'
 
-const MIN_QUERY_LENGTH = 3
+export const MIN_CLIENT_QUERY_LENGTH = 3
+const MIN_QUERY_LENGTH = MIN_CLIENT_QUERY_LENGTH
 
 export function useWizardClientSearch({ permissionFlow, onResults, onAppendResults }: {
   permissionFlow: WizardSalesPermissionFlow
