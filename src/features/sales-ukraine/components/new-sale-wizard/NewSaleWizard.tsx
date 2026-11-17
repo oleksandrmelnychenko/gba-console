@@ -1,4 +1,5 @@
 import { omitDocumentaryAgreementRead } from '../../../../shared/debt/documentaryDebtAging'
+import { useBrowserBackGuard } from '../../../../shared/router/useBrowserBackGuard'
 import { reuseSaleSnapshot } from '../../saleSnapshot'
 import { useSingleFlight } from '../../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../../shared/hooks/useBusyState'
@@ -645,6 +646,9 @@ function NewSaleWizardContent({
       setExitConfirmOpen(true)
     }
   }
+
+  // Browser Back must not silently drop the wizard (and leave its draft «Рахунок» behind): ask first.
+  useBrowserBackGuard(true, requestExit)
 
   async function confirmExit() {
     return runActionOnce('confirmExit', async () => {
