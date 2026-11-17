@@ -95,3 +95,34 @@
   background-color: var(--brand-orange);
   border-color: var(--brand-orange);
 }
+
+/* Phone width: stack the agreement row instead of squeezing the name, status and
+   currency to one or two letters (chaos C2-16 at 390px). */
+@media (max-width: 600px) {
+  .agreement-item__layout.mantine-Group-root {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .agreement-item__info {
+    flex: 1 1 100%;
+  }
+
+  .agreement-item__title.mantine-Group-root {
+    flex-wrap: wrap;
+  }
+
+  .agreement-item__name.mantine-Text-root {
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .agreement-item__actions.mantine-Group-root {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}

@@ -24,6 +24,7 @@ import { AgreementForm } from './AgreementForm'
 import { organizationHasVat } from './organizationVat'
 import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
 import { isAgreementPeriodInverted } from './clientAgreementDraft'
+import { agreementDocumentFileBaseName, agreementDocumentTitle, type AgreementDocumentKind } from './agreementDocumentName'
 import './client-agreements.css'
 import type {
   Agreement,
@@ -65,6 +66,9 @@ export type ClientAgreementsPanelProps = {
 
 type AgreementsPanelState = {
   downloadModalOpened: boolean
+  /** Which document the export dialog is for: the contract itself or its warranty terms. */
+  downloadKind: AgreementDocumentKind
+  downloadName: string
   formDraft: Agreement | null
   formError: string | null
   /** The field the error belongs to: it is shown under that field instead of at the bottom. */
@@ -77,7 +81,7 @@ type AgreementsPanelAction =
   | { type: 'closeDownload' }
   | { type: 'closeForm' }
   | { type: 'openCreate'; draft: Agreement }
-  | { type: 'openDownload' }
+  | { type: 'openDownload'; kind: AgreementDocumentKind; name: string }
   | { type: 'openEdit'; agreement: Agreement }
   | { type: 'patchDraft'; patch: Partial<Agreement> }
   | { type: 'setFormError'; error: string | null; field?: AgreementFormErrorField }
@@ -86,6 +90,8 @@ type AgreementFormErrorField = 'currency' | 'name' | 'toDate'
 
 const initialAgreementsPanelState: AgreementsPanelState = {
   downloadModalOpened: false,
+  downloadKind: 'contract',
+  downloadName: '',
   formDraft: null,
   formError: null,
   formErrorField: null,
@@ -109,7 +115,7 @@ function agreementsPanelReducer(state: AgreementsPanelState, action: AgreementsP
         formOpened: true,
       }
     case 'openDownload':
-      return { ...state, downloadModalOpened: true }
+      return { ...state, downloadKind: action.kind, downloadModalOpened: true, downloadName: action.name }
     case 'openEdit':
       return {
         ...state,
@@ -160,7 +166,7 @@ export function ClientAgreementsPanel({
   const canExportDocument = hasPermission(EXPORT_AGREEMENT_DOCUMENT_PERMISSION)
 
   const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
-  const { downloadModalOpened, formDraft, formError, formErrorField, formIsEdit, formOpened } = state
+  const { downloadKind, downloadModalOpened, downloadName, formDraft, formError, formErrorField, formIsEdit, formOpened } = state
   const formIsSourceManaged = isSourceManagedAgreement(formDraft)
 
   // Permissions refresh on window focus: close an open form once contract editing is revoked.
@@ -239,14 +245,14 @@ export function ClientAgreementsPanel({
     dispatch({ type: 'closeForm' })
   }
 
-  function handlePrint(netId: string) {
+  function handlePrint(netId: string, name: string) {
     onExportAgreementDocument?.(netId)
-    dispatch({ type: 'openDownload' })
+    dispatch({ kind: 'contract', name, type: 'openDownload' })
   }
 
-  function handleWarranty(netId: string) {
+  function handleWarranty(netId: string, name: string) {
     onExportAgreementWarrantyConditions?.(netId)
-    dispatch({ type: 'openDownload' })
+    dispatch({ kind: 'warranty', name, type: 'openDownload' })
   }
 
   return (
@@ -324,8 +330,8 @@ export function ClientAgreementsPanel({
                 originalClientName={clientAgreement.OriginalClientName}
                   onClick={() => onRowClick?.(clientAgreement)}
                 onEdit={() => openEdit(agreement)}
-                onPrint={() => agreement.NetUid && handlePrint(agreement.NetUid)}
-                onWarranty={() => agreement.NetUid && handleWarranty(agreement.NetUid)}
+                onPrint={() => agreement.NetUid && handlePrint(agreement.NetUid, agreement.Name || '')}
+                onWarranty={() => agreement.NetUid && handleWarranty(agreement.NetUid, agreement.Name || '')}
               />
             )
           })}
@@ -401,8 +407,9 @@ export function ClientAgreementsPanel({
         document={exportDocument}
         documentFormat="word"
         isLoading={isExporting}
+        fileBaseName={agreementDocumentFileBaseName(downloadKind, downloadName)}
         opened={downloadModalOpened}
-        title={t('Друк договору')}
+        title={t(agreementDocumentTitle(downloadKind))}
         onClose={() => dispatch({ type: 'closeDownload' })}
       />
     </Stack>
@@ -440,10 +447,10 @@ function BuyerAgreementItem({
       radius="md"
       onClick={onClick}
     >
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Stack gap={2} style={{ minWidth: 0 }}>
-          <Group gap={6} align="center" wrap="nowrap">
-            <Text fw={600} size="sm" truncate>
+      <Group className="agreement-item__layout" justify="space-between" align="center" wrap="nowrap">
+        <Stack className="agreement-item__info" gap={2} style={{ minWidth: 0 }}>
+          <Group className="agreement-item__title" gap={6} align="center" wrap="nowrap">
+            <Text className="agreement-item__name" fw={600} size="sm" truncate>
               {agreementName}
             </Text>
             {agreement.IsActive && (
@@ -468,7 +475,7 @@ function BuyerAgreementItem({
           </Group>
         </Stack>
 
-        <Group gap="xs" align="center" wrap="nowrap">
+        <Group className="agreement-item__actions" gap="xs" align="center" wrap="nowrap">
           {canExport && (
             <>
               <Tooltip label={t('Друк договору')} position="top">
