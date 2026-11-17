@@ -1,4 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { isConflictError, isNotFoundError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
 import {
   Alert,
   Button,
@@ -88,6 +90,9 @@ function OrganizationClientEditPageContent({
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [conflict, setConflict] = useValueState<string | null>(null)
+  const [isDeletedRecord, setDeletedRecord] = useValueState(false)
+  const [reloadKey, setReloadKey] = useValueState(0)
   const hasMutatedRef = useRef(false)
   // The NIP as stored: a legacy value is not re-checked unless the user edits it.
   const savedNipRef = useRef<string | null>(null)
@@ -100,20 +105,28 @@ function OrganizationClientEditPageContent({
         return
       }
 
+      setConflict(null)
+      setDeletedRecord(false)
+
       setLoading(true)
       setError(null)
 
       try {
-        const nextClient = await getOrganizationClient(netId)
+        const loadedClient = await getOrganizationClient(netId)
+        // A soft-deleted organization must not open as an editable card.
+        const nextClient = loadedClient?.Deleted === true ? null : loadedClient
 
         if (!cancelled) {
           savedNipRef.current = nextClient?.NIP ?? null
+          setDeletedRecord(loadedClient?.Deleted === true)
           setClient(nextClient)
         }
       } catch (loadError) {
         if (!cancelled) {
           setClient(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити організацію'))
+          setError(isNotFoundError(loadError)
+            ? null
+            : loadError instanceof Error ? loadError.message : t('Не вдалося завантажити організацію'))
         }
       } finally {
         if (!cancelled) {
@@ -127,7 +140,7 @@ function OrganizationClientEditPageContent({
     return () => {
       cancelled = true
     }
-  }, [netId, setClient, setError, setLoading, t])
+  }, [netId, reloadKey, setClient, setConflict, setDeletedRecord, setError, setLoading, t])
 
   useEffect(() => {
     let cancelled = false
@@ -238,6 +251,16 @@ function OrganizationClientEditPageContent({
         message: t('Організацію збережено'),
       })
     } catch (saveError) {
+      if (isConflictError(saveError)) {
+        setConflict(t('Організацію змінив інший користувач після того, як ви її відкрили. Перезавантажте картку; ваші незбережені зміни буде втрачено.'))
+        return
+      }
+      if (isNotFoundError(saveError)) {
+        setDeletedRecord(true)
+        setClient(null)
+        notifications.show({ color: 'red', message: t('Організацію видалено або не знайдено. Зміни не збережено.') })
+        return
+      }
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти організацію'))
     } finally {
       setSaving(false)
@@ -292,7 +315,7 @@ function OrganizationClientEditPageContent({
       onClose={closeSheet}
       footer={
         <Group gap="xs">
-          {permissions.canDelete && (
+          {permissions.canDelete && client && (
             <Button
               color="red"
               disabled={!client}
@@ -304,7 +327,7 @@ function OrganizationClientEditPageContent({
               {t('Видалити')}
             </Button>
           )}
-          {permissions.canEdit && (
+          {permissions.canEdit && client && (
             <Button
               color={CREATE_ACTION_COLOR}
               disabled={!client}
@@ -320,6 +343,7 @@ function OrganizationClientEditPageContent({
       }
     >
     <Stack className="app-compact-form" gap={10}>
+      {conflict && <StaleRecordAlert message={conflict} onReload={() => setReloadKey((key) => key + 1)} />}
       {error && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error}
@@ -366,7 +390,7 @@ function OrganizationClientEditPageContent({
         </form>
       ) : (
         <Card withBorder radius="md" padding="lg">
-          <Text c="dimmed">{t('Організацію не знайдено')}</Text>
+          <Text c="dimmed">{isDeletedRecord ? t('Організацію видалено') : t('Організацію не знайдено')}</Text>
         </Card>
       )}
 
