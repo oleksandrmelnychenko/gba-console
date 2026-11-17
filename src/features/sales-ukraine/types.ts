@@ -7,7 +7,7 @@ export type SalesUkraineStatusFilter =
   | 'TransporterChanged'
   | 'OrderClosed'
 
-export type SalesUkraineUserFilter = 'All' | 'Self'
+export type SalesUkraineUserFilter = 'All' | 'Self' | 'By'
 
 export type SalesUkraineFilters = {
   clientId: string
@@ -19,6 +19,8 @@ export type SalesUkraineFilters = {
   status: SalesUkraineStatusFilter
   to: string
   type: SalesUkraineUserFilter
+  /** Manager whose sales are listed when `type` is 'By'. */
+  managerNetId?: string | null
   value: string
 }
 

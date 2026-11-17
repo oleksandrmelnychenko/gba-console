@@ -67,6 +67,17 @@ const paymentDocumentOperation = {
   operationId: '9b316272-8d8c-4d6d-95a4-6eea9a79d7d6',
 }
 
+describe('sales registry manager filter', () => {
+  beforeEach(() => apiRequestMock.mockReset().mockResolvedValue([]))
+
+  it('lists the sales of one chosen manager (type By + netId)', async () => {
+    await getSalesUkraine({ clientId: '', forEcommerce: false, from: '2026-11-01', limit: 20, managerNetId: 'm-1', offset: 0,
+      organisationIds: [], status: 'all', to: '2026-11-17', type: 'By', value: '' })
+
+    expect(apiRequestMock.mock.calls[0]?.[1]?.query).toMatchObject({ netId: 'm-1', type: 'By' })
+  })
+})
+
 describe('sales Ukraine document request contracts', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()

@@ -52,16 +52,26 @@ export async function getSalesUkraine(filters: SalesUkraineFilters, signal?: Abo
       fromShipments: false,
       includeDetails: false,
       limit: filters.limit,
+      netId: filters.type === 'By' && filters.managerNetId ? filters.managerNetId : undefined,
       offset: filters.offset,
       organisationIds: filters.organisationIds.length ? filters.organisationIds : undefined,
       status: filters.status === 'all' ? 'All' : filters.status,
       to: filters.to,
-      type: filters.type,
+      type: filters.type === 'By' && !filters.managerNetId ? 'All' : filters.type,
       value: filters.value.trim() || undefined,
     },
   })
 
   return normalizeArray(result) as SalesUkraineSale[]
+}
+
+export type SalesUkraineManagerOption = { FirstName?: string; LastName?: string; NetUid?: string }
+
+/** Sales managers (everyone responsible for a live sale) for the registry «Менеджер» filter. */
+export async function getSalesUkraineManagers(): Promise<SalesUkraineManagerOption[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/managers/sales')
+
+  return normalizeArray(result) as SalesUkraineManagerOption[]
 }
 
 export async function getSalesUkraineOrganizations(): Promise<SalesUkraineOrganizationOption[]> {

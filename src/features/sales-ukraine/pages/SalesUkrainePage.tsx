@@ -73,11 +73,13 @@ import {
   getSalesUkraineDeliveryDetails,
   getSalesUkraineEditDetails,
   getSalesUkraineSaleDetails,
+  getSalesUkraineManagers,
   getSalesUkraineOrganizations,
   printSalesUkraineConsignmentNoteDocument,
   removeSalesUkraineConsignmentNoteSetting,
   unlockSale,
   updateSalesUkraineConsignmentNoteSetting,
+  type SalesUkraineManagerOption,
 } from '../api/salesUkraineApi'
 import { getSaleDiscountSummary } from '../saleDiscounts'
 import {
@@ -100,7 +102,6 @@ import type {
   SalesUkraineOrganizationOption,
   SalesUkraineSale,
   SalesUkraineStatusFilter,
-  SalesUkraineUserFilter,
 } from '../types'
 
 const LazyConsignmentNoteSettingsDrawer = lazy(() =>
@@ -189,10 +190,13 @@ type SaleRowActionsMenuState = {
   sale: SalesUkraineSale
 }
 
+const MANAGER_FILTER_PREFIX = 'by:'
+
 type FilterDraft = {
   clientId: string
   forEcommerce: boolean
   from: string
+  managerNetId: string | null
   onlyMine: boolean
   organisationIds: string[]
   status: SalesUkraineStatusFilter
@@ -378,6 +382,7 @@ function SalesUkrainePageContent() {
       clientId: '',
       forEcommerce: false,
       from: weekAgo,
+      managerNetId: null,
       onlyMine: false,
       organisationIds: [],
       status: 'all',
@@ -446,7 +451,8 @@ function SalesUkrainePageContent() {
       }, []),
       status: activeDraft.status,
       to: activeDraft.to,
-      type: activeDraft.onlyMine ? 'Self' : 'All',
+      managerNetId: activeDraft.managerNetId,
+      type: activeDraft.onlyMine ? 'Self' : activeDraft.managerNetId ? 'By' : 'All',
       value: activeDraft.value,
     }),
     [activeDraft, offset, pageSize],
@@ -524,12 +530,28 @@ function SalesUkrainePageContent() {
   }, [])
 
   const statusSelectData = useMemo(() => STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) })), [t])
+  const [salesManagers, setSalesManagers] = useValueState<SalesUkraineManagerOption[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    getSalesUkraineManagers()
+      .then((managers) => { if (!cancelled) setSalesManagers(managers) })
+      .catch(() => { /* the filter keeps «Усі / Тільки мої» */ })
+    return () => { cancelled = true }
+  }, [setSalesManagers])
+
   const managerSelectData = useMemo(
     () => [
       { value: 'All', label: t('Усі менеджери') },
       { value: 'Self', label: t('Тільки мої') },
+      ...salesManagers
+        .filter((manager) => manager.NetUid)
+        .map((manager) => ({
+          value: `${MANAGER_FILTER_PREFIX}${manager.NetUid}`,
+          label: [manager.LastName, manager.FirstName].filter(Boolean).join(' ') || String(manager.NetUid),
+        })),
     ],
-    [t],
+    [salesManagers, t],
   )
 
   useEffect(() => {
@@ -1182,9 +1204,14 @@ function SalesUkrainePageContent() {
                 label={t('Менеджер')}
                 scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
                 size="sm"
-                value={filterDraft.onlyMine ? 'Self' : 'All'}
+                searchable
+                value={filterDraft.onlyMine ? 'Self' : filterDraft.managerNetId ? `${MANAGER_FILTER_PREFIX}${filterDraft.managerNetId}` : 'All'}
                 onChange={(value) =>
-                  applyFilters({ ...filterDraft, onlyMine: ((value as SalesUkraineUserFilter | null) || 'All') === 'Self' })
+                  applyFilters({
+                    ...filterDraft,
+                    managerNetId: value?.startsWith(MANAGER_FILTER_PREFIX) ? value.slice(MANAGER_FILTER_PREFIX.length) : null,
+                    onlyMine: value === 'Self',
+                  })
                 }
               />
               <div className="app-filter-field sales-filter-control sales-filter-organisation-picker">
