@@ -217,7 +217,7 @@ describe('usePersistentSalesCartMutation', () => {
   })
 
   it('keeps a submitted 4xx unknown and permits only exact same-operation retry', async () => {
-    const validationError = new ApiError('quantity conflict', 400, null)
+    const validationError = new ApiError('quantity conflict', 409, null)
     updateOrderItemMock
       .mockRejectedValueOnce(validationError)
       .mockResolvedValueOnce(undefined)

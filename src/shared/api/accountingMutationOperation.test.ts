@@ -495,10 +495,10 @@ describe('accounting mutation operation', () => {
   it('keeps ambiguous 4xx and network failures unknown without blocking validation', () => {
     expect(classifyAccountingMutationFailure(
       new ApiError('validation', 400, null),
-    )).toBe('unknown-outcome')
+    )).toBe('definitive-failure')
     expect(classifyAccountingMutationFailure(
       new ApiError('validation', 422, null),
-    )).toBe('unknown-outcome')
+    )).toBe('definitive-failure')
     expect(classifyAccountingMutationFailure(
       new ApiError('domain conflict', 409, null),
     )).toBe('unknown-outcome')

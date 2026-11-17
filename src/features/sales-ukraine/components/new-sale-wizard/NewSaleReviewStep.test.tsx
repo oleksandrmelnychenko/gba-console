@@ -659,8 +659,20 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     await waitFor(() => expect(view.onCreated).toHaveBeenCalledOnce())
   })
 
+  it('does not lock the editor after a validation 400 (the server decided, the data must be corrected)', async () => {
+    mocks.updateSaleFromData.mockRejectedValueOnce(new ApiError('Коментар не може бути довшим за 450 символів.', 400, null))
+    renderStep()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({ message: 'Коментар не може бути довшим за 450 символів.' })))
+    expect(screen.queryByRole('button', { name: 'Перевірити результат' })).toBeNull()
+    expect(loadSalesPendingMutation(wizardFileScope)).toBeNull()
+    expect((screen.getByRole('button', { name: 'Зберегти' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
   it.each([
-    ['unmarked validation', 400],
+    ['request timeout', 408],
     ['existing operation conflict', 409],
     ['uncertain server result', 503],
   ] as const)('preserves the frozen request for %s without a blind new submission', async (_reason, status) => {

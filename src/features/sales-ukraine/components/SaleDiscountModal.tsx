@@ -1,5 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, NumberInput, Stack, Text, Textarea } from '@mantine/core'
+import { SALE_COMMENT_MAX_LENGTH } from '../salesFieldLimits'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -212,6 +213,7 @@ function SaleDiscountForm({
         autosize
         disabled={!canEditComment || discountMutation.hasPending}
         label={t('Коментар')}
+        maxLength={SALE_COMMENT_MAX_LENGTH}
         minRows={2}
         value={comment}
         onChange={(event) => setComment(event.currentTarget.value)}

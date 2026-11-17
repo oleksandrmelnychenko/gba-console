@@ -113,6 +113,7 @@ describe('SaleDiscountModal', () => {
 
     expect((amount as HTMLInputElement).disabled).toBe(true)
     expect((comment as HTMLTextAreaElement).disabled).toBe(false)
+    expect(comment.getAttribute('maxlength')).toBe('450')
     expect(screen.getByText('Відсоток знижки зафіксовано на етапі пакування. Можна змінити лише коментар')).toBeTruthy()
 
     fireEvent.change(comment, { target: { value: 'packaging approval' } })
@@ -226,6 +227,20 @@ describe('SaleDiscountModal', () => {
     expect(notificationsShowMock).not.toHaveBeenCalledWith(
       expect.objectContaining({ color: 'red' }),
     )
+  })
+
+  it('an unmarked validation 400 never leaves the comment locked', async () => {
+    const value = sale(0)
+    const target = value.Order?.OrderItems?.[1] ?? null
+    renderModal(value, target)
+    updateSaleDiscountMock.mockRejectedValueOnce(new ApiError('Коментар до знижки не може бути довшим за 450 символів.', 400, null))
+
+    fireEvent.change(screen.getByLabelText('Коментар'), { target: { value: 'item approval' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText('Коментар до знижки не може бути довшим за 450 символів.')).toBeTruthy()
+    expect(loadSalesPendingMutation({ context: 'sale-discount:sale-a:item-b', kind: 'sale-discount', userKey: 'net:user-a' })).toBe(null)
+    expect((screen.getByLabelText('Коментар') as HTMLTextAreaElement).disabled).toBe(false)
   })
 
   it('retries an unknown discount outcome with the same frozen body and operation key', async () => {

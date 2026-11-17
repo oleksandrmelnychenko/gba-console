@@ -9,9 +9,14 @@ import {
 } from './salesMutationOperation'
 
 describe('sales mutation failure classification', () => {
-  it.each([400, 409])('keeps an unmarked HTTP %s pending reconciliation', (status) => {
+  it.each([408, 409, 425, 429])('keeps an unmarked HTTP %s pending reconciliation', (status) => {
     expect(classifySalesMutationFailure(new ApiError('rejected', status, null)))
       .toBe('pending-reconciliation')
+  })
+
+  it.each([400, 403, 404, 413, 422])('settles an unmarked validation-class HTTP %s so no lock survives it', (status) => {
+    expect(classifySalesMutationFailure(new ApiError('Коментар до знижки не може бути довшим за 450 символів.', status, null)))
+      .toBe('definitive-failure')
   })
 
   it('accepts the explicit top-level pre-ledger payload marker on a 400', () => {

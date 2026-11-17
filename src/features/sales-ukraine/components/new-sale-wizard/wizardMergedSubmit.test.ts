@@ -134,14 +134,14 @@ describe('merged sale submit commit boundary', () => {
     expect(getWizardSplitOrderItems()).toEqual([])
   })
 
-  it('retains a pending merged context after an unmarked 400 until manual reconciliation', async () => {
+  it('retains a pending merged context after an unmarked 409 until manual reconciliation', async () => {
     const firstOperationId = '22222222-2222-4222-8222-222222222222'
     const nextOperationId = '33333333-3333-4333-8333-333333333333'
     const payload = { Comment: 'before correction', NetUid: 'sale-1' }
     const updateMergedSale = vi
       .fn()
       .mockRejectedValueOnce(new ApiError('response lost', 500, null))
-      .mockRejectedValueOnce(new ApiError('merged fingerprint rejected', 400, null))
+      .mockRejectedValueOnce(new ApiError('merged operation still in flight', 409, null))
       .mockResolvedValueOnce(undefined)
 
     const first = await advanceWizardMergedSaleSession({

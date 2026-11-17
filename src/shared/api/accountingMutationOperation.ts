@@ -181,10 +181,10 @@ export function snapshotImmutableAccountingPayload<T>(payload: T): T {
   return deepFreeze(JSON.parse(serialized) as T)
 }
 
-/** A failure is definitive only when the server explicitly proves that the
- * request did not enter the mutation ledger. Network failures, aborts,
- * unmarked 4xx responses, and all 5xx responses keep the operation key and
- * immutable payload snapshot pending for a safe retry.
+/** Network failures, aborts, all 5xx and the 4xx statuses that prove no decision (408, 409 operation
+ * in flight, 425, 429) keep the operation key and payload snapshot pending for a safe retry. Any other
+ * 4xx (validation 400/422, 401/403/404, 413) is the final answer of the server and never leaves an
+ * unknown-outcome lock; an explicit ledger marker settles any 4xx.
  */
 export function classifyAccountingMutationFailure(
   error: unknown,
@@ -199,10 +199,13 @@ export function classifyAccountingMutationFailure(
   const payloadState = getMutationLedgerState(error.payload)
 
   return headerState === ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED ||
-    payloadState === ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED
+    payloadState === ACCOUNTING_MUTATION_LEDGER_NOT_ENTERED ||
+    !AMBIGUOUS_CLIENT_ERROR_STATUSES.has(error.status)
     ? 'definitive-failure'
     : 'unknown-outcome'
 }
+
+const AMBIGUOUS_CLIENT_ERROR_STATUSES = new Set([408, 409, 425, 429])
 
 async function resolvePendingMutation<TPayload>(
   kind: string,

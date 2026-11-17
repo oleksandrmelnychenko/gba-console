@@ -62,10 +62,11 @@ export function normalizeSalesOperationNetUid(operationId: string): string {
   return normalized
 }
 
-/** A rejection is definitive only when the server explicitly proves that the
- * request either never entered its mutation ledger or was fully rolled back.
- * The accepted response contract is an `X-Mutation-Ledger-State` header or
- * top-level `MutationLedgerState` marker on a 4xx response.
+/** Only an unknown outcome may keep the operation locked for reconciliation: network failures,
+ * aborts, 5xx and the 4xx statuses that do not prove a decision (408 timeout, 409 operation still in
+ * flight, 425, 429). Any other 4xx (validation 400, 401/403/404, 413, 422...) is the final answer of
+ * the server: the data must be corrected, so it never leaves an unknown-outcome lock behind.
+ * An explicit `X-Mutation-Ledger-State` / `MutationLedgerState` marker settles any 4xx.
  */
 export function classifySalesMutationFailure(error: unknown): SalesMutationFailureStatus {
   if (error instanceof SalesMutationPreflightValidationError) {
@@ -80,10 +81,13 @@ export function classifySalesMutationFailure(error: unknown): SalesMutationFailu
   const payloadState = getMutationLedgerState(error.payload)
 
   return isDefinitiveLedgerState(headerState) ||
-    isDefinitiveLedgerState(payloadState)
+    isDefinitiveLedgerState(payloadState) ||
+    !AMBIGUOUS_CLIENT_ERROR_STATUSES.has(error.status)
     ? 'definitive-failure'
     : 'pending-reconciliation'
 }
+
+const AMBIGUOUS_CLIENT_ERROR_STATUSES = new Set([408, 409, 425, 429])
 
 function isDefinitiveLedgerState(value: string): boolean {
   return value === SALES_MUTATION_LEDGER_NOT_ENTERED ||
