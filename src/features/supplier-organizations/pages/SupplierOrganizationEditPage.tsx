@@ -14,14 +14,13 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Tabs,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { CircleAlert, File, FileSpreadsheet, FileText, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useRef } from 'react'
+import { Building2, CircleAlert, File, FileSpreadsheet, FileText, Landmark, Plus, RefreshCw, Save, Trash2, Upload, UserRound, X } from 'lucide-react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { usePermissions } from '../../auth/usePermissions'
@@ -364,54 +363,70 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
       transitionProps={{ duration: DRAWER_TRANSITION_MS }}
       onClose={closeDrawer}
       footer={
-        activeFormId && canSaveSupplier ? (
-          <Button color={CREATE_ACTION_COLOR} form={activeFormId} leftSection={<Save size={16} />} loading={isSaving} type="submit">
-            {t('Зберегти')}
-          </Button>
-        ) : null
+        <>
+          <Group gap="xs">
+            <Button color="gray" variant="default" disabled={isSaving || isDeleting} onClick={closeDrawer}>
+              {t('Скасувати')}
+            </Button>
+            {!isNew && (
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={36} variant="default" onClick={() => void reloadOrganization()}>
+                  <RefreshCw size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+          <Group gap="xs">
+            {!isNew && (
+              <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Supplier.Delete}>
+                <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
+                  {t('Видалити')}
+                </Button>
+              </PermissionGate>
+            )}
+            {activeFormId && canSaveSupplier ? (
+              <Button color={CREATE_ACTION_COLOR} form={activeFormId} leftSection={<Save size={16} />} loading={isSaving} type="submit">
+                {t('Зберегти')}
+              </Button>
+            ) : null}
+          </Group>
+        </>
       }
     >
-      <Stack className="app-compact-form" gap={10}>
-      <Tabs className="supplier-organization-edit-tabs-root" color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
-        <Tabs.List className="pill-tabs supplier-organization-edit-tabs">
-          <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
-          <Tabs.Tab value="agreements" disabled={tabsDisabled}>
-            {t('Договори')}
-          </Tabs.Tab>
-          <Tabs.Tab value="bank" disabled={tabsDisabled}>
-            {t('Банківські реквізити')}
-          </Tabs.Tab>
-          <Tabs.Tab value="contact" disabled={tabsDisabled}>
-            {t('Контактна особа')}
-          </Tabs.Tab>
-        </Tabs.List>
+      <Stack className="supplier-organization-sheet" gap={10}>
+      <div aria-label={t('Розділи постачальника')} className="pill-tabs supplier-organization-edit-tabs" role="tablist">
+        {SUPPLIER_EDIT_TABS.map((tab) => {
+          const TabIcon = tab.icon
+          const isActive = activeTab === tab.value
 
-        {!isNew && (
-          <Group gap="xs" justify="flex-end" mt="md">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={32} variant="default" onClick={() => void reloadOrganization()}>
-                <RefreshCw size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <PermissionGate permissionKey={PermissionKeys.SupplierOrganizations.Supplier.Delete}>
-              <Button color="red" leftSection={<Trash2 size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
-                {t('Видалити')}
-              </Button>
-            </PermissionGate>
-          </Group>
-        )}
+          return (
+            <button
+              key={tab.value}
+              aria-selected={isActive}
+              className={`pill-tab${isActive ? ' is-active' : ''}`}
+              disabled={tab.value !== 'general' && tabsDisabled}
+              role="tab"
+              type="button"
+              onClick={() => setActiveTab(tab.value)}
+            >
+              <TabIcon className="pill-tab-icon" size={16} aria-hidden="true" />
+              {t(tab.label)}
+            </button>
+          )
+        })}
+      </div>
 
         {error && (
-          <Alert color="red" icon={<CircleAlert size={18} />} mt="md" variant="light">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <Tabs.Panel value="general" pt="md">
+        <div role="tabpanel" hidden={activeTab !== 'general'}>
           <GeneralInfoForm key={`general-${organizationFormKey}`} organization={organization} onSubmit={saveGeneral} />
-        </Tabs.Panel>
+        </div>
 
-        <Tabs.Panel value="agreements" pt="md">
+        <div role="tabpanel" hidden={activeTab !== 'agreements'}>
           {activeTab === 'agreements' ? (
             <AgreementsPanel
               canCreateAgreement={canCreateAgreement}
@@ -426,16 +441,15 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
               setSaving={setSaving}
             />
           ) : null}
-        </Tabs.Panel>
+        </div>
 
-        <Tabs.Panel value="bank" pt="md">
+        <div role="tabpanel" hidden={activeTab !== 'bank'}>
           <BankDetailsForm key={`bank-${organizationFormKey}`} organization={organization} onSubmit={saveBank} />
-        </Tabs.Panel>
+        </div>
 
-        <Tabs.Panel value="contact" pt="md">
+        <div role="tabpanel" hidden={activeTab !== 'contact'}>
           <ContactPersonForm key={`contact-${organizationFormKey}`} organization={organization} onSubmit={saveContact} />
-        </Tabs.Panel>
-      </Tabs>
+        </div>
 
       <DeleteModal
         isSubmitting={isDeleting}
@@ -446,6 +460,34 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
       />
       </Stack>
     </AppDrawer>
+  )
+}
+
+const SUPPLIER_EDIT_TABS = [
+  { value: 'general', label: 'Загальна інформація', icon: Building2 },
+  { value: 'agreements', label: 'Договори', icon: FileText },
+  { value: 'bank', label: 'Банківські реквізити', icon: Landmark },
+  { value: 'contact', label: 'Контактна особа', icon: UserRound },
+] as const
+
+function SupplierSheetSection({
+  actions,
+  children,
+  title,
+}: {
+  actions?: ReactNode
+  children: ReactNode
+  title: string
+}) {
+  return (
+    <div className="supplier-organization-sheet-card">
+      <div className="supplier-organization-sheet-card-head">
+        <span className="supplier-organization-sheet-card-dot" aria-hidden="true" />
+        <span className="supplier-organization-sheet-card-title">{title}</span>
+        {actions ? <div className="supplier-organization-sheet-card-actions">{actions}</div> : null}
+      </div>
+      <div className="supplier-organization-sheet-card-body">{children}</div>
+    </div>
   )
 }
 
@@ -479,7 +521,7 @@ function GeneralInfoForm({
 
   return (
     <form id="supplier-organization-general-form" onSubmit={submit}>
-      <Card className="app-section-card supplier-organization-form-card" withBorder>
+      <SupplierSheetSection title={t('Основні дані')}>
         <Stack className="app-compact-form" gap={10}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--general">
             <TextInput
@@ -520,7 +562,7 @@ function GeneralInfoForm({
             />
           </Group>
         </Stack>
-      </Card>
+      </SupplierSheetSection>
     </form>
   )
 }
@@ -546,7 +588,7 @@ function BankDetailsForm({
 
   return (
     <form id="supplier-organization-bank-form" onSubmit={submit}>
-      <Card className="app-section-card supplier-organization-form-card" withBorder>
+      <SupplierSheetSection title={t('Банківські реквізити')}>
         <Stack className="app-compact-form" gap={10}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--bank">
             <TextInput label={t('Банківські реквізити')} value={values.Requisites} onChange={(event) => setField('Requisites', event.currentTarget.value)} />
@@ -561,7 +603,7 @@ function BankDetailsForm({
             <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
           </div>
         </Stack>
-      </Card>
+      </SupplierSheetSection>
     </form>
   )
 }
@@ -596,7 +638,7 @@ function ContactPersonForm({
 
   return (
     <form id="supplier-organization-contact-form" onSubmit={submit}>
-      <Card className="app-section-card supplier-organization-form-card" withBorder>
+      <SupplierSheetSection title={t('Контактна особа')}>
         <Stack className="app-compact-form" gap={10}>
           <div className="supplier-organization-form-grid supplier-organization-form-grid--contact">
             <TextInput label={t('ПІБ')} value={values.ContactPersonName} onChange={(event) => setField('ContactPersonName', event.currentTarget.value)} />
@@ -613,7 +655,7 @@ function ContactPersonForm({
             <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
           </div>
         </Stack>
-      </Card>
+      </SupplierSheetSection>
     </form>
   )
 }
@@ -772,19 +814,21 @@ function AgreementsPanel({
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Group gap="xs">
+    <SupplierSheetSection
+      title={t('Договори')}
+      actions={
+        <>
           <Badge color="blue" variant="light">
             {t('Договорів')}: {agreements.length}
           </Badge>
-        </Group>
-        {canCreateAgreement ? (
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
-            {t('Новий договір')}
-          </Button>
-        ) : null}
-      </Group>
+          {canCreateAgreement ? (
+            <Button color={CREATE_ACTION_COLOR} leftSection={<Plus size={16} />} size="xs" onClick={() => setEditor(createEmptyAgreement())}>
+              {t('Новий договір')}
+            </Button>
+          ) : null}
+        </>
+      }
+    >
       <DataTable
         columns={columns}
         data={agreements}
@@ -811,7 +855,7 @@ function AgreementsPanel({
           onSubmit={saveAgreement}
         />
       ) : null}
-    </Stack>
+    </SupplierSheetSection>
   )
 }
 

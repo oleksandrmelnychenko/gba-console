@@ -1,4 +1,52 @@
 .supplier-organization-form-sheet .supplier-organization-form-card { padding: 12px; }
+
+/* Section cards follow the user edit window: white card, thin border, mono heading with an orange dot. */
+.supplier-organization-sheet { min-width: 0; }
+.supplier-organization-sheet-card {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+.supplier-organization-sheet-card-head {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-9);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  gap: 8px;
+  letter-spacing: 0;
+  line-height: 1.2;
+  min-height: 40px;
+  padding: 6px 12px;
+}
+.supplier-organization-sheet-card-dot {
+  background: var(--brand-orange);
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 6px;
+  width: 6px;
+}
+.supplier-organization-sheet-card-title { min-width: 0; }
+.supplier-organization-sheet-card-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.supplier-organization-sheet-card-body { padding: 12px; }
+.supplier-organization-sheet .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
 .supplier-organization-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; align-items: start; }
 .supplier-organization-form-grid--general { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .supplier-organization-form-grid--general > * { grid-column: span 3; }
