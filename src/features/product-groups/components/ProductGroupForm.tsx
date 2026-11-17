@@ -9,6 +9,8 @@ type ProductGroupFormProps = {
   compact?: boolean
   disabled?: boolean
   isLoadingRootGroups?: boolean
+  /** Shown under «Назва» (e.g. the required-name error). */
+  nameError?: string | null
   productGroup: ProductGroup
   rootGroups: ProductGroup[]
   selectedRootNetUid: string | null
@@ -20,6 +22,7 @@ export function ProductGroupForm({
   compact = false,
   disabled = false,
   isLoadingRootGroups = false,
+  nameError = null,
   productGroup,
   rootGroups,
   selectedRootNetUid,
@@ -68,6 +71,7 @@ export function ProductGroupForm({
     <Stack className={`product-group-form app-compact-form${compact ? ' is-compact' : ''}`} gap={10}>
       <SimpleGrid className="product-group-form-names" cols={{ base: 1, xs: 2 }} spacing={10} verticalSpacing={10}>
         <TextInput
+          error={nameError}
           label={t('Назва')}
           maxLength={100}
           required

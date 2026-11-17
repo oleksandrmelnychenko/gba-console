@@ -79,6 +79,7 @@ function ProductGroupDetailPageContent() {
   const [selectedRootNetUid, setSelectedRootNetUid] = useValueState<string | null>(null)
   const [activeTab, setActiveTab] = useValueState<ProductGroupContentTab>('subGroups')
   const [error, setError] = useValueState<string | null>(null)
+  const [nameError, setNameError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(true)
@@ -163,6 +164,9 @@ function ProductGroupDetailPageContent() {
   }
 
   function setField<TKey extends keyof ProductGroup>(key: TKey, value: ProductGroup[TKey]) {
+    if (key === 'Name') {
+      setNameError(null)
+    }
     setFormProductGroup((currentProductGroup) =>
       currentProductGroup
         ? {
@@ -177,6 +181,7 @@ function ProductGroupDetailPageContent() {
     setFormProductGroup(productGroup)
     setSelectedRootNetUid(getCurrentRootProductGroup(productGroup)?.NetUid || null)
     setError(null)
+    setNameError(null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -193,7 +198,8 @@ function ProductGroupDetailPageContent() {
     const validationError = validateProductGroup(payload)
 
     if (validationError) {
-      setError(validationError)
+      // The only rule is the required name: say it under the field itself.
+      setNameError(validationError)
       return
     }
 
@@ -222,6 +228,10 @@ function ProductGroupDetailPageContent() {
 
   function closeSheet() {
     if (isSaving) {
+      return
+    }
+
+    if (isEdited && !window.confirm(t('Є незбережені зміни. Закрити без збереження?'))) {
       return
     }
 
@@ -280,13 +290,14 @@ function ProductGroupDetailPageContent() {
           </Group>
         </Card>
       ) : formProductGroup ? (
-        <form id="product-group-edit-form" onSubmit={handleSubmit}>
+        <form id="product-group-edit-form" noValidate onSubmit={handleSubmit}>
           <Card className="app-section-card product-group-detail-form-card" withBorder radius="md" padding={12}>
             <Text className="app-section-title" mb={10}>{t('Товарна група')}</Text>
             <ProductGroupForm
               compact
               disabled={!canEdit || isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
+              nameError={nameError}
               productGroup={formProductGroup}
               rootGroups={rootGroupsForForm}
               selectedRootNetUid={selectedRootNetUid}
