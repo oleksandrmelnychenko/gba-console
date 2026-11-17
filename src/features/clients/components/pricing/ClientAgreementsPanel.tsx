@@ -14,7 +14,7 @@ import {
 } from '@mantine/core'
 import { Check, CircleAlert, CircleHelp, Pencil, Plus, Printer, ShieldCheck, Trash2 } from 'lucide-react'
 import { DocumentExportModal } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
-import { useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { AppModal, AppModalFooter } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -152,6 +152,13 @@ export function ClientAgreementsPanel({
   const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
   const { downloadModalOpened, formDraft, formError, formIsEdit, formOpened } = state
   const formIsSourceManaged = isSourceManagedAgreement(formDraft)
+
+  // Permissions refresh on window focus: close an open form once contract editing is revoked.
+  useEffect(() => {
+    if (formOpened && !canEdit) {
+      dispatch({ type: 'closeForm' })
+    }
+  }, [canEdit, formOpened])
 
   const isVatAccountingHidden = useMemo(
     () => !(formDraft?.IsAccounting),

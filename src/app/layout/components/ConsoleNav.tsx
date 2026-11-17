@@ -61,7 +61,7 @@ type ConsoleNavProps = {
 }
 
 export function ConsoleNav({ mode = 'all', availableWidth }: ConsoleNavProps) {
-  const { error, getNodePath, isLoading, modules, selectedModule, selectedNode } = useNavigation()
+  const { error, getNodePath, isLoading, visibleModules: modules, selectedModule, selectedNode } = useNavigation()
   const navigate = useGuardedNavigate()
   const { t } = useI18n()
 

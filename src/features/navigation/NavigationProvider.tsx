@@ -5,6 +5,7 @@ import { useAuth } from '../auth/useAuth'
 import { getNavigation } from './api/navigationApi'
 import { NavigationContext, type NavigationContextValue } from './NavigationContext'
 import {
+  filterNavigationByRouteAccess,
   findNavigationMatch,
   getModuleKey,
   getNavigationNodePath,
@@ -77,7 +78,12 @@ function navigationReducer(state: NavigationState, action: NavigationAction): Na
   }
 }
 
-export function NavigationProvider({ children }: PropsWithChildren) {
+type NavigationProviderProps = PropsWithChildren<{
+  /** Page permission required by a console route, if any. */
+  getRoutePermissionKey?: (path: string) => string | undefined
+}>
+
+export function NavigationProvider({ children, getRoutePermissionKey }: NavigationProviderProps) {
   const {
     hasPermission,
     isAuthenticated,
@@ -136,6 +142,18 @@ export function NavigationProvider({ children }: PropsWithChildren) {
     ? state.error
     : null
   const availableModules = useMemo(() => (isMenuReady ? state.modules : []), [isMenuReady, state.modules])
+  const visibleModules = useMemo(
+    () =>
+      getRoutePermissionKey
+        ? filterNavigationByRouteAccess(availableModules, (path) => {
+          const permissionKey = getRoutePermissionKey(path)
+          return !permissionKey || hasPermission(permissionKey)
+        })
+        : availableModules,
+    // permissionSetKey changes whenever the permission set does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [availableModules, getRoutePermissionKey, permissionSetKey],
+  )
   const routerLocationState = routerLocation.state as NavigationLocationState | null
   const navigationLocation = routerLocationState?.backgroundLocation || routerLocation
   const routerTarget = `${navigationLocation.pathname}${navigationLocation.search}`
@@ -166,13 +184,14 @@ export function NavigationProvider({ children }: PropsWithChildren) {
       isLoading: isPermissionsLoading
         || (canLoadMenu && !isMenuReady && !currentError),
       modules: availableModules,
+      visibleModules,
       selectedModule,
       selectedNode: activeMatch?.node || null,
       getNodePath: getNavigationNodePath,
       isNodeActive: (node) => isNavigationNodeActive(node, routerTarget),
       selectModule: (module) => dispatch({ type: 'moduleSelected', moduleKey: getModuleKey(module) }),
     }),
-    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, isPermissionsLoading, routerTarget, selectedModule],
+    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, isPermissionsLoading, routerTarget, selectedModule, visibleModules],
   )
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>

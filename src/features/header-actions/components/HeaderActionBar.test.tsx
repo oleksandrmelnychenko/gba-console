@@ -13,6 +13,9 @@ vi.mock('../../ai-fleet/components/AiFleetControl', () => ({
 vi.mock('./ProductWriteOffRulesControl', () => ({
   ProductWriteOffRulesControl: () => null,
 }))
+vi.mock('./ResaleControl', () => ({
+  ResaleControl: () => <button type="button">Перепродаж (Resale)</button>,
+}))
 vi.mock('./SyncControl', () => ({
   SyncControl: () => <button type="button">1С синхронізація</button>,
 }))

@@ -54,18 +54,23 @@ export function transformUiActions(code, filename, runtimePath) {
   return changed ? { code: result.outputText, map: result.sourceMapText ? JSON.parse(result.sourceMapText) : null } : null
 }
 
+// Vite ids always use forward slashes, while path.resolve returns backslashes on
+// Windows. Compare normalized forward-slash paths so the guard runs there too.
+const toPosixPath = value => path.resolve(value).split(path.sep).join('/')
+
 /** Apply equally in development, production and Vitest. Never instrument dependencies. */
 export function uiActionGuardPlugin(root = process.cwd()) {
-  const sourceRoot = path.resolve(root, 'src') + path.sep
-  const runtimePath = path.resolve(sourceRoot, 'shared/ui/action-guard/uiActionGuard.ts')
+  const sourceRoot = toPosixPath(path.resolve(root, 'src')) + '/'
+  const runtimePath = toPosixPath(path.resolve(root, 'src', 'shared/ui/action-guard/uiActionGuard.ts'))
+  const testRoot = sourceRoot + 'test/'
   return {
     name: 'app-ui-action-guard',
     enforce: 'pre',
     transform(code, id) {
-      const filename = id.split('?')[0]
+      const filename = toPosixPath(id.split('?')[0])
       if (!filename.startsWith(sourceRoot) || !/\.[jt]sx?$/.test(filename)
         || filename === runtimePath || /\.(test|spec)\.[jt]sx?$/.test(filename)
-        || filename.startsWith(path.join(sourceRoot, 'test') + path.sep)) return null
+        || filename.startsWith(testRoot)) return null
       return transformUiActions(code, filename, runtimePath)
     },
   }

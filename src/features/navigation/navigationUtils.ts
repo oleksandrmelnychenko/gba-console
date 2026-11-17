@@ -222,6 +222,34 @@ export function findNavigationMatch(modules: NavigationModule[], pathname: strin
   return activeMatch
 }
 
+/**
+ * Hides menu entries whose own page the user cannot open. Only affects what the
+ * menu shows; route access still uses the unfiltered modules, because a node can
+ * also grant aliased routes (for example /sales/ukraine/all → /resales).
+ */
+export function filterNavigationByRouteAccess(
+  modules: NavigationModule[],
+  canOpenRoute: (path: string) => boolean,
+): NavigationModule[] {
+  const filterNodes = (nodes: NavigationNode[] | undefined): NavigationNode[] =>
+    (nodes || []).flatMap((node) => {
+      const children = filterNodes(node.Children)
+      const hasOwnRoute = Boolean(node.Route)
+      const isOpenable = hasOwnRoute && canOpenRoute(normalizePath(node.Route))
+
+      if (!isOpenable && children.length === 0) {
+        return []
+      }
+
+      return [{ ...node, Children: children }]
+    })
+
+  return modules.flatMap((module) => {
+    const children = filterNodes(module.Children)
+    return children.length > 0 ? [{ ...module, Children: children }] : []
+  })
+}
+
 export function isNavigationPathAllowed(modules: NavigationModule[], pathname: string): boolean {
   const normalizedPath = normalizePath(pathname)
 

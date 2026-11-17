@@ -287,6 +287,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
   const canChangeDeliveryDocumentStatus = hasPermission(PERMISSION_CHANGE_DELIVERY_DOCUMENT_STATUS)
   const canCreateProForm = hasPermission(PERMISSION_CREATE_PROFORM)
   const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && hasSupplyProForm(order)
+  const canAddInvoice = canOpenInvoices && hasPermission(PermissionKeys.OrdersUkraine.LogisticWay.AddInvoice)
   const canOpenProductIncome = canOpenDirectProductIncomeFromOrder(
     order,
     hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME),
@@ -923,7 +924,7 @@ function SupplyUkraineDirectOrderDetailPageContent() {
 
           <Card className="supply-detail-card" withBorder radius="md" padding={12}>
             <Group gap="xs" wrap="wrap">
-              {canOpenInvoices && (
+              {canAddInvoice && (
                 <Button
                   color={CREATE_ACTION_COLOR}
                   leftSection={<Plus size={16} />}

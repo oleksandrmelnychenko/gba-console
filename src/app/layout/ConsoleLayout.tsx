@@ -1,6 +1,7 @@
 import { AppShell } from '@mantine/core'
 import { Outlet, useLocation } from 'react-router-dom'
 import { NavigationProvider } from '../../features/navigation/NavigationProvider'
+import { getMainRoutePermissionKey } from '../routes/overlayConsoleRoutes'
 import { PageHeaderActionsProvider } from '../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleFooter } from './components/ConsoleFooter'
 import { ConsoleHeader } from './components/ConsoleHeader'
@@ -14,7 +15,7 @@ export function ConsoleLayout() {
   const showFooter = !isBudgetCartRoute(pathname)
 
   return (
-    <NavigationProvider>
+    <NavigationProvider getRoutePermissionKey={getMainRoutePermissionKey}>
       <PageHeaderActionsProvider>
         <AppShell
           header={{ height: 108 }}

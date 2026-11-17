@@ -231,3 +231,17 @@
 }
 .app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab[data-active] { background: var(--brand-orange); color: white; }
 .app-drawer .client-structure-tabs-root > .client-structure-tabs > .mantine-Tabs-tab:not([data-active]):hover { background: var(--mantine-color-gray-1); }
+
+.client-edit-title-type.is-clickable {
+  border: 0;
+  cursor: pointer;
+}
+
+.client-edit-title-type.is-clickable:hover {
+  filter: brightness(0.95);
+}
+
+.client-edit-title-type.is-clickable:focus-visible {
+  outline: 2px solid var(--mantine-color-brand-5, currentColor);
+  outline-offset: 1px;
+}

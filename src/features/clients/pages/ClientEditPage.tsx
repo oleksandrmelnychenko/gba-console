@@ -1092,7 +1092,7 @@ export function ClientEditPage() {
             displayCode={folderTree?.code}
             displayName={folderTree?.name}
             onToggleActive={(active) => setField('IsActive', active)}
-            onTypeClick={() => setTypePanelOpened(true)}
+            onTypeClick={rootSourceManaged ? undefined : () => setTypePanelOpened(true)}
           />
         ) : t('Редагування клієнта')
       }
@@ -1311,6 +1311,7 @@ function ClientEditTitle({
   displayCode,
   displayName,
   onToggleActive,
+  onTypeClick,
 }: {
   canEditActive: boolean
   canEditType: boolean
@@ -1356,11 +1357,23 @@ function ClientEditTitle({
         )}
       </Group>
       <Group gap="xs" mt={4}>
-        {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-          <Badge className="app-role-pill" variant="light">
+        {canEditType && onTypeClick ? (
+          <Badge
+            aria-label={t('Змінити тип клієнта')}
+            className="app-role-pill client-edit-title-type is-clickable"
+            component="button"
+            title={t('Змінити тип клієнта')}
+            type="button"
+            variant="light"
+            onClick={onTypeClick}
+          >
             {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
           </Badge>
-        )}
+        ) : client.ClientInRole?.ClientTypeRole?.Name ? (
+          <Badge className="app-role-pill" variant="light">
+            {client.ClientInRole.ClientTypeRole.Name}
+          </Badge>
+        ) : null}
         {client.IsTemporaryClient && (
           <Badge className="app-role-pill" variant="light">
             {t('З інтернет-магазину')}

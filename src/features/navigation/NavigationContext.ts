@@ -5,6 +5,8 @@ export type NavigationContextValue = {
   error: Error | null
   isLoading: boolean
   modules: NavigationModule[]
+  /** Menu entries the user can open; use for rendering the menu. */
+  visibleModules: NavigationModule[]
   selectedModule: NavigationModule | null
   selectedNode: NavigationNode | null
   getNodePath: (node: NavigationNode) => string

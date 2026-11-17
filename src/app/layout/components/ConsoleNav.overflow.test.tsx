@@ -16,7 +16,7 @@ const modules: NavigationModule[] = ['Продажі', 'Замовлення', '
 const realRect = HTMLElement.prototype.getBoundingClientRect
 
 function select(index: number) {
-  navigation.value = { error: null, isLoading: false, modules, selectedModule: modules[index], selectedNode: modules[index].Children[0],
+  navigation.value = { error: null, isLoading: false, modules, visibleModules: modules, selectedModule: modules[index], selectedNode: modules[index].Children[0],
     getNodePath: (item: NavigationNode) => item.Route }
 }
 
@@ -69,7 +69,7 @@ it('keeps the active module on screen with its highlight', () => {
 it('labels the reports submenu Catalogue while preserving the reports module and route', () => {
   const reportNode = { Id: 200, Module: 'Звіти', Route: '/reports/stocks' }
   const reportModule = { Id: 20, Module: 'Звіти', Children: [reportNode] }
-  navigation.value = { error: null, isLoading: false, modules: [reportModule], selectedModule: reportModule, selectedNode: reportNode,
+  navigation.value = { error: null, isLoading: false, modules: [reportModule], visibleModules: [reportModule], selectedModule: reportModule, selectedNode: reportNode,
     getNodePath: (item: NavigationNode) => item.Route }
   render(<MantineProvider env="test"><I18nProvider><ConsoleNav /></I18nProvider></MantineProvider>)
   expect(screen.getByRole('button', { name: 'Звіти' })).toBeTruthy()

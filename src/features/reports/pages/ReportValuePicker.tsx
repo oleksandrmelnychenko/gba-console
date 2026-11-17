@@ -54,13 +54,19 @@ export function ReportValuePicker({
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
   const failed = !selectedOnly && !busy && !!lookupError
   const retrying = failed && !!onRetry
-  const serverLabels = useRef(new Map<string, string>())
-  for (const item of data) serverLabels.current.set(item.value, item.label)
-  const restored = selected.filter(item => !serverLabels.current.has(item.value))
+  // Labels the server has returned so far, kept across searches (derived state, not a render-time ref).
+  const [seenLabels, setSeenLabels] = useState(() => mergeServerLabels(new Map(), data))
+  const [seenData, setSeenData] = useState(data)
+  if (seenData !== data) {
+    setSeenData(data)
+    setSeenLabels(previous => mergeServerLabels(previous, data))
+  }
+  const serverLabels = seenData === data ? seenLabels : mergeServerLabels(seenLabels, data)
+  const restored = selected.filter(item => !serverLabels.has(item.value))
   const storedShared = previewSharedNames(restored.map(item => item.label))
   const selectedItems = new Set<ReportValueOption>(selected)
   const shown = (item: ReportValueOption) => ownSelectedLabels && selectedItems.has(item) ? previewCaptionText(item.label, storedShared)
-    : available.get(item.value)?.label ?? serverLabels.current.get(item.value) ?? previewCaptionText(item.label, storedShared)
+    : available.get(item.value)?.label ?? serverLabels.get(item.value) ?? previewCaptionText(item.label, storedShared)
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))
@@ -158,4 +164,10 @@ export function ReportValuePicker({
         ? <Text size="xs" c="dimmed">{t('ще')} {selected.length - REPORT_VALUE_VISIBLE_PILLS}</Text> : null}
     </Group> : null}
   </Stack>
+}
+
+function mergeServerLabels(previous: Map<string, string>, data: ReportValueOption[]): Map<string, string> {
+  const next = new Map(previous)
+  for (const item of data) next.set(item.value, item.label)
+  return next
 }

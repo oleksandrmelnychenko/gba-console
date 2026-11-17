@@ -53,6 +53,7 @@ function renderReports(path: string) {
             error: null,
             isLoading: false,
             modules,
+            visibleModules: modules,
             selectedModule: modules[0] ?? null,
             selectedNode: modules[0]?.Children[0] ?? null,
             getNodePath: getNavigationNodePath,

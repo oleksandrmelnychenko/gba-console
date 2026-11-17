@@ -60,6 +60,7 @@ function renderRolesRoute(modules: NavigationModule[]) {
               isLoading: false,
               isNodeActive: () => false,
               modules,
+              visibleModules: modules,
               selectedModule: null,
               selectedNode: null,
               selectModule: () => undefined,

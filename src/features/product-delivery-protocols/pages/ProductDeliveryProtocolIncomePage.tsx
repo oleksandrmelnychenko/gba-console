@@ -232,6 +232,7 @@ type ProductIncomeSource = 'delivery-protocol' | 'direct-supply-order'
 
 type ProductIncomePermissions = {
   capitalize: string
+  deleteColumn: string
   downloadDocument: string
   editPlacement: string
   open: string
@@ -241,6 +242,8 @@ type ProductIncomePermissions = {
 
 const DELIVERY_PROTOCOL_INCOME_PERMISSIONS: ProductIncomePermissions = {
   capitalize: PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize,
+  // Delivery protocols have no separate delete key: removing a column is a placement edit.
+  deleteColumn: PermissionKeys.ProductDeliveryProtocols.ProductIncome.EditPlacement,
   downloadDocument: PermissionKeys.ProductDeliveryProtocols.ProductIncome.DownloadDocument,
   editPlacement: PermissionKeys.ProductDeliveryProtocols.ProductIncome.EditPlacement,
   open: PermissionKeys.ProductDeliveryProtocols.ProductIncome.Open,
@@ -250,6 +253,7 @@ const DELIVERY_PROTOCOL_INCOME_PERMISSIONS: ProductIncomePermissions = {
 
 const DIRECT_SUPPLY_ORDER_INCOME_PERMISSIONS: ProductIncomePermissions = {
   capitalize: PermissionKeys.OrdersUkraine.ProductIncome.Capitalize,
+  deleteColumn: PermissionKeys.OrdersUkraine.ProductIncome.Delete,
   downloadDocument: PermissionKeys.OrdersUkraine.Order.DownloadDocuments,
   editPlacement: PermissionKeys.OrdersUkraine.ProductIncome.Add,
   open: PermissionKeys.OrdersUkraine.Order.OpenProductIncome,
@@ -896,6 +900,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   const confirmRemoveColumn = useCallback(() => {
     if (
       !hasPermission(permissions.editPlacement)
+      || !hasPermission(permissions.deleteColumn)
       || !columnToRemove
       || !canUseIncome
       || !packingList
@@ -918,7 +923,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     }
   }, [
     canUseIncome, columnToRemove, hasPermission, invoice, isDirty, isSaving, packingList,
-    permissions.editPlacement, persistPackingList, setColumnToRemove, setPackingList,
+    permissions.deleteColumn, permissions.editPlacement, persistPackingList, setColumnToRemove, setPackingList,
   ])
 
   const handleMoveRemnants = useCallback(
@@ -1261,6 +1266,7 @@ function PzDocumentDownloadModal({
 type ProtocolIncomeModel = ReturnType<typeof useProtocolIncomeModel>
 
 type ProductIncomeColumnsParams = {
+  canDeleteColumns: boolean
   canEditPlacements: boolean
   canUseIncome: boolean
   isPlaced: boolean
@@ -1268,6 +1274,7 @@ type ProductIncomeColumnsParams = {
 }
 
 function useProductIncomeColumns({
+  canDeleteColumns,
   canEditPlacements,
   canUseIncome,
   isPlaced,
@@ -1406,7 +1413,7 @@ function useProductIncomeColumns({
       model.packingList?.DynamicProductPlacementColumns || []
     ).map((column) => {
       const key = columnKey(column)
-      const canDelete = canEditPlacements && canUseIncome && !isPlaced && !columnHasAppliedPlacements(column)
+      const canDelete = canDeleteColumns && canUseIncome && !isPlaced && !columnHasAppliedPlacements(column)
 
       return {
         id: `dynamic-${key}`,
@@ -1489,7 +1496,7 @@ function useProductIncomeColumns({
     })
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [canEditPlacements, canUseIncome, isPlaced, model, t])
+  }, [canDeleteColumns, canEditPlacements, canUseIncome, isPlaced, model, t])
 }
 
 export function ProductDeliveryProtocolIncomePage() {
@@ -1569,6 +1576,7 @@ function PackingListProductIncomePageContent({
     && Boolean(model.packingList)
     && hasPermission(permissions.editPlacement)
   const canUpdateReadiness = canUseIncome && hasPermission(permissions.updateReadiness)
+  const canDeleteColumns = canEditPlacements && hasPermission(permissions.deleteColumn)
   const filteredGridRows = useMemo(() => {
     const value = vendorCodeFilter.trim().toLowerCase()
 
@@ -1582,6 +1590,7 @@ function PackingListProductIncomePageContent({
   }, [model.gridRows, vendorCodeFilter])
 
   const columns = useProductIncomeColumns({
+    canDeleteColumns,
     canEditPlacements,
     canUseIncome,
     isPlaced,
@@ -1639,6 +1648,7 @@ function PackingListProductIncomePageContent({
       />
       <ProductIncomeDialogs
         canCarryOutDynamicIncome={canCarryOutDynamicIncome}
+        canDeleteColumns={canDeleteColumns}
         canEditPlacements={canEditPlacements}
         canUseIncome={canUseIncome}
         model={model}
@@ -2028,6 +2038,7 @@ function ProductIncomeSummaryMetric({ label, value, currency }: { label: string;
 
 type ProductIncomeDialogsProps = {
   canCarryOutDynamicIncome: boolean
+  canDeleteColumns: boolean
   canEditPlacements: boolean
   canUseIncome: boolean
   model: ProtocolIncomeModel
@@ -2035,6 +2046,7 @@ type ProductIncomeDialogsProps = {
 
 function ProductIncomeDialogs({
   canCarryOutDynamicIncome,
+  canDeleteColumns,
   canEditPlacements,
   canUseIncome,
   model,
@@ -2079,7 +2091,7 @@ function ProductIncomeDialogs({
           </Button>
           <Button
             color="red"
-            disabled={!canEditPlacements || !canUseIncome || model.isSaving}
+            disabled={!canDeleteColumns || !canUseIncome || model.isSaving}
             loading={model.isSaving}
             onClick={model.confirmRemoveColumn}
           >
