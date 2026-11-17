@@ -86,17 +86,18 @@ export function CurrentVparivanieRegionalPanel({ dataset, request: form, enabled
 
   const handledHistory = useRef(0)
   const runHistory = useEffectEvent(async (run: { token: number; excel: boolean }) => {
-    handledHistory.current = run.token
     const next = await read(run.excel)
+    if (next === undefined) return
+    handledHistory.current = run.token
     if (next && run.excel) await exportDocument('xlsx', next)
   })
   useEffect(() => {
-    if (!historyRun || historyRun.token === handledHistory.current || !dataset || !available || !enabled || disabled || rejected) return
+    if (!historyRun || historyRun.token === handledHistory.current || !dataset || !available || !enabled || disabled || rejected || busy) return
     void runHistory(historyRun)
-  }, [historyRun, dataset, available, enabled, disabled, rejected])
+  }, [historyRun, dataset, available, enabled, disabled, rejected, busy, requestKey])
 
-  async function read(excelIntent = false): Promise<CurrentVparivanieRegionalResult | null> {
-    if (!dataset || !available || !enabled || disabled || busy || rejected) return null
+  async function read(excelIntent = false): Promise<CurrentVparivanieRegionalResult | null | undefined> {
+    if (!dataset || !available || !enabled || disabled || busy || rejected) return undefined
     active.current?.abort()
     const controller = new AbortController(); active.current = controller
     setBusyKey(requestKey); setSnapshot(null); setFailure(null)
@@ -104,10 +105,10 @@ export function CurrentVparivanieRegionalPanel({ dataset, request: form, enabled
       const next = excelIntent ? await readCurrentVparivanieRegional(dataset, request, controller.signal, true)
         : await readCurrentVparivanieRegional(dataset, request, controller.signal)
       if (!controller.signal.aborted) setSnapshot({ key: requestKey, result: next })
-      return controller.signal.aborted ? null : next
+      return controller.signal.aborted ? undefined : next
     } catch (cause) {
-      if (!controller.signal.aborted) setFailure({ key: requestKey,
-        message: cause instanceof Error ? cause.message : 'Не вдалося сформувати регіональну форму.' })
+      if (controller.signal.aborted) return undefined
+      setFailure({ key: requestKey, message: cause instanceof Error ? cause.message : 'Не вдалося сформувати регіональну форму.' })
     } finally { if (!controller.signal.aborted) setBusyKey(null) }
     return null
   }

@@ -117,3 +117,18 @@ it('builds the regional form from history once, marking an Excel request so it i
   await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(2))
   expect(vi.mocked(readCurrentVparivanieRegional).mock.calls[1]).toEqual([regionalDataset, request, expect.any(AbortSignal), true])
 })
+
+it('forms a reopened history entry again when the settings settle after the first call started', async () => {
+  vi.clearAllMocks()
+  vi.mocked(readCurrentVparivanieRegional).mockImplementationOnce((_dataset, _request, signal) => new Promise((_, reject) => {
+    signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+  })).mockResolvedValueOnce(regionalResult())
+  const view = (request: ReportRequestBody) => <MantineProvider env="test"><I18nProvider><CurrentVparivanieRegionalPanel dataset={regionalDataset}
+    request={request} enabled disabled={false} historyRun={{ token: 1, excel: false }} /></I18nProvider></MantineProvider>
+  const first = regionalRequest()
+  const { rerender } = render(view(first))
+  await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(1))
+  rerender(view({ ...first, selections: [...first.selections, exactSelection(21, 2, ['2'])] }))
+  await waitFor(() => expect(readCurrentVparivanieRegional).toHaveBeenCalledTimes(2))
+  expect(await screen.findByRole('rowheader', { name: 'Товар А' })).toBeTruthy()
+})

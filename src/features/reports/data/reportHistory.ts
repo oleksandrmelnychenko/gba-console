@@ -171,7 +171,7 @@ export async function verifyHistoryValues(source: ReportRequestBody, search: His
     const field = selection.SelectedField.Type
     if (!selection.Values?.length || !await probe(field)) return structuredClone(selection)
     const values = await Promise.all(selection.Values.map(async value => {
-      const wanted = new Set(identities([value.Value, value.Data?.Id, value.Data?.NetUid]))
+      const wanted = new Set(identities([value.Value, value.Data?.Id, value.Data?.id, value.Data?.NetUid]))
       if (!wanted.size) return true
       const texts = [...new Set([value.Data?.Name, value.Name, value.Data?.Code, value.Data?.FullName]
         .filter((text): text is string => typeof text === 'string' && text.trim() !== '').map(text => text.trim()))]
@@ -179,7 +179,7 @@ export async function verifyHistoryValues(source: ReportRequestBody, search: His
       for (const text of texts) {
         let items: ReportEntity[]
         try { items = await search(field, text) } catch { uncertain = true; break }
-        if (items.some(item => identities([item.Id, item.NetUid, item.Value]).some(id => wanted.has(id)))) return true
+        if (items.some(item => identities([item.Id, item.id, item.NetUid, item.Value]).some(id => wanted.has(id)))) return true
         if (items.length >= limit) uncertain = true
       }
       if (!uncertain) dropped.push(`${label(selection)}: ${value.Name}`)

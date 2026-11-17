@@ -92,6 +92,7 @@ import { Suspense, type FormEvent, type ReactNode, useCallback, useEffect, useEf
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { getReportHistorySettings, type ReportHistorySettings } from '../api/reportHistoryApi'
+import { searchAnalysisValues } from '../api/currentVparivanieAnalysisApi'
 import { clearReportHandoff, droppedSettingsLine, historyReportName, peekReportHandoff, sanitizeHistorySettings, verifyHistoryValues, type ReportHistoryAction, type ReportHistoryRun } from '../data/reportHistory'
 import type { MovementHistoryRun } from './WarehouseStockMovementPanel'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -725,7 +726,10 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     const lookupMode = (nextDataset.DataSource === 35 || nextDataset.DataSource === 38) && nextDataset.profitReadModeLookup === true
       && (requestProfitReadMode(structural.data) === 0 || requestProfitReadMode(structural.data) === 1) ? requestProfitReadMode(structural.data) as 0 | 1 : undefined
     const fieldLabels = datasetFilters(nextDataset, structural.data)
-    const checked = await verifyHistoryValues(structural.data, (field, text) => loadSelectionLookupOptions(nextDataset.DataSource, field, text,
+    const analysisLookup = nextDataset.DataSource === 39 && !!currentVparivanieAnalysisCapability(nextDataset)
+    const checked = await verifyHistoryValues(structural.data, (field, text) => analysisLookup
+      ? searchAnalysisValues(field, text, structural.data.from, structural.data.to).then(items => items.map(item => item.data))
+      : loadSelectionLookupOptions(nextDataset.DataSource, field, text,
       structural.data.from, structural.data.to, undefined, undefined, reportLookupSourceWorld(nextDataset.DataSource, requestGroupedSettlementPeriod(structural.data)),
       lookupMode), LOOKUP_SEARCH_LIMIT,
       selection => fieldLabels.find(option => option.field.Type === selection.SelectedField.Type)?.label ?? selection.SelectedField.Name)

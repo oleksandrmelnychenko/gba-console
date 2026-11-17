@@ -254,3 +254,16 @@ describe('report names follow the reports menu', () => {
     }
   })
 })
+
+describe('typed analysis identities in history values', () => {
+  it('keeps a value whose identity is a lower-case id', async () => {
+    const source = request()
+    delete (source as Record<string, unknown>).filterExpression
+    source.selections = [{ ...selection(1, 'Product', []), FilterCondition: { Name: 'У групі', Type: 6 },
+      Values: [{ Value: 0, Name: 'AL-KO', Data: { kind: 'productGroup', id: '4425' } }] }]
+    const search = vi.fn(async (_: number, text: string) => text === '' ? [{ kind: 'productGroup', id: '1' }] : [{ kind: 'productGroup', id: '4425' }])
+    const { data, dropped } = await verifyHistoryValues(source, search, 30, () => 'Товар')
+    expect(dropped).toEqual([])
+    expect(data.selections[0].Values).toHaveLength(1)
+  })
+})
