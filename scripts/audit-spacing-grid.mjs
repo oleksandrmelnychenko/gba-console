@@ -52,9 +52,13 @@ for (const file of files) {
   const text = raw.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
   const lines = text.split('\n')
   lines.forEach((line, i) => {
-    const m = line.match(/^\s*(--[\w-]+|[a-z-]+)\s*:\s*([^;{}]+);?/)
-    if (!m) return
-    const [, prop, value] = m
+    // Every declaration on the line, including one-line rules `.x { padding: 6px; }`.
+    // A property must start the line or follow `{`, `;` or whitespace, so selectors
+    // (`.a:hover`) and media queries (`(min-width: …)`) never match.
+    for (const m of line.matchAll(/(?:^|[{;\s])(--[\w-]+|[a-z-]+)\s*:\s*([^;{}]+)/g)) checkDecl(m[1], m[2], i)
+  })
+  function checkDecl(prop, value, i) {
+    if (/^\s*[^{]*\{?\s*$/.test(value) && /[.#&>]/.test(value) && !/\d/.test(value)) return
     let kind = null
     if (SPACING.test(prop)) kind = 'spacing'
     else if (RADIUS.test(prop)) kind = 'radius'
@@ -65,7 +69,7 @@ for (const file of files) {
     let bad = offGrid(value)
     if (kind === 'size') bad = bad.filter((b) => Math.abs(parseFloat(b)) >= 24)
     if (bad.length) rows.push({ file: relative(root, file).split(sep).join('/'), line: i + 1, kind, prop, value: value.trim(), bad })
-  })
+  }
 }
 
 if (asJson) {
