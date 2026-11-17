@@ -9,6 +9,11 @@ export const CURRENCY_LIMITS = {
   nameMaxLength: 150,
 } as const
 
+/** Storage.Name is nvarchar(40); a longer name used to leave the save request without an answer. */
+export const STORAGE_LIMITS = {
+  nameMaxLength: 40,
+} as const
+
 const CURRENCY_CODE_PATTERN = /^[A-Z0-9-]{2,25}$/
 
 type Translate = (text: string) => string
@@ -20,6 +25,14 @@ export function validateMeasureUnitLimits(values: { CodeOneC: string; Name: stri
 
   if (values.CodeOneC.trim().length > MEASURE_UNIT_LIMITS.codeOneCMaxLength) {
     return t('Код 1С не може бути довшим за 25 символів')
+  }
+
+  return null
+}
+
+export function validateStorageLimits(values: { Name: string }, t: Translate): string | null {
+  if (values.Name.trim().length > STORAGE_LIMITS.nameMaxLength) {
+    return t('Назва складу не може бути довшою за 40 символів.')
   }
 
   return null

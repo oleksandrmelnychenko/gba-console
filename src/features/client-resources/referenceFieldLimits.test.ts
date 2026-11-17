@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { validateCurrencyLimits, validateMeasureUnitLimits } from './referenceFieldLimits'
+import { validateCurrencyLimits, validateMeasureUnitLimits, validateStorageLimits } from './referenceFieldLimits'
 
 const t = (text: string) => text
 
@@ -14,6 +14,12 @@ describe('client resource field limits', () => {
       expect(validateCurrencyLimits({ Code: code, Name: 'Валюта' }, t)).toMatch(/^Код валюти/)
     }
     expect(validateCurrencyLimits({ Code: 'UAH', Name: 'x'.repeat(151) }, t)).toMatch(/150/)
+  })
+
+  it('limits the storage name to its 40-character column (a 315-character name hung the save)', () => {
+    expect(validateStorageLimits({ Name: 'x'.repeat(40) }, t)).toBeNull()
+    expect(validateStorageLimits({ Name: `  ${'x'.repeat(40)}  ` }, t)).toBeNull()
+    expect(validateStorageLimits({ Name: 'Я'.repeat(315) }, t)).toBe('Назва складу не може бути довшою за 40 символів.')
   })
 
   it('limits measure unit name and 1C code to 25', () => {

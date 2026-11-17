@@ -122,8 +122,10 @@ import {
 import {
   CURRENCY_LIMITS,
   MEASURE_UNIT_LIMITS,
+  STORAGE_LIMITS,
   validateCurrencyLimits,
   validateMeasureUnitLimits,
+  validateStorageLimits,
 } from '../referenceFieldLimits'
 import { buildSaleOrganizationsByStorageId } from '../clientResourceStorageOrganizations'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
@@ -2076,6 +2078,7 @@ function StorageEditorModal({
             <TextInput
               autoFocus
               label={translate("Назва")}
+              maxLength={STORAGE_LIMITS.nameMaxLength}
               required
               value={values.Name}
               onChange={(event) => setField('Name', event.currentTarget.value)}
@@ -5570,7 +5573,7 @@ function validateStorageForm(values: StorageFormValues): string | null {
     return translate('Вкажіть коректний пріоритет')
   }
 
-  return null
+  return validateStorageLimits(values, translate)
 }
 
 function buildStoragePayload(
