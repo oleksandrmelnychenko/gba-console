@@ -29,3 +29,10 @@ export function formatIsoDatesInText(text: string): string {
     return hours && minutes && `${hours}:${minutes}` !== '00:00' ? `${date} ${hours}:${minutes}` : date
   })
 }
+
+/* Known typos in server-built toast texts (WH2-08); the server text is being fixed too. */
+const SERVER_TEXT_FIXES: Array<[RegExp, string]> = [[/Створенено/g, 'Створено']]
+
+export function fixServerToastText(text: string): string {
+  return SERVER_TEXT_FIXES.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), text)
+}

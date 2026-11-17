@@ -21,7 +21,7 @@ import {
   type SupplyPaymentTaskNotification,
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
-import { formatIsoDatesInText, isSupplyToastQuietRoute, toastTitleAndMessage } from './notificationText'
+import { fixServerToastText, formatIsoDatesInText, isSupplyToastQuietRoute, toastTitleAndMessage } from './notificationText'
 import { consumeOwnSupplyOrderEcho } from './ownSupplyOrderEcho'
 import { realtimeUrl } from './realtimeUrl'
 import { applyDataSyncNotification } from './dataSyncProgressStore'
@@ -288,15 +288,17 @@ function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (
   }
 
   const title = getStringValue(notification.Title) || t('Оновлено замовлення')
+  const amount = getNumberValue(notification.Amount)
   const message = [
     getStringValue(notification.Message),
     getStringValue(notification.CreatedBy),
-    formatAmount(notification.Amount),
+    // A 0 sum (an order without priced lines yet) says nothing without a currency (WH2-08).
+    amount ? formatAmount(amount) : '',
   ].filter(Boolean).join('\n')
 
   notifications.show({
     color: 'teal',
-    ...toastTitleAndMessage(title, formatIsoDatesInText(message)),
+    ...toastTitleAndMessage(fixServerToastText(title), fixServerToastText(formatIsoDatesInText(message))),
   })
 }
 
