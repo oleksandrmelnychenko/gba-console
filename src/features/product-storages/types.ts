@@ -37,6 +37,8 @@ export type ProductStorageAvailability = {
   ChangedQty?: number
   Id?: number
   IsSelected?: boolean
+  /** Physical stock in lots on this storage (server read model); Amount is the free part. */
+  LotQty?: number
   NetUid?: string
   Placements?: ProductStoragePlacement[]
   Product?: ProductStorageProduct

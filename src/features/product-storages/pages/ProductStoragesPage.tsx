@@ -72,6 +72,7 @@ const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+import { getReservedQuantity } from '../reservedQuantity'
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management
@@ -1752,7 +1753,7 @@ function useProductStoragesColumns({
       },
       {
         id: 'qty',
-        header: 'Кількість',
+        header: 'Вільно',
         width: 120,
         minWidth: 104,
         align: 'right',
@@ -1778,6 +1779,18 @@ function useProductStoragesColumns({
         enableReorder: false,
         enableResizing: false,
         cell: (availability) => {
+      {
+        id: 'reserved',
+        header: 'Резерв',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: getReservedQuantity,
+        cell: (availability) => {
+          const reserved = getReservedQuantity(availability)
+          return reserved > 0 ? formatAmount(reserved) : '—'
+        },
+      },
           return (
             <Group className="seo-table-action-cell" gap={4} justify="center" wrap="nowrap">
               {canOpenAction ? (
