@@ -23,6 +23,12 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { excelImportErrorText } from '../../../shared/excel/excelImportMessages'
 import { hasNegativeValue, showSubmitNotice } from '../productCapitalizationSubmitChecks'
+import {
+  formatCapitalizationQtyText,
+  parseCapitalizationQty,
+  readCapitalizationQtyValue,
+} from '../capitalizationQuantity'
+import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -62,7 +68,8 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 type ItemEntryDraft = {
-  quantity: number | ''
+  /** Typed «Кількість» text, read by parseCapitalizationQty («2,5» is 2.5). */
+  quantity: string
   unitPrice: number | ''
   weight: number | ''
 }
@@ -73,7 +80,8 @@ const EMPTY_ITEM_ENTRY: ItemEntryDraft = {
   weight: '',
 }
 
-type DraftItem = ProductCapitalizationItem & { __priceRequired: boolean; __rowKey: string }
+/** __qtyText: the row's «Кількість» as typed (or as the file gave it); Qty is what it spells, minus included. */
+type DraftItem = ProductCapitalizationItem & { __priceRequired: boolean; __qtyText: string; __rowKey: string }
 
 type StorageSelectionState = {
   items: ClientResourceStorage[]
@@ -96,17 +104,27 @@ function nextRowKey(): string {
 }
 
 function toDraftItem(item: ProductCapitalizationItem, options: { priceRequired?: boolean } = {}): DraftItem {
-  return { ...item, __priceRequired: options.priceRequired ?? true, __rowKey: nextRowKey() }
+  return {
+    ...item,
+    __priceRequired: options.priceRequired ?? true,
+    __qtyText: formatCapitalizationQtyText(item.Qty),
+    __rowKey: nextRowKey(),
+  }
 }
 
-function fromDraftItem({ __priceRequired, __rowKey, ...item }: DraftItem): ProductCapitalizationItem {
+/** The row's quantity problem, or null («Провести» refuses while any row has one). */
+function getDraftItemQtyError(item: DraftItem): string | null {
+  return parseCapitalizationQty(item.__qtyText, item.Product?.MeasureUnit?.Name, translate).error
+}
+
+function fromDraftItem({ __priceRequired, __qtyText, __rowKey, ...item }: DraftItem): ProductCapitalizationItem {
   void __priceRequired
   void __rowKey
 
   return {
     ...item,
     ProductId: item.ProductId || item.Product?.Id,
-    Qty: toPositiveInteger(item.Qty),
+    Qty: parseCapitalizationQty(__qtyText, item.Product?.MeasureUnit?.Name, translate).qty ?? 0,
     UnitPrice: toFiniteNumber(item.UnitPrice),
     Weight: toFiniteNumber(item.Weight),
   }
@@ -131,7 +149,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
   const { t } = useI18n()
   const model = useNewProductCapitalizationModel(canCreate, opened, onClose, onCreated)
   const isFormBusy = model.isSubmitting || model.isParsing
-  const itemColumns = useItemColumns(model.items, model.updateItem, model.removeItem, isFormBusy)
+  const itemColumns = useItemColumns(model.items, model.updateItem, model.updateItemQty, model.removeItem, isFormBusy)
 
   return (
     <AppModal
@@ -203,15 +221,18 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
               onChange={model.changeVendorCodeQuery}
               onOptionSubmit={model.selectVendorCode}
             />
-            <NumberInput
-              allowDecimal={false}
-              allowNegative={false}
+            <TextInput
+              autoComplete="off"
               disabled={isFormBusy}
+              error={model.itemEntryQtyError}
+              inputMode="decimal"
               label={t('Кількість')}
-              min={1}
               style={{ flex: 1 }}
               value={model.itemEntry.quantity}
-              onChange={(value) => model.setItemEntry((current) => ({ ...current, quantity: toIntegerOrEmpty(value) }))}
+              onChange={(event) => {
+                const quantity = event.currentTarget.value
+                model.setItemEntry((current) => ({ ...current, quantity }))
+              }}
             />
             <NumberInput
               allowNegative={false}
@@ -609,13 +630,15 @@ function useNewProductCapitalizationModel(
       return
     }
 
-    const quantity = toPositiveInteger(itemEntry.quantity)
+    const parsedQuantity = parseCapitalizationQty(itemEntry.quantity, product.MeasureUnit?.Name, t)
     const unitPrice = toFiniteNumber(itemEntry.unitPrice)
 
-    if (quantity <= 0) {
-      notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Кількість')}` })
+    if (parsedQuantity.error || parsedQuantity.qty === null) {
+      notifications.show({ color: 'yellow', message: `${t('Кількість')}: ${parsedQuantity.error || t('Вкажіть кількість')}` })
       return
     }
+
+    const quantity = parsedQuantity.qty
 
     if (unitPrice <= 0) {
       notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
@@ -625,6 +648,7 @@ function useNewProductCapitalizationModel(
     const newItem = toDraftItem({
       Product: {
         Id: product.Id,
+        MeasureUnit: product.MeasureUnit,
         Name: product.Name,
         NetUid: product.NetUid,
         VendorCode: product.VendorCode,
@@ -665,6 +689,21 @@ function useNewProductCapitalizationModel(
 
       setItems((current) =>
         current.map((item) => (item.__rowKey === rowKey ? { ...item, [field]: value } : item)),
+      )
+    },
+    [isParsing, isSubmitting, setItems],
+  )
+
+  const updateItemQty = useCallback(
+    (rowKey: string, qtyText: string) => {
+      if (isSubmitting || isParsing) {
+        return
+      }
+
+      setItems((current) =>
+        current.map((item) =>
+          item.__rowKey === rowKey ? { ...item, __qtyText: qtyText, Qty: readCapitalizationQtyValue(qtyText) } : item,
+        ),
       )
     },
     [isParsing, isSubmitting, setItems],
@@ -852,8 +891,16 @@ function useNewProductCapitalizationModel(
       return
     }
 
-    if (items.some((item) => toPositiveInteger(item.Qty) <= 0)) {
-      showSubmitNotice({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Кількість')}` })
+    const qtyProblem = items
+      .map((item) => ({ error: getDraftItemQtyError(item), item }))
+      .find(({ error }) => error)
+
+    if (qtyProblem) {
+      const vendorCode = getCapitalizationItemVendorCode(qtyProblem.item)
+      showSubmitNotice({
+        color: 'yellow',
+        message: `${t('Кількість')}${vendorCode ? ` (${vendorCode})` : ''}: ${qtyProblem.error}`,
+      })
       return
     }
 
@@ -990,6 +1037,9 @@ function useNewProductCapitalizationModel(
     isLoadingStorages,
     isSubmitting,
     itemEntry,
+    itemEntryQtyError: itemEntry.quantity.trim()
+      ? parseCapitalizationQty(itemEntry.quantity, selectedProduct?.MeasureUnit?.Name, t).error
+      : null,
     items,
     missingModalOpened,
     missingVendorCodes,
@@ -1017,12 +1067,14 @@ function useNewProductCapitalizationModel(
     setMissingModalOpened,
     submit,
     updateItem,
+    updateItemQty,
   }
 }
 
 function useItemColumns(
   items: DraftItem[],
   onUpdate: (rowKey: string, field: 'Qty' | 'UnitPrice' | 'Weight', value: number) => void,
+  onUpdateQty: (rowKey: string, qtyText: string) => void,
   onRemove: (rowKey: string) => void,
   disabled: boolean,
 ): DataTableColumn<DraftItem>[] {
@@ -1071,15 +1123,16 @@ function useItemColumns(
         align: 'right',
         enableSorting: false,
         cell: (item) => (
-          <NumberInput
-            allowDecimal={false}
+          <TextInput
+            aria-label={t('Кількість')}
+            autoComplete="off"
             disabled={disabled}
-            error={typeof item.Qty === 'number' && item.Qty < 0}
-            hideControls
-            min={1}
+            error={Boolean(getDraftItemQtyError(item))}
+            inputMode="decimal"
             size="xs"
-            value={item.Qty ?? ''}
-            onChange={(value) => onUpdate(item.__rowKey, 'Qty', toPositiveInteger(value))}
+            title={getDraftItemQtyError(item) || undefined}
+            value={item.__qtyText}
+            onChange={(event) => onUpdateQty(item.__rowKey, event.currentTarget.value)}
           />
         ),
       },
@@ -1140,7 +1193,7 @@ function useItemColumns(
         ),
       },
     ],
-    [disabled, items, onRemove, onUpdate, t],
+    [disabled, items, onRemove, onUpdate, onUpdateQty, t],
   )
 }
 
@@ -1183,26 +1236,10 @@ function toNumberOrEmpty(value: number | string): number | '' {
   return Number.isFinite(numberValue) ? numberValue : ''
 }
 
-function toIntegerOrEmpty(value: number | string): number | '' {
-  const numberValue = typeof value === 'number' ? value : Number(value)
-
-  return Number.isFinite(numberValue) ? Math.trunc(numberValue) : ''
-}
-
 function toFiniteNumber(value: number | string | undefined): number {
   const numberValue = typeof value === 'number' ? value : Number(value)
 
   return Number.isFinite(numberValue) ? numberValue : 0
-}
-
-function toPositiveInteger(value: number | string | undefined): number {
-  const numberValue = typeof value === 'number' ? value : Number(value)
-
-  if (!Number.isFinite(numberValue) || numberValue <= 0) {
-    return 0
-  }
-
-  return Math.trunc(numberValue)
 }
 
 /* Empty values render as blank cells (§5), never a dash. */

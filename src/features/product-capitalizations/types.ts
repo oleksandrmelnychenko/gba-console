@@ -21,7 +21,12 @@ export type ProductCapitalizationResponsible = EntityFields & {
   Name?: string
 }
 
+export type ProductCapitalizationMeasureUnit = EntityFields & {
+  Name?: string
+}
+
 export type ProductCapitalizationProduct = EntityFields & {
+  MeasureUnit?: ProductCapitalizationMeasureUnit | null
   Name?: string
   VendorCode?: string
 }
@@ -75,6 +80,7 @@ export type ProductCapitalizationsExportDocument = {
 }
 
 export type ProductCapitalizationSearchProduct = EntityFields & {
+  MeasureUnit?: ProductCapitalizationMeasureUnit | null
   Name?: string
   VendorCode?: string
 }

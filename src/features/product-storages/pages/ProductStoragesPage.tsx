@@ -9,7 +9,6 @@ import {
   Checkbox,
   Group,
   Loader,
-  NumberInput,
   ScrollArea,
   SegmentedControl,
   Select,
@@ -64,15 +63,22 @@ import type {
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { parseQuantityInput } from '../../../shared/units/quantityInput'
+import {
+  getStorageActionRowQty,
+  getStorageActionRowsError,
+  INITIAL_STORAGE_ACTION_ROW_QTY_TEXT,
+  parseStorageActionRowQty,
+  sumStorageActionRows,
+} from '../storageActionRows'
 import { mergePlacementQuantities } from '../../../shared/placements/placementAddress'
 import { DELETED_PRODUCT_LABEL, isDeletedProductAvailability } from '../deletedProduct'
+import { getReservedQuantity } from '../reservedQuantity'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-import { getReservedQuantity } from '../reservedQuantity'
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management
@@ -88,7 +94,8 @@ type ProductStorageActionScope = 'group' | 'single'
 
 type ProductStorageActionRow = {
   availability: ProductStorageAvailability
-  changedQty: number
+  /** Typed quantity of the preview cell, read by parseStorageActionRowQty (same rule as the single-row dialog). */
+  qtyText: string
 }
 
 type ProductStorageActionModalState = {
@@ -533,16 +540,15 @@ function useProductStoragesPageModel() {
     setActionError(null)
   }
 
-  function updatePreviewQty(availability: ProductStorageAvailability, value: number | string) {
+  function updatePreviewQty(availability: ProductStorageAvailability, qtyText: string) {
     const availabilityKey = getAvailabilityKey(availability)
-    const changedQty = typeof value === 'number' && Number.isFinite(value) ? value : 0
 
     setPreviewRows((currentRows) =>
       currentRows.map((row) =>
         getAvailabilityKey(row.availability) === availabilityKey
           ? {
               ...row,
-              changedQty,
+              qtyText,
             }
           : row,
       ),
@@ -1117,10 +1123,14 @@ function ProductStoragePreviewDrawer({
   onClose: () => void
   onProcess: () => void
   onRemoveRow: (availability: ProductStorageAvailability) => void
-  onUpdateQty: (availability: ProductStorageAvailability, value: number | string) => void
+  onUpdateQty: (availability: ProductStorageAvailability, qtyText: string) => void
 }) {
   const { t } = useI18n()
   const hasInvalidRows = rows.some((row) => !isValidActionRow(row))
+  const typedRowsError = getStorageActionRowsError(
+    rows.filter((row) => row.qtyText.trim()).map(toRowQuantity),
+    t,
+  )
   const rowIndexMap = useMemo(
     () =>
       rows.reduce((indexMap, row, index) => {
@@ -1200,20 +1210,25 @@ function ProductStoragePreviewDrawer({
         width: 150,
         minWidth: 128,
         align: 'right',
-        accessor: (row) => row.changedQty,
-        cell: (row) => (
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            error={!isValidActionRow(row)}
-            max={getQuantity(row.availability)}
-            min={0.001}
-            size="xs"
-            value={row.changedQty}
-            onClick={(event) => event.stopPropagation()}
-            onChange={(value) => onUpdateQty(row.availability, value)}
-          />
-        ),
+        accessor: (row) => row.qtyText,
+        cell: (row) => {
+          const rowError = row.qtyText.trim() ? parseStorageActionRowQty(toRowQuantity(row), t).error : null
+
+          return (
+            <TextInput
+              aria-label={t('Кількість')}
+              autoComplete="off"
+              error={rowError}
+              inputMode="decimal"
+              placeholder="0"
+              size="xs"
+              title={rowError || undefined}
+              value={row.qtyText}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => onUpdateQty(row.availability, event.currentTarget.value)}
+            />
+          )
+        },
       },
       {
         id: 'actions',
@@ -1254,10 +1269,14 @@ function ProductStoragePreviewDrawer({
       onClose={onClose}
     >
       <Stack gap="md">
-        {hasInvalidRows ? (
+        {typedRowsError ? (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
-            {t('Кількість має бути більшою за 0 і не перевищувати доступний залишок')}
+            {typedRowsError}
           </Alert>
+        ) : hasInvalidRows ? (
+          <Text c="dimmed" size="sm">
+            {t('Вкажіть кількість у кожному рядку')}
+          </Text>
         ) : null}
         {!canProcess ? (
           <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
@@ -1761,6 +1780,18 @@ function useProductStoragesColumns({
         cell: (availability) => formatAmount(getQuantity(availability)),
       },
       {
+        id: 'reserved',
+        header: 'Резерв',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: getReservedQuantity,
+        cell: (availability) => {
+          const reserved = getReservedQuantity(availability)
+          return reserved > 0 ? formatAmount(reserved) : '—'
+        },
+      },
+      {
         id: 'storage',
         header: 'Склад',
         width: 240,
@@ -1779,18 +1810,6 @@ function useProductStoragesColumns({
         enableReorder: false,
         enableResizing: false,
         cell: (availability) => {
-      {
-        id: 'reserved',
-        header: 'Резерв',
-        width: 110,
-        minWidth: 96,
-        align: 'right',
-        accessor: getReservedQuantity,
-        cell: (availability) => {
-          const reserved = getReservedQuantity(availability)
-          return reserved > 0 ? formatAmount(reserved) : '—'
-        },
-      },
           return (
             <Group className="seo-table-action-cell" gap={4} justify="center" wrap="nowrap">
               {canOpenAction ? (
@@ -1848,8 +1867,16 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
 function createActionRows(availabilities: ProductStorageAvailability[]): ProductStorageActionRow[] {
   return availabilities.map((availability) => ({
     availability,
-    changedQty: getQuantity(availability) || 0,
+    qtyText: INITIAL_STORAGE_ACTION_ROW_QTY_TEXT,
   }))
+}
+
+function toRowQuantity(row: ProductStorageActionRow) {
+  return {
+    available: getQuantity(row.availability),
+    qtyText: row.qtyText,
+    unit: getAvailabilityUnit(row.availability),
+  }
 }
 
 function buildTransferItems(actionModal: NonNullable<ProductStorageActionModalState>, form: ProductStorageActionForm) {
@@ -1877,7 +1904,7 @@ function getActionRowQty(
     return readActionQty(form.qty)
   }
 
-  return row.changedQty
+  return getStorageActionRowQty(toRowQuantity(row), translate) ?? Number.NaN
 }
 
 function validateAction(
@@ -1918,8 +1945,12 @@ function validateAction(
     if (quantityError) {
       return quantityError
     }
-  } else if (!actionModal.rows.every(isValidActionRow)) {
-    return 'Кількість має бути більшою за 0 і не перевищувати доступний залишок'
+  } else {
+    const rowsError = getStorageActionRowsError(actionModal.rows.map(toRowQuantity), translate)
+
+    if (rowsError) {
+      return rowsError
+    }
   }
 
   if (actionModal.mode === 'transfer') {
@@ -1942,9 +1973,7 @@ function validateAction(
 }
 
 function isValidActionRow(row: ProductStorageActionRow): boolean {
-  const availableQty = getQuantity(row.availability)
-
-  return row.changedQty > 0 && (typeof availableQty !== 'number' || row.changedQty <= availableQty)
+  return getStorageActionRowQty(toRowQuantity(row), translate) !== null
 }
 
 function getReturnMaxQty(
@@ -1961,7 +1990,7 @@ function getReturnMaxQty(
 }
 
 function sumActionRows(rows: ProductStorageActionRow[]): number {
-  return rows.reduce((total, row) => total + (Number.isFinite(row.changedQty) ? row.changedQty : 0), 0)
+  return sumStorageActionRows(rows.map(toRowQuantity), translate)
 }
 
 function getActionModeOptions(scope: ProductStorageActionScope) {
