@@ -1138,6 +1138,7 @@ export const PermissionKeys = {
       CancelAnyReturn: 'sales.ukraine.sale_return.cancel_any',
       CancelReturn: 'sales.ukraine.sale_return.cancel',
       CreateAnyReturn: 'sales.ukraine.sale_return.create_any',
+      CreateReturn: 'sales.ukraine.sale_return.create',
       OpenCreateDialog: 'sales.ukraine.sale.open_create_dialog',
       Create: 'sales.ukraine.sale.create',
       OpenDetails: 'sales.ukraine.sale.open_details',

@@ -10,6 +10,7 @@ const EXPECTED_SALES_UKRAINE_KEYS = [
   'sales.ukraine.sale_return.cancel_any',
   'sales.ukraine.sale_return.cancel',
   'sales.ukraine.sale_return.create_any',
+  'sales.ukraine.sale_return.create',
   'sales.ukraine.sale.open_create_dialog',
   'sales.ukraine.sale.create',
   'sales.ukraine.sale.open_details',
@@ -50,9 +51,9 @@ const EXPECTED_SUPPLIER_ORGANIZATION_KEYS = [
 ] as const
 
 describe('canonical event permission set', () => {
-  it('contains exactly 538 unique canonical keys', () => {
-    expect(EVENT_PERMISSION_KEYS).toHaveLength(538)
-    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(538)
+  it('contains exactly 539 unique canonical keys', () => {
+    expect(EVENT_PERMISSION_KEYS).toHaveLength(539)
+    expect(new Set(EVENT_PERMISSION_KEYS).size).toBe(539)
     expect(EVENT_PERMISSION_KEYS.every(isEventPermissionKey)).toBe(true)
   })
 

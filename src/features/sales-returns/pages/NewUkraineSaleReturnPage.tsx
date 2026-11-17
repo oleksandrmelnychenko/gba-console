@@ -132,10 +132,11 @@ type ItemEditorState = {
 export function NewUkraineSaleReturnPage() {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
-  // The create dialog's client, warehouse and product pickers are server facades gated by
-  // sales.ukraine.sale_return.create_any, so the dialog is only usable with that key.
+  // Saving a return needs sales.ukraine.sale_return.create; the create dialog's client, warehouse and
+  // product pickers are server facades gated by sales.ukraine.sale_return.create_any, so both are needed.
   const { can } = usePermissions()
-  const canCreateReturn = can(PermissionKeys.SalesUkraine.Sale.CreateAnyReturn)
+  const canCreateReturn = can(PermissionKeys.SalesUkraine.Sale.CreateReturn)
+    && can(PermissionKeys.SalesUkraine.Sale.CreateAnyReturn)
   // The server needs sales.ukraine.sale_return.cancel; cancel_any only widens it to other users' returns.
   const canCancelReturn = can(PermissionKeys.SalesUkraine.Sale.CancelReturn)
   const runCancelMutation = usePersistentSalesMutation(

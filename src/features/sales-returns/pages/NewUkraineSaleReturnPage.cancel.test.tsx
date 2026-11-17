@@ -56,6 +56,18 @@ it('does not offer cancel to a role without the return-cancel key', async () => 
   expect(screen.queryByRole('button', { name: 'Скасувати' })).toBeNull()
 })
 
+it('offers «Створити» only with both the create key and the create-any picker key', async () => {
+  granted.add(PermissionKeys.SalesUkraine.Sale.CreateAnyReturn)
+  const view = render(<MantineProvider><I18nProvider><NewUkraineSaleReturnPage /></I18nProvider></MantineProvider>)
+  expect(await screen.findByRole('button', { name: 'Експорт' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+  view.unmount()
+
+  granted.add(PermissionKeys.SalesUkraine.Sale.CreateReturn)
+  renderPage()
+  expect(await screen.findByRole('button', { name: 'Створити' })).toBeTruthy()
+})
+
 it('offers cancel with the key and asks on one line', async () => {
   granted.add(PermissionKeys.SalesUkraine.Sale.CancelReturn)
   renderPage()
