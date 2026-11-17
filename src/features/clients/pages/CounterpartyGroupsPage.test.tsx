@@ -111,6 +111,13 @@ describe('CounterpartyGroupsPage', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull())
   })
 
+  it('caps the member search at the server limit of 120 characters', async () => {
+    mocks.can.mockReturnValue(true)
+    renderPage()
+    const search = await screen.findByRole('textbox', { name: 'Пошук контрагента' })
+    expect(search.getAttribute('maxlength')).toBe('120')
+  })
+
   it('hides editing for a reader without the client edit permission', async () => {
     mocks.can.mockImplementation((permissionKey) => permissionKey === PermissionKeys.Clients.Page.View)
     renderPage()

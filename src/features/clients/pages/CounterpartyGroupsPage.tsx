@@ -326,6 +326,8 @@ function CounterpartyGroupsPageContent() {
                 <TextInput
                   className="counterparty-groups-search"
                   label={t('Пошук контрагента')}
+                  // Server limit for members?search= (CounterpartyGroupsController): 120 characters.
+                  maxLength={120}
                   leftSection={<Search size={16} />}
                   placeholder={t('Назва, ЄДРПОУ або код')}
                   value={memberSearchDraft}
