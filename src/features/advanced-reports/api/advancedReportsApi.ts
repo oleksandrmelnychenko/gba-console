@@ -53,7 +53,7 @@ export async function getAdvancedReportPaymentMovements(
 }
 
 export async function searchAdvancedReportPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+  const result = await apiRequest<unknown>('/payments/registers/advanced-reports/page/search', {
     query: {
       value,
     },

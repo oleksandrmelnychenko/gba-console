@@ -37,7 +37,7 @@ it.each(scalarCases)('selects Product1 under native report$source condition$cond
  expect(api.mock.calls.every(call=>call[0]===route&&call[1]?.query?.dataSource===source)).toBe(true)
 })
 it('uses only the shared report route for source3 SKU selection when the legacy transport is forbidden',async()=>{
- api.mockImplementation(async(path)=>{if(path==='/products/search/advanced')throw new Error('403 Products.Read');if(path!==route)throw new Error('Unexpected route');return[target]})
+ api.mockImplementation(async(path)=>{if(path==='/products/reports/stocks/search/advanced')throw new Error('403 Products.Read');if(path!==route)throw new Error('Unexpected route');return[target]})
  render(<Form/>);await waitFor(()=>expect(api).toHaveBeenCalledOnce())
  await userEvent.type(screen.getByRole('combobox',{name:'Значення'}),'SEM14631')
  await userEvent.click(await screen.findByRole('option',{name:'Отбойник ресори · SEM14631 [38041660]'}))
@@ -50,12 +50,12 @@ it.each([undefined,{version:99}])('retains the legacy source3 selector when the 
  render(<Form advertise={capability!==undefined} capability={capability}/>)
  await userEvent.type(screen.getByPlaceholderText('Пошук значення'),'Legacy')
  await waitFor(()=>expect(api).toHaveBeenCalled())
- expect(api.mock.calls.every(call=>call[0]==='/products/search/advanced')).toBe(true)
+ expect(api.mock.calls.every(call=>call[0]==='/products/reports/stocks/search/advanced')).toBe(true)
 })
 it('does not use a foreign dataset owner to authorize the requested source3 picker',async()=>{
  api.mockResolvedValue([]);render(<Form source={3} datasetSource={44}/>)
  await userEvent.type(screen.getByPlaceholderText('Пошук значення'),'Legacy')
- await waitFor(()=>expect(api).toHaveBeenCalled());expect(api.mock.calls.every(call=>call[0]==='/products/search/advanced')).toBe(true)
+ await waitFor(()=>expect(api).toHaveBeenCalled());expect(api.mock.calls.every(call=>call[0]==='/products/reports/stocks/search/advanced')).toBe(true)
 })
 it('retains the P8 legacy source2 API when new metadata is absent',async()=>{
  api.mockResolvedValue([]);render(<Form source={2} advertise={false} legacy/>)

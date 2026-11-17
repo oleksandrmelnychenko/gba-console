@@ -17,6 +17,7 @@ import {
   getIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentMovements,
   searchIncomeCashflowPaymentRegisters,
+  type CashflowLookupScope,
 } from '../../income-cashflows/api/incomeCashflowsApi'
 import type { NamedEntity, PaymentMovement } from '../../income-cashflows/types'
 import { createOutcomeOrderFromSad, createOutcomeOrderFromTaxFree } from '../api/documentOutcomePaymentApi'
@@ -37,6 +38,11 @@ import type {
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const SEARCH_DEBOUNCE_MS = 300
+
+/** Registers and cash-flow articles are read through the facade of the document's own «create outcome» key. */
+function outcomeLookupScope(source: DocumentOutcomePaymentSource): CashflowLookupScope {
+  return source.type === 'sad' ? 'sad-outcome' : 'tax-free-outcome'
+}
 const SELECT_PAYMENT_MOVEMENT = 'Виберіть статтю грошових витрат'
 
 type FormState = {
@@ -141,8 +147,8 @@ export function DocumentOutcomePaymentModal({
           || activeSource.counterpartyKind === 'client'
         const [nextOrganizations, nextRegisters, nextMovements, loadedClientAgreements] = await Promise.all([
           getIncomeCashflowOrganizations() as Promise<OutcomeOrganization[]>,
-          searchIncomeCashflowPaymentRegisters('') as Promise<OutcomePaymentRegister[]>,
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', outcomeLookupScope(activeSource)) as Promise<OutcomePaymentRegister[]>,
+          getIncomeCashflowPaymentMovements(outcomeLookupScope(activeSource)),
           shouldLoadClientAgreements && activeSource.clientNetId
             ? getIncomeCashflowClientAgreements(activeSource.clientNetId).catch((agreementsError) => {
                 if (!cancelled) {
@@ -216,21 +222,22 @@ export function DocumentOutcomePaymentModal({
   ])
 
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !source) {
       return
     }
 
     const value = form.movementSearch.trim()
+    const scope = outcomeLookupScope(source)
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value, scope).then(setPaymentMovements).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.movementSearch, opened, setPaymentMovements])
+  }, [form.movementSearch, opened, setPaymentMovements, source])
 
   function updateForm(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))

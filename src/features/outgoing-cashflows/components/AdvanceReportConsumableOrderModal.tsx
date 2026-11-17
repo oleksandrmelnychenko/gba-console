@@ -47,9 +47,9 @@ import type {
   SupplyOrganizationAgreement,
 } from '../advanceReportTypes'
 import {
+  getConsumableStoragesForAdvanceReportEdit,
   searchConsumableProductCategories,
   searchConsumableProductsByVendorCode,
-  searchConsumableStorages,
   searchPaymentCostMovements,
 } from '../../consumable-orders/api/consumableOrdersApi'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
@@ -271,7 +271,7 @@ export function AdvanceReportConsumableOrderModal({
     const requestId = (storageLoadSeq.current += 1)
     setLoadingStorages(true)
 
-    void searchConsumableStorages('')
+    void getConsumableStoragesForAdvanceReportEdit()
       .then((nextStorages) => {
         if (storageLoadSeq.current === requestId) {
           setStorages(nextStorages)
@@ -301,7 +301,7 @@ export function AdvanceReportConsumableOrderModal({
         return
       }
 
-      void searchConsumableProductCategories(value)
+      void searchConsumableProductCategories(value, 'advanced-report-edit')
         .then((categories) => {
           if (productSearchSeq.current === requestId) {
             setProductOptions(flattenConsumableProducts(categories))
@@ -349,7 +349,7 @@ export function AdvanceReportConsumableOrderModal({
         return
       }
 
-      void searchPaymentCostMovements(value)
+      void searchPaymentCostMovements(value, 'advanced-report-edit')
         .then((nextMovements) => {
           if (costMovementSearchSeq.current === requestId) {
             setCostMovements(nextMovements)

@@ -198,8 +198,9 @@ export async function searchSupplyOrganizations(value: string): Promise<SupplyOr
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyOrganization[]
 }
 
+/** Supply-service products for the new unified-service form (create key), not the orders delivery-costs key. */
 export async function getSupplyServiceConsumableProducts(value = ''): Promise<ConsumableProduct[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/supply/services/get', {
+  const result = await apiRequest<unknown>('/consumables/categories/product-delivery-protocols/unified-service/create/supply-services', {
     query: { value },
   })
 

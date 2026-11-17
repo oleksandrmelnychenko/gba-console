@@ -112,7 +112,7 @@ export async function searchOffersClients(value: string): Promise<OffersClientOp
 }
 
 export async function getOfferSubClients(clientNetId: string): Promise<OfferSubClientLink[]> {
-  const result = await apiRequest<unknown>('/clients/all/clientsubclients/client', {
+  const result = await apiRequest<unknown>('/clients/sales-offers/create/subclients', {
     query: { netId: clientNetId },
   })
 

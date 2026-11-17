@@ -164,24 +164,24 @@ describe('income cashflow API lookup contracts', () => {
     await expect(getIncomeCashflowOrganizations()).resolves.toEqual([
       { Id: 1, Name: 'Організація' },
     ])
-    await expect(searchIncomeCashflowPaymentRegisters('рах')).resolves.toEqual([
+    await expect(searchIncomeCashflowPaymentRegisters('рах', 'income-form')).resolves.toEqual([
       {
         Id: 2,
         Name: 'Рахунок',
         PaymentCurrencyRegisters: [],
       },
     ])
-    await expect(getIncomeCashflowPaymentMovements()).resolves.toEqual([
+    await expect(getIncomeCashflowPaymentMovements('income-form')).resolves.toEqual([
       { Id: 3, OperationName: 'Інші витрати' },
     ])
     await expect(
-      searchIncomeCashflowPaymentMovements('постачальнику'),
+      searchIncomeCashflowPaymentMovements('постачальнику', 'income-form'),
     ).resolves.toEqual([{ Id: 4, OperationName: 'Оплата постачальнику' }])
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/organizations/all')
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/registers/search',
+      '/payments/registers/income-cashflows/registry/search',
       {
         query: {
           value: 'рах',
@@ -190,11 +190,11 @@ describe('income cashflow API lookup contracts', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/accounting/all',
+      '/payments/movements/income-cashflows/form/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/accounting/all/search',
+      '/payments/movements/income-cashflows/form/all/search',
       {
         query: {
           value: 'постачальнику',

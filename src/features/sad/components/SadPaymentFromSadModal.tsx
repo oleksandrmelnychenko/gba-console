@@ -154,8 +154,8 @@ export function SadPaymentFromSadModal({
                 return [] as ExternalClientAgreement[]
               })
             : Promise.resolve([] as ExternalClientAgreement[]),
-          searchIncomeCashflowPaymentRegisters(''),
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', 'sad-income'),
+          getIncomeCashflowPaymentMovements('sad-income'),
         ])
 
         if (cancelled) {
@@ -224,7 +224,7 @@ export function SadPaymentFromSadModal({
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value, 'sad-income').then(setPaymentMovements).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)

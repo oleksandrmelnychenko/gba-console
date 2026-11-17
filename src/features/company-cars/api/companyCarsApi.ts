@@ -26,6 +26,17 @@ export async function searchCompanyCars(value: string): Promise<CompanyCar[]> {
   return normalizeCompanyCars(result)
 }
 
+/** Company-car lookup for the advance report fuel row; gated by the advance report edit key, not the cars page. */
+export async function searchCompanyCarsForAdvanceReportEdit(value: string): Promise<CompanyCar[]> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/advanced-reports/report/edit/search', {
+    query: {
+      value,
+    },
+  })
+
+  return normalizeCompanyCars(result)
+}
+
 export async function getCompanyCarForEdit(netId: string): Promise<CompanyCar | null> {
   const result = await apiRequest<unknown>('/consumables/company/cars/accounting/edit/details', {
     query: {
@@ -148,8 +159,8 @@ export async function getCompanyCarOrganizations(): Promise<Organization[]> {
   return readArrayPayload(result, ['Items', 'Organizations', 'Organisations', 'Data']) as Organization[]
 }
 
-export async function searchCompanyCarUsers(value: string): Promise<UserProfile[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/search', {
+export async function searchCompanyCarUsers(value: string, mode: 'create' | 'edit'): Promise<UserProfile[]> {
+  const result = await apiRequest<unknown>(`/usermanagement/profiles/company-cars/road-list/${mode}/search`, {
     query: {
       value,
     },

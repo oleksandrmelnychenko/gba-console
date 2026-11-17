@@ -117,7 +117,7 @@ export async function searchPlacementProducts(value: string): Promise<PlacementP
 }
 
 export async function getNonDefectiveStorages(): Promise<PlacementStorage[]> {
-  const result = await apiRequest<unknown>('/storages/all/nondefective')
+  const result = await apiRequest<unknown>('/storages/orders-ukraine/placement/nondefective')
 
   if (Array.isArray(result)) {
     return result as PlacementStorage[]

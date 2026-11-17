@@ -346,7 +346,7 @@ export async function getReportPricings(): Promise<ReportEntity[]> {
 }
 
 export async function getReportProductGroups(value = ''): Promise<ReportEntity[]> {
-  const result = await apiRequest<unknown>('/products/groups/filtered/get', {
+  const result = await apiRequest<unknown>('/products/groups/reports/stocks/filtered', {
     query: {
       value: value.trim(),
     },
@@ -362,7 +362,7 @@ export async function getReportProductTop(): Promise<ReportEntity[]> {
 }
 
 export async function searchReportProducts(params: ReportSearchParams): Promise<ReportEntity[]> {
-  const result = await apiRequest<unknown>('/products/search/advanced', {
+  const result = await apiRequest<unknown>('/products/reports/stocks/search/advanced', {
     query: {
       limit: params.limit,
       mode: 5,

@@ -147,8 +147,8 @@ export function TaxFreePaymentFromTaxFreeModal({
                 return [] as ClientAgreement[]
               })
             : Promise.resolve([] as ClientAgreement[]),
-          searchIncomeCashflowPaymentRegisters(''),
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', 'tax-free-income'),
+          getIncomeCashflowPaymentMovements('tax-free-income'),
         ])
 
         if (cancelled) {
@@ -204,7 +204,7 @@ export function TaxFreePaymentFromTaxFreeModal({
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value).then(setPaymentMovements).catch(() => undefined)
+      void searchIncomeCashflowPaymentMovements(value, 'tax-free-income').then(setPaymentMovements).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)

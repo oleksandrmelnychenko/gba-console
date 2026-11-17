@@ -18,7 +18,7 @@ export async function getOutgoingCreateOrganizations(): Promise<Organization[]> 
 }
 
 export async function searchOutgoingCreatePaymentRegisters(value = ''): Promise<CreatePaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+  const result = await apiRequest<unknown>('/payments/registers/outgoing-cashflows/create/search', {
     query: {
       value,
     },
@@ -28,13 +28,13 @@ export async function searchOutgoingCreatePaymentRegisters(value = ''): Promise<
 }
 
 export async function getOutgoingCreatePaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
+  const result = await apiRequest<unknown>('/payments/movements/outgoing-cashflows/create/all')
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
 export async function searchOutgoingCreatePaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
+  const result = await apiRequest<unknown>('/payments/movements/outgoing-cashflows/create/all/search', {
     query: {
       value,
     },
@@ -55,7 +55,7 @@ export async function createOutgoingCreatePaymentMovement(operationName: string)
 }
 
 export async function searchOutgoingCreateUsers(value: string): Promise<OutcomePaymentUser[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/search', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/outgoing-cashflows/create/search', {
     query: {
       value,
     },

@@ -112,7 +112,7 @@ function ConsumableStorageFormPageContent() {
 
     void Promise.all([
       getConsumableStorageOrganizations(),
-      searchConsumableStorageUsers(''),
+      searchConsumableStorageUsers('', id ? 'edit' : 'create'),
       id ? getConsumableStorage(id) : Promise.resolve(null),
     ])
       .then(([nextOrganizations, nextUsers, nextStorage]) => {
@@ -155,7 +155,7 @@ function ConsumableStorageFormPageContent() {
 
     async function loadUsers() {
       try {
-        const nextUsers = await searchConsumableStorageUsers(debouncedUserSearchValue.trim())
+        const nextUsers = await searchConsumableStorageUsers(debouncedUserSearchValue.trim(), isEditMode ? 'edit' : 'create')
 
         if (isActive) {
           dispatchPageState({ users: includeEntity(nextUsers, responsibleUser) })
@@ -174,7 +174,7 @@ function ConsumableStorageFormPageContent() {
     return () => {
       isActive = false
     }
-  }, [debouncedUserSearchValue, storage.ResponsibleUser, t])
+  }, [debouncedUserSearchValue, isEditMode, storage.ResponsibleUser, t])
 
   const organizationOptions = useMemo(
     () => toSelectOptions(organizations, (organization) => organization.Name || organization.FullName),

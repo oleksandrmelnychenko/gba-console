@@ -151,8 +151,45 @@ export async function getIncomeCashflowOrganizations(): Promise<Organization[]> 
   return readArrayPayload(result, ['Items', 'Organizations', 'Organisations', 'Data']) as Organization[]
 }
 
-export async function searchIncomeCashflowPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+/**
+ * The cash-flow form that asks for payment registers and cash-flow articles. Every scope maps to a server facade gated
+ * by the key that admits the user into that form (income forms sit behind the income page key, the others behind
+ * their create/accounting keys), never by the available-payments or cash-flow-articles pages.
+ */
+export type CashflowLookupScope =
+  | 'income-form'
+  | 'income-client-payment'
+  | 'outgoing-create'
+  | 'sad-income'
+  | 'sad-outcome'
+  | 'tax-free-income'
+  | 'tax-free-outcome'
+
+const CASHFLOW_LOOKUP_REGISTER_PATHS: Record<CashflowLookupScope, string> = {
+  'income-form': '/payments/registers/income-cashflows/registry/search',
+  'income-client-payment': '/payments/registers/income-cashflows/client-payment/search',
+  'outgoing-create': '/payments/registers/outgoing-cashflows/create/search',
+  'sad-income': '/payments/registers/sad/accounting/income/search',
+  'sad-outcome': '/payments/registers/sad/accounting/outcome/search',
+  'tax-free-income': '/payments/registers/tax-free-documents/accounting/income/search',
+  'tax-free-outcome': '/payments/registers/tax-free-documents/accounting/outcome/search',
+}
+
+const CASHFLOW_LOOKUP_MOVEMENT_PATHS: Record<CashflowLookupScope, string> = {
+  'income-form': '/payments/movements/income-cashflows/form/all',
+  'income-client-payment': '/payments/movements/income-cashflows/client-payment/all',
+  'outgoing-create': '/payments/movements/outgoing-cashflows/create/all',
+  'sad-income': '/payments/movements/sad/accounting/income/all',
+  'sad-outcome': '/payments/movements/sad/accounting/outcome/all',
+  'tax-free-income': '/payments/movements/tax-free-documents/accounting/income/all',
+  'tax-free-outcome': '/payments/movements/tax-free-documents/accounting/outcome/all',
+}
+
+export async function searchIncomeCashflowPaymentRegisters(
+  value: string,
+  scope: CashflowLookupScope,
+): Promise<PaymentRegister[]> {
+  const result = await apiRequest<unknown>(CASHFLOW_LOOKUP_REGISTER_PATHS[scope], {
     query: {
       value,
     },
@@ -171,14 +208,17 @@ export async function searchIncomeCashflowRegistryPaymentRegisters(value = ''): 
   return normalizePaymentRegisters(result)
 }
 
-export async function getIncomeCashflowPaymentMovements(): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/accounting/all')
+export async function getIncomeCashflowPaymentMovements(scope: CashflowLookupScope): Promise<PaymentMovement[]> {
+  const result = await apiRequest<unknown>(CASHFLOW_LOOKUP_MOVEMENT_PATHS[scope])
 
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as PaymentMovement[]
 }
 
-export async function searchIncomeCashflowPaymentMovements(value: string): Promise<PaymentMovement[]> {
-  const result = await apiRequest<unknown>('/payments/movements/accounting/all/search', {
+export async function searchIncomeCashflowPaymentMovements(
+  value: string,
+  scope: CashflowLookupScope,
+): Promise<PaymentMovement[]> {
+  const result = await apiRequest<unknown>(`${CASHFLOW_LOOKUP_MOVEMENT_PATHS[scope]}/search`, {
     query: {
       value,
     },
@@ -402,7 +442,7 @@ export async function searchIncomeCashflowPaymentPurposes(params: {
 }
 
 export async function searchIncomeCashflowUsers(value: string): Promise<NamedEntity[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/search', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/income-cashflows/colleague-return/search', {
     query: {
       value,
     },

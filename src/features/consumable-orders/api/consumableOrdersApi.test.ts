@@ -16,6 +16,10 @@ import {
   searchSupplyOrganizations,
   searchPaymentMovements,
   searchConsumableStorages,
+  getConsumableStoragesForAdvanceReportEdit,
+  searchConsumableProductCategories,
+  searchPaymentCostMovements,
+  searchPaymentRegisters,
   updateConsumableOrder,
 } from './consumableOrdersApi'
 import type { ConsumablesOrder, OutcomePaymentOrder } from '../types'
@@ -32,6 +36,34 @@ describe('consumableOrdersApi', () => {
     localStorage.setItem('gba_console_session', JSON.stringify({
       userNetUid: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     }))
+  })
+
+  it('reads every form lookup through the facade of the form that asks for it', async () => {
+    apiRequestMock.mockResolvedValue([])
+
+    await getConsumableStoragesForAdvanceReportEdit()
+    await searchConsumableProductCategories('папір', 'create')
+    await searchConsumableProductCategories('папір', 'edit')
+    await searchConsumableProductCategories('папір', 'advanced-report-edit')
+    await searchPaymentCostMovements('витрати', 'create')
+    await searchPaymentCostMovements('витрати', 'edit')
+    await searchPaymentCostMovements('витрати', 'premises-write-off-create')
+    await searchPaymentCostMovements('витрати', 'premises-write-off-edit')
+    await searchPaymentCostMovements('витрати', 'advanced-report-edit')
+    await searchPaymentRegisters('каса')
+
+    expect(apiRequestMock.mock.calls.map(([route]) => route)).toEqual([
+      '/consumables/storages/advanced-reports/report/edit/all',
+      '/consumables/categories/consumable-orders/create/search',
+      '/consumables/categories/consumable-orders/edit/search',
+      '/consumables/categories/advanced-reports/report/edit/search',
+      '/payments/costs/movements/consumable-orders/create/search',
+      '/payments/costs/movements/consumable-orders/edit/search',
+      '/payments/costs/movements/premises/write-off/create/search',
+      '/payments/costs/movements/premises/write-off/edit/search',
+      '/payments/costs/movements/advanced-reports/report/edit/search',
+      '/payments/registers/consumable-orders/order/pay/search',
+    ])
   })
 
   it('uses context-specific supplier and responsible-user lookup facades', async () => {
@@ -151,9 +183,9 @@ describe('consumableOrdersApi', () => {
       ],
     })
 
-    const result = await searchConsumableStorages('   ')
+    const result = await searchConsumableStorages('   ', 'create')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/all')
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/consumable-orders/create/all')
     expect(result).toHaveLength(2)
   })
 
@@ -162,9 +194,9 @@ describe('consumableOrdersApi', () => {
       ConsumablesStorages: [{ NetUid: 'storage-1', Name: 'Автомобілі компанії' }],
     })
 
-    await searchConsumableStorages('  авто  ')
+    await searchConsumableStorages('  авто  ', 'edit')
 
-    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/search', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/storages/consumable-orders/edit/search', {
       query: {
         value: 'авто',
       },

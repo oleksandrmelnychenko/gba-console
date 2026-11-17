@@ -469,7 +469,7 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string, 
 
       try {
         const [nextProducts, nextUsers] = await Promise.all([
-          getSupplyServiceConsumableProducts(''),
+          getSupplyServiceConsumableProducts('', 'edit'),
           getUnifiedServiceEditResponsibleUsers(),
         ])
 

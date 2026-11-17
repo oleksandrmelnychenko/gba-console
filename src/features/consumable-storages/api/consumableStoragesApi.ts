@@ -72,8 +72,14 @@ export async function getConsumableStorageOrganizations(): Promise<Organization[
   return readArrayPayload(result, ['Items', 'Organizations', 'Organisations', 'Data']) as Organization[]
 }
 
-export async function searchConsumableStorageUsers(value: string): Promise<UserProfile[]> {
-  const result = await apiRequest<unknown>('/usermanagement/profiles/search', {
+/** Which premises form asks for users; each maps to a facade gated by that form's create/edit key. */
+export type ConsumableStorageUserLookupScope = 'create' | 'edit' | 'write-off/create' | 'write-off/edit'
+
+export async function searchConsumableStorageUsers(
+  value: string,
+  scope: ConsumableStorageUserLookupScope,
+): Promise<UserProfile[]> {
+  const result = await apiRequest<unknown>(`/usermanagement/profiles/premises/${scope}/search`, {
     query: {
       value,
     },

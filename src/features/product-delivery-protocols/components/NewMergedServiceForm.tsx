@@ -156,7 +156,7 @@ export function NewMergedServiceForm({
 
       try {
         const [nextProducts, nextUsers] = await Promise.all([
-          getSupplyServiceConsumableProducts(''),
+          getSupplyServiceConsumableProducts('', 'create'),
           getUnifiedServiceCreateResponsibleUsers(),
         ])
 

@@ -186,8 +186,8 @@ function IncomeCashflowConversionFormPageContent() {
       try {
         const [nextOrganizations, nextRegisters, nextMovements, nextEuroRate] = await Promise.all([
           getIncomeCashflowOrganizations(),
-          searchIncomeCashflowPaymentRegisters(''),
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', 'income-form'),
+          getIncomeCashflowPaymentMovements('income-form'),
           getCurrentEuroExchangeRate(),
         ])
 
@@ -246,7 +246,7 @@ function IncomeCashflowConversionFormPageContent() {
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value)
+      void searchIncomeCashflowPaymentMovements(value, 'income-form')
         .then((nextMovements) => {
           if (!cancelled) {
             setPaymentMovements(nextMovements)

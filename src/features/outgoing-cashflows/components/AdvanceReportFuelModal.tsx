@@ -19,7 +19,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { searchCompanyCars } from '../../company-cars/api/companyCarsApi'
+import { searchCompanyCarsForAdvanceReportEdit } from '../../company-cars/api/companyCarsApi'
 import { searchPaymentCostMovements } from '../../consumable-orders/api/consumableOrdersApi'
 import {
   calculateAdvanceReportCompanyCarFueling,
@@ -206,7 +206,7 @@ export function AdvanceReportFuelModal({
         return
       }
 
-      void searchCompanyCars(value)
+      void searchCompanyCarsForAdvanceReportEdit(value)
         .then((nextCompanyCars) => {
           if (companyCarSearchSeq.current !== requestId) {
             return
@@ -233,7 +233,7 @@ export function AdvanceReportFuelModal({
     const requestId = (costMovementLoadSeq.current += 1)
     setLoadingCostMovements(true)
 
-    void searchPaymentCostMovements('')
+    void searchPaymentCostMovements('', 'advanced-report-edit')
       .then((nextMovements) => {
         if (costMovementLoadSeq.current === requestId) {
           setCostMovements(nextMovements)

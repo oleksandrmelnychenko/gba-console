@@ -309,7 +309,7 @@ function useRoadListFormModel({
 
     let cancelled = false
 
-    void searchCompanyCarUsers(debouncedUserSearchValue.trim())
+    void searchCompanyCarUsers(debouncedUserSearchValue.trim(), isEditMode ? 'edit' : 'create')
       .then((nextUsers) => {
         if (!cancelled) {
           dispatchState({ type: 'loaded-users', users: nextUsers })
@@ -327,7 +327,7 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [canSave, debouncedUserSearchValue, opened, t])
+  }, [canSave, debouncedUserSearchValue, isEditMode, opened, t])
 
   useEffect(() => {
     if (!opened || !canSave || !companyCarNetUid) {

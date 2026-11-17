@@ -256,11 +256,16 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
   }, [form.selectedSupplierValue, form.supplierSearch, isEditMode, setSuppliers])
 
   useEffect(() => {
+    // The storage list is only needed to change the storage; a read-only viewer keeps the order's own storage.
+    if (!canMutate) {
+      return undefined
+    }
+
     const value = form.storageSearch.trim()
     const requestId = (searchRequestRef.current.storage || 0) + 1
     searchRequestRef.current.storage = requestId
     const timeoutId = window.setTimeout(() => {
-      void searchConsumableStorages(value).then((nextStorages) => {
+      void searchConsumableStorages(value, isEditMode ? 'edit' : 'create').then((nextStorages) => {
         if (searchRequestRef.current.storage === requestId) {
           setStorages((current) => includeEntity(nextStorages, current.find((item) => getEntityValue(item) === form.selectedStorageValue) || null))
         }
@@ -268,7 +273,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [form.selectedStorageValue, form.storageSearch, setStorages])
+  }, [canMutate, form.selectedStorageValue, form.storageSearch, isEditMode, setStorages])
 
   useEffect(() => {
     if (!itemEditor.opened) {
@@ -279,7 +284,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     const requestId = (searchRequestRef.current.productName || 0) + 1
     searchRequestRef.current.productName = requestId
     const timeoutId = window.setTimeout(() => {
-      void searchConsumableProductCategories(value).then((categories) => {
+      void searchConsumableProductCategories(value, isEditMode ? 'edit' : 'create').then((categories) => {
         if (searchRequestRef.current.productName === requestId) {
           setProductOptions(flattenConsumableProducts(categories))
         }
@@ -287,7 +292,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [itemEditor.opened, itemEditor.productSearch, setProductOptions])
+  }, [isEditMode, itemEditor.opened, itemEditor.productSearch, setProductOptions])
 
   useEffect(() => {
     if (!itemEditor.opened) {
@@ -321,7 +326,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     const requestId = (searchRequestRef.current.costMovement || 0) + 1
     searchRequestRef.current.costMovement = requestId
     const timeoutId = window.setTimeout(() => {
-      void searchPaymentCostMovements(value).then((nextMovements) => {
+      void searchPaymentCostMovements(value, isEditMode ? 'edit' : 'create').then((nextMovements) => {
         if (searchRequestRef.current.costMovement === requestId) {
           setCostMovements(nextMovements)
         }
@@ -329,7 +334,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [itemEditor.costMovementSearch, itemEditor.opened, setCostMovements])
+  }, [isEditMode, itemEditor.costMovementSearch, itemEditor.opened, setCostMovements])
 
   const recalculateOrder = useCallback(
     async (nextOrder: ConsumablesOrder) => {

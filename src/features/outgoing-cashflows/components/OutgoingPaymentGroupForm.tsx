@@ -258,8 +258,8 @@ export function OutgoingPaymentGroupForm({
       try {
         const [nextOrganizations, nextRegisters, nextMovements] = await Promise.all([
           getIncomeCashflowOrganizations(),
-          searchIncomeCashflowPaymentRegisters(''),
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', 'outgoing-create'),
+          getIncomeCashflowPaymentMovements('outgoing-create'),
         ])
 
         if (cancelled) {
@@ -358,7 +358,7 @@ export function OutgoingPaymentGroupForm({
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value)
+      void searchIncomeCashflowPaymentMovements(value, 'outgoing-create')
         .then((items) => {
           if (!cancelled) {
             setPaymentMovements(items)

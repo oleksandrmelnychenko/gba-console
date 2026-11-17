@@ -351,8 +351,8 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
 
       try {
         const [allRegisters, nextMovements, nextRetailClients] = await Promise.all([
-          searchIncomeCashflowPaymentRegisters(''),
-          getIncomeCashflowPaymentMovements(),
+          searchIncomeCashflowPaymentRegisters('', 'income-client-payment'),
+          getIncomeCashflowPaymentMovements('income-client-payment'),
           getIncomeCashflowRetailClients().catch(() => []),
         ])
 
@@ -460,7 +460,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
         return
       }
 
-      void searchIncomeCashflowPaymentMovements(value)
+      void searchIncomeCashflowPaymentMovements(value, 'income-client-payment')
         .then((nextMovements) => {
           if (!cancelled) {
             setPaymentMovements(nextMovements)

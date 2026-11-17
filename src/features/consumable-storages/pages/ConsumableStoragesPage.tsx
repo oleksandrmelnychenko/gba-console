@@ -1137,13 +1137,13 @@ function DeprecatedConsumableOrderEditorModal({
   function handleUserSearch(value: string, setter: (value: string) => void) {
     setter(value)
 
-    void searchConsumableStorageUsers(value.trim())
+    void searchConsumableStorageUsers(value.trim(), isEditMode ? 'write-off/edit' : 'write-off/create')
       .then((nextUsers) => setUsers((current) => mergeEntities(current, nextUsers)))
       .catch(() => undefined)
   }
 
   function handleMovementSearch(value: string) {
-    void searchPaymentCostMovements(value.trim())
+    void searchPaymentCostMovements(value.trim(), isEditMode ? 'premises-write-off-edit' : 'premises-write-off-create')
       .then((nextMovements) => setMovements((current) => mergeEntities(current, nextMovements)))
       .catch(() => undefined)
   }

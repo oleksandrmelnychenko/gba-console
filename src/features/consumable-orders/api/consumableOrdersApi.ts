@@ -153,15 +153,36 @@ export async function calculateConsumableOrderForPayment(order: ConsumablesOrder
   return normalizeConsumableOrderCalculation(result)
 }
 
-export async function searchConsumableStorages(value: string): Promise<ConsumablesStorage[]> {
+export type ConsumableOrderLookupMode = 'create' | 'edit'
+
+/**
+ * Lookups shared by the consumable order form and the advance report editor. Each scope maps to a server facade
+ * gated by the key of the form that calls it, not by the premises/expense-article/consumable-product pages.
+ */
+export type ConsumableLookupScope = ConsumableOrderLookupMode | 'advanced-report-edit'
+
+function consumableLookupSegment(scope: ConsumableLookupScope): string {
+  return scope === 'advanced-report-edit' ? 'advanced-reports/report/edit' : `consumable-orders/${scope}`
+}
+
+export async function searchConsumableStorages(
+  value: string,
+  mode: ConsumableOrderLookupMode,
+): Promise<ConsumablesStorage[]> {
   const searchValue = value.trim()
   const result = searchValue
-    ? await apiRequest<unknown>('/consumables/storages/search', {
+    ? await apiRequest<unknown>(`/consumables/storages/consumable-orders/${mode}/search`, {
         query: {
           value: searchValue,
         },
       })
-    : await apiRequest<unknown>('/consumables/storages/all')
+    : await apiRequest<unknown>(`/consumables/storages/consumable-orders/${mode}/all`)
+
+  return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
+}
+
+export async function getConsumableStoragesForAdvanceReportEdit(): Promise<ConsumablesStorage[]> {
+  const result = await apiRequest<unknown>('/consumables/storages/advanced-reports/report/edit/all')
 
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
 }
@@ -187,8 +208,11 @@ export async function searchSupplyOrganizations(
   return normalizeSupplyOrganizations(result)
 }
 
-export async function searchConsumableProductCategories(value: string): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/accounting/search', {
+export async function searchConsumableProductCategories(
+  value: string,
+  scope: ConsumableLookupScope,
+): Promise<ConsumableProductCategory[]> {
+  const result = await apiRequest<unknown>(`/consumables/categories/${consumableLookupSegment(scope)}/search`, {
     query: {
       value,
     },
@@ -209,8 +233,25 @@ export async function searchConsumableProductsByVendorCode(value: string): Promi
     .filter((product): product is ConsumableProduct => Boolean(product))
 }
 
-export async function searchPaymentCostMovements(value: string): Promise<PaymentCostMovement[]> {
-  const result = await apiRequest<unknown>('/payments/costs/movements/accounting/all/search', {
+export type PaymentCostMovementLookupScope = ConsumableLookupScope | 'premises-write-off-create' | 'premises-write-off-edit'
+
+function paymentCostMovementLookupSegment(scope: PaymentCostMovementLookupScope): string {
+  if (scope === 'premises-write-off-create') {
+    return 'premises/write-off/create'
+  }
+
+  if (scope === 'premises-write-off-edit') {
+    return 'premises/write-off/edit'
+  }
+
+  return consumableLookupSegment(scope)
+}
+
+export async function searchPaymentCostMovements(
+  value: string,
+  scope: PaymentCostMovementLookupScope,
+): Promise<PaymentCostMovement[]> {
+  const result = await apiRequest<unknown>(`/payments/costs/movements/${paymentCostMovementLookupSegment(scope)}/search`, {
     query: {
       value,
     },
@@ -226,7 +267,7 @@ export async function getConsumableOrderOrganizations(): Promise<Organization[]>
 }
 
 export async function searchPaymentRegisters(value = ''): Promise<PaymentRegister[]> {
-  const result = await apiRequest<unknown>('/payments/registers/search', {
+  const result = await apiRequest<unknown>('/payments/registers/consumable-orders/order/pay/search', {
     query: {
       value,
     },

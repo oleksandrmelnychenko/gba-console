@@ -106,7 +106,7 @@ export async function getPaymentAccountOrganizations(): Promise<Organization[]> 
 }
 
 export async function getPaymentAccountBanks(): Promise<BankItem[]> {
-  const result = await apiRequest<unknown>('/bank/accounting/all')
+  const result = await apiRequest<unknown>('/bank/payment-accounts/page/all')
 
   return readArrayPayload(result, ['Items', 'Banks', 'Data']) as BankItem[]
 }

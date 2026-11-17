@@ -231,8 +231,12 @@ async function searchSupplyOrganizationsAt(route: string, value: string): Promis
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyOrganization[]
 }
 
-export async function getSupplyServiceConsumableProducts(value = ''): Promise<ConsumableProduct[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/supply/services/get', {
+/** Supply-service products for the unified-service form; gated by the form's create/edit key. */
+export async function getSupplyServiceConsumableProducts(
+  value: string,
+  mode: 'create' | 'edit',
+): Promise<ConsumableProduct[]> {
+  const result = await apiRequest<unknown>(`/consumables/categories/product-delivery-protocols/unified-service/${mode}/supply-services`, {
     query: { value },
   })
 

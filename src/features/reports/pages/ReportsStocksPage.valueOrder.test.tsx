@@ -53,7 +53,7 @@ beforeEach(() => {
   Data.selections = [{ IsChecked: true, SelectedField: { Type: 4, Name: 'Товарна група' }, FilterCondition: { Type: 2, Name: 'В списку' }, Values: groups.slice(0, 3).map(group => ({ Data: group, Name: group.Name, Value: group.Id })) }]
   vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'group-order', Revision: 1, Name: 'Товарні групи', Data }])
   vi.mocked(saveServerReportTemplate).mockImplementation(async value => ({ ...value, Revision: 2 }))
-  vi.mocked(apiRequest).mockImplementation(async path => path === '/products/groups/filtered/get' ? { ProductGroups: groups } : [])
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/products/groups/reports/stocks/filtered' ? { ProductGroups: groups } : [])
 })
 afterEach(cleanup)
 
@@ -100,5 +100,5 @@ it('keeps a lower product group in place when checked and unchecked in the sales
   expect(vi.mocked(saveServerReportTemplate).mock.calls[0][0].Data.selections[0].Values).toEqual(
     [...groups.slice(0, 3), hobi].map(group => ({ Data: group, Name: group.Name, Value: group.Id })),
   )
-  await waitFor(() => expect(apiRequest).toHaveBeenCalledWith('/products/groups/filtered/get', { query: { value: '' } }))
+  await waitFor(() => expect(apiRequest).toHaveBeenCalledWith('/products/groups/reports/stocks/filtered', { query: { value: '' } }))
 })

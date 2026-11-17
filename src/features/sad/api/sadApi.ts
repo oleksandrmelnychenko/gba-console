@@ -171,7 +171,7 @@ export async function getClientAgreements(netId: string): Promise<SadClientAgree
 }
 
 export async function searchOrganizationClients(value: string): Promise<SadOrganizationClient[]> {
-  const result = await apiRequest<unknown>('/clients/organizations/all/search', {
+  const result = await apiRequest<unknown>('/clients/organizations/sad/edit/search', {
     query: {
       value,
     },
@@ -240,7 +240,7 @@ export async function uploadProductSpecificationForSad(
 }
 
 export async function getAllUkraineCartItemsForSad(): Promise<SadSupplyOrderUkraineCartItem[]> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/all')
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/sad/edit/all')
 
   return normalizeArray<SadSupplyOrderUkraineCartItem>(result)
     .filter((item) => (item.ReservedQty || 0) > 0)

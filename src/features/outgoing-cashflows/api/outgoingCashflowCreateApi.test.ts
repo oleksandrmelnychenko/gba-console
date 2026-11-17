@@ -103,7 +103,7 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/organizations/all')
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/payments/registers/search',
+      '/payments/registers/outgoing-cashflows/create/search',
       {
         query: {
           value: 'каса',
@@ -112,11 +112,11 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/payments/movements/accounting/all',
+      '/payments/movements/outgoing-cashflows/create/all',
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       4,
-      '/payments/movements/accounting/all/search',
+      '/payments/movements/outgoing-cashflows/create/all/search',
       {
         query: {
           value: 'госп',
@@ -125,7 +125,7 @@ describe('outgoingCashflowCreateApi mutation contract', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       5,
-      '/usermanagement/profiles/search',
+      '/usermanagement/profiles/outgoing-cashflows/create/search',
       {
         query: {
           value: 'іван',
