@@ -96,7 +96,7 @@ export async function createUkraineMergedServicePaymentTask(
   paymentTask: SupplyPaymentTask,
   isAccounting: boolean,
 ): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/create', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/order/merged-services/payment-tasks/create', {
     method: 'POST',
     body: {
       ...mergedServiceIdentity(orderNetUid, service),
@@ -114,7 +114,7 @@ export async function deleteUkraineMergedServicePaymentTask(
   paymentTask: SupplyPaymentTask,
   isAccounting: boolean,
 ): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/payment-tasks/delete', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/order/merged-services/payment-tasks/delete', {
     method: 'POST',
     body: {
       ...mergedServiceIdentity(orderNetUid, service),
@@ -133,7 +133,7 @@ export async function deleteUkraineMergedService(
   orderNetUid: string,
   service: MergedService,
 ): Promise<SupplyOrderUkraine | null> {
-  const result = await apiRequest<unknown>('/supplies/ukraine/order/merged-services/delete', {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/order/merged-services/delete', {
     method: 'POST',
     body: mergedServiceIdentity(orderNetUid, service),
   })

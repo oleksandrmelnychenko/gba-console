@@ -83,7 +83,7 @@ describe('payment protocols permission-scoped API', () => {
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       1,
-      '/supplies/ukraine/order/merged-services/payment-tasks/create',
+      '/supplies/ukraine/order/order/merged-services/payment-tasks/create',
       {
         method: 'POST',
         body: {
@@ -97,7 +97,7 @@ describe('payment protocols permission-scoped API', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/supplies/ukraine/order/merged-services/payment-tasks/delete',
+      '/supplies/ukraine/order/order/merged-services/payment-tasks/delete',
       {
         method: 'POST',
         body: {
@@ -111,7 +111,7 @@ describe('payment protocols permission-scoped API', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       3,
-      '/supplies/ukraine/order/merged-services/delete',
+      '/supplies/ukraine/order/order/merged-services/delete',
       {
         method: 'POST',
         body: {

@@ -310,26 +310,6 @@ export async function exportProductMovementsDocument(
   return normalizeExportDocument(result)
 }
 
-export async function getProductRecommendationForecast(params: {
-  asOfDate: string
-  forecastWeeks: number
-  productNetId: string
-  useCache?: boolean
-}): Promise<unknown> {
-  return apiRequest<unknown>('/recommendations/forecast', {
-    query: {
-      asOfDate: params.asOfDate,
-      forecastWeeks: params.forecastWeeks,
-      productNetId: params.productNetId,
-      useCache: params.useCache ?? true,
-    },
-    errorMessages: {
-      default: 'Не вдалося завантажити прогноз',
-      network: 'Сервер прогнозів недоступний',
-    },
-  })
-}
-
 export async function getNonDefectiveStorages(): Promise<Storage[]> {
   const result = await apiRequest<unknown>('/storages/all/nondefective', {
     errorMessages: {
