@@ -26,7 +26,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
-import { BANK_FIELD_LIMITS, validateBank } from '../bankValidation'
+import { BANK_FIELD_LIMITS, findDuplicateBank, validateBank } from '../bankValidation'
 import './accounting-banks-page.css'
 
 const ACCOUNTING_BANK_CREATE_PERMISSION = PermissionKeys.FinancialAdministration.Banks.Bank.Create
@@ -184,6 +184,11 @@ function AccountingBanksPageContent() {
 
     if (validationError) {
       setFormError(validationError)
+      return
+    }
+
+    if (findDuplicateBank(payload, banks)) {
+      setFormError(t('Такий банк уже є: та сама назва, МФО і ЄДРПОУ'))
       return
     }
 

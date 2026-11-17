@@ -52,3 +52,18 @@ export function validateBank(bank: AccountingBank): string | null {
 
   return null
 }
+
+/* A second identical bank (same name, МФО and ЄДРПОУ) made two indistinguishable
+   options in the account form's «Банк» picker. */
+export function findDuplicateBank(bank: AccountingBank, banks: AccountingBank[]): AccountingBank | null {
+  const key = (item: AccountingBank) =>
+    [item.Name?.trim().toLocaleLowerCase('uk-UA') || '', item.MfoCode?.trim() || '', item.EdrpouCode?.trim() || ''].join('|')
+  const target = key(bank)
+
+  return banks.find((item) =>
+    !item.Deleted
+    && !(bank.Id && item.Id === bank.Id)
+    && !(bank.NetUid && item.NetUid === bank.NetUid)
+    && key(item) === target,
+  ) ?? null
+}

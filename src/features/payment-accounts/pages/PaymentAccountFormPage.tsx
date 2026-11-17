@@ -1,3 +1,4 @@
+import { toBankOptions } from '../paymentAccountBankOptions'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { exchangeCurrencyCode, exchangeDisplayAmount, exchangeRowId } from '../exchangePresentation'
@@ -377,8 +378,8 @@ function PaymentAccountFormPageContent() {
     [organizations],
   )
   const bankOptions = useMemo(
-    () => toBankOptions(banks),
-    [banks],
+    () => toBankOptions(banks, form.bankName),
+    [banks, form.bankName],
   )
   const headerState = useMemo<PaymentAccountFormHeaderState>(
     () => ({
@@ -3072,24 +3073,6 @@ function toSelectOptions<T extends { Id?: number; NetUid?: string }>(items: T[],
     if (value) {
       options.push({
         label: getLabel(item) || value,
-        value,
-      })
-    }
-
-    return options
-  }, [])
-}
-
-function toBankOptions(banks: BankItem[]) {
-  const seenValues = new Set<string>()
-
-  return banks.reduce<Array<{ label: string; value: string }>>((options, bank) => {
-    const value = bank.Name?.trim() || ''
-
-    if (value && !seenValues.has(value)) {
-      seenValues.add(value)
-      options.push({
-        label: value,
         value,
       })
     }
