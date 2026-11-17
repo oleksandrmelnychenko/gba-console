@@ -30,6 +30,7 @@ import {
   getSupplyReturns,
 } from '../api/supplyReturnsApi'
 import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from '../types'
+import { getSupplierDisplayName } from '../supplyReturnSupplier'
 import './supply-returns-page.css'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -601,8 +602,8 @@ function useSupplyReturnColumns(
         id: 'supplier',
         header: t('Постачальник'),
         minWidth: 200,
-        accessor: (supplyReturn) => supplyReturn.Supplier?.FullName,
-        cell: (supplyReturn) => displayValue(supplyReturn.Supplier?.FullName),
+        accessor: (supplyReturn) => getSupplierDisplayName(supplyReturn.Supplier),
+        cell: (supplyReturn) => displayValue(getSupplierDisplayName(supplyReturn.Supplier)),
       },
       {
         id: 'qty',
@@ -771,7 +772,7 @@ function SupplyReturnDetail({
       {supplyReturn.HasIncompleteCostData && <Alert color="yellow" variant="light">{t('Для частини товарів немає даних історичної партії. Кількість доступна, повну суму повернення визначити неможливо.')}</Alert>}
       <DocumentDetailSection title={t('Реквізити документа')}>
         <DocumentDetailRow label={t('Організація')} value={<TableChip tone="product" value={getOrganizationDisplayName(supplyReturn.Organization)} />} />
-        <DocumentDetailRow label={t('Постачальник')} value={supplyReturn.Supplier?.SupplierName || supplyReturn.Supplier?.FullName} />
+        <DocumentDetailRow label={t('Постачальник')} value={getSupplierDisplayName(supplyReturn.Supplier)} />
         <DocumentDetailRow label={t('З складу')} value={<TableChip tone="storage" value={supplyReturn.Storage?.Name} />} />
         <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={getResponsibleName(supplyReturn)} />} />
         {supplyReturn.Comment && <DocumentDetailRow label={t('Коментар')} value={supplyReturn.Comment} wide />}
