@@ -1,4 +1,4 @@
-import { MantineProvider } from '@mantine/core'
+import { MantineProvider, Modal } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -27,6 +27,28 @@ function NestedForm() {
 }
 
 describe('AppDrawer', () => {
+  it('closes only the nested dialog on Escape and itself on Escape from its own content', async () => {
+    const closeDrawer = vi.fn()
+    const closeModal = vi.fn()
+    render(
+      <MantineProvider>
+        <AppDrawer opened title="Outer" onClose={closeDrawer}>
+          <input aria-label="drawer field" />
+          <Modal opened title="Export" onClose={closeModal}>
+            <input aria-label="modal field" />
+          </Modal>
+        </AppDrawer>
+      </MantineProvider>,
+    )
+
+    fireEvent.keyDown(await screen.findByLabelText('modal field'), { key: 'Escape' })
+    expect(closeModal).toHaveBeenCalledOnce()
+    expect(closeDrawer).not.toHaveBeenCalled()
+
+    fireEvent.keyDown(screen.getByLabelText('drawer field'), { key: 'Escape' })
+    expect(closeDrawer).toHaveBeenCalledOnce()
+  })
+
   it('renders the shared header and pinned footer', async () => {
     render(
       <MantineProvider>

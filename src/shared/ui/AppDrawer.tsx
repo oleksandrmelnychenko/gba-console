@@ -1,4 +1,5 @@
 import { Drawer, type DrawerProps } from '@mantine/core'
+import { useWindowEvent } from '@mantine/hooks'
 import {
   createContext,
   useCallback,
@@ -161,6 +162,29 @@ export function AppDrawer({
   )
   const hasFooter = footer != null || registeredFooterCount > 0
   const [outsideCloseArmed, setOutsideCloseArmed] = useState(false)
+  const [rootNode, setRootNode] = useState<HTMLDivElement | null>(null)
+  const closeOnEscape = props.closeOnEscape ?? true
+  const { onClose, opened } = props
+
+  // Mantine closes every open modal layer on one Escape. A nested dialog (export, confirm, another
+  // sheet) is portaled outside this drawer, so an Escape whose target lives there is not ours.
+  useWindowEvent('keydown', (event) => {
+    if (event.key !== 'Escape' || event.isComposing || !closeOnEscape || !opened) {
+      return
+    }
+
+    const target = event.target
+
+    if (target instanceof Element && target.getAttribute('data-mantine-stop-propagation') === 'true') {
+      return
+    }
+
+    if (rootNode && target instanceof Node && target !== document.body && !rootNode.contains(target)) {
+      return
+    }
+
+    onClose()
+  }, { capture: true })
   const drawerClassName = ['app-drawer', 'app-form-sheet', hasFooter ? 'app-drawer--with-footer' : '', className]
     .filter(Boolean)
     .join(' ')
@@ -177,6 +201,8 @@ export function AppDrawer({
   return (
     <Drawer
       {...props}
+      ref={setRootNode}
+      closeOnEscape={false}
       closeButtonProps={{ 'aria-label': 'Закрити', ...props.closeButtonProps }}
       className={drawerClassName}
       closeOnClickOutside={(props.closeOnClickOutside ?? true) && outsideCloseArmed}

@@ -331,10 +331,23 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable
 }
 
+function isFromPortaledLayer(event: ReactKeyboardEvent<HTMLElement>): boolean {
+  const root = event.currentTarget
+  const target = event.target
+
+  return root instanceof Node && target instanceof Node && root !== target && !root.contains(target)
+}
+
 export function dispatchWizardKey(event: ReactKeyboardEvent<HTMLElement>): boolean {
   const hotkey = toWizardHotkey(event)
 
   if (!hotkey) {
+    return false
+  }
+
+  // React bubbles keydown from portaled nested dialogs (document movement, print, export) through the
+  // wizard. That Escape belongs to the nested dialog only; it must not also ask to close the wizard.
+  if (hotkey === 'Escape' && isFromPortaledLayer(event)) {
     return false
   }
 
