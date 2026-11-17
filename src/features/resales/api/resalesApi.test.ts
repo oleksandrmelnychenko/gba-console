@@ -214,7 +214,7 @@ describe('resales API contracts', () => {
       Storages: [resaleStorage, legacyResaleStorage],
     })
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/resales/permissions/create/filter/options')
-    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/storages/get/all')
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/storages/resales/create/warehouses')
   })
 
   it('loads selected client agreements without debt aggregates', async () => {

@@ -501,24 +501,17 @@ function useClientsPageModel() {
     let cancelled = false
 
     async function loadClientMeta() {
-      try {
-        const [nextTotalCount, nextClientTypes, nextFilterItems] = await Promise.all([
-          getClientCount(),
-          getClientTypes(),
-          getClientFilterItems(),
-        ])
+      // Independent lookups: one failing (e.g. a 403 on the total) must not clear the others.
+      const [totalResult, typesResult, filtersResult] = await Promise.allSettled([
+        getClientCount(),
+        getClientTypes(),
+        getClientFilterItems(),
+      ])
 
-        if (!cancelled) {
-          setTotalCount(nextTotalCount)
-          setClientTypes(nextClientTypes)
-          setClientFilterItems(nextFilterItems)
-        }
-      } catch {
-        if (!cancelled) {
-          setTotalCount(null)
-          setClientTypes([])
-          setClientFilterItems([])
-        }
+      if (!cancelled) {
+        setTotalCount(totalResult.status === 'fulfilled' ? totalResult.value : null)
+        setClientTypes(typesResult.status === 'fulfilled' ? typesResult.value : [])
+        setClientFilterItems(filtersResult.status === 'fulfilled' ? filtersResult.value : [])
       }
     }
 

@@ -245,7 +245,9 @@ export async function getResaleAvailabilityFilterOptions(): Promise<ResaleAvaila
 }
 
 async function getResaleAvailabilityStorages(): Promise<ResaleStorage[]> {
-  const result = await apiRequest<unknown>('/storages/get/all')
+  // Purpose-specific facade gated by sales.resales.resale.create (the legacy /storages/get/all
+  // route requires a warehouse transfer key that resale users do not have).
+  const result = await apiRequest<unknown>('/storages/resales/create/warehouses')
   const storages = (readArrayPayload(result, ['Items', 'Storages', 'Data']) as ResaleStorage[])
     .filter((storage) => storage.Deleted !== true && storage.Id != null && Boolean(storage.NetUid))
   const resaleStorages = storages.filter(
