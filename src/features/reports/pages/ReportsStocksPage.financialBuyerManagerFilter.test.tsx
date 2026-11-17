@@ -103,5 +103,5 @@ it('keys restored manager chips by identity even when a directory caption change
     { Data: { Id: managerId }, Name: 'Стара назва [42]', Value: 0 },
     { Data: { Id: secondId }, Name: 'Інший менеджер [43]', Value: 0 },
   ])
-  expect(screen.getByRole('button', { name: 'Видалити Стара назва [42]' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Видалити Менеджер нова назва [42]' })).toBeTruthy()
 })

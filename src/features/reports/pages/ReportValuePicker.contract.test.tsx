@@ -240,7 +240,7 @@ describe('selected values', () => {
     expect(keys()).toEqual(['3'])
     expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(options.map(option => `${option.label} current`))
     await userEvent.click(screen.getByRole('button', { name: 'Вибрано: 1' }))
-    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([options[2].label.replace(/ \[\d+\]$/, '')])
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual([`${options[2].label} current`])
   })
 
   it.each(['multi', 'single'] as const)('%s: shows «Вибрано: N» with removable pills', async mode => {

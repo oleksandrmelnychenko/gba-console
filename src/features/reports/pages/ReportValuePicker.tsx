@@ -14,6 +14,7 @@ export type ReportValuePickerProps = {
   mode: 'single' | 'multi'
   data: ReportValueOption[]
   selected: ReportValueOption[]
+  ownSelectedLabels?: boolean
   search: string
   onSearchChange: (value: string) => void
   onChange: (keys: string[], chosen?: string) => void
@@ -34,7 +35,7 @@ export type ReportValuePickerProps = {
 }
 
 export function ReportValuePicker({
-  mode, data, selected, search, onSearchChange, onChange, label, placeholder, loading, disabled, readOnly,
+  mode, data, selected, ownSelectedLabels, search, onSearchChange, onChange, label, placeholder, loading, disabled, readOnly,
   remote = true, emptyMessage, error, lookupError, onRetry, hasMore, loadingMore, onLoadMore, onAddText,
 }: ReportValuePickerProps) {
   const { t } = useI18n()
@@ -57,7 +58,9 @@ export function ReportValuePicker({
   for (const item of data) serverLabels.current.set(item.value, item.label)
   const restored = selected.filter(item => !serverLabels.current.has(item.value))
   const storedShared = previewSharedNames(restored.map(item => item.label))
-  const shown = (item: ReportValueOption) => serverLabels.current.has(item.value) ? item.label : previewCaptionText(item.label, storedShared)
+  const selectedItems = new Set<ReportValueOption>(selected)
+  const shown = (item: ReportValueOption) => ownSelectedLabels && selectedItems.has(item) ? previewCaptionText(item.label, storedShared)
+    : available.get(item.value)?.label ?? serverLabels.current.get(item.value) ?? previewCaptionText(item.label, storedShared)
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))

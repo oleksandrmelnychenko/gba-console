@@ -126,7 +126,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     {injectedItem ? renderItemPicker?.({ selection, onChange, multiple, createData: encode, selectedLabel: label, identity: data => analysisValueIdentity(field, data) })
       : unavailable ? <Alert color="yellow">{unavailable}</Alert>
       : <ReportValuePicker mode={multiple ? 'multi' : 'single'} label="Значення"
-          data={pending ? [] : options} selected={selection.Values.map(value => ({ value: analysisValueIdentity(field, value.Data), label: label(value) }))}
+          data={pending ? [] : options} ownSelectedLabels selected={selection.Values.map(value => ({ value: analysisValueIdentity(field, value.Data), label: label(value) }))}
           search={search} onSearchChange={setSearch} onChange={change} loading={!current || pending}
           lookupError={pending ? undefined : current?.error} onRetry={() => { if (current?.values.length) void loadMore(); else setAttempt(value => value + 1) }}
           hasMore={!pending && !!current?.hasMore && current.nextOffset < 4080} loadingMore={current?.loadingMore} onLoadMore={() => void loadMore()} />}
