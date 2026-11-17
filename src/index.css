@@ -70,9 +70,9 @@
   --app-radius-pill: 999px;
 
   /* Control heights (toolbar density). */
-  --app-control-height: 36px;
-  --app-control-height-sm: 32px;
-  --app-control-height-xs: 28px;
+  --app-control-height: 32px;
+  --app-control-height-sm: 28px;
+  --app-control-height-xs: 24px;
 }
 
 html,

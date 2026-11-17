@@ -14,7 +14,7 @@
      Bar height = 8px padding × 2 + label + gap + control + 1px bottom border. */
   --app-filter-control-height: var(--app-control-height, 32px);
   --app-filter-label-gap: var(--app-space-1, 4px);
-  --app-filter-label-height: 17px;
+  --app-filter-label-height: 16px;
   --app-filter-bar-height: calc(
     2 * var(--app-space-2, 8px) + var(--app-filter-label-height) + var(--app-filter-label-gap) +
       var(--app-filter-control-height) + 1px
