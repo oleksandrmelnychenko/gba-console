@@ -43,6 +43,7 @@ import { getSaleReviewIssues, type SaleReviewIssueCode } from '../../saleReviewG
 import { getSalesTtnFileValidationError } from '../../salesPayloadGuards'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
+import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH } from '../../salesFieldLimits'
 import {
   getSaleFileMutationOperationIdentity,
   isPersistedSaleFileMutationRecord,
@@ -148,9 +149,7 @@ export type WizardDeliverySelection = {
   recipient: WizardDeliveryRecipient | null
 }
 
-/** Column limits enforced again by the server (CustomersOwnTtn.Number, Sale.Comment). */
-export const SALE_OWN_TTN_MAX_LENGTH = 150
-export const SALE_COMMENT_MAX_LENGTH = 450
+export { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH } from '../../salesFieldLimits'
 
 export function useWizardSaleSubmission({
   canSubmit,

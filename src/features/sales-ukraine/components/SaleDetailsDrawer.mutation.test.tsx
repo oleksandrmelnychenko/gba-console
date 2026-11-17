@@ -189,6 +189,7 @@ describe('SaleDetailsDrawer file mutation reconciliation', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Редагувати' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Власне ТТН' }))
+    expect(screen.getByRole('textbox', { name: 'Номер ТТН' }).getAttribute('maxlength')).toBe('150')
     fireEvent.change(screen.getByRole('textbox', { name: 'Номер ТТН' }), {
       target: { value: 'TTN-7857' },
     })

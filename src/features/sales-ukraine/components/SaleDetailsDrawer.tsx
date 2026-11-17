@@ -1,5 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH } from '../salesFieldLimits'
 import {
   Anchor,
   Alert,
@@ -463,6 +464,7 @@ function SaleDetailsContent({
             autosize
             disabled={fileMutation.reconciliationRequired}
             label={t('Коментар')}
+            maxLength={SALE_COMMENT_MAX_LENGTH}
             minRows={2}
             value={comment}
             onChange={(event) => setComment(event.currentTarget.value)}
@@ -500,6 +502,7 @@ function SaleDetailsContent({
               <TextInput
                 disabled={fileMutation.reconciliationRequired}
                 label={t('Номер ТТН')}
+                maxLength={SALE_OWN_TTN_MAX_LENGTH}
                 value={ownTtnNumber}
                 onChange={(event) => setOwnTtnNumber(event.currentTarget.value)}
               />

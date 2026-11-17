@@ -167,7 +167,7 @@ export function AppDrawer({
   const { onClose, opened } = props
 
   // Mantine closes every open modal layer on one Escape. A nested dialog (export, confirm, another
-  // sheet) is portaled outside this drawer, so an Escape whose target lives there is not ours.
+  // sheet) is portaled outside this drawer, so an Escape from inside that other dialog is not ours.
   useWindowEvent('keydown', (event) => {
     if (event.key !== 'Escape' || event.isComposing || !closeOnEscape || !opened) {
       return
@@ -179,7 +179,9 @@ export function AppDrawer({
       return
     }
 
-    if (rootNode && target instanceof Node && target !== document.body && !rootNode.contains(target)) {
+    const targetDialog = target instanceof Element ? target.closest('[role="dialog"]') : null
+
+    if (rootNode && targetDialog && !rootNode.contains(targetDialog)) {
       return
     }
 
