@@ -8,6 +8,7 @@ import { getPaymentAccount } from '../api/paymentAccountsApi'
 import type { PaymentAccount, PaymentRegisterCurrencyExchange, PaymentRegisterTransfer } from '../types'
 import { PaymentRegisterType } from '../types'
 import { PaymentAccountActivityPanel, PaymentAccountFormPage } from './PaymentAccountFormPage'
+import { PAYMENT_ACCOUNTS_PAGE_PERMISSION } from '../permissions'
 
 const allowedPermissions = new Set<string>()
 
@@ -131,6 +132,22 @@ describe('payment-account canonical permission guards', () => {
 
     expect(screen.getByText('Доступ заборонено')).toBeTruthy()
     expect(getPaymentAccount).not.toHaveBeenCalled()
+  })
+
+  it('denies a direct /new without the create key', () => {
+    allowedPermissions.add(PAYMENT_ACCOUNTS_PAGE_PERMISSION)
+    render(
+      <Providers>
+        <MemoryRouter initialEntries={['/accounting/payment-accounts/new']}>
+          <Routes>
+            <Route path="/accounting/payment-accounts/new" element={<PaymentAccountFormPage />} />
+          </Routes>
+        </MemoryRouter>
+      </Providers>,
+    )
+
+    expect(screen.getByText('Доступ заборонено')).toBeTruthy()
+    expect(screen.getByText('Недостатньо прав для створення рахунку')).toBeTruthy()
   })
 
   it('keeps transfer and exchange creation independent', () => {

@@ -295,6 +295,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function PaymentAccountFormPage() {
   const { t } = useI18n()
   const { can, isLoading } = usePermissions()
+  const { id } = useParams<{ id?: string }>()
 
   if (isLoading) {
     return <Text c="dimmed">{t('Завантаження')}</Text>
@@ -304,6 +305,16 @@ export function PaymentAccountFormPage() {
     return (
       <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
         {t('Недостатньо прав для перегляду платіжних рахунків')}
+      </Alert>
+    )
+  }
+
+  // A direct /new without the create key is denied like the other create routes
+  // (it used to open an editable form with a disabled Зберегти).
+  if (!id && !can(PAYMENT_ACCOUNT_CREATE_PERMISSION)) {
+    return (
+      <Alert color="red" icon={<CircleAlert size={18} />} title={t('Доступ заборонено')} variant="light">
+        {t('Недостатньо прав для створення рахунку')}
       </Alert>
     )
   }
