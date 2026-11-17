@@ -401,7 +401,7 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce('42')
 
     await expect(getClientCount()).resolves.toBe(42)
-    expect(apiRequestMock).toHaveBeenCalledWith('/clients/get/total', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/clients-page/total', {
       query: {
         type: 0,
       },

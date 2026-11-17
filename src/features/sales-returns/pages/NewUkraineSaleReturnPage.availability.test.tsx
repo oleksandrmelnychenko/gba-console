@@ -7,6 +7,15 @@ import { NewUkraineSaleReturnPage } from './NewUkraineSaleReturnPage'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
+const permissionState = vi.hoisted(() => ({ canCreateAnyReturn: true }))
+vi.mock('../../auth/usePermissions', () => ({
+  usePermissions: () => ({
+    can: () => permissionState.canCreateAnyReturn,
+    cannot: () => !permissionState.canCreateAnyReturn,
+    isLoading: false,
+    permissions: [],
+  }),
+}))
 vi.mock('../../products/components/ProductCardModal', () => ({ ProductCardModal: () => null }))
 vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
   usePersistentSalesMutation: () => vi.fn(),
@@ -115,4 +124,14 @@ it.each([
   fireEvent.mouseEnter(status)
   expect(await screen.findByText(hint)).toBeTruthy()
   expect((results.getAllByText('Додати', { exact: true }).map((item) => item.closest('button')!)[1] as HTMLButtonElement).disabled).toBe(true)
+})
+
+it('hides «Створити» without sales.ukraine.sale_return.create_any', () => {
+  permissionState.canCreateAnyReturn = false
+  try {
+    render(<MantineProvider><I18nProvider><NewUkraineSaleReturnPage /></I18nProvider></MantineProvider>)
+    expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+  } finally {
+    permissionState.canCreateAnyReturn = true
+  }
 })

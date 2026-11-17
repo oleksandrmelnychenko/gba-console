@@ -105,7 +105,9 @@ export async function getSuppliers(
 }
 
 export async function getClientCount(type = CLIENT_TYPE_BUYER): Promise<number> {
-  const result = await apiRequest<unknown>('/clients/get/total', {
+  // Clients-page facade gated by counterparties.clients.page.view (the legacy /clients/get/total
+  // route belongs to the suppliers page).
+  const result = await apiRequest<unknown>('/clients/clients-page/total', {
     query: {
       type,
     },

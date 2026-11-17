@@ -29,6 +29,8 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PermissionKeys } from '../../../shared/auth/permissionKeys'
+import { usePermissions } from '../../auth/usePermissions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
@@ -130,6 +132,10 @@ type ItemEditorState = {
 export function NewUkraineSaleReturnPage() {
   const runActionOnce = useSingleFlight()
   const { t } = useI18n()
+  // The create dialog's client, warehouse and product pickers are server facades gated by
+  // sales.ukraine.sale_return.create_any, so the dialog is only usable with that key.
+  const { can } = usePermissions()
+  const canCreateReturn = can(PermissionKeys.SalesUkraine.Sale.CreateAnyReturn)
   const runCancelMutation = usePersistentSalesMutation(
     'sale-return-cancel',
     'ukraine-sale-return:cancel',
@@ -361,6 +367,9 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function openCreate() {
+    if (!canCreateReturn) {
+      return
+    }
     salesRequestIdRef.current += 1
     editorRequestIdRef.current += 1
     storageRequestIdRef.current += 1
@@ -820,9 +829,11 @@ export function NewUkraineSaleReturnPage() {
                 {t('Сформувати звіт')}
               </Button>
             </Tooltip>
-            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={openCreate}>
-              {t('Створити')}
-            </Button>
+            {canCreateReturn ? (
+              <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<Plus size={16} />} onClick={openCreate}>
+                {t('Створити')}
+              </Button>
+            ) : null}
           </div>
         </div>
 
