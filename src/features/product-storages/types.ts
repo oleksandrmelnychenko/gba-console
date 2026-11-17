@@ -23,6 +23,7 @@ export type ProductStoragePlacement = {
 
 export type ProductStorageProduct = {
   Id?: number
+  MeasureUnit?: { Name?: string } | null
   Name?: string
   NameUA?: string
   NetUid?: string

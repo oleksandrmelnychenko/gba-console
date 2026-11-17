@@ -63,6 +63,7 @@ import type {
   ProductStoragesExportDocument,
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { parseQuantityInput } from '../../../shared/units/quantityInput'
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { right: ['actions'] },
@@ -99,7 +100,8 @@ type ProductStorageActionForm = {
   consignmentId: string
   fromDate: string
   isManagement: boolean
-  qty: number | ''
+  /** Typed text: «1,5» stays as typed and is parsed (and explained) by parseQuantityInput. */
+  qty: string
   reason: string
   rowNumber: string
   storageNumber: string
@@ -216,7 +218,7 @@ function useProductStoragesPageModel() {
     [effectiveToStorageNetUid, storages],
   )
   const availableReturnConsignments = useMemo(
-    () => returnConsignmentsState.items.filter(hasReturnConsignmentItemId),
+    () => uniqueReturnConsignments(returnConsignmentsState.items.filter(hasReturnConsignmentItemId)),
     [returnConsignmentsState.items],
   )
   const selectedReturnConsignment = useMemo(
@@ -393,7 +395,7 @@ function useProductStoragesPageModel() {
             items: nextConsignments,
           })
           setActionForm((currentForm) => {
-            const nextAvailableConsignments = nextConsignments.filter(hasReturnConsignmentItemId)
+            const nextAvailableConsignments = uniqueReturnConsignments(nextConsignments.filter(hasReturnConsignmentItemId))
 
             if (currentForm.consignmentId && nextAvailableConsignments.some((consignment) => getConsignmentKey(consignment) === currentForm.consignmentId)) {
               return currentForm
@@ -566,7 +568,8 @@ function useProductStoragesPageModel() {
       rows,
       scope: 'single',
     })
-    setActionForm(createActionForm(rows[0]?.changedQty))
+    /* The quantity starts empty: an untouched Списати/Перемістити/Повернути must not move the whole stock. */
+    setActionForm(createActionForm())
     setActionError(null)
   }
 
@@ -740,7 +743,7 @@ function useProductStoragesPageModel() {
             {
               ConsignmentItemId: selectedReturnConsignment.ConsignmentItemId,
               Product: getAvailabilityProduct(availability),
-              Qty: Number(actionForm.qty),
+              Qty: readActionQty(actionForm.qty),
             },
           ],
         })
@@ -1326,8 +1329,17 @@ function ProductStorageActionModal({
   onSubmit: () => void
 }) {
   const { t } = useI18n()
+  /* Списати / Перемістити / Повернути change stock: they run only after «Так». */
+  const [confirmOpened, setConfirmOpened] = useValueState(false)
+  const [submitTried, setSubmitTried] = useValueState(false)
 
   if (!modal) {
+    /* Closed: the next operation starts without old errors or a pending confirmation. */
+    if (submitTried || confirmOpened) {
+      setSubmitTried(false)
+      setConfirmOpened(false)
+    }
+
     return null
   }
 
@@ -1344,7 +1356,12 @@ function ProductStorageActionModal({
     modal.mode === 'return'
       ? getReturnMaxQty(singleAvailableQty, selectedReturnConsignment)
       : singleAvailableQty
-  const displayedQty = isSingle ? Number(form.qty) : sumActionRows(modal.rows)
+  const displayedQty = isSingle ? readActionQty(form.qty) : sumActionRows(modal.rows)
+  const singleUnit = getAvailabilityUnit(modal.rows[0]?.availability)
+  const quantityProblem = isSingle
+    ? parseQuantityInput(form.qty, { available: singleMaxQty, unit: singleUnit }, t).error
+    : null
+  const quantityError = form.qty.trim() || submitTried ? quantityProblem : null
   const footer = (
     <>
       <Button disabled={isSubmitting} variant="default" onClick={onClose}>
@@ -1355,12 +1372,19 @@ function ProductStorageActionModal({
         disabled={isSubmitting}
         leftSection={getActionSubmitIcon(modal.mode)}
         loading={isSubmitting}
-        onClick={onSubmit}
+        onClick={() => {
+          setSubmitTried(true)
+
+          if (!quantityProblem) {
+            setConfirmOpened(true)
+          }
+        }}
       >
         {t(getActionSubmitLabel(modal.mode))}
       </Button>
     </>
   )
+  const confirmQty = Number.isFinite(displayedQty) ? formatAmount(displayedQty) : '—'
 
   return (
     <AppModal
@@ -1470,17 +1494,17 @@ function ProductStorageActionModal({
             ) : null}
 
             {showQuantityField ? (
-              <NumberInput
-                allowNegative={false}
-                decimalScale={3}
+              <TextInput
+                description={typeof singleMaxQty === 'number' ? `${t('Доступно')}: ${formatAmount(singleMaxQty)}${singleUnit ? ` ${singleUnit}` : ''}` : undefined}
                 disabled={isSubmitting}
-                w={160}
+                error={quantityError}
+                inputMode="decimal"
+                w={200}
                 maw="100%"
                 label={t('Кількість')}
-                max={singleMaxQty}
-                min={0.001}
+                required
                 value={form.qty}
-                onChange={(value) => onChangeForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, qty: nextValue })) }}
               />
             ) : null}
 
@@ -1512,6 +1536,32 @@ function ProductStorageActionModal({
         )}
         <AppModalFooter>{footer}</AppModalFooter>
       </Stack>
+      <AppModal
+        centered
+        opened={confirmOpened}
+        size={420}
+        title={t('Ви впевнені?')}
+        onClose={() => setConfirmOpened(false)}
+      >
+        <Stack gap={10}>
+          <Text size="sm">
+            {t(getActionSubmitLabel(modal.mode))}: {confirmQty}{singleUnit && isSingle ? ` ${singleUnit}` : ''} ({t('Позицій')}: {modal.rows.length})?
+          </Text>
+          <AppModalFooter>
+            <Button variant="default" onClick={() => setConfirmOpened(false)}>{t('Ні')}</Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              loading={isSubmitting}
+              onClick={() => {
+                setConfirmOpened(false)
+                onSubmit()
+              }}
+            >
+              {t('Так')}
+            </Button>
+          </AppModalFooter>
+        </Stack>
+      </AppModal>
     </AppModal>
   )
 }
@@ -1761,14 +1811,14 @@ function useProductStoragesColumns({
   )
 }
 
-function createActionForm(qty?: number): ProductStorageActionForm {
+function createActionForm(): ProductStorageActionForm {
   return {
     cellNumber: '',
     comment: '',
     consignmentId: '',
     fromDate: formatProductStorageDateTimeInput(new Date()),
     isManagement: false,
-    qty: typeof qty === 'number' && Number.isFinite(qty) ? qty : '',
+    qty: '',
     reason: '',
     rowNumber: '',
     storageNumber: '',
@@ -1817,7 +1867,7 @@ function getActionRowQty(
   form: ProductStorageActionForm,
 ): number {
   if (actionModal.scope === 'single') {
-    return Number(form.qty)
+    return readActionQty(form.qty)
   }
 
   return row.changedQty
@@ -1847,19 +1897,19 @@ function validateAction(
 
   if (actionModal.scope === 'single') {
     const row = actionModal.rows[0]
-    const qty = Number(form.qty)
     const availableQty = getQuantity(row?.availability)
     const maxQty =
       actionModal.mode === 'return'
         ? getReturnMaxQty(availableQty, context.selectedConsignment)
         : availableQty
+    const quantityError = parseQuantityInput(
+      form.qty,
+      { available: maxQty, unit: getAvailabilityUnit(row?.availability) },
+      translate,
+    ).error
 
-    if (!Number.isFinite(qty) || qty <= 0) {
-      return 'Кількість має бути більшою за 0'
-    }
-
-    if (typeof maxQty === 'number' && qty > maxQty) {
-      return 'Кількість не може перевищувати доступний залишок'
+    if (quantityError) {
+      return quantityError
     }
   } else if (!actionModal.rows.every(isValidActionRow)) {
     return 'Кількість має бути більшою за 0 і не перевищувати доступний залишок'
@@ -1964,10 +2014,6 @@ function getActionSubmitIcon(mode: ProductStorageActionMode) {
   }
 
   return <Check size={16} />
-}
-
-function toNumberInputValue(value: number | string): number | '' {
-  return typeof value === 'number' && Number.isFinite(value) ? value : ''
 }
 
 function buildStorageOptions(storages: ProductStorageStorage[]): { label: string; value: string }[] {
@@ -2124,7 +2170,29 @@ function getConsignmentKey(consignment?: ProductStorageAvailableConsignment): st
     return ''
   }
 
-  return String(consignment.ConsignmentItemId || `${consignment.ProductIncomeNumber || ''}:${consignment.FromDate || ''}`)
+  /* The same consignment item can come once per supplier/agreement (WH2-18): the
+     key names the whole lot so each list entry is its own row and selection. */
+  return [
+    consignment.ConsignmentItemId || `${consignment.ProductIncomeNumber || ''}:${consignment.FromDate || ''}`,
+    consignment.Supplier?.NetUid || consignment.Supplier?.Id || '',
+    consignment.ClientAgreement?.NetUid || consignment.ClientAgreement?.Id || '',
+  ].join('|')
+}
+
+/** Drops exact repeats (same lot, supplier and agreement), keeping the first. */
+function uniqueReturnConsignments(consignments: ProductStorageAvailableConsignment[]): ProductStorageAvailableConsignment[] {
+  const seen = new Set<string>()
+
+  return consignments.filter((consignment) => {
+    const key = getConsignmentKey(consignment)
+
+    if (seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
 }
 
 function hasReturnConsignmentItemId(consignment: ProductStorageAvailableConsignment): boolean {
@@ -2166,6 +2234,17 @@ function getProductName(availability: ProductStorageAvailability): string | unde
 
 function getStorageName(availability: ProductStorageAvailability): string | undefined {
   return availability.Storage?.Name || availability.StorageName
+}
+
+/** Quantity typed in the operation dialog («1,5» or «1.5»); NaN when it is not a number. */
+function readActionQty(text: string): number {
+  const normalized = text.trim().replace(',', '.')
+
+  return /^\d+(\.\d+)?$/.test(normalized) ? Number(normalized) : Number.NaN
+}
+
+function getAvailabilityUnit(availability?: ProductStorageAvailability): string | undefined {
+  return availability?.Product?.MeasureUnit?.Name || undefined
 }
 
 function getQuantity(availability: ProductStorageAvailability): number | undefined {

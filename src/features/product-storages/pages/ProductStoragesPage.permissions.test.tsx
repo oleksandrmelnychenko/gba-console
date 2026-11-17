@@ -138,7 +138,9 @@ describe('Product storages canonical permission guards', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Операція зі складської позиції' }))
     fireEvent.click(screen.getByRole('switch', { name: 'Управлінська операція' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Кількість/ }), { target: { value: '1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Перемістити' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Так' }))
 
     await waitFor(() => expect(createProductStorageTransfer).toHaveBeenCalledWith(
       expect.objectContaining({
