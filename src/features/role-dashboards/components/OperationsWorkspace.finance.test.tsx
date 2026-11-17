@@ -6,12 +6,13 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { OperationsWorkspace } from './OperationsWorkspace'
 
 vi.mock('../../navigation/hooks/useNavigation', () => ({
-  useNavigation: () => ({
-    modules: [{ Children: [
+  useNavigation: () => {
+    const modules = [{ Children: [
       { Route: '/accounting/payment-accounts', Children: [] },
       { Route: '/accounting/sync/documents', Children: [] },
-    ] }],
-  }),
+    ] }]
+    return { modules, visibleModules: modules }
+  },
 }))
 
 function Location() { const location = useLocation(); return <output data-testid="location">{location.pathname}</output> }

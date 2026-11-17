@@ -48,7 +48,8 @@ function QueueModal({ request, expected, onClose }: { request: WorkspaceQueueReq
 
 function QueueContents({ data, expected, page, onPage }: { data: WorkspaceQueue; expected: string | null; page: number; onPage: (page: number) => void }) {
   const { t } = useI18n()
-  const { modules } = useNavigation()
+  // Permission-filtered menu: a tile must not link to a page the user cannot open.
+  const { visibleModules: modules } = useNavigation()
   const changed = hasAggregateChanged(data.aggregateValue, data.unit, expected)
   const isReceivables = data.key === 'open-debts' || data.key === 'overdue-debts'
   return <>

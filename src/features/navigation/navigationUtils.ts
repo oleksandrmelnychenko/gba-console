@@ -113,6 +113,14 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
     ],
   },
   {
+    // Income-document details link to the placement of their supply order; warehouse roles
+    // reach it from «Прихідні накладні на товар», not from the Ukraine orders menu.
+    source: '/products/income/documents',
+    targets: [
+      /^\/supply-orders\/product-placement\/[^/]+$/i,
+    ],
+  },
+  {
     source: '/basket-supply-ukraine-order/cockpit',
     targets: [
       // The permission catalog lists the supply-sales page at /sales; it renders the same basket page.

@@ -96,7 +96,8 @@ export function OperationsWorkspace({
 }) {
   const navigate = useNavigate()
   const { t } = useI18n()
-  const { modules } = useNavigation()
+  // Permission-filtered menu: a tile must not link to a page the user cannot open.
+  const { visibleModules: modules } = useNavigation()
   const actions = useMemo(
     () => (workspaceActions[workspaceKey] ?? []).filter((action) => isNavigationPathAllowed(modules, action.route)),
     [modules, workspaceKey],

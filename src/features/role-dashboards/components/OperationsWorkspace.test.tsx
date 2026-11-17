@@ -7,7 +7,7 @@ import type { DashboardWorkspaceSummary } from '../types'
 import { OperationsWorkspace } from './OperationsWorkspace'
 import { WorkspaceSummary } from './WorkspaceSummary'
 
-vi.mock('../../navigation/hooks/useNavigation', () => ({ useNavigation: () => ({ modules: [] }) }))
+vi.mock('../../navigation/hooks/useNavigation', () => ({ useNavigation: () => ({ modules: [], visibleModules: [] }) }))
 const summary: DashboardWorkspaceSummary = {
   workspace: 'warehouse', from: '2026-10-24', to: '2026-10-27', generatedAtUtc: '2026-10-24T08:00:00Z', cacheTtlSeconds: 30, dataFreshness: 'live',
   metrics: ['receipts', 'receipt-qty', 'awaiting-placement', 'negative-stock', 'transfers'].map((key) => ({ key, label: key, value: 0, hasData: true, coveragePercent: 100, tone: 'positive', unit: 'count', timeBasis: 'period', route: '/general-register' })),

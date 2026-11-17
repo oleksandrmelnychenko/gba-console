@@ -8,7 +8,7 @@ import { WorkspaceQueueModal } from './WorkspaceQueueModal'
 
 vi.mock('../api/dashboardQueuesApi', () => ({ getDashboardQueue: vi.fn() }))
 vi.mock('../../../shared/i18n/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
-vi.mock('../../navigation/hooks/useNavigation', () => ({ useNavigation: () => ({ modules: [] }) }))
+vi.mock('../../navigation/hooks/useNavigation', () => ({ useNavigation: () => ({ modules: [], visibleModules: [] }) }))
 vi.mock('../../navigation/navigationUtils', () => ({ isNavigationPathAllowed: () => false }))
 const data: WorkspaceQueue = { workspace: 'driver', key: 'pending', from: '2026-10-01', to: '2026-11-01', asOfUtc: '2026-10-22T12:00:00Z', readAtUtc: '2026-10-22T12:00:00Z', offset: 0, limit: 50, total: 1, aggregateValue: 1, label: 'Очікують відправлення', unit: 'count', timeBasis: 'period', formula: 'Невідправлені листи', source: 'ShipmentList', grain: 'Лист', scope: 'Лише поточний водій', rows: [{ id: 17, netUid: null, number: 'Лист-17', documentDate: null, quantity: null, route: '/warehouse/ukraine', description: 'Очікує' }] }
 const location = '/dashboard?view=driver&queue=pending&queueFrom=2026-10-01&queueTo=2026-11-01&queueAsOf=2026-10-22T12%3A00%3A00Z&queueValue=1'

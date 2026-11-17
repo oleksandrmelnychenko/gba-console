@@ -77,6 +77,8 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const canCreate = hasPermission(PERMISSION_CREATE_CASHFLOW_ARTICLE)
+  // Without the save key the dialog is read-only, so the row action is "view", not "edit".
+  const canSaveArticle = hasPermission(PermissionKeys.FinancialAdministration.CashflowArticles.Article.Save)
 
   const openArticle = useCallback(
     (article: PaymentCashflowArticle) => {
@@ -114,11 +116,13 @@ function PaymentCashflowArticlesPageContent({ inSharedShell = false }: PaymentCa
         enableSorting: false,
         enableHiding: false,
         cell: (article) => (
-          <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openArticle(article)} />
+          canSaveArticle
+            ? <TableRowAction action="edit" label={t('Редагувати')} onClick={() => openArticle(article)} />
+            : <TableRowAction action="view" label={t('Переглянути')} onClick={() => openArticle(article)} />
         ),
       },
     ],
-    [openArticle, t],
+    [canSaveArticle, openArticle, t],
   )
 
   useEffect(() => {
