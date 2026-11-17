@@ -49,7 +49,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
   const options = new Map(rows.map(row => [row.Id.toUpperCase(), { value: row.Id.toUpperCase(), label: row.Name }]))
   for (const id of selectedIds) if (!options.has(id.toUpperCase())) {
     const known = SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.find(group => group.Id === id.toUpperCase())
-    options.set(id.toUpperCase(), { value: id.toUpperCase(), label: known?.Name ?? `Збережена група [${id.toUpperCase()}]` })
+    options.set(id.toUpperCase(), { value: id.toUpperCase(), label: known?.Name ?? 'Збережена група' })
   }
   const count = selectedIds.length
   return <Stack gap="xs">

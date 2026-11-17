@@ -57,7 +57,7 @@ export function ReportValuePicker({
   const serverLabels = useRef(new Map<string, string>())
   for (const item of data) serverLabels.current.set(item.value, item.label)
   const restored = selected.filter(item => !serverLabels.current.has(item.value))
-  const storedShared = previewSharedNames(restored.map(item => item.label))
+  const storedShared = previewSharedNames((ownSelectedLabels ? selected : restored).map(item => item.label))
   const selectedItems = new Set<ReportValueOption>(selected)
   const shown = (item: ReportValueOption) => ownSelectedLabels && selectedItems.has(item) ? previewCaptionText(item.label, storedShared)
     : available.get(item.value)?.label ?? serverLabels.current.get(item.value) ?? previewCaptionText(item.label, storedShared)

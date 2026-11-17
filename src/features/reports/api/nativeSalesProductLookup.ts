@@ -1,14 +1,13 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { positiveProductId } from '../data/salesProductLookupCapability'
+import { distinctCaptions } from '../data/distinctCaptions'
 export type NativeSalesProduct = { Id: string; Name: string; VendorCode: string }
 export type NativeSalesProductQuery = { value?: string; exactId?: string; offset?: number; limit?: number }
 export function productBusinessName(product: NativeSalesProduct): string {
-  return [product.Name.trim(), product.VendorCode.trim()].filter(Boolean).join(' · ') || `Товар [${product.Id}]`
+  return [product.Name.trim(), product.VendorCode.trim()].filter(Boolean).join(' · ') || 'Товар'
 }
-export function productOptionName(product: NativeSalesProduct): string {
-  return product.Name.trim() || product.VendorCode.trim()
-    ? `${productBusinessName(product)} [${product.Id}]`
-    : productBusinessName(product)
+export function productOptionNames(products: NativeSalesProduct[]): string[] {
+  return distinctCaptions(products.map((product) => ({ id: product.Id, caption: productBusinessName(product) })))
 }
 export async function searchNativeSalesProducts(
   query: NativeSalesProductQuery,

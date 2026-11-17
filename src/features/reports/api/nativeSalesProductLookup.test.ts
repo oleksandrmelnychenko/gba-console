@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { productOptionName, searchNativeSalesProducts } from './nativeSalesProductLookup'
+import { productOptionNames, searchNativeSalesProducts } from './nativeSalesProductLookup'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
 beforeEach(() => {
@@ -19,8 +19,17 @@ it('preserves large string IDs and empty name/sku without decorated report names
   const value = { Id: '9223372036854775807', Name: '', VendorCode: '' }
   api.mockResolvedValue([value])
   expect(await searchNativeSalesProducts({ exactId: value.Id })).toEqual([value])
-  expect(productOptionName(value)).toBe('Товар [9223372036854775807]')
+  expect(productOptionNames([value])).toEqual(['Товар'])
   expect(api.mock.calls[0][1]?.query).toEqual({ exactId: value.Id, offset: 0, limit: 30 })
+})
+it('adds the id only to captions that print identically', () => {
+  expect(
+    productOptionNames([
+      { Id: '1', Name: 'Фільтр', VendorCode: 'A1' },
+      { Id: '2', Name: 'Фільтр', VendorCode: 'A1' },
+      { Id: '3', Name: 'Фільтр', VendorCode: 'B2' },
+    ]),
+  ).toEqual(['Фільтр · A1 [1]', 'Фільтр · A1 [2]', 'Фільтр · B2'])
 })
 it.each([
   { exactId: '01' },

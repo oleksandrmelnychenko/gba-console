@@ -62,7 +62,7 @@ function CustomerGroupEditor({group,index,disabled,onChange,onRemove,known,onFou
     }).catch(()=>{if(!abort.signal.aborted)setError('Не вдалося завантажити клієнтів')})
     return ()=>abort.abort()
   },[search,disabled,onFound])
-  const listed=[...options,...group.ClientIds.filter(id=>!options.some(option=>option.value===String(id))).map(id=>known[String(id)]??{value:String(id),label:`Клієнт [${id}]`})]
+  const listed=[...options,...group.ClientIds.filter(id=>!options.some(option=>option.value===String(id))).map(id=>known[String(id)]??{value:String(id),label:'Клієнт'})]
   const data=listed
   return <Stack gap="xs">
     <Group align="end"><TextInput label={index===0?'Назва еталонного набору':'Назва набору'} value={group.Name} disabled={disabled}
@@ -82,7 +82,7 @@ async function resolveClientLabels(ids:string[],signal:AbortSignal) {
       try {
         const rows=await searchDatasetReportValues(44,6,{value:`id:${id}`,offset:0,limit:1},signal)
         const client=rows.find(row=>String(row.Id)===id)
-        resolved.push({value:id,label:client?.Name?String(client.Name):`Клієнт [${id}] — не знайдено`})
+        resolved.push({value:id,label:client?.Name?String(client.Name):'Клієнт не знайдено'})
       } catch {failed=true}
     }))
   }

@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
-import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { useEffect, useState } from 'react'
+import { Alert, Stack } from '@mantine/core'
 import { ReportValuePicker } from './ReportValuePicker'
 import { reportValueExactId, useReportValueSearch } from './reportValueSearch'
 import { useNativeSalesProductOptions, type ProductSearchMode } from './useNativeSalesProductOptions'
 import {
   productBusinessName,
-  productOptionName,
+  productOptionNames,
   searchNativeSalesProducts,
   type NativeSalesProduct,
 } from '../api/nativeSalesProductLookup'
 import { positiveProductId } from '../data/salesProductLookupCapability'
-import { productLookupBinding } from '../data/productLookupCapability'
+import { distinctCaptions, plainCaption } from '../data/distinctCaptions'
+import { productLookupBinding, type ReportProductLookupSource } from '../data/productLookupCapability'
 import { searchNativeReportProducts } from '../api/nativeReportProductLookup'
 import { isMultiValueReportCondition } from '../data/reportOptions'
 import type { ReportDataset, ReportEntity, ReportSelectedValue, ReportSelection } from '../types'
@@ -56,12 +57,16 @@ type Props = {
   identity?: NativeProductItemPickerContext['identity']
 }
 type ProductChoice = { key: string; item: NativeSalesProduct; value: ReportSelectedValue }
-type SavedRecheck = { lookupKey: string; id: string; message: string } | null
+type ResolvedNames = { lookupKey: string; names: Record<string, string | null> }
+const RESOLVE_LIMIT = 20
 function defaultIdentity(data: ReportEntity): string {
   return savedProductId(data) ? `product:${savedProductId(data)}` : `saved:${JSON.stringify(data)}`
 }
+function savedName(value: ReportSelectedValue): string {
+  return plainCaption(value.Name ?? '')
+}
 function defaultSelectedLabel(value: ReportSelectedValue): string {
-  return value.Name || `Товар [${savedProductId(value.Data) ?? '?'}]`
+  return savedName(value) || 'Товар'
 }
 function productChoices(
   items: NativeSalesProduct[],
@@ -87,66 +92,54 @@ function changedSelection(
     .map((choice) => choice.value)
   return [...retained, ...added]
 }
-function useSavedProductRecheck(dataset: ReportDataset | undefined, field: number, requestedSource: number | undefined) {
+function useResolvedProductNames(
+  dataset: ReportDataset | undefined,
+  field: number,
+  requestedSource: number | undefined,
+  values: ReportSelectedValue[],
+) {
   const binding = productLookupBinding(dataset, requestedSource)
   const lookupKey = field === 1 && binding ? `${binding.kind}:${binding.dataSource}` : null
-  const [recheck, setRecheck] = useState<SavedRecheck>(null)
-  const savedCheck = useRef<AbortController | null>(null)
-  useEffect(() => () => savedCheck.current?.abort(), [lookupKey])
-  const checkSaved = async (id: string) => {
-    if (!lookupKey || !binding) return
-    savedCheck.current?.abort()
+  const [resolved, setResolved] = useState<ResolvedNames>({ lookupKey: '', names: {} })
+  const known = resolved.lookupKey === lookupKey ? resolved.names : {}
+  const missing = [
+    ...new Set(
+      values.flatMap((value) => {
+        const id = savedName(value) ? null : savedProductId(value.Data)
+        return id && !(id in known) ? [id] : []
+      }),
+    ),
+  ].slice(0, RESOLVE_LIMIT)
+  const pendingKey = missing.join(',')
+  useEffect(() => {
+    if (!lookupKey || !pendingKey) return
+    const [kind, source] = lookupKey.split(':')
     const controller = new AbortController()
-    savedCheck.current = controller
-    setRecheck({ lookupKey, id, message: 'Перевірка…' })
-    try {
-      const result = await (binding.kind === 'report'
-        ? searchNativeReportProducts(binding.dataSource, { exactId: id }, controller.signal)
-        : searchNativeSalesProducts({ exactId: id }, controller.signal))
+    void Promise.all(
+      pendingKey.split(',').map(async (id) => {
+        try {
+          const result = await (kind === 'report'
+            ? searchNativeReportProducts(Number(source) as ReportProductLookupSource, { exactId: id }, controller.signal)
+            : searchNativeSalesProducts({ exactId: id }, controller.signal))
+          return [id, result.length ? productBusinessName(result[0]) : null] as const
+        } catch {
+          return [id, null] as const
+        }
+      }),
+    ).then((entries) => {
       if (controller.signal.aborted) return
-      setRecheck({ lookupKey, id, message: result.length
-        ? 'Товар доступний у довіднику.'
-        : 'Товар недоступний у довіднику. Збережений відбір залишено.' })
-    } catch {
-      if (controller.signal.aborted) return
-      setRecheck({ lookupKey, id, message: 'Не вдалося перевірити товар. Збережений відбір залишено.' })
-    }
-  }
-  return { recheck: recheck?.lookupKey === lookupKey ? recheck : null, checkSaved }
+      setResolved((previous) => ({
+        lookupKey,
+        names: { ...(previous.lookupKey === lookupKey ? previous.names : {}), ...Object.fromEntries(entries) },
+      }))
+    })
+    return () => controller.abort()
+  }, [lookupKey, pendingKey])
+  return known
 }
 
 function ProductSearchNotice({ admitted }: { admitted: boolean }) {
   return admitted ? null : <Alert color="yellow">Вибір товарів зараз недоступний. Оновіть сторінку.</Alert>
-}
-function SavedProductRecheck({
-  value,
-  disabled,
-  admitted,
-  recheck,
-  checkSaved,
-}: {
-  value: ReportSelectedValue
-  disabled?: boolean
-  admitted: boolean
-  recheck: SavedRecheck
-  checkSaved: (id: string) => Promise<void>
-}) {
-  const id = savedProductId(value.Data)
-  if (!id) return null
-  return (
-    <Group gap={4}>
-      <Button
-        type="button"
-        variant="subtle"
-        size="compact-xs"
-        disabled={disabled || !admitted}
-        onClick={() => void checkSaved(id)}
-      >
-        Перевірити ID {id}
-      </Button>
-      {recheck?.id === id ? <Text size="xs">{recheck.message}</Text> : null}
-    </Group>
-  )
 }
 export function NativeSalesProductPicker({
   dataSource,
@@ -166,13 +159,21 @@ export function NativeSalesProductPicker({
   const mode: ProductSearchMode = exactId === null ? 'text' : 'id'
   const requestedSource = dataSource ?? dataset?.DataSource
   const binding = productLookupBinding(dataset, requestedSource)
-  const { recheck, checkSaved } = useSavedProductRecheck(dataset, selection.SelectedField.Type, requestedSource)
+  const resolvedNames = useResolvedProductNames(dataset, selection.SelectedField.Type, requestedSource, selection.Values)
   const admitted = !!binding && selection.SelectedField.Type === 1
   const sharedSource = binding?.kind === 'report' ? binding.dataSource : undefined
   const options = useNativeSalesProductOptions(mode, exactId ?? query, admitted && !disabled && exactId !== '', sharedSource)
   const multiple = explicitMultiple ?? isMultiValueReportCondition(selection.FilterCondition.Type)
   const choices = productChoices(options.items, createData, identity)
-  const selected = selection.Values.map((value) => ({ value: identity(value.Data), label: selectedLabel(value) }))
+  const selectedCaptions = distinctCaptions(
+    selection.Values.map((value) => {
+      const id = savedProductId(value.Data)
+      const resolvedName = !savedName(value) && id ? resolvedNames[id] : null
+      return { id, caption: resolvedName ? selectedLabel({ ...value, Name: resolvedName }) : selectedLabel(value) }
+    }),
+  )
+  const selected = selection.Values.map((value, index) => ({ value: identity(value.Data), label: selectedCaptions[index] }))
+  const optionNames = productOptionNames(choices.map((choice) => choice.item))
   const change = (keys: string[], chosen?: string) => {
     if (chosen === undefined) {
       onChange(changedSelection(selection.Values, choices, keys, identity))
@@ -187,8 +188,9 @@ export function NativeSalesProductPicker({
         mode={multiple ? 'multi' : 'single'}
         label={label}
         placeholder="Назва, артикул або id:123"
-        data={pending ? [] : choices.map((choice) => ({ value: choice.key, label: productOptionName(choice.item) }))}
+        data={pending ? [] : choices.map((choice, index) => ({ value: choice.key, label: optionNames[index] }))}
         selected={selected}
+        ownSelectedLabels
         search={search}
         onSearchChange={setSearch}
         onChange={change}
@@ -202,16 +204,6 @@ export function NativeSalesProductPicker({
         onLoadMore={options.loadMore}
       />
       <ProductSearchNotice admitted={admitted} />
-      {selection.Values.map((value) => (
-        <SavedProductRecheck
-          key={identity(value.Data)}
-          value={value}
-          disabled={disabled}
-          admitted={admitted}
-          recheck={recheck}
-          checkSaved={checkSaved}
-        />
-      ))}
     </Stack>
   )
 }

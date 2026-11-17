@@ -58,6 +58,7 @@ function Form({
   )
 }
 const values = () => JSON.parse(screen.getByTestId('values').textContent!)
+const pills = () => [...document.querySelectorAll('.report-value-picker__pill-label')].map((node) => node.textContent)
 beforeEach(() => {
   api.mockReset()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
@@ -85,19 +86,47 @@ it('pages65 real identities and chooses page3 while retaining raw saved data', a
   await waitFor(() => expect(api).toHaveBeenCalledTimes(2))
   await userEvent.click(await screen.findByRole('option', { name: 'Ще значення' }))
   await waitFor(() => expect(api).toHaveBeenCalledTimes(3))
-  await userEvent.click(await screen.findByRole('option', { name: 'Одна назва · SKU64 [65]' }))
+  await userEvent.click(await screen.findByRole('option', { name: 'Одна назва · SKU64' }))
   expect(values()).toEqual([...saved, { Data: { Id: '65' }, Name: 'Одна назва · SKU64', Value: 0 }])
   expect(api.mock.calls.map((x) => x[1]?.query?.offset)).toEqual([0, 30, 60])
   expect(screen.queryByRole('option', { name: 'Ще значення' })).toBeNull()
 })
-it('explicit archived recheck never erases raw selected values and is never automatic', async () => {
+it('shows saved product names without technical captions or automatic lookups', async () => {
   api.mockResolvedValue([])
   render(<Form />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
-  await userEvent.click(screen.getByRole('button', { name: 'Перевірити ID 9007199254740993' }))
-  await screen.findByText(/Товар недоступний/)
+  expect(pills()).toEqual(['Збережений'])
+  expect(screen.queryByText(/Перевірити|ID/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /Перевірити/ })).toBeNull()
   expect(values()).toEqual(saved)
-  expect(api).toHaveBeenCalledTimes(2)
+  expect(api).toHaveBeenCalledOnce()
+})
+it('resolves a nameless saved product by exact id for display only', async () => {
+  const nameless = [{ Data: { Id: '38677005' }, Name: '', Value: 0 }] as unknown as ReportSelectedValue[]
+  api.mockImplementation(async (_path, options) =>
+    options?.query?.exactId === '38677005' ? [{ Id: '38677005', Name: 'Фільтр масляний', VendorCode: 'W712' }] : [],
+  )
+  render(<Form initial={nameless} />)
+  await waitFor(() => expect(pills()).toEqual(['Фільтр масляний · W712']))
+  expect(values()).toEqual(nameless)
+})
+it('shows a short plain label when a nameless saved product cannot be resolved', async () => {
+  const nameless = [{ Data: { Id: '38677005' }, Name: '', Value: 0 }] as unknown as ReportSelectedValue[]
+  api.mockResolvedValue([])
+  render(<Form initial={nameless} />)
+  await waitFor(() => expect(api.mock.calls.some((call) => call[1]?.query?.exactId === '38677005')).toBe(true))
+  await waitFor(() => expect(pills()).toEqual(['Товар']))
+})
+it('adds the id in brackets only to selected products that print identically', async () => {
+  const twins = [
+    { Data: { Id: '11' }, Name: 'Фільтр · A1', Value: 0 },
+    { Data: { Id: '12' }, Name: 'Фільтр · A1', Value: 0 },
+    { Data: { Id: '13' }, Name: 'Фільтр · B2', Value: 0 },
+  ] as unknown as ReportSelectedValue[]
+  api.mockResolvedValue([])
+  render(<Form initial={twins} condition={4} />)
+  await waitFor(() => expect(api).toHaveBeenCalled())
+  expect(pills()).toEqual(['Фільтр · A1 [11]', 'Фільтр · A1 [12]', 'Фільтр · B2'])
 })
 it('invalid exact ID hides old options and never requests a rounded ID', async () => {
   api.mockResolvedValue([{ Id: '1', Name: 'Старий', VendorCode: '' }])
@@ -108,7 +137,7 @@ it('invalid exact ID hides old options and never requests a rounded ID', async (
   await userEvent.type(box, 'id:01')
   await screen.findByText(/правильний позитивний ID/)
   expect(api).toHaveBeenCalledOnce()
-  expect(screen.queryByRole('option', { name: 'Старий [1]' })).toBeNull()
+  expect(screen.queryByRole('option', { name: 'Старий' })).toBeNull()
 })
 
 it('selects an exact Int64 maximum by keyboard without changing its identity', async () => {
@@ -118,7 +147,7 @@ it('selects an exact Int64 maximum by keyboard without changing its identity', a
   render(<Form initial={[]} condition={0} />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
   await userEvent.type(screen.getByRole('combobox', { name: 'Значення' }), 'id:9223372036854775807')
-  await screen.findByRole('option', { name: 'Максимум · MAX [9223372036854775807]' })
+  await screen.findByRole('option', { name: 'Максимум · MAX' })
   await userEvent.keyboard('{ArrowDown}{Enter}')
   expect(values()).toEqual([{ Data: { Id: '9223372036854775807' }, Name: 'Максимум · MAX', Value: 0 }])
   expect(api.mock.calls.at(-1)?.[1]?.query).toEqual({ exactId: '9223372036854775807', offset: 0, limit: 30 })
@@ -141,7 +170,7 @@ it('portals scalar options outside a clipping Card and keeps exact string identi
   render(<Form condition={0} initial={[]} portalEnvironment />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
   await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-  const option = await screen.findByRole('option', { name: 'Товар над 2^53 · SKU1 [9007199254740993]' })
+  const option = await screen.findByRole('option', { name: 'Товар над 2^53 · SKU1' })
   const card = screen.getByTestId('filter-card')
   expect(card.style.overflow).toBe('hidden')
   expect(card.contains(option)).toBe(false)
@@ -154,7 +183,7 @@ it('portals multi options outside a clipping Card and preserves saved raw data o
   render(<Form portalEnvironment />)
   await waitFor(() => expect(api).toHaveBeenCalledOnce())
   await userEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
-  const option = await screen.findByRole('option', { name: 'Великий товар · MAX [9223372036854775807]' })
+  const option = await screen.findByRole('option', { name: 'Великий товар · MAX' })
   const card = screen.getByTestId('filter-card')
   expect(card.style.overflow).toBe('hidden')
   expect(card.contains(option)).toBe(false)
