@@ -93,9 +93,9 @@ it('keeps catalogue loading failures visible before a price has been selected', 
   expectBlocked()
 })
 
-it('explains the inactive button with a neutral hint before the first touch and drops it once a price is chosen', async () => {
+it('omits the removed hint before selection, after selection, clearing and reset', async () => {
   await openReport()
-  expect(screen.getByText(hint).className).toContain('mantine-Select-description')
+  expect(screen.queryByText(hint)).toBeNull()
   expect(screen.queryByText(warning)).toBeNull()
   expectBlocked()
   await selectPrice()
@@ -103,7 +103,12 @@ it('explains the inactive button with a neutral hint before the first touch and 
   const input = screen.getByRole('combobox', { name: 'Тип ціни для порівняння' })
   fireEvent.click(input.closest('.mantine-Select-wrapper')!.querySelector('button')!)
   expect(await screen.findByText(warning)).toBeTruthy()
-  expect(screen.getByText(hint)).toBeTruthy()
+  expect(screen.queryByText(hint)).toBeNull()
+  expectBlocked()
+  fireEvent.click(screen.getByRole('button', { name: 'Скинути' }))
+  await waitFor(() => expect(screen.queryByText(warning)).toBeNull())
+  expect(screen.queryByText(hint)).toBeNull()
+  expectBlocked()
 })
 
 it('names the missing price type next to the changed-settings notice instead of asking to apply the set', async () => {
