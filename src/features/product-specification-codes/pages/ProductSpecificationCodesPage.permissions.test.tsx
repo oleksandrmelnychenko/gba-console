@@ -131,7 +131,8 @@ describe('Product specification codes canonical permission guards', () => {
     expect(uploadSpecificationCodesFile).not.toHaveBeenCalled()
 
     allowedPermissions.add(PermissionKeys.ProductSpecificationCodes.Code.Import)
-    fireEvent.change(input!, { target: { files: [new File(['b'], 'codes.xlsx')] } })
+    // A real .xlsx starts with the ZIP signature; the page checks the content before upload.
+    fireEvent.change(input!, { target: { files: [new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], 'codes.xlsx')] } })
     await waitFor(() => expect(uploadSpecificationCodesFile).toHaveBeenCalledTimes(1))
   })
 })

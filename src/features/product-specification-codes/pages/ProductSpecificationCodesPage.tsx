@@ -29,6 +29,7 @@ import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/p
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
 import { getProductSpecificationDisplayName } from '../productSpecificationDisplay'
 import type { ProductSpecification, SpecificationCodeUploadResult } from '../types'
+import { excelWorkbookFileError, SPECIFICATION_CODES_ACCEPT } from '../excelWorkbookFile'
 import './product-specification-codes-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -182,6 +183,12 @@ function ProductSpecificationCodesPageContent() {
       return
     }
 
+    const fileError = await excelWorkbookFileError(file, t)
+    if (fileError) {
+      notifications.show({ color: 'red', message: fileError })
+      return
+    }
+
     if (!tryStartUploading()) {
       return
     }
@@ -232,7 +239,7 @@ function ProductSpecificationCodesPageContent() {
                 <Button aria-label={t('Скинути')} color="gray" size="sm" variant="default" onClick={model.resetFilters} className="registry-caption-action" leftSection={<RotateCcw size={17} />}>{t('Скинути')}</Button>
               </Tooltip>
               {canImport && (
-                <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
+                <FileButton accept={SPECIFICATION_CODES_ACCEPT} onChange={handleUpload}>
                   {(props) => (
                     <Tooltip label={t('Завантажити Excel')}>
                       <Button
