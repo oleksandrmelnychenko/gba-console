@@ -165,7 +165,7 @@ export function CompanyCarRoadListFormModal({
             title={effectiveCompanyCar.LicensePlate || '—'}
             meta={effectiveCompanyCar.CarBrand ? <DocumentDetailChip>{effectiveCompanyCar.CarBrand}</DocumentDetailChip> : null}
             metrics={<>
-              <DocumentDetailMetric label={t('Загальний кілометраж')} value={calculated ? formatNumber(calculated.TotalKilometers) : '—'} suffix="км" />
+              <DocumentDetailMetric label={t('Загальний кілометраж')} value={calculated ? formatKilometers(calculated.TotalKilometers) : '—'} suffix="км" />
               <DocumentDetailMetric label={t('Кількість пального')} value={calculated ? formatNumber(calculated.FuelAmount) : '—'} suffix="л" />
             </>}
           />}
@@ -282,9 +282,11 @@ function useRoadListFormModel({
     [editedRoadList, outcomeOrders, selectedOutcomeNetUid],
   )
   const outcomeError = isEditMode && !selectedOutcomeOrder ? t('Виберіть вихідну статтю бюджету') : null
+  /* Only a new road list continues from the car's current odometer; an edited one is already counted in it. */
+  const minMileage = isEditMode ? undefined : effectiveCompanyCar.Mileage
   const fieldErrors = useMemo(
-    () => validateRoadListForm(form, activeDrivers.length, t, showRequired),
-    [activeDrivers.length, form, showRequired, t],
+    () => validateRoadListForm(form, activeDrivers.length, t, showRequired, minMileage),
+    [activeDrivers.length, form, minMileage, showRequired, t],
   )
 
   useEffect(() => {
@@ -356,7 +358,7 @@ function useRoadListFormModel({
     }
 
     /* «abc» or «-5» is shown as a field error; it is never calculated as 0. */
-    if (hasRoadListFormatErrors(validateRoadListForm(debouncedForm, 0, t, false))) {
+    if (hasRoadListFormatErrors(validateRoadListForm(debouncedForm, 0, t, false, isEditMode ? undefined : effectiveCompanyCar.Mileage))) {
       return
     }
 
@@ -466,7 +468,7 @@ function useRoadListFormModel({
         return
       }
 
-      if (Object.keys(validateRoadListForm(form, activeDrivers.length, t, true)).length > 0) {
+      if (Object.keys(validateRoadListForm(form, activeDrivers.length, t, true, minMileage)).length > 0) {
         dispatchState({ type: 'show-required' })
         dispatchState({ error: t('Перевірте виділені поля'), type: 'failed' })
         return
@@ -670,7 +672,7 @@ function RoadListFormFooter({
   return (
     <AppModalFooter className="app-modal-footer--split">
       <Badge color="gray" variant="light">
-        {t('Загальний кілометраж')}: {formatNumber(calculated?.TotalKilometers ?? 0)}
+        {t('Загальний кілометраж')}: {formatKilometers(calculated?.TotalKilometers)}
       </Badge>
       <Group gap="xs">
         <Button color="gray" disabled={isSaving} variant="default" onClick={onClose}>
@@ -950,6 +952,11 @@ function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): strin
 
 function getEntityName(entity?: UserProfile | null): string | undefined {
   return entity?.LastName || entity?.FullName || entity?.Name
+}
+
+/** A negative total (odometer below the car's reading) is never shown as a distance. */
+function formatKilometers(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? formatNumber(value) : '—'
 }
 
 function formatNumber(value?: number): string {

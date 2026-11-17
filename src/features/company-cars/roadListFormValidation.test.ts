@@ -36,3 +36,10 @@ describe('road list form validation', () => {
     expect(errors.drivers).toBe('Вкажіть, кому видано шляховий лист')
   })
 })
+
+describe('road list odometer vs the car (WH2-11)', () => {
+  it('refuses an odometer below the car reading for a new road list', () => {
+    expect(validateRoadListForm({ ...valid, mileage: '1100' }, 1, t, false, 1120).mileage).toMatch(/1120 км/)
+    expect(validateRoadListForm({ ...valid, mileage: '1200' }, 1, t, false, 1120).mileage).toBeUndefined()
+  })
+})

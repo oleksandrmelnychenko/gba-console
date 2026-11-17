@@ -38,14 +38,22 @@ export function validateRoadListForm(
   driversCount: number,
   t: Translate,
   requireFilled: boolean,
+  /** The car's current odometer: a new road list cannot start below it (WH2-11). */
+  minMileage?: number,
 ): RoadListFormErrors {
   const errors: RoadListFormErrors = {}
+  const typedMileage = parseWholeKilometers(values.mileage)
 
   const mileageError = describeKilometers(values.mileage, t)
     || (parseWholeKilometers(values.mileage) === null && requireFilled ? t('Вкажіть показники одометра') : '')
     || rangeError(parseWholeKilometers(values.mileage), 1, ROAD_LIST_LIMITS.mileageMax, t('Показники одометра мають бути від 1 до 10 000 000 км'))
   if (mileageError) {
     errors.mileage = mileageError
+  } else if (
+    typeof minMileage === 'number' && minMileage > 0 && typedMileage !== null && Number.isFinite(typedMileage)
+    && typedMileage < minMileage
+  ) {
+    errors.mileage = t('Показники одометра не можуть бути меншими за поточні показники автомобіля') + ` (${minMileage} км)`
   }
 
   for (const field of ['inCityKilometers', 'outsideCityKilometers', 'mixedModeKilometers'] as const) {
