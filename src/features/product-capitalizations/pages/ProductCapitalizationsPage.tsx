@@ -179,12 +179,12 @@ function useProductCapitalizationsPageModel() {
         if (detailedCapitalization) {
           setSelectedCapitalization(detailedCapitalization)
         } else {
-          setDetailError(t('Оприховування не знайдено або видалено'))
+          setDetailError(t('Оприходування не знайдено або видалено'))
         }
       }
     } catch (loadError) {
       if (detailRequestRef.current === requestId) {
-        setDetailError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі оприбуткування'))
+        setDetailError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі оприходування'))
       }
     } finally {
       if (detailRequestRef.current === requestId) {
@@ -230,7 +230,7 @@ function useProductCapitalizationsPageModel() {
       }
     } catch (exportError) {
       if (isCurrentExport()) {
-        setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування'))
+        setDownloadError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприходування'))
       }
     } finally {
       if (isCurrentExport()) {
@@ -308,7 +308,7 @@ function useProductCapitalizationsPageModel() {
       } catch (loadError) {
         if (!cancelled) {
           dispatchListState({ type: 'failed' })
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити оприбуткування товарів'))
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити оприходування товарів'))
         }
       }
     }
@@ -459,7 +459,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() => setCreatePanelOpened(true)}
               >
-                {t('Оприховування')}
+                {t('Оприходування')}
               </Button>
             )}
           </Group>
@@ -558,7 +558,7 @@ export function ProductCapitalizationDetailDrawer({
     <AppModal
       opened={Boolean(capitalization)}
       size="min(1240px, calc(100vw - 32px))"
-      title={t('Оприховування')}
+      title={t('Оприходування')}
       onClose={onClose}
     >
       {capitalization && (
@@ -566,7 +566,7 @@ export function ProductCapitalizationDetailDrawer({
           variant="inventory"
           summary={
             <DocumentDetailSummary
-              eyebrow={t('Оприховування')}
+              eyebrow={t('Оприходування')}
               title={displayValue(capitalization.Number)}
               meta={<DocumentDetailChip tone="info">{formatDateTime(capitalization.FromDate)}</DocumentDetailChip>}
               metrics={
@@ -616,7 +616,7 @@ export function ProductCapitalizationDetailDrawer({
               getRowId={(item, index) => String(item.NetUid || item.Id || `${getItemVendorCode(item)}-${index}`)}
               isLoading={isLoading}
               layoutVersion="product-capitalization-items-table-1"
-              loadingText={t('Завантаження позицій оприбуткування')}
+              loadingText={t('Завантаження позицій оприходування')}
               maxHeight="calc(100vh - 420px)"
               minWidth={920}
               showToolbar={false}

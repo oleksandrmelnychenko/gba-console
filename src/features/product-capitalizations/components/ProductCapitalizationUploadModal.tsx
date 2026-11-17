@@ -11,6 +11,7 @@ import {
   toProductCapitalizationParseConfiguration,
 } from '../productCapitalizationUploadConfig'
 import type { ProductCapitalizationParseConfiguration } from '../types'
+import { DEFAULT_EXCEL_IMPORT_LAYOUT, EXCEL_FILE_REQUIRED_MESSAGE } from '../../../shared/excel/excelImportMessages'
 
 type ProductCapitalizationUploadModalProps = {
   isSubmitting: boolean
@@ -25,9 +26,9 @@ const EMPTY_FORM: ProductCapitalizationUploadForm = {
   files: [],
   priceColumnNumber: '',
   pricePerItem: true,
-  qtyColumnNumber: '',
-  startRow: '',
-  vendorCodeColumnNumber: '',
+  qtyColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.qtyColumn,
+  startRow: DEFAULT_EXCEL_IMPORT_LAYOUT.startRow,
+  vendorCodeColumnNumber: DEFAULT_EXCEL_IMPORT_LAYOUT.codeColumn,
   weightColumnNumber: '',
   weightPerItem: true,
 }
@@ -48,9 +49,14 @@ export function ProductCapitalizationUploadModal({
       return
     }
 
+    if (form.files.length === 0) {
+      setValidationError(t(EXCEL_FILE_REQUIRED_MESSAGE))
+      return
+    }
+
     const parseConfiguration = toProductCapitalizationParseConfiguration(form)
 
-    if (form.files.length === 0 || !parseConfiguration) {
+    if (!parseConfiguration) {
       setValidationError(t('Заповніть файли, артикул, кількість і діапазон рядків'))
       return
     }
@@ -185,7 +191,7 @@ export function ProductCapitalizationUploadModal({
         </Stack>
 
         <Text c="dimmed" size="xs">
-          {t('Позиції з файлу буде додано до документа оприбуткування.')}
+          {t('Позиції з файлу буде додано до документа оприходування.')}
         </Text>
 
         <AppModalFooter>

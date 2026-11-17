@@ -125,7 +125,7 @@ describe('Product capitalization canonical permission guards', () => {
 
     const row = await screen.findByRole('button', { name: 'CAP-1' })
     expect((row as HTMLButtonElement).disabled).toBe(true)
-    expect(screen.queryByRole('button', { name: 'Оприховування' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Оприходування' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Деталі' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Друк PDF' })).toBeNull()
     expect(getProductCapitalization).not.toHaveBeenCalled()
@@ -159,7 +159,7 @@ describe('Product capitalization canonical permission guards', () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Capitalization.Capitalization.Create)
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Оприховування' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Оприходування' }))
 
     expect(screen.getByText('Форма нового оприбуткування')).toBeTruthy()
   })

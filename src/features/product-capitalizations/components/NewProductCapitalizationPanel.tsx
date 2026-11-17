@@ -21,6 +21,7 @@ import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/Page
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
+import { excelImportErrorText } from '../../../shared/excel/excelImportMessages'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -136,7 +137,7 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
       className="product-capitalization-sheet"
       opened={opened}
       size="min(1180px, calc(100vw - 32px))"
-      title={t('Оприховування')}
+      title={t('Оприходування')}
       onClose={model.requestClose}
     >
       <Stack className="app-compact-form" gap={12}>
@@ -336,7 +337,7 @@ function useNewProductCapitalizationModel(
   const [isSubmitting, setSubmitting, tryStartSubmitting] = useBusyState()
   const [uploadModalOpened, setUploadModalOpened] = useValueState(false)
   const [uploadError, setUploadError] = useValueState<string | null>(null)
-  const [isParsing, setParsing] = useValueState(false)
+  const [isParsing, setParsing, tryStartParsing] = useBusyState()
   const [missingVendorCodes, setMissingVendorCodes] = useValueState<string[]>([])
   const [missingModalOpened, setMissingModalOpened] = useValueState(false)
   const [debouncedVendorCode] = useDebouncedValue(vendorCodeQuery, VENDOR_CODE_DEBOUNCE_MS)
@@ -741,14 +742,14 @@ function useNewProductCapitalizationModel(
 
   const parseFromFiles = useCallback(
     (files: File[], parseConfiguration: ProductCapitalizationParseConfiguration) => {
-      if (isSubmitting || isParsing) {
+      /* Synchronous lock: a second click on «Завантажити» must not add the file rows twice. */
+      if (isSubmitting || !tryStartParsing()) {
         return
       }
 
       const requestId = parseRequestRef.current + 1
       parseRequestRef.current = requestId
       const isCurrentParse = () => parseRequestRef.current === requestId
-      setParsing(true)
       setUploadError(null)
 
       void Promise.all(files.map((file) => parseProductCapitalizationItemsFromFile(file, parseConfiguration)))
@@ -796,11 +797,15 @@ function useNewProductCapitalizationModel(
         })
         .catch((parseError: unknown) => {
           if (isCurrentParse()) {
-            setUploadError(formatExcelArticleColumnError(
+            const columnMessage = formatExcelArticleColumnError(
               parseError,
               parseConfiguration.VendorCodeColumnNumber,
               t('Не вдалося розпізнати файл'),
-            ))
+            )
+            const rawMessage = parseError instanceof Error ? parseError.message : ''
+            setUploadError(columnMessage !== rawMessage
+              ? columnMessage
+              : excelImportErrorText(parseError, t('Не вдалося розпізнати файл')))
           }
         })
         .finally(() => {
@@ -810,7 +815,6 @@ function useNewProductCapitalizationModel(
         })
     },
     [
-      isParsing,
       isSubmitting,
       setItems,
       setMissingModalOpened,
@@ -819,12 +823,13 @@ function useNewProductCapitalizationModel(
       setUploadError,
       setUploadModalOpened,
       t,
+      tryStartParsing,
     ],
   )
 
   const submit = useCallback(async () => {
     if (!canCreate) {
-      notifications.show({ color: 'red', message: t('Недостатньо прав для створення оприбуткування') })
+      notifications.show({ color: 'red', message: t('Недостатньо прав для створення оприходування') })
       return
     }
 
@@ -893,18 +898,18 @@ function useNewProductCapitalizationModel(
       })
 
       if (!productCapitalization || (!productCapitalization.NetUid && !productCapitalization.Id)) {
-        throw new Error(t('Сервер не повернув створене оприбуткування'))
+        throw new Error(t('Сервер не повернув створене оприходування'))
       }
 
       if (isCurrentSubmit()) {
-        notifications.show({ color: 'green', message: t('Оприховування створено') })
+        notifications.show({ color: 'green', message: t('Оприходування створено') })
         resetDraft()
         onCreated()
         onClose()
       }
     } catch (submitError) {
       if (isCurrentSubmit()) {
-        setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити оприбуткування'))
+        setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити оприходування'))
       }
     } finally {
       if (isCurrentSubmit()) {

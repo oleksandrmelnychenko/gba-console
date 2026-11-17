@@ -155,7 +155,7 @@ beforeEach(() => {
 describe('warehouse document detail pattern', () => {
   it('keeps capitalization totals, fields, PDF action and table settings', async () => {
     const props = renderCapitalization()
-    const dialog = await screen.findByRole('dialog', { name: 'Оприховування' })
+    const dialog = await screen.findByRole('dialog', { name: 'Оприходування' })
     const summary = dialog.querySelector('.document-detail-summary')!
     expect(summary.querySelectorAll('.document-detail-metric')).toHaveLength(3)
     expect(summary.textContent).toContain('Кількість2Сума13,95Вага6')
@@ -173,7 +173,7 @@ describe('warehouse document detail pattern', () => {
 
   it('keeps capitalization loading, errors and the missing-ID export guard', async () => {
     renderCapitalization({ capitalization: { Number: 'EMPTY' }, detailError: 'Помилка оприбуткування', isLoading: true })
-    await screen.findByRole('dialog', { name: 'Оприховування' })
+    await screen.findByRole('dialog', { name: 'Оприходування' })
     expect(screen.getByText('Помилка оприбуткування')).toBeTruthy()
     expect(screen.getByTestId('product-capitalization-items').getAttribute('aria-busy')).toBe('true')
     expect(screen.getByRole('button', { name: 'Друк PDF' }).hasAttribute('disabled')).toBe(true)
