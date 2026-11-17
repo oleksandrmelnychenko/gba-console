@@ -81,7 +81,10 @@ import {
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
-import { sameGuid } from '../../../shared/guid/sameGuid'
+import { isGuid, sameGuid } from '../../../shared/guid/sameGuid'
+import { isConflictError, isNotFoundError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
+import { bankDetailsWereDropped } from '../components/form/bankDetailsValidation'
 import type {
   Client,
   ClientCommercialStructure,
@@ -229,6 +232,11 @@ export function ClientEditPage() {
   const [folderClient, setFolderClient] = useValueState<Client | null>(null)
   const [identityAttention, setIdentityAttention] = useValueState<ClientIdentityAttentionSummary | null>(null)
   const [error, setError] = useValueState<string | null>(null)
+  // 409 on save: someone else saved first; offer a reload instead of the raw server text.
+  const [conflict, setConflict] = useValueState<string | null>(null)
+  // The card is gone (deleted elsewhere, or a broken link): no form, no actions.
+  const [isDeletedClient, setDeletedClient] = useValueState(false)
+  const [reloadKey, setReloadKey] = useValueState(0)
   const [structureError, setStructureError] = useValueState<string | null>(null)
   const [folderClientError, setFolderClientError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -312,6 +320,18 @@ export function ClientEditPage() {
         return
       }
 
+      setConflict(null)
+      setDeletedClient(false)
+
+      if (!isGuid(netid)) {
+        // Not an id at all: «Картку не знайдено» without asking the server.
+        setClient(null)
+        setError(null)
+        setStructureLoading(false)
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       setError(null)
       setCommercialStructure(null)
@@ -322,9 +342,11 @@ export function ClientEditPage() {
       setFolderClientError(null)
 
       try {
-        const nextClient = await getClientForRegistryById(netid)
+        const loadedClient = await getClientForRegistryById(netid)
+        const nextClient = loadedClient?.Deleted === true ? null : loadedClient
 
         if (!cancelled) {
+          setDeletedClient(loadedClient?.Deleted === true)
           setClient(nextClient)
           if (nextClient?.NetUid) {
             loadedClientsRef.current.set(nextClient.NetUid, nextClient)
@@ -339,7 +361,9 @@ export function ClientEditPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити картку'))
+          setError(isNotFoundError(loadError)
+            ? null
+            : loadError instanceof Error ? loadError.message : t('Не вдалося завантажити картку'))
           setClient(null)
           setStructureLoading(false)
         }
@@ -357,7 +381,10 @@ export function ClientEditPage() {
     }
   }, [
     netid,
+    reloadKey,
     setClient,
+    setConflict,
+    setDeletedClient,
     setCommercialStructure,
     setError,
     setFolderClient,
@@ -518,7 +545,8 @@ export function ClientEditPage() {
   ])
 
   useEffect(() => {
-    if (!netid) {
+    if (!isGuid(netid)) {
+      // A broken link must not reach identity-attention (the server answers 400).
       setIdentityAttention(null)
       return
     }
@@ -1030,7 +1058,18 @@ export function ClientEditPage() {
         && pendingDiscountDraftRef.current?.clientNetUid === contentClient.NetUid) {
         pendingDiscountDraftRef.current = null
       }
-      const savedClient = updatedClient || clientToSave
+      const bankDropped = !isEcommerceSettingsUpdate && Boolean(updatedClient)
+        && bankDetailsWereDropped(clientToSave.ClientBankDetails, updatedClient?.ClientBankDetails)
+      // Keep what the user typed when the server answered without it, and say so.
+      const savedClient = bankDropped && updatedClient
+        ? { ...updatedClient, ClientBankDetails: clientToSave.ClientBankDetails }
+        : updatedClient || clientToSave
+      if (bankDropped) {
+        notifications.show({
+          color: 'orange',
+          message: t('Сервер не зберіг банківські реквізити. Вони залишились у формі; повторіть збереження або зверніться до адміністратора.'),
+        })
+      }
       if (savedClient.NetUid) {
         loadedClientsRef.current.set(savedClient.NetUid, savedClient)
       }
@@ -1046,6 +1085,18 @@ export function ClientEditPage() {
           : t('Картку збережено'),
       })
     } catch (saveError) {
+      if (isConflictError(saveError)) {
+        const conflictMessage = t('Картку змінив інший користувач після того, як ви її відкрили. Перезавантажте картку; ваші незбережені зміни буде втрачено.')
+        setConflict(conflictMessage)
+        notifications.show({ color: 'orange', message: conflictMessage })
+        return
+      }
+      if (isNotFoundError(saveError)) {
+        setDeletedClient(true)
+        setClient(null)
+        notifications.show({ color: 'red', message: t('Картку видалено або не знайдено. Зміни не збережено.') })
+        return
+      }
       const message = saveError instanceof Error ? saveError.message : t('Не вдалося зберегти картку')
       setError(message)
       /* The page alert can be scrolled out of view; the unsaved changes stay in the form. */
@@ -1117,8 +1168,8 @@ export function ClientEditPage() {
       onClose={closeSheet}
       footer={
         <ClientEditActions
-          canEdit={canEditClient}
-          canDelete={canEditClientLifecycle(
+          canEdit={canEditClient && Boolean(client)}
+          canDelete={Boolean(client) && canEditClientLifecycle(
             client,
             hasPermission(EDIT_CLIENT_DELETE_PERMISSION),
           ) && (!folderTree || !usesFolderClient)}
@@ -1137,6 +1188,15 @@ export function ClientEditPage() {
       }
     >
     <Stack className="client-edit-sheet" gap="md">
+      {conflict && (
+        <StaleRecordAlert
+          message={conflict}
+          onReload={() => {
+            setConflict(null)
+            setReloadKey((key) => key + 1)
+          }}
+        />
+      )}
       {(error || lookupsError || structureError || folderClientError) && (
         <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
           {error || lookupsError || structureError || folderClientError}
@@ -1166,6 +1226,7 @@ export function ClientEditPage() {
         errors={formErrors}
         firstStep={firstStep}
         folderTree={folderTree}
+        isDeleted={isDeletedClient}
         isLoading={isBodyLoading}
         isLoadingRegionCode={isLoadingRegionCode}
         isUploadingDocuments={isUploadingDocuments}
@@ -1418,6 +1479,7 @@ function ClientEditBody({
   errors,
   firstStep,
   folderTree,
+  isDeleted = false,
   isLoading,
   isLoadingRegionCode,
   isUploadingDocuments,
@@ -1467,6 +1529,7 @@ function ClientEditBody({
   firstStep?: EditStep
   folderTree: ClientFolderTree | null
   isLoading: boolean
+  isDeleted?: boolean
   isLoadingRegionCode: boolean
   isUploadingDocuments: boolean
   lookups: ReturnType<typeof useClientFormLookups>['lookups']
@@ -1521,7 +1584,7 @@ function ClientEditBody({
   if (!client) {
     return (
       <Card className="app-section-card" withBorder radius="md" padding="lg">
-        <Text c="dimmed">{t('Картку не знайдено')}</Text>
+        <Text c="dimmed">{isDeleted ? t('Картку видалено') : t('Картку не знайдено')}</Text>
       </Card>
     )
   }
@@ -1877,6 +1940,7 @@ function EditStepContent({
       <BankDetailsFields
         client={client}
         currencies={lookups.currencies}
+        errors={errors}
         sourceManaged={sourceFieldsLocked}
         onAccountNumberChange={setAccountNumber}
         onAccountNumberCurrencyChange={setAccountNumberCurrency}

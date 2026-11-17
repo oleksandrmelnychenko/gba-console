@@ -81,6 +81,11 @@ const NEW_CLIENT_FIELD_STEPS: Partial<Record<string, NewClientStep>> = {
   DeliveryAddress: 'contact-information',
   LegalAddress: 'contact-information',
   ActualAddress: 'contact-information',
+  BankIban: 'bank-details',
+  BankIbanCurrency: 'bank-details',
+  BankSwift: 'bank-details',
+  BankAccountNumber: 'bank-details',
+  BankAccountCurrency: 'bank-details',
 }
 
 type ClientNewRouteState = {
@@ -1076,6 +1081,7 @@ function NewStepContent({
         <BankDetailsFields
           client={draft}
           currencies={lookups.currencies}
+          errors={errors}
           onAccountNumberChange={setAccountNumber}
           onAccountNumberCurrencyChange={setAccountNumberCurrency}
           onBankFieldChange={setBankField}

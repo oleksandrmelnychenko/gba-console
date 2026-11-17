@@ -1,5 +1,6 @@
 import type { Client } from '../../types'
 import type { ClientFormRole } from './GeneralInfoFields'
+import { validateBankDetails } from './bankDetailsValidation'
 
 export type ClientFormErrors = Partial<Record<string, string>>
 
@@ -86,6 +87,12 @@ function validateClientFormats(client: Client, role: ClientFormRole, options: Cl
   if (needsFormatCheck('EmailAddress', client.EmailAddress, baseline) && !isValidClientEmail(client.EmailAddress)) {
     errors.EmailAddress = t('Вкажіть коректний email, наприклад name@example.com')
   }
+
+  Object.assign(errors, validateBankDetails(
+    client.ClientBankDetails,
+    t,
+    baseline === undefined ? undefined : baseline?.ClientBankDetails ?? null,
+  ))
 
   PHONE_FIELDS.forEach((field) => {
     const value = client[field]

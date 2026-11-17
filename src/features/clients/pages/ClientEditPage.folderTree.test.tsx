@@ -306,6 +306,49 @@ describe('ClientEditPage root folder form', () => {
     expect(screen.queryByText('Завантаження картки')).toBeNull()
   })
 
+  it('shows a broken link as «Картку не знайдено» without actions or server calls', async () => {
+    renderPage('not-a-guid')
+
+    expect(await screen.findByText('Картку не знайдено')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Видалити' })).toBeNull()
+    expect(apiMocks.getClientForRegistryById).not.toHaveBeenCalled()
+    expect(apiMocks.getClientIdentityAttention).not.toHaveBeenCalled()
+  })
+
+  it('shows a deleted card as «Картку видалено» with no editable form', async () => {
+    apiMocks.getClientForRegistryById.mockResolvedValue({ ...ORDINARY_CLIENT, Deleted: true })
+    renderPage(ORDINARY_NET_UID)
+
+    expect(await screen.findByText('Картку видалено')).toBeTruthy()
+    expect(screen.queryByText(`general:${ORDINARY_NET_UID}`)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Зберегти' })).toBeNull()
+  })
+
+  it('reports a save conflict in Ukrainian and reloads the card on request', async () => {
+    apiMocks.updateClient.mockRejectedValueOnce(Object.assign(new Error('The client was updated by another request.'), { status: 409 }))
+    renderPage(ORDINARY_NET_UID)
+    expect(await screen.findByText(`general:${ORDINARY_NET_UID}`)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    expect(await screen.findByText(/Картку змінив інший користувач/)).toBeTruthy()
+    expect(screen.queryByText(/updated by another request/)).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Перезавантажити' }))
+    await waitFor(() => expect(apiMocks.getClientForRegistryById).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText(/Картку змінив інший користувач/)).toBeNull()
+  })
+
+  it('turns a save on a card deleted elsewhere into the deleted state', async () => {
+    apiMocks.updateClient.mockRejectedValueOnce(Object.assign(new Error('Client was not found.'), { status: 404 }))
+    renderPage(ORDINARY_NET_UID)
+    expect(await screen.findByText(`general:${ORDINARY_NET_UID}`)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    expect(await screen.findByText('Картку видалено')).toBeTruthy()
+    expect(screen.queryByText('Client was not found.')).toBeNull()
+  })
+
   it('keeps the standard flat form for a client that is not a root folder', async () => {
     renderPage(ORDINARY_NET_UID)
 

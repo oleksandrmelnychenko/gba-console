@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { executeAccountingMutation } from '../../../shared/api/accountingMutationOperation'
 import { toSaveDiscount } from '../productGroupDiscountPayload'
+import { prepareBankDetailsForSave } from '../components/form/bankDetailsValidation'
 import type {
   Agreement,
   Client,
@@ -97,7 +98,10 @@ export async function updateClient(
   client: Client,
   options: ClientUpdateOptions = {},
 ): Promise<ClientUpsertResult> {
-  const payload = prepareClientSavePayload(client)
+  const payload = prepareClientSavePayload({
+    ...client,
+    ClientBankDetails: prepareBankDetailsForSave(client.ClientBankDetails),
+  })
   const allowSourceOverride = options.allowSourceOverride === true
   const result = await executeAccountingMutation({
     identity: client,

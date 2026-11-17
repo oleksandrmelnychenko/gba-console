@@ -1,10 +1,12 @@
 import { Card, Group, SimpleGrid, Stack, Select, Text, TextInput } from '@mantine/core'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client, ClientBankDetails, Currency } from '../../types'
+import type { ClientFormErrors } from './validateClientForm'
 
 export type BankDetailsFieldsProps = {
   client: Client
   currencies: Currency[]
+  errors?: ClientFormErrors
   sourceManaged?: boolean
   onBankFieldChange: (key: 'BankAndBranch' | 'Swift' | 'BranchCode' | 'BankAddress', value: string) => void
   onAccountNumberChange: (value: string) => void
@@ -36,7 +38,10 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <TextInput
             disabled={props.sourceManaged}
+            error={props.errors?.BankAccountNumber}
+            inputMode="numeric"
             label={t('Номер рахунку')}
+            maxLength={40}
             value={bankDetails.AccountNumber?.AccountNumber || ''}
             onChange={(event) => props.onAccountNumberChange(event.currentTarget.value)}
           />
@@ -45,7 +50,8 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
             disabled={props.sourceManaged}
             searchable
             data={currencyOptions}
-            label={t('Валюта')}
+            error={props.errors?.BankAccountCurrency}
+            label={t('Валюта рахунку')}
             placeholder={t('Оберіть валюту')}
             value={bankDetails.AccountNumber?.Currency?.Id != null ? String(bankDetails.AccountNumber.Currency.Id) : null}
             onChange={(value) => {
@@ -58,7 +64,9 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <TextInput
             disabled={props.sourceManaged}
+            error={props.errors?.BankIban}
             label="IBAN"
+            maxLength={42}
             value={bankDetails.ClientBankDetailIbanNo?.IBANNO || ''}
             onChange={(event) => props.onIbanNumberChange(event.currentTarget.value)}
           />
@@ -67,7 +75,8 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
             disabled={props.sourceManaged}
             searchable
             data={currencyOptions}
-            label={t('Валюта')}
+            error={props.errors?.BankIbanCurrency}
+            label={t('Валюта IBAN')}
             placeholder={t('Оберіть валюту')}
             value={
               bankDetails.ClientBankDetailIbanNo?.Currency?.Id != null
@@ -83,7 +92,9 @@ export function BankDetailsFields(props: BankDetailsFieldsProps) {
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           <TextInput
+            error={props.errors?.BankSwift}
             label="SWIFT"
+            maxLength={11}
             value={bankDetails.Swift || ''}
             onChange={(event) => props.onBankFieldChange('Swift', event.currentTarget.value)}
           />
