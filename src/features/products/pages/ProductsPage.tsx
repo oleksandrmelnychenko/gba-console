@@ -71,6 +71,7 @@ import {
 } from '../api/productsApi'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { PRODUCT_IMAGE_PLACEHOLDER } from '../productImagePlaceholder'
 import { toProxiedAssetUrl } from '../../../shared/url/proxiedAssetUrl'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -1345,7 +1346,7 @@ function ProductInlineView({
             }}
           >
             {mainImage?.ImageUrl ? (
-              <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
+              <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fallbackSrc={PRODUCT_IMAGE_PLACEHOLDER} fit="contain" h="100%" w="100%" />
             ) : (
               <Package size={42} strokeWidth={1.5} />
             )}
@@ -1359,7 +1360,7 @@ function ProductInlineView({
                   key={`${image.NetUid || image.ImageUrl || index}`}
                   onClick={() => setPreviewImageUrl(toProxiedAssetUrl(image.ImageUrl) || null)}
                 >
-                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
+                  <Image src={toProxiedAssetUrl(image.ImageUrl)} alt={image.FileName || getProductTitle(product)} fallbackSrc={PRODUCT_IMAGE_PLACEHOLDER} fit="cover" h="100%" w="100%" />
                 </button>
               ))}
             </Group>

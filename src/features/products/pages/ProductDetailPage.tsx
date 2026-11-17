@@ -4,6 +4,7 @@ import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-hist
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useProductImageDraft } from '../useProductImageDraft'
 import { partitionProductImageFiles, PRODUCT_IMAGE_ACCEPT } from '../productImageFiles'
+import { PRODUCT_IMAGE_PLACEHOLDER } from '../productImagePlaceholder'
 import { parseSpecificationAmount, SPECIFICATION_AMOUNT_MAX } from '../productSpecificationAmounts'
 import { isConflictError, isNotFoundError } from '../../../shared/api/staleRecord'
 import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
@@ -387,7 +388,7 @@ function ProductDetailPageContent() {
                     }}
                     onClick={() => setPreviewImageUrl(mainImage.ImageUrl || null)}
                   >
-                    <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} radius="sm" fit="contain" h={220} />
+                    <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fallbackSrc={PRODUCT_IMAGE_PLACEHOLDER} radius="sm" fit="contain" h={220} />
                   </button>
                 ) : (
                   <Box

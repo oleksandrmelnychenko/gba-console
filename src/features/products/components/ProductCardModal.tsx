@@ -7,6 +7,7 @@ import { TableChip, type TableChipTone } from '../../../shared/ui/TableChip'
 import { getProductByNetId } from '../api/productsApi'
 import { useProductResource } from '../useProductResource'
 import { getProductMainImage, getProductTitle, isCriticalProductTop } from '../utils'
+import { PRODUCT_IMAGE_PLACEHOLDER } from '../productImagePlaceholder'
 import { ShopImageGallery } from './ShopImageGallery'
 import './product-card-modal.css'
 
@@ -124,7 +125,7 @@ function ProductCardContent({
               className="product-card-main-image"
               onClick={() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}
             >
-              <Image src={mainImage.ImageUrl} alt={name} fit="contain" h="100%" w="100%" />
+              <Image src={mainImage.ImageUrl} alt={name} fallbackSrc={PRODUCT_IMAGE_PLACEHOLDER} fit="contain" h="100%" w="100%" />
               <span aria-hidden className="product-card-image-zoom"><ZoomIn size={18} /></span>
             </button>
             {persistedImageUrls.length > 1 ? (
