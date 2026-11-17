@@ -12,7 +12,7 @@ import { getInvoiceRegister, getInvoiceRegisterPrintDocument } from '../api/invo
 import { getInvoicePrintStatus } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
-import { displayValue, getDateShiftedByDays } from './dateHelpers'
+import { displayValue, getDateShiftedByDays, isImpossibleTypedDate } from './dateHelpers'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -221,8 +221,6 @@ function useInvoiceRegisterModel(canExport: boolean) {
       const document = await getInvoiceRegisterPrintDocument({
         value: activeFilters.value,
         date: activeFilters.date,
-        limit: pageSize,
-        offset: pageOffset,
       })
 
       if (downloadRequestRef.current === requestId) {
@@ -282,6 +280,10 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
   const model = useInvoiceRegisterModel(canExport)
   const { t } = useI18n()
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
+  /* An impossible typed date (31.02.2026, 99.99.9999, abc) never reaches the
+     filter; mark the field and stop showing the previous date's rows as if
+     they matched it. Leaving the field restores the date the rows belong to. */
+  const [typedDateInvalid, setTypedDateInvalid] = useState(false)
 
   return (
     <Stack className="warehouse-ukraine-tab" gap={6}>
@@ -295,10 +297,13 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
             />
             <AppDateInput
               className="warehouse-ukraine-filter-input"
+              error={typedDateInvalid ? t('Некоректна дата') : undefined}
               label={t('На дату')}
               type="date"
               value={model.filterDraft.date}
+              onBlur={() => setTypedDateInvalid(false)}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, date: event.currentTarget.value })}
+              onChangeCapture={(event) => setTypedDateInvalid(isImpossibleTypedDate(event.currentTarget.value))}
             />
             <div className="app-filter-actions warehouse-ukraine-filter-actions">
               <Button className="warehouse-toolbar-icon-action" aria-label={t('Скинути')} title={t('Скинути')} variant="default" size="sm" leftSection={<RotateCcw size={16} />} onClick={model.resetFilters}>
@@ -307,7 +312,7 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
               <Button color="gray" variant="default" size="sm" className="warehouse-toolbar-icon-action" aria-label={t('Роздрукувати')} title={t('Роздрукувати')}
                 leftSection={<Download size={16} />}
                 loading={model.isDownloading}
-                disabled={!canExport || Boolean(model.filterError) || model.isLoading || model.isDownloading}
+                disabled={!canExport || typedDateInvalid || Boolean(model.filterError) || model.isLoading || model.isDownloading}
                 onClick={model.exportDocument}
               >
                 {t('Роздрукувати')}
@@ -335,12 +340,12 @@ export function InvoiceRegisterTab({ canExport }: { canExport: boolean }) {
           <div className="warehouse-ukraine-table console-table-body">
           <DataTable
             columns={model.columns}
-            data={model.invoices}
+            data={typedDateInvalid ? [] : model.invoices}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             distributeAvailableWidth
-            emptyText={t('Накладних не знайдено')}
+            emptyText={typedDateInvalid ? t('Вкажіть коректну дату у форматі дд.мм.рррр') : t('Накладних не знайдено')}
             footer={
-              model.totalQty > 0 ? (
+              model.totalQty > 0 && !typedDateInvalid ? (
                 <Text className="warehouse-ukraine-table-footer-summary" c="dimmed" size="sm">
                   {t('Показано')} {model.pageStart}-{model.pageEnd} {t('з')} {model.totalQty}
                 </Text>

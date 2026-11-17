@@ -296,8 +296,6 @@ function useDocumentVerificationModel(canExport: boolean) {
       const document = await exportDocumentVerification({
         from: toDateString(activeFilters.from),
         to: toDateString(activeFilters.to),
-        limit: pageSize,
-        offset: pageOffset,
         storageIds,
       })
 
@@ -381,7 +379,7 @@ export function DocumentVerificationTab({ canExport }: { canExport: boolean }) {
             <CheckboxMultiSelect
               dropdownClassName="warehouse-ukraine-toolbar-dropdown"
               data={model.storageOptions}
-              label={t('Організація')}
+              label={t('Склад')}
               value={model.selectedStorageIds}
               onChange={model.setSelectedStorageIds}
             />

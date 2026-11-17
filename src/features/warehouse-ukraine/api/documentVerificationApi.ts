@@ -37,15 +37,14 @@ export async function getDocumentVerification(
   return normalizeVerificationResponse(result)
 }
 
+/** The printed verification covers the whole filtered list: the export endpoint has no paging. */
 export async function exportDocumentVerification(
-  params: DocumentVerificationSearchParams,
+  params: Pick<DocumentVerificationSearchParams, 'from' | 'storageIds' | 'to'>,
 ): Promise<WarehouseUkraineExportDocument> {
   const result = await apiRequest<unknown>('/history/order/item/warehouse-ukraine/verification/export', {
     query: {
       from: params.from,
       to: params.to,
-      limit: params.limit,
-      offset: params.offset,
       storageId: params.storageIds,
     },
   })

@@ -900,7 +900,8 @@ function useShipmentsTabModel({ canCarryOut, canEdit, canPrintShipment, onCarrie
 
   async function printShipments() {
     return runActionOnce('printShipments', async () => {
-      if (!canPrintShipment || !selectedTransporterNetId || filterError) {
+      /* An empty picker would print an empty shipment list as if it were a document. */
+      if (!canPrintShipment || !selectedTransporterNetId || filterError || items.length === 0) {
         return
       }
 
@@ -1066,8 +1067,8 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={typeOptions}
-              label={t('Перевізники')}
-              placeholder={t('Перевізники')}
+              label={t('Тип перевізника')}
+              placeholder={t('Тип перевізника')}
               value={model.selectedTypeNetId}
               onChange={(value) => model.setSelectedTypeNetId(value)}
             />
@@ -1075,8 +1076,8 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               classNames={{ dropdown: 'warehouse-ukraine-toolbar-dropdown' }}
               className="warehouse-ukraine-filter-input"
               data={transporterOptions}
-              label={t('Перевізники')}
-              placeholder={t('Перевізники')}
+              label={t('Перевізник')}
+              placeholder={t('Перевізник')}
               value={model.selectedTransporterNetId}
               onChange={(value) => model.setSelectedTransporterNetId(value)}
             />
@@ -1105,8 +1106,9 @@ function AutoShipmentsPanel({ onCarriedOut, permissions }: AutoShipmentsPanelPro
               >
                 {t('Провести і закрити')}
               </Button>
-              <Button color="gray" variant="default" size="sm" className="warehouse-toolbar-icon-action" aria-label={t('Друк PDF')} title={t('Друк PDF')}
-                disabled={!model.canPrintShipment || !model.selectedTransporterNetId || Boolean(model.filterError)}
+              <Button color="gray" variant="default" size="sm" className="warehouse-toolbar-icon-action" aria-label={t('Друк PDF')}
+                title={model.items.length === 0 ? t('Немає накладних для друку') : t('Друк PDF')}
+                disabled={!model.canPrintShipment || !model.selectedTransporterNetId || Boolean(model.filterError) || model.items.length === 0}
                 leftSection={<FileDown size={18} />}
                 styles={{ label: { fontFamily: 'var(--font-mono)', letterSpacing: 0 } }}
                 onClick={() => model.printShipments()}

@@ -39,16 +39,15 @@ export async function getInvoiceRegister(
   return normalizeRegisterResponse(result)
 }
 
+/** The printed register covers the whole filtered day: the export endpoint has no paging. */
 export async function getInvoiceRegisterPrintDocument(
-  params: InvoiceRegisterSearchParams,
+  params: Pick<InvoiceRegisterSearchParams, 'date' | 'value'>,
 ): Promise<WarehouseUkraineExportDocument> {
   const { from, to } = buildDayBounds(params.date)
 
   const result = await apiRequest<unknown>('/sales/warehouse-ukraine/invoice-register/export', {
     query: {
       value: params.value.trim(),
-      limit: params.limit,
-      offset: params.offset,
       to,
       from,
     },
