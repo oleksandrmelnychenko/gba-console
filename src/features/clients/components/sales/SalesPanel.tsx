@@ -718,15 +718,18 @@ function getLifeCycleLabel(value: number | undefined, t: (key: string) => string
   }
 }
 
+// Same labels as the accounting cash-flow payment status (accountingCashFlowPaymentStatus.ts).
 function getPaymentStatusLabel(value: number | undefined, t: (key: string) => string): string {
   switch (value) {
     case SalePaymentStatusType.NotPaid:
-      return t('SalePaymentStatusNotPaid')
+      return t('Не оплачено')
     case SalePaymentStatusType.Paid:
     case SalePaymentStatusType.Overpaid:
-      return t('SalePaymentStatusPaid')
+      return t('Оплачено')
     case SalePaymentStatusType.PartialPaid:
-      return t('SalePaymentStatusPartialPaid')
+      return t('Оплачено частково')
+    case SalePaymentStatusType.Refund:
+      return t('Повернення')
     default:
       return ''
   }

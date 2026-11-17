@@ -95,6 +95,26 @@ describe('SalesPanel permissions', () => {
     })
   })
 
+  it('shows the payment status in Ukrainian, never the raw enum key', async () => {
+    authState.permissions = new Set([PermissionKeys.SalesUkraine.Sale.View])
+    vi.mocked(getSalesByClient).mockResolvedValue([
+      {
+        NetUid: 'statistic-2',
+        Sale: {
+          NetUid: 'sale-2',
+          TotalCount: 1,
+          BaseLifeCycleStatus: { SaleLifeCycleType: SaleLifeCycleType.Shipping },
+          BaseSalePaymentStatus: { SalePaymentStatusType: SalePaymentStatusType.NotPaid },
+          SaleNumber: { Value: 'S-2' },
+        },
+      },
+    ])
+    renderPanel()
+
+    expect(await screen.findByText('Не оплачено')).toBeTruthy()
+    expect(screen.queryByText(/SalePaymentStatus/)).toBeNull()
+  })
+
   it('maps edit and delivery to their exact Sales Ukraine rights', async () => {
     authState.permissions = new Set([
       PermissionKeys.SalesUkraine.Sale.View,
