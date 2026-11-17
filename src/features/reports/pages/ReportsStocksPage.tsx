@@ -2435,7 +2435,8 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 
 function getSelectionLookupMinLength(fieldType: number): number {
   if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit
-    || fieldType === REPORT_FILTER_FIELD_TYPES.warehouse) return 0
+    || fieldType === REPORT_FILTER_FIELD_TYPES.warehouse || fieldType === REPORT_FILTER_FIELD_TYPES.supplier
+    || fieldType === REPORT_FILTER_FIELD_TYPES.supplierContract || fieldType === REPORT_FILTER_FIELD_TYPES.purchaseDocument) return 0
   return fieldType === REPORT_FILTER_FIELD_TYPES.product || fieldType === REPORT_FILTER_FIELD_TYPES.productArticle ? 2 : 1
 }
 
