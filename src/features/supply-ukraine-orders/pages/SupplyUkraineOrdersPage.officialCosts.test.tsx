@@ -90,6 +90,7 @@ function renderModal(row: SupplyUkraineOrderRow, onSaved = vi.fn()) {
 describe('official delivery costs', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    Element.prototype.scrollIntoView = vi.fn()
     apiMocks.createSupplyOrderUkraineDeliveryExpense.mockResolvedValue(undefined)
     apiMocks.getSupplyOrderServiceConsumableProducts.mockResolvedValue([product])
     apiMocks.searchSupplyOrderServiceOrganizations.mockResolvedValue([organization])
@@ -133,7 +134,35 @@ describe('official delivery costs', () => {
     await screen.findByDisplayValue('Автосервіси Думанських, ТОВ')
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 
-    expect(await screen.findByText('Заповніть організацію, договір і номер інвойса')).toBeTruthy()
+    expect(await screen.findByText('Заповніть постачальника послуг, договір і номер інвойса')).toBeTruthy()
     expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense).not.toHaveBeenCalled()
+  })
+
+  it('refuses VAT above 100% before calling the server', async () => {
+    const row = createRow()
+    const expense = row.order?.DeliveryExpenses?.[0]
+    if (expense) expense.VatPercent = 250
+    renderModal(row)
+
+    await screen.findByDisplayValue('Автосервіси Думанських, ТОВ')
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText('ПДВ має бути від 0 до 100%')).toBeTruthy()
+    expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense).not.toHaveBeenCalled()
+  })
+
+  it('picking the already selected contract keeps it selected', async () => {
+    renderModal(createRow())
+
+    const contract = await screen.findByDisplayValue('Основний договір')
+    fireEvent.click(contract)
+    fireEvent.click(await screen.findByRole('option', { name: 'Основний договір' }))
+
+    expect(screen.getByDisplayValue('Основний договір')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense).toHaveBeenCalledTimes(1))
+    expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense.mock.calls[0][0]).toMatchObject({
+      SupplyOrganizationAgreementId: 17,
+    })
   })
 })

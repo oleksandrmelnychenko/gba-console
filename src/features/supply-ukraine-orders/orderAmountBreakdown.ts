@@ -7,7 +7,9 @@ export type OrderAmountBreakdown = {
 }
 
 export function getDirectOrderAmountBreakdown(order: DirectSupplyOrder): OrderAmountBreakdown {
-  const net = finiteNumber(order.TotalNetPrice)
+  // The order list and logistic-way responses do not hydrate invoice totals: TotalNetPrice
+  // comes back 0 while the order amount lives in NetPrice (the same as for invoices below).
+  const net = nonZeroNumber(order.TotalNetPrice) ?? finiteNumber(order.NetPrice) ?? finiteNumber(order.TotalNetPrice)
   const vat = finiteNumber(order.TotalVat)
   const calculatedWithVat = addDefined(net, vat)
 
@@ -95,6 +97,17 @@ function addDefined(left: number | undefined, right: number | undefined): number
   }
 
   return (left ?? 0) + (right ?? 0)
+}
+
+/** Order quantity; TotalQuantity is 0 when the response did not hydrate it, Qty holds the stored one. */
+export function getDirectOrderQuantity(order: DirectSupplyOrder): number | undefined {
+  return nonZeroNumber(order.TotalQuantity) ?? finiteNumber(order.Qty) ?? finiteNumber(order.TotalQuantity)
+}
+
+function nonZeroNumber(value: number | undefined): number | undefined {
+  const number = finiteNumber(value)
+
+  return number === 0 ? undefined : number
 }
 
 function finiteNumber(value: number | undefined): number | undefined {

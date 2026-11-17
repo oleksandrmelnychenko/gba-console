@@ -485,7 +485,8 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     >
       <form id="supply-ukraine-order-create-form" onSubmit={submitForm}>
         <Stack gap="md">
-          {error && (
+          {/* The comment field shows its own error; repeating it in the alert doubled it. */}
+          {error && error !== commentValidationError && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
             </Alert>
@@ -724,6 +725,7 @@ function ImportConfigurationSection({
         >
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving}
             label={t('Код товару')}
             min={1}
@@ -732,6 +734,7 @@ function ImportConfigurationSection({
           />
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving}
             label={t('Кількість')}
             min={1}
@@ -740,6 +743,7 @@ function ImportConfigurationSection({
           />
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving}
             label={t('З рядка')}
             min={1}
@@ -748,6 +752,7 @@ function ImportConfigurationSection({
           />
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving}
             label={t('До рядка')}
             min={1}
@@ -756,6 +761,7 @@ function ImportConfigurationSection({
           />
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving || parseForm.withTotalAmount}
             label={t('Колонка ціни')}
             min={1}
@@ -764,6 +770,7 @@ function ImportConfigurationSection({
           />
           <NumberInput
             allowDecimal={false}
+            allowNegative={false}
             disabled={isSaving || !parseForm.withTotalAmount}
             label={t('Колонка суми')}
             min={1}
@@ -799,6 +806,7 @@ function ImportConfigurationSection({
               </Group>
               <NumberInput
                 allowDecimal={false}
+                allowNegative={false}
                 disabled={isSaving || !parseForm.withWeight}
                 label={t('Колонка ваги нетто')}
                 min={1}
@@ -822,6 +830,7 @@ function ImportConfigurationSection({
               </Group>
               <NumberInput
                 allowDecimal={false}
+                allowNegative={false}
                 disabled={isSaving || !parseForm.withGrossWeight}
                 label={t('Колонка ваги брутто')}
                 min={1}
@@ -870,6 +879,7 @@ function SupplierImportExtraFields({
         </Group>
         <NumberInput
           allowDecimal={false}
+          allowNegative={false}
           disabled={isSaving || !parseForm.withSpecificationCode}
           label={t('Колонка коду специфікації')}
           min={1}
@@ -892,6 +902,7 @@ function SupplierImportExtraFields({
         </Group>
         <NumberInput
           allowDecimal={false}
+          allowNegative={false}
           disabled={isSaving || !parseForm.withImportedProduct}
           label={t('Колонка ознаки імпорту')}
           min={1}

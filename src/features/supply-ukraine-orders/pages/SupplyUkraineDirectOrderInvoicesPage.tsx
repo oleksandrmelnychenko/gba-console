@@ -31,6 +31,7 @@ import './supply-order-detail.css'
 import './supply-order-invoices.css'
 import '../../../shared/ui/selection-surface.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { useCloseToFallback } from '../../../shared/router/useCloseToFallback'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatExcelArticleColumnError } from '../../../shared/excel/excelImportError'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -273,7 +274,8 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
 function SupplyUkraineDirectOrderInvoicesPageContent() {
   const model = useSupplyUkraineDirectOrderInvoicesPageModel()
   const { t } = useI18n()
-  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const close = useCloseToFallback(id ? `/orders/ukraine/all/edit/${id}` : '/orders/ukraine/all')
   const orderNumber = getOrderNumber(model.order)
 
   return (
@@ -283,7 +285,7 @@ function SupplyUkraineDirectOrderInvoicesPageContent() {
       opened
       size="full"
       title={<Group gap={10} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}</Group>}
-      onClose={() => navigate(-1)}
+      onClose={close}
     >
       <SupplyUkraineDirectOrderInvoicesView embedded model={model} />
     </AppDrawer>

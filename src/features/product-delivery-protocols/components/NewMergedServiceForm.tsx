@@ -38,11 +38,15 @@ import './new-merged-service-form.css'
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 type NewMergedServiceFieldErrors = Partial<Record<
+  | 'accountingExchangeRate'
   | 'accountingTaskUser'
   | 'agreement'
+  | 'exchangeRate'
   | 'grossPrice'
   | 'grossPriceAccounting'
   | 'invoiceNumber'
+  | 'percent'
+  | 'percentAccounting'
   | 'supplyInformationTaskUser'
   | 'supplyOrganization'
   | 'taskUser',
@@ -339,7 +343,8 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    if (isSaving) {
+    // A click that lands while the dialog fades out after a save must not post again.
+    if (isSaving || !opened) {
       return
     }
 
@@ -464,6 +469,7 @@ export function NewMergedServiceForm({
               disabled={isSaving}
               error={fieldErrors.grossPrice}
               label={t('Вартість Брутто')}
+              min={0}
               type="number"
               value={values.grossPrice}
               onChange={(event) => update('grossPrice', event.currentTarget.value)}
@@ -471,7 +477,10 @@ export function NewMergedServiceForm({
             <TextInput
               className="new-merged-service-control is-number"
               disabled={isSaving}
+              error={fieldErrors.percent}
               label={t('ПДВ %')}
+              max={100}
+              min={0}
               type="number"
               value={values.percent}
               onChange={(event) => update('percent', event.currentTarget.value)}
@@ -480,6 +489,7 @@ export function NewMergedServiceForm({
               className="new-merged-service-control is-number"
               description={exchangeRatePresentation.description}
               disabled={isSaving}
+              error={fieldErrors.exchangeRate}
               label={`${t('Курс управлінських витрат')}${exchangeRatePresentation.labelSuffix}`}
               placeholder={t('Автоматично за офіційним курсом')}
               type="number"
@@ -492,6 +502,7 @@ export function NewMergedServiceForm({
               disabled={isSaving}
               error={fieldErrors.grossPriceAccounting}
               label={t('Вартість Брутто (Бух.)')}
+              min={0}
               type="number"
               value={values.grossPriceAccounting}
               onChange={(event) => update('grossPriceAccounting', event.currentTarget.value)}
@@ -499,7 +510,10 @@ export function NewMergedServiceForm({
             <TextInput
               className="new-merged-service-control is-number"
               disabled={isSaving}
+              error={fieldErrors.percentAccounting}
               label={`${t('ПДВ %')} (${t('Бух.')})`}
+              max={100}
+              min={0}
               type="number"
               value={values.percentAccounting}
               onChange={(event) => update('percentAccounting', event.currentTarget.value)}
@@ -508,6 +522,7 @@ export function NewMergedServiceForm({
               className="new-merged-service-control is-number"
               description={exchangeRatePresentation.description}
               disabled={isSaving}
+              error={fieldErrors.accountingExchangeRate}
               label={`${t('Курс бухгалтерських витрат')}${exchangeRatePresentation.labelSuffix}`}
               placeholder={t('Автоматично за офіційним курсом')}
               type="number"
@@ -760,22 +775,68 @@ function validateNewMergedService(
     return { fieldErrors, summary: t('Заповніть управлінські або бухгалтерські витрати') }
   }
 
+  const amountErrors = validateMergedServiceAmounts(values, t)
+
+  if (Object.keys(amountErrors).length > 0) {
+    return { fieldErrors: amountErrors, summary: t('Перевірте суми, ПДВ і курси') }
+  }
+
   if (values.isSupplyInformationTask && !values.supplyInformationTaskUser) {
     fieldErrors.supplyInformationTaskUser = t('Вкажіть відповідального за оплату в межах країни')
-    return { fieldErrors, summary: fieldErrors.supplyInformationTaskUser }
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
   }
 
   if (values.createTask && !values.taskUser) {
     fieldErrors.taskUser = t('Вкажіть відповідального за платіжну задачу')
-    return { fieldErrors, summary: fieldErrors.taskUser }
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
   }
 
   if (values.createAccountingTask && !values.accountingTaskUser) {
     fieldErrors.accountingTaskUser = t('Вкажіть відповідального за бухгалтерську платіжну задачу')
-    return { fieldErrors, summary: fieldErrors.accountingTaskUser }
+    return { fieldErrors, summary: t('Заповніть обовʼязкові поля') }
   }
 
   return { fieldErrors, summary: null }
+}
+
+/** The largest amount SQL money stores; bigger values were silently rounded and refused by the server. */
+const MAX_MONEY_AMOUNT = 922_337_203_685
+
+function validateMergedServiceAmounts(
+  values: NewMergedServiceFormValues,
+  t: (value: string) => string,
+): NewMergedServiceFieldErrors {
+  const errors: NewMergedServiceFieldErrors = {}
+  const number = (value: string) => (value.trim() === '' ? null : Number(value))
+  const amount = (key: 'grossPrice' | 'grossPriceAccounting') => {
+    const value = number(values[key])
+
+    if (value !== null && (!Number.isFinite(value) || value < 0 || value > MAX_MONEY_AMOUNT)) {
+      errors[key] = t('Вартість має бути від 0 до 922 337 203 685')
+    }
+  }
+  const percent = (key: 'percent' | 'percentAccounting') => {
+    const value = number(values[key])
+
+    if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) {
+      errors[key] = t('ПДВ має бути від 0 до 100%')
+    }
+  }
+  const rate = (key: 'accountingExchangeRate' | 'exchangeRate') => {
+    const value = number(values[key])
+
+    if (value !== null && (!Number.isFinite(value) || value <= 0)) {
+      errors[key] = t('Курс має бути більшим за 0 або порожнім')
+    }
+  }
+
+  amount('grossPrice')
+  amount('grossPriceAccounting')
+  percent('percent')
+  percent('percentAccounting')
+  rate('exchangeRate')
+  rate('accountingExchangeRate')
+  return errors
 }
 
 function NewMergedServiceSection({

@@ -17,6 +17,7 @@ import { notifications } from '@mantine/notifications'
 import { BetweenVerticalEnd, CircleAlert, Search, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useCloseToFallback } from '../../../shared/router/useCloseToFallback'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import type { ExportDocument } from '../../../shared/documents/exportDocument'
@@ -1521,9 +1522,10 @@ export function ProductDeliveryProtocolIncomeSheet({
 }
 
 export function SupplyUkraineDirectOrderProductIncomePage() {
-  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+  const close = useCloseToFallback(id ? `/orders/ukraine/all/edit/${id}` : '/orders/ukraine/all')
 
-  return <PackingListProductIncomePage embedded source="direct-supply-order" onClose={() => navigate(-1)} />
+  return <PackingListProductIncomePage embedded source="direct-supply-order" onClose={close} />
 }
 
 type PackingListProductIncomePageProps = {

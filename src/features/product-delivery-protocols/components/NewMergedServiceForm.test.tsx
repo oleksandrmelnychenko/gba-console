@@ -25,6 +25,9 @@ vi.mock('../api/protocolDetailApi', () => ({
   searchUnifiedServiceCreateSupplyOrganizations: mocks.searchUnifiedServiceCreateSupplyOrganizations,
 }))
 
+const rateInput = () => screen.getAllByLabelText(/^Курс управлінських витрат/).find(
+  (element) => element.tagName === 'INPUT',
+) as HTMLInputElement
 const requiredLabel = (label: string) => new RegExp(`^${label}(?: \\*)?$`)
 const getInput = (label: string) => screen.getAllByLabelText(requiredLabel(label)).find(
   (element) => element.tagName === 'INPUT',
@@ -151,5 +154,67 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     )
     expect(responsibleFields).toHaveLength(2)
     expect(responsibleFields[1].getAttribute('aria-required')).toBe('true')
+  })
+
+  it('refuses negative or huge amounts, VAT above 100% and a zero rate without posting', async () => {
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValueOnce([{
+      Name: 'LMAX ATL SP.',
+      NetUid: 'supplier-1',
+      SupplyOrganizationAgreements: [
+        { Currency: { Code: 'EUR' }, Name: 'Main agreement', NetUid: 'agreement-1' },
+      ],
+    }])
+    const onSubmit = renderForm()
+
+    await waitFor(() => expect(mocks.searchUnifiedServiceCreateSupplyOrganizations).toHaveBeenCalledWith(''))
+    fireEvent.click(getInput('Постачальник послуг'))
+    fireEvent.click(await screen.findByText('LMAX ATL SP.'))
+    fireEvent.click(getInput('Договір'))
+    fireEvent.click(await screen.findByText('Main agreement (EUR)'))
+    fireEvent.change(getInput('Номер інвойса'), { target: { value: 'INV-1' } })
+    fireEvent.change(getInput('Вартість Брутто'), { target: { value: '99999999999999999' } })
+    fireEvent.change(getInput('ПДВ %'), { target: { value: '150' } })
+    fireEvent.change(rateInput(), { target: { value: '0' } })
+
+    for (let click = 0; click < 3; click += 1) {
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Зберегти' })) })
+    }
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getByText('Перевірте суми, ПДВ і курси')).toBeTruthy()
+    expect(screen.getByText('Вартість має бути від 0 до 922 337 203 685')).toBeTruthy()
+    expect(screen.getByText('ПДВ має бути від 0 до 100%')).toBeTruthy()
+    expect(screen.getByText('Курс має бути більшим за 0 або порожнім')).toBeTruthy()
+
+    fireEvent.change(getInput('Вартість Брутто'), { target: { value: '100' } })
+    fireEvent.change(getInput('ПДВ %'), { target: { value: '20' } })
+    fireEvent.change(rateInput(), { target: { value: '' } })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Зберегти' })) })
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a missing responsible user once, beside the field', async () => {
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValueOnce([{
+      Name: 'LMAX ATL SP.',
+      NetUid: 'supplier-1',
+      SupplyOrganizationAgreements: [
+        { Currency: { Code: 'EUR' }, Name: 'Main agreement', NetUid: 'agreement-1' },
+      ],
+    }])
+    const onSubmit = renderForm()
+
+    await waitFor(() => expect(mocks.searchUnifiedServiceCreateSupplyOrganizations).toHaveBeenCalledWith(''))
+    fireEvent.click(getInput('Постачальник послуг'))
+    fireEvent.click(await screen.findByText('LMAX ATL SP.'))
+    fireEvent.click(getInput('Договір'))
+    fireEvent.click(await screen.findByText('Main agreement (EUR)'))
+    fireEvent.change(getInput('Номер інвойса'), { target: { value: 'INV-1' } })
+    fireEvent.change(getInput('Вартість Брутто'), { target: { value: '100' } })
+    fireEvent.click(screen.getByLabelText('Створити платіжну задачу'))
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Зберегти' })) })
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getAllByText('Вкажіть відповідального за платіжну задачу')).toHaveLength(1)
+    expect(screen.getByText('Заповніть обовʼязкові поля')).toBeTruthy()
   })
 })

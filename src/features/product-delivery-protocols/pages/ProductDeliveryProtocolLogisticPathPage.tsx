@@ -153,6 +153,8 @@ function useLogisticPathModel(netId: string | undefined) {
       if (updated) {
         setLoadState((current) => ({ ...current, protocol: updated }))
       }
+
+      notifications.show({ color: 'green', message: t('Статус протоколу змінено') })
     } catch (statusError) {
       notifications.show({
         color: 'red',

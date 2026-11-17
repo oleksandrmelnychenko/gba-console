@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   getDirectOrderAmountBreakdown,
+  getDirectOrderQuantity,
   getInvoiceAmountBreakdown,
   getInvoiceDiscountLimit,
   getInvoicePaymentAmount,
@@ -18,6 +19,16 @@ describe('order amount breakdowns', () => {
       vat: 1694.22,
       withVat: 10165.32,
     })
+  })
+
+  it('uses the stored order amount and quantity when the list response leaves totals at 0', () => {
+    // Live list response for the seeded direct order: NetPrice 282, Qty 14, totals 0.
+    const order = { NetPrice: 282, Qty: 14, TotalNetPrice: 0, TotalQuantity: 0, TotalVat: 0 }
+
+    expect(getDirectOrderAmountBreakdown(order)).toEqual({ net: 282, vat: 0, withVat: 282 })
+    expect(getDirectOrderQuantity(order)).toBe(14)
+    expect(getDirectOrderQuantity({ Qty: 14, TotalQuantity: 9 })).toBe(9)
+    expect(getDirectOrderAmountBreakdown({ NetPrice: 1, TotalNetPrice: 81.5 }).net).toBe(81.5)
   })
 
   it('prefers the explicit VAT-inclusive invoice total', () => {

@@ -453,6 +453,7 @@ function AssignInvoicesDrawer({
   const { t } = useI18n()
   const [invoices, setInvoices] = useValueState<SupplyInvoice[]>([])
   const [selected, setSelected] = useValueState<Record<string, boolean>>({})
+  const [initialSelected, setInitialSelected] = useValueState<Record<string, boolean>>({})
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
 
@@ -475,6 +476,7 @@ function AssignInvoicesDrawer({
       return records
     }, {})
     setSelected(initialSelected)
+    setInitialSelected(initialSelected)
 
     async function loadInvoices() {
       setLoading(true)
@@ -503,7 +505,9 @@ function AssignInvoicesDrawer({
     return () => {
       cancelled = true
     }
-  }, [opened, protocol, setError, setInvoices, setLoading, setSelected, t])
+  }, [opened, protocol, setError, setInitialSelected, setInvoices, setLoading, setSelected, t])
+
+  const isUnchanged = isSameInvoiceSelection(selected, initialSelected)
 
   function toggle(invoice: SupplyInvoice) {
     if (isSaving) {
@@ -518,7 +522,9 @@ function AssignInvoicesDrawer({
   }
 
   function handleAssign() {
-    if (isSaving) {
+    // Nothing to send when the selection is unchanged; a click while the dialog fades out
+    // after a save must not post the same selection again.
+    if (isSaving || !opened || isUnchanged) {
       return
     }
 
@@ -554,11 +560,18 @@ function AssignInvoicesDrawer({
       </div>
       <AppModalFooter>
         <Button variant="default" disabled={isSaving} onClick={onClose}>{t('Скасувати')}</Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>{t('Зберегти')}</Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} disabled={isLoading || isSaving || isUnchanged} loading={isSaving} onClick={handleAssign}>{t('Зберегти')}</Button>
       </AppModalFooter>
       </Stack>
     </AppModal>
   )
+}
+
+function isSameInvoiceSelection(left: Record<string, boolean>, right: Record<string, boolean>): boolean {
+  const leftKeys = Object.keys(left).filter((key) => left[key])
+  const rightKeys = new Set(Object.keys(right).filter((key) => right[key]))
+
+  return leftKeys.length === rightKeys.size && leftKeys.every((key) => rightKeys.has(key))
 }
 
 export function InvoicesSection({

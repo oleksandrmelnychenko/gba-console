@@ -39,6 +39,9 @@ function createInitialFormState(): NewProductDeliveryProtocolFormState {
   }
 }
 
+/** DeliveryProductProtocol.Comment is nvarchar(500); a longer comment came back as a bare 400. */
+const PROTOCOL_COMMENT_MAX_LENGTH = 500
+
 export function NewProductDeliveryProtocolModal({
   createError,
   isCreating,
@@ -186,7 +189,9 @@ function NewProductDeliveryProtocolForm({
 
           <Textarea
             autosize
+            description={`${comment.length}/${PROTOCOL_COMMENT_MAX_LENGTH}`}
             label={t('Коментар')}
+            maxLength={PROTOCOL_COMMENT_MAX_LENGTH}
             minRows={2}
             value={comment}
             onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}

@@ -47,7 +47,7 @@ describe('direct supply order comment validation', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
 
-    expect(screen.getAllByText('Коментар: не більше 500 символів')).not.toHaveLength(0)
+    expect(screen.getAllByText('Коментар: не більше 500 символів')).toHaveLength(1)
     expect(apiMocks.uploadDirectSupplyOrderFromFile).not.toHaveBeenCalled()
 
     fireEvent.change(comment, {

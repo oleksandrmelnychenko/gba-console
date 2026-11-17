@@ -41,4 +41,25 @@ describe('NewProductDeliveryProtocolModal', () => {
     expect(screen.queryByRole('option', { name: 'ТОВ "ПАК "Конкорд"' })).toBeNull()
     expect(screen.queryByRole('option', { name: 'ТОВ "Хмельницький агрегатний завод"' })).toBeNull()
   })
+
+  it('limits the comment to the 500 characters the server stores and shows the count', () => {
+    render(
+      <MantineProvider>
+        <NewProductDeliveryProtocolModal
+          createError={null}
+          isCreating={false}
+          opened
+          organizations={[]}
+          organizationsError={null}
+          onClose={vi.fn()}
+          onCreate={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    const comment = screen.getByRole('textbox', { name: 'Коментар' })
+    expect(comment.getAttribute('maxlength')).toBe('500')
+    fireEvent.change(comment, { target: { value: 'x'.repeat(491) } })
+    expect(screen.getByText('491/500')).toBeTruthy()
+  })
 })

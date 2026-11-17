@@ -333,6 +333,8 @@ export type DirectSupplyOrder = EntityFields & {
   TotalNetPrice?: number
   TotalNetPriceWithVat?: number
   TotalQuantity?: number
+  /** Stored order quantity; TotalQuantity is 0 when a response does not hydrate it. */
+  Qty?: number
   TotalRowsQty?: number
   TotalVat?: number
   TransportationType?: SupplyTransportationTypeValue

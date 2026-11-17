@@ -8,10 +8,12 @@ import {
   getNotSentTaxFreePackLists,
   getSalesForMovingToUkraine,
   getUkraineCartItems,
+  recoverFromPendingCartReservation,
   updateUkraineCartItem,
   uploadPreviewUkraineCartItemsFromFile,
   uploadUkraineCartItemsFromFile,
 } from './basketSupplyUkraineOrderApi'
+import { CartReservationPendingOperationError } from './cartReservationMutationOperation'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -169,6 +171,56 @@ describe('basketSupplyUkraineOrderApi cart reservation mutations', () => {
         operationNetUid: operation,
       },
     })
+  })
+
+  it('a 500 on upload no longer locks out every other file once the cart is re-read', async () => {
+    const configuration = {
+      EndRow: 10,
+      QtyColumnNumber: 2,
+      StartRow: 2,
+      VendorCodeColumnNumber: 1,
+    }
+    const brokenFile = new File(['not a workbook'], 'broken.xlsx', { lastModified: 1 })
+    const goodFile = new File(['workbook'], 'good.xlsx', { lastModified: 2 })
+
+    apiRequestMock.mockRejectedValueOnce(
+      Object.assign(new Error('server'), { status: 500 }),
+    )
+    await expect(uploadUkraineCartItemsFromFile(brokenFile, configuration))
+      .rejects.toThrow('server')
+
+    let blocked: unknown
+    try {
+      await uploadUkraineCartItemsFromFile(goodFile, configuration)
+    } catch (error) {
+      blocked = error
+    }
+    expect(blocked).toBeInstanceOf(CartReservationPendingOperationError)
+    expect(apiRequestMock).toHaveBeenCalledTimes(1)
+
+    apiRequestMock.mockResolvedValueOnce({ Body: [{ Id: 7 }] })
+    const items = await recoverFromPendingCartReservation(blocked)
+
+    expect(items?.map((item) => item.Id)).toEqual([7])
+    expect(apiRequestMock.mock.calls[1]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/all',
+    )
+
+    apiRequestMock.mockResolvedValueOnce({ Body: [] })
+    await uploadUkraineCartItemsFromFile(goodFile, configuration)
+    expect(apiRequestMock.mock.calls[2]?.[0]).toBe(
+      '/supplies/ukraine/order/cart/items/page/file/upload',
+    )
+  })
+
+  it('keeps the block when the cart cannot be re-read', async () => {
+    const error = new CartReservationPendingOperationError('some-key')
+    localStorage.setItem('some-key', 'pending')
+    apiRequestMock.mockRejectedValueOnce(new Error('offline'))
+
+    await expect(recoverFromPendingCartReservation(error)).rejects.toThrow('offline')
+    expect(localStorage.getItem('some-key')).toBe('pending')
+    expect(await recoverFromPendingCartReservation(new Error('other'))).toBeNull()
   })
 
   it('uses only permission-scoped registry and preview routes', async () => {

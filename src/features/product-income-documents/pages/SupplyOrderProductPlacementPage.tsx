@@ -5,6 +5,7 @@ import { Alert, Badge, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams, type Location } from 'react-router-dom'
+import { useCloseToFallback } from '../../../shared/router/useCloseToFallback'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -50,6 +51,7 @@ const rateFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 4 
 export function SupplyOrderProductPlacementPage() {
   return (
     <SupplyOrderProductPlacementGuard
+      closeFallbackPath="/products/income/documents"
       loadIncome={getSupplyOrderProductIncomeByNetId}
       permissionKey={PermissionKeys.ProductIncomeDocuments.Document.OpenDetails}
       title="Розміщення приходу по замовленню"
@@ -60,6 +62,7 @@ export function SupplyOrderProductPlacementPage() {
 export function SupplyOrderUkraineProductPlacementPage() {
   return (
     <SupplyOrderProductPlacementGuard
+      closeFallbackPath="/orders/ukraine/all"
       loadIncome={getSupplyOrderUkraineProductIncomeByNetId}
       permissionKey={PermissionKeys.OrdersUkraine.Placement.OpenProductPlacement}
       title="Розміщення приходу поставки в Україну"
@@ -68,10 +71,12 @@ export function SupplyOrderUkraineProductPlacementPage() {
 }
 
 function SupplyOrderProductPlacementGuard({
+  closeFallbackPath,
   loadIncome,
   permissionKey,
   title,
 }: {
+  closeFallbackPath: string
   loadIncome: (netId: string) => Promise<ProductIncomeInfo | null>
   permissionKey: PermissionKey
   title: string
@@ -94,6 +99,7 @@ function SupplyOrderProductPlacementGuard({
   return (
     <SupplyOrderProductPlacementContent
       canExport={() => can(PermissionKeys.ProductIncomeDocuments.Document.Export)}
+      closeFallbackPath={closeFallbackPath}
       loadIncome={loadIncome}
       title={title}
     />
@@ -102,10 +108,12 @@ function SupplyOrderProductPlacementGuard({
 
 function SupplyOrderProductPlacementContent({
   canExport,
+  closeFallbackPath,
   loadIncome,
   title,
 }: {
   canExport: () => boolean
+  closeFallbackPath: string
   loadIncome: (netId: string) => Promise<ProductIncomeInfo | null>
   title: string
 }) {
@@ -119,11 +127,13 @@ function SupplyOrderProductPlacementContent({
     : null
   const returnState = backgroundLocation?.state
 
+  const closeWithoutBackground = useCloseToFallback(closeFallbackPath)
+
   function handleClose() {
     if (returnPath) {
       navigate(returnPath, { state: returnState })
     } else {
-      navigate(-1)
+      closeWithoutBackground()
     }
   }
   const [income, setIncome] = useValueState<ProductIncomeInfo | null>(null)

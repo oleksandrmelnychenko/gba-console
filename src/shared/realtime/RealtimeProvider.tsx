@@ -21,6 +21,7 @@ import {
   type SupplyPaymentTaskNotification,
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
+import { toastTitleAndMessage } from './notificationText'
 import { realtimeUrl } from './realtimeUrl'
 import { applyDataSyncNotification } from './dataSyncProgressStore'
 import { humanizeSyncStepKeys } from './syncStepLabel'
@@ -287,8 +288,7 @@ function showSupplyOrderNotification(notification: SupplyOrderNotification, t: (
 
   notifications.show({
     color: 'teal',
-    message: message || title,
-    title,
+    ...toastTitleAndMessage(title, message),
   })
 }
 

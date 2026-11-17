@@ -1,4 +1,6 @@
-import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
+import { realpathSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { defineConfig, loadEnv, searchForWorkspaceRoot, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 import { uiActionGuardPlugin } from './scripts/ui-action-guard-plugin.mjs'
 
@@ -28,6 +30,28 @@ function resolveBuildNumber() {
   const now = new Date()
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}.${pad(now.getHours())}${pad(now.getMinutes())}`
+}
+
+/**
+ * Paths the dev server may serve under /@fs/. Setting fs.allow replaces Vite's default, so
+ * the workspace root stays first. A checkout whose node_modules is a link to another
+ * folder (shared installs) also needs the link target, or font files come back 403 and
+ * the console renders with fallback fonts.
+ */
+export function devServerFsAllow(root: string): string[] {
+  const allow = [searchForWorkspaceRoot(root)]
+
+  try {
+    const nodeModules = realpathSync(resolve(root, 'node_modules'))
+
+    if (!allow.some((path) => nodeModules.startsWith(path))) {
+      allow.push(nodeModules)
+    }
+  } catch {
+    // No node_modules yet: nothing extra to allow.
+  }
+
+  return allow
 }
 
 // https://vite.dev/config/
@@ -87,6 +111,9 @@ export default defineConfig(({ mode }) => {
     },
   },
   server: {
+    fs: {
+      allow: devServerFsAllow(process.cwd()),
+    },
     watch: {
       ignored: ['**/.vs/**'],
     },

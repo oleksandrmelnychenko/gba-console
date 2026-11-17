@@ -47,6 +47,7 @@ import {
   getNotSentTaxFreePackLists,
   getSalesForMovingToUkraine,
   getUkraineCartItems,
+  recoverFromPendingCartReservation,
   updateUkraineCartItem,
   uploadPreviewUkraineCartItemsFromFile,
   uploadUkraineCartItemsFromFile,
@@ -462,9 +463,38 @@ function BasketCartWorkflow() {
 
       setUploadModalOpen(false)
     } catch (uploadErrorResult) {
-      setUploadError(userErrorText(uploadErrorResult, t('Не вдалося завантажити файл')))
+      const recovered = await recoverPendingCartReservation(uploadErrorResult)
+
+      setUploadError(
+        recovered
+          ? recovered
+          : userErrorText(uploadErrorResult, t('Не вдалося завантажити файл')),
+      )
     } finally {
       setUploading(false)
+    }
+  }
+
+  /**
+   * A request that ended without a definite answer blocks every different one. Re-read the
+   * cart (so the user sees what that request did), release the block and say so. Returns the
+   * message to show, or null when the error is something else.
+   */
+  async function recoverPendingCartReservation(error: unknown): Promise<string | null> {
+    try {
+      const items = await recoverFromPendingCartReservation(error)
+
+      if (!items) {
+        return null
+      }
+
+      setCartItems(sortCartItems(items))
+      setSelectedSourceIds(new Set())
+      return t(
+        'Попередня зміна кошика завершилася без відповіді сервера. Кошик оновлено — перевірте його та повторіть дію.',
+      )
+    } catch {
+      return null
     }
   }
 
@@ -598,9 +628,11 @@ function BasketCartWorkflow() {
       })
       setReserveItem(null)
     } catch (updateError) {
+      const recovered = await recoverPendingCartReservation(updateError)
+
       notifications.show({
         color: 'red',
-        message: userErrorText(updateError, t('Не вдалося оновити резерв')),
+        message: recovered ?? userErrorText(updateError, t('Не вдалося оновити резерв')),
       })
     } finally {
       setUpdatingReserve(false)

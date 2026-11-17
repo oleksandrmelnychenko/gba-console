@@ -73,6 +73,7 @@ import { hasSupplyProForm } from '../proFormHelpers'
 import { buildSupplyOrderCurrencyFilterOptions } from '../currencyFilter'
 import {
   getDirectOrderAmountBreakdown,
+  getDirectOrderQuantity,
   getInvoiceAmountBreakdown,
   getToUkraineOrderAmountBreakdown,
 } from '../orderAmountBreakdown'
@@ -138,8 +139,8 @@ const TYPE_OPTIONS: Array<{ label: string, value: SupplyUkraineOrderKind }> = [
 
 const PERMISSION_CREATE_TO_UKRAINE = PermissionKeys.OrdersUkraine.Order.OpenArrival
 const PERMISSION_CREATE_DIRECT = PermissionKeys.OrdersUkraine.Order.OpenOrder
-const PERMISSION_PRINT = PermissionKeys.OrdersUkraine.Order.DownloadDocuments
 const PERMISSION_CREATE = PermissionKeys.OrdersUkraine.Order.Create
+const PERMISSION_PRINT = PermissionKeys.OrdersUkraine.Order.DownloadDocuments
 const PERMISSION_TO_UKRAINE_PLACEMENT = PermissionKeys.OrdersUkraine.Order.OpenPlacement
 const PERMISSION_TO_UKRAINE_VIEW = PermissionKeys.OrdersUkraine.Order.OpenOverview
 const PERMISSION_TO_UKRAINE_PROTOCOLS = PermissionKeys.OrdersUkraine.Order.CreatePaymentTask
@@ -1897,7 +1898,14 @@ export function OfficialCostsModal({
       }
 
       if (!selectedOrganization || !selectedAgreement || !form.invoiceNumber.trim()) {
-        dispatch({ error: t('Заповніть організацію, договір і номер інвойса'), type: 'setError' })
+        dispatch({ error: t('Заповніть постачальника послуг, договір і номер інвойса'), type: 'setError' })
+        return
+      }
+
+      const amountError = validateOfficialCostAmounts(form)
+
+      if (amountError) {
+        dispatch({ error: t(amountError), type: 'setError' })
         return
       }
 
@@ -1968,8 +1976,10 @@ export function OfficialCostsModal({
                 data={organizationOptions}
                 disabled={isLoading || isSaving}
                 label={t('Постачальник послуг')}
-                nothingFoundMessage={t('Нічого не знайдено')}
+                nothingFoundMessage={organizationSearch.trim() ? t('Нічого не знайдено') : t('Почніть вводити назву постачальника')}
+                placeholder={t('Почніть вводити назву')}
                 searchable
+                withAsterisk
                 searchValue={organizationSearch}
                 value={form.serviceOrganizationKey || null}
                 onChange={(value) => {
@@ -1982,9 +1992,11 @@ export function OfficialCostsModal({
                 className="supply-orders-official-costs-field is-mono"
                 data={agreementOptions}
                 disabled={isLoading || isSaving || !selectedOrganization}
+                allowDeselect={false}
                 label={t('Договір')}
                 searchable
                 value={form.serviceAgreementKey || null}
+                withAsterisk
                 onChange={(value) => updateForm({ serviceAgreementKey: value || '' })}
               />
               <Select
@@ -1992,6 +2004,7 @@ export function OfficialCostsModal({
                 data={productOptions}
                 disabled={isLoading || isSaving}
                 label={t('Тип')}
+                nothingFoundMessage={t('Немає типів витрат доставки')}
                 searchable
                 value={form.consumableProductKey || null}
                 onChange={(value) => updateForm({ consumableProductKey: value || '' })}
@@ -2001,11 +2014,13 @@ export function OfficialCostsModal({
                 disabled={isSaving}
                 label={t('Номер інвойса')}
                 value={form.invoiceNumber}
+                withAsterisk
                 onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
               />
               <NumberInput
                 className="supply-orders-official-costs-field is-mono"
                 disabled={isSaving}
+                allowNegative={false}
                 label={t('Вартість брутто')}
                 min={0}
                 value={form.grossAmount}
@@ -2014,7 +2029,11 @@ export function OfficialCostsModal({
               <NumberInput
                 className="supply-orders-official-costs-field is-mono"
                 disabled={isSaving}
+                allowNegative={false}
+                // No silent clamp: 250 used to become 100 on blur and was saved; the save check names it instead.
+                clampBehavior="none"
                 label={t('ПДВ %')}
+                max={100}
                 min={0}
                 value={form.vatPercent}
                 onChange={(value) => updateForm({ vatPercent: toNonNegativeNumber(value) })}
@@ -2022,6 +2041,7 @@ export function OfficialCostsModal({
               <NumberInput
                 className="supply-orders-official-costs-field is-mono"
                 disabled={isSaving}
+                allowNegative={false}
                 label={t('Бух. вартість брутто')}
                 min={0}
                 value={form.accountingGrossAmount}
@@ -2030,7 +2050,11 @@ export function OfficialCostsModal({
               <NumberInput
                 className="supply-orders-official-costs-field is-mono"
                 disabled={isSaving}
+                allowNegative={false}
+                // No silent clamp: 250 used to become 100 on blur and was saved; the save check names it instead.
+                clampBehavior="none"
                 label={t('Бух. ПДВ %')}
+                max={100}
                 min={0}
                 value={form.accountingVatPercent}
                 onChange={(value) => updateForm({ accountingVatPercent: toNonNegativeNumber(value) })}
@@ -2159,7 +2183,7 @@ function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
     number: getDirectOrderDisplayNumber(order),
     orderDate: order.DateFrom,
     organization: order.Organization?.Name,
-    qty: positiveNumber(order.TotalQuantity),
+    qty: positiveNumber(getDirectOrderQuantity(order)),
     responsible: getEntityName(order.Responsible),
     source: order.ImportedForAmg === true ? 'AMG' : order.ImportedForAmg === false ? 'Fenix' : undefined,
     storage: order.ImportedStorageName,
@@ -2373,6 +2397,24 @@ function toDateTimeInput(value?: Date | string): string {
 
 function normalizeDateTimeInput(value: string): string {
   return value.length === 16 ? `${value}:00` : value
+}
+
+/** Mirrors the server rule: amounts are not negative, VAT is 0–100 %. Returns a message key or null. */
+function validateOfficialCostAmounts(
+  form: Pick<OfficialCostsForm, 'accountingGrossAmount' | 'accountingVatPercent' | 'grossAmount' | 'vatPercent'>,
+): string | null {
+  const isPercent = (value: number | '') => value === '' || (value >= 0 && value <= 100)
+  const isAmount = (value: number | '') => value === '' || value >= 0
+
+  if (!isAmount(form.grossAmount) || !isAmount(form.accountingGrossAmount)) {
+    return 'Вартість брутто не може бути відʼємною'
+  }
+
+  if (!isPercent(form.vatPercent) || !isPercent(form.accountingVatPercent)) {
+    return 'ПДВ має бути від 0 до 100%'
+  }
+
+  return null
 }
 
 function toNonNegativeNumber(value: number | string): number | '' {

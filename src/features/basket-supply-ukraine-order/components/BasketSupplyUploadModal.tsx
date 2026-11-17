@@ -3,6 +3,7 @@ import { AppModal, AppModalFooter } from "../../../shared/ui/AppModal"
 import { CircleAlert, FileSpreadsheet, Upload } from 'lucide-react'
 import { useState } from 'react'
 import './basket-supply-upload-modal.css'
+import { validateUploadForm } from './basketSupplyUploadValidation'
 import type {
   BasketSupplyFileUploadMode,
   BasketSupplyUploadForm,
@@ -52,10 +53,11 @@ export function BasketSupplyUploadModal({
   const isPreview = mode === 'preview'
 
   function submitForm() {
-    const parseConfiguration = toParseConfiguration(form, isPreview)
+    const message = validateUploadForm(form, isPreview, t)
+    const parseConfiguration = message ? null : toParseConfiguration(form, isPreview)
 
-    if (!form.file || !parseConfiguration) {
-      setValidationError(t('Заповніть файл і колонки імпорту'))
+    if (message || !form.file || !parseConfiguration) {
+      setValidationError(message ?? t('Заповніть файл і колонки імпорту'))
       return
     }
 
@@ -91,6 +93,7 @@ export function BasketSupplyUploadModal({
             accept=".xls,.xlsx,.csv"
             disabled={isSubmitting}
             label={t('Файл замовлення')}
+            withAsterisk
             leftSection={<FileSpreadsheet size={16} />}
             placeholder={t('Оберіть файл')}
             value={form.file}
@@ -103,32 +106,40 @@ export function BasketSupplyUploadModal({
           <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing={12} mt={12}>
             <NumberInput
               allowDecimal={false}
+              allowNegative={false}
               disabled={isSubmitting}
               label={t('Колонка коду виробника')}
+              withAsterisk
               min={1}
               value={form.vendorCodeColumnNumber}
               onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))}
             />
             <NumberInput
               allowDecimal={false}
+              allowNegative={false}
               disabled={isSubmitting}
               label={t('Колонка кількості')}
+              withAsterisk
               min={1}
               value={form.qtyColumnNumber}
               onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))}
             />
             <NumberInput
               allowDecimal={false}
+              allowNegative={false}
               disabled={isSubmitting}
               label={t('З рядка')}
+              withAsterisk
               min={1}
               value={form.startRow}
               onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))}
             />
             <NumberInput
               allowDecimal={false}
+              allowNegative={false}
               disabled={isSubmitting}
               label={t('До рядка')}
+              withAsterisk
               min={1}
               value={form.endRow}
               onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))}
@@ -137,16 +148,20 @@ export function BasketSupplyUploadModal({
               <>
                 <NumberInput
                   allowDecimal={false}
+                  allowNegative={false}
                   disabled={isSubmitting}
                   label={t('Колонка дати')}
+                  withAsterisk
                   min={1}
                   value={form.fromDateColumnNumber}
                   onChange={(value) => setForm((current) => ({ ...current, fromDateColumnNumber: toPositiveNumber(value) }))}
                 />
                 <NumberInput
                   allowDecimal={false}
+                  allowNegative={false}
                   disabled={isSubmitting}
                   label={t('Колонка пріоритету')}
+                  withAsterisk
                   min={1}
                   value={form.priorityColumnNumber}
                   onChange={(value) => setForm((current) => ({ ...current, priorityColumnNumber: toPositiveNumber(value) }))}
@@ -176,8 +191,10 @@ export function BasketSupplyUploadModal({
                 {form.withWeight && (
                   <NumberInput
                     allowDecimal={false}
+                    allowNegative={false}
                     disabled={isSubmitting}
                     label={t('Колонка ваги нетто')}
+                    withAsterisk
                     min={1}
                     value={form.weightColumnNumber}
                     onChange={(value) => setForm((current) => ({ ...current, weightColumnNumber: toPositiveNumber(value) }))}
@@ -198,8 +215,10 @@ export function BasketSupplyUploadModal({
                 {form.withGrossWeight && (
                   <NumberInput
                     allowDecimal={false}
+                    allowNegative={false}
                     disabled={isSubmitting}
                     label={t('Колонка ваги брутто')}
+                    withAsterisk
                     min={1}
                     value={form.grossWeightColumnNumber}
                     onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: toPositiveNumber(value) }))}
@@ -220,8 +239,10 @@ export function BasketSupplyUploadModal({
                 {form.withSpecificationCode && (
                   <NumberInput
                     allowDecimal={false}
+                    allowNegative={false}
                     disabled={isSubmitting}
                     label={t('Колонка митного коду')}
+                    withAsterisk
                     min={1}
                     value={form.specificationCodeColumnNumber}
                     onChange={(value) => setForm((current) => ({ ...current, specificationCodeColumnNumber: toPositiveNumber(value) }))}
@@ -242,8 +263,10 @@ export function BasketSupplyUploadModal({
                 {form.withIsImportedProduct && (
                   <NumberInput
                     allowDecimal={false}
+                    allowNegative={false}
                     disabled={isSubmitting}
                     label={t('Колонка імпорту')}
+                    withAsterisk
                     min={1}
                     value={form.isImportedProductColumnNumber}
                     onChange={(value) => setForm((current) => ({ ...current, isImportedProductColumnNumber: toPositiveNumber(value) }))}

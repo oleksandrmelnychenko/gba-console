@@ -11,11 +11,14 @@ type PendingCartReservationOperation = {
 }
 
 export class CartReservationPendingOperationError extends Error {
-  constructor() {
+  readonly storageKey: string
+
+  constructor(storageKey: string) {
     super(
       'Попередня зміна резерву має невідомий результат. Повторіть той самий запит або оновіть дані кошика.',
     )
     this.name = 'CartReservationPendingOperationError'
+    this.storageKey = storageKey
   }
 }
 
@@ -71,6 +74,20 @@ export function clearCartReservationOperation(
   }
 }
 
+/**
+ * Forgets the operation that blocked a new request. Call it only after the cart was
+ * re-read from the server, so the user sees whatever that earlier request did.
+ */
+export function discardPendingCartReservationOperation(
+  error: CartReservationPendingOperationError,
+) {
+  try {
+    getStorage().removeItem(error.storageKey)
+  } catch {
+    // Nothing else to do: the next attempt reports the storage problem itself.
+  }
+}
+
 export function isDefinitiveCartReservationFailure(error: unknown): boolean {
   if (!error || typeof error !== 'object' || !('status' in error)) {
     return false
@@ -93,7 +110,7 @@ function acquireOperation(
 
   if (persisted) {
     if (persisted.fingerprint !== fingerprint) {
-      throw new CartReservationPendingOperationError()
+      throw new CartReservationPendingOperationError(storageKey)
     }
 
     return persisted

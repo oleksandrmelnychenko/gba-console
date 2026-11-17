@@ -66,12 +66,16 @@ export function getInvoiceTotalNetPrice(invoice?: SupplyInvoice | null): number 
     TotalAmount?: number | string
     TotalValue?: number | string
   }) | null | undefined
+  // TotalNetPrice is 0 when the response did not hydrate packing-list totals; the stored
+  // invoice amount is then in NetPrice (what Управління інвойсами shows).
+  const detailedTotal = readFiniteNumber(record?.TotalNetPrice)
   const amount =
-    readFiniteNumber(record?.TotalNetPrice)
+    (detailedTotal === 0 ? undefined : detailedTotal)
     ?? readFiniteNumber(record?.NetPrice)
     ?? readFiniteNumber(record?.TotalAmount)
     ?? readFiniteNumber(record?.TotalValue)
     ?? readFiniteNumber(record?.TotalValueWithVat)
+    ?? detailedTotal
 
   if (typeof amount === 'number') {
     return amount

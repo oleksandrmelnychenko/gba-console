@@ -51,3 +51,14 @@ it('stops waiting when the request is aborted', async () => {
   await vi.advanceTimersByTimeAsync(30_000)
   expect(load).toHaveBeenCalledOnce()
 })
+it('does not wait or retry when the procurement service is not configured', async () => {
+  const notConfigured = new ApiError('ProcurementApi: ai_service_not_configured (ProcurementApi:Url is not configured).', 503, null)
+  const load = vi.fn().mockRejectedValue(notConfigured)
+  const onPreparing = vi.fn()
+
+  await expect(loadProcurementWithRetry(load, new AbortController().signal, onPreparing)).rejects.toBe(notConfigured)
+  expect(load).toHaveBeenCalledOnce()
+  expect(onPreparing).not.toHaveBeenCalled()
+  expect(procurementLoadError(notConfigured, 'fallback', t))
+    .toBe('Сервіс планування закупівель не налаштований. Зверніться до адміністратора.')
+})

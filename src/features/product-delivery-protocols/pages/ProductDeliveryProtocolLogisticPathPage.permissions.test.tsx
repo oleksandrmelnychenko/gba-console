@@ -19,6 +19,10 @@ import { ProductDeliveryProtocolLogisticPathPage } from './ProductDeliveryProtoc
 
 const allowedPermissions = new Set<string>()
 
+const notificationMocks = vi.hoisted(() => ({ show: vi.fn() }))
+
+vi.mock('@mantine/notifications', () => ({ notifications: notificationMocks }))
+
 vi.mock('../../auth/useAuth', () => ({
   useAuth: () => ({
     hasPermission: (permission: string) => allowedPermissions.has(permission),
@@ -154,12 +158,12 @@ describe('Product delivery protocol logistic-path permission guards', () => {
 
   it('rechecks every mutation permission at the final page handler boundary', async () => {
     allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.LogisticWay.Open)
+    // Opening invoice management alone no longer allows assigning invoices.
+    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open)
     renderPage()
 
     await waitFor(() => expect(getProtocolForLogisticPath).toHaveBeenCalledWith('protocol-1'))
 
-    // Opening invoice management alone no longer allows assigning invoices.
-    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.InvoiceManagement.Open)
     const cases = [
       {
         button: 'status-final',
@@ -232,5 +236,9 @@ describe('Product delivery protocol logistic-path permission guards', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'status-final' }))
     await waitFor(() => expect(updateProtocolStatus).toHaveBeenCalledWith('protocol-1'))
+    await waitFor(() => expect(notificationMocks.show).toHaveBeenCalledWith({
+      color: 'green',
+      message: 'Статус протоколу змінено',
+    }))
   })
 })

@@ -55,7 +55,7 @@ import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTas
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import { canOpenDirectProductIncomeFromOrder } from '../directOrderActions'
 import { createInvoiceDiscountPayload } from '../invoiceMetadataPayload'
-import { getInvoiceDiscountLimit } from '../orderAmountBreakdown'
+import { getDirectOrderAmountBreakdown, getDirectOrderQuantity, getInvoiceDiscountLimit } from '../orderAmountBreakdown'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
@@ -915,8 +915,8 @@ function SupplyUkraineDirectOrderDetailPageContent() {
                   value={order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name || ''}
                 />
                 <LeaderField label={t('Відповідальний')} value={getUserName(order.Responsible)} />
-                <LeaderField label={t('Кількість')} mono value={formatNumber(order.TotalQuantity)} />
-                <LeaderField label={t('Сума нетто')} mono value={formatMoney(order.TotalNetPrice)} />
+                <LeaderField label={t('Кількість')} mono value={formatNumber(getDirectOrderQuantity(order))} />
+                <LeaderField label={t('Сума нетто')} mono value={formatMoney(getDirectOrderAmountBreakdown(order).net)} />
                 <LeaderField label={t('ПДВ')} mono value={formatMoney(order.TotalVat)} />
               </div>
             </Stack>

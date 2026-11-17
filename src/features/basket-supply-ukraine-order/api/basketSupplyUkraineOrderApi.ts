@@ -3,7 +3,9 @@ import { executeSadMutation } from '../../../shared/api/sadMutationOperation'
 import {
   acquireCartReservationUpdateOperation,
   acquireCartReservationUploadOperation,
+  CartReservationPendingOperationError,
   clearCartReservationOperation,
+  discardPendingCartReservationOperation,
   isDefinitiveCartReservationFailure,
 } from './cartReservationMutationOperation'
 import type {
@@ -22,6 +24,23 @@ export async function getUkraineCartItems(): Promise<SupplyOrderUkraineCartItem[
   const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/page/all')
 
   return normalizeArray<SupplyOrderUkraineCartItem>(result).map(ensureCartItem)
+}
+
+/**
+ * An earlier upload or reserve change ended without a definite answer (500, timeout, lost
+ * connection) and now blocks every different request. Re-read the cart so the user sees
+ * what actually happened, then release the block. Returns null for any other error.
+ */
+export async function recoverFromPendingCartReservation(
+  error: unknown,
+): Promise<SupplyOrderUkraineCartItem[] | null> {
+  if (!(error instanceof CartReservationPendingOperationError)) {
+    return null
+  }
+
+  const items = await getUkraineCartItems()
+  discardPendingCartReservationOperation(error)
+  return items
 }
 
 export async function updateUkraineCartItem(

@@ -39,3 +39,16 @@
 .app-toasts .mantine-Notification-closeButton { width: 26px; height: 26px; min-width: 26px; border-radius: 6px; }
 .app-toasts .mantine-Notification-closeButton svg { width: 16px; height: 16px; }
 .app-toasts .mantine-Notifications-notification + .mantine-Notifications-notification { margin-top: 8px; }
+
+/*
+ * Dialog and drawer footers put Скасувати / Зберегти bottom-right, exactly where toasts
+ * appear; a toast there swallowed clicks and, hovered, never closed. While one is open,
+ * show toasts at the top centre instead. Closed dialogs often stay mounted, so the signal is
+ * the scroll lock Mantine puts on <body> only while a modal or drawer is open.
+ */
+body[data-scroll-locked] .app-toasts[data-position='bottom-right'] {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  bottom: auto;
+  right: 50%;
+  transform: translateX(50%);
+}
