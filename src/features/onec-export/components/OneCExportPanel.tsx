@@ -241,16 +241,10 @@ export function OneCExportPanel() {
                   key={type}
                   value={type}
                   label={t(ONE_C_EXPORT_TYPE_LABELS[type])}
-                  description={
-                    ONE_C_EXPORT_UNCONFIRMED_TYPES.includes(type) ? t('Вигляд у 1С ще не підтверджено адміністратором 1С') : undefined
-                  }
                 />
               ))}
             </SimpleGrid>
           </Checkbox.Group>
-          <Text size="xs" c="dimmed">
-            {t('Вивантажуються лише документи, створені в GBA, і нові клієнти, договори та товари GBA. Tax-free і SAD не вивантажуються.')}
-          </Text>
         </Stack>
       </Box>
       {lastWarnings.length > 0 && (
@@ -262,25 +256,20 @@ export function OneCExportPanel() {
               </Text>
             ))}
             {lastWarnings.length > MAX_SHOWN_WARNINGS && (
-              <Text size="sm" c="dimmed">{t('Та ще {count}. Повний список — у заголовку файлу (Header/Warning).', { count: lastWarnings.length - MAX_SHOWN_WARNINGS })}</Text>
+              <Text size="sm" c="dimmed">{t('Та ще {count}', { count: lastWarnings.length - MAX_SHOWN_WARNINGS })}</Text>
             )}
           </Stack>
         </Alert>
       )}
       <Group justify="space-between" align="center" className="sync-action-bar">
-        <Stack gap={2}>
-          <Button
-            variant="default"
-            leftSection={<BookOpen size={16} strokeWidth={1.9} />}
-            loading={packageLoading}
-            onClick={() => void downloadFormatPackage()}
-          >
-            {t('Схема та опис формату')}
-          </Button>
-          <Text size="xs" c="dimmed">
-            {t('Архів для адміністраторів 1С: XSD-схема, опис формату і приклад файлу.')}
-          </Text>
-        </Stack>
+        <Button
+          variant="default"
+          leftSection={<BookOpen size={16} strokeWidth={1.9} />}
+          loading={packageLoading}
+          onClick={() => void downloadFormatPackage()}
+        >
+          {t('Схема та опис формату')}
+        </Button>
         <Button
           color={CREATE_ACTION_COLOR}
           leftSection={<FileUp size={16} strokeWidth={1.9} />}
