@@ -32,6 +32,7 @@ import {
   UserNewPage,
   WarehouseUkraineOrderPlacementsPage,
 } from './lazyConsolePages'
+import { incomeCashflowFormRoute } from './incomeCashflowFormRoute'
 import { lazyRoute } from './lazyRoute'
 
 export type OverlayConsoleRoute = {
@@ -68,10 +69,10 @@ const overlayRouteElements: Array<Omit<OverlayConsoleRoute, 'permissionKey'>> = 
   { path: '/accounting/storages/edit/:id', element: lazyRoute(<ConsumableStorageFormPage />) },
   { path: '/accounting/currency-convertors/new', element: lazyRoute(<CurrencyConvertorFormPage />) },
   { path: '/accounting/currency-convertors/edit/:id', element: lazyRoute(<CurrencyConvertorFormPage />) },
-  { path: '/accounting/income-cashflows/new/client', element: lazyRoute(<IncomeCashflowClientFormPage />) },
-  { path: '/accounting/income-cashflows/new/conversion', element: lazyRoute(<IncomeCashflowConversionFormPage />) },
+  { path: '/accounting/income-cashflows/new/client', element: incomeCashflowFormRoute(<IncomeCashflowClientFormPage />) },
+  { path: '/accounting/income-cashflows/new/conversion', element: incomeCashflowFormRoute(<IncomeCashflowConversionFormPage />) },
   { path: '/accounting/income-cashflows/new/shop', element: lazyRoute(<IncomeCashflowShopFormPage />) },
-  { path: '/accounting/income-cashflows/new/user', element: lazyRoute(<IncomeCashflowUserFormPage />) },
+  { path: '/accounting/income-cashflows/new/user', element: incomeCashflowFormRoute(<IncomeCashflowUserFormPage />) },
   { path: '/accounting/outgoing-cashflow/new', element: lazyRoute(<OutgoingCashflowCreatePage />) },
   { path: '/accounting/outgoing-cashflow/new/simple', element: lazyRoute(<OutgoingCashflowCreatePage />) },
   { path: '/accounting/outgoing-cashflow/new/group', element: lazyRoute(<OutgoingCashflowCreatePage />) },

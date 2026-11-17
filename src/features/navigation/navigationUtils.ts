@@ -115,6 +115,8 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
   {
     source: '/basket-supply-ukraine-order/cockpit',
     targets: [
+      // The permission catalog lists the supply-sales page at /sales; it renders the same basket page.
+      /^\/sales$/i,
       /^\/basket-supply-ukraine-order(?:\/.*)?$/i,
     ],
   },

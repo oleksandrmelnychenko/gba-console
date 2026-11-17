@@ -45,3 +45,15 @@ describe('filterNavigationByRouteAccess', () => {
     expect(filterNavigationByRouteAccess(modules, () => true)).toEqual(modules)
   })
 })
+
+describe('supply-sales catalog route', () => {
+  it('opens /sales through the purchase cockpit menu entry', async () => {
+    const { isNavigationPathAllowed } = await import('./navigationUtils')
+    const cockpit: NavigationModule[] = [
+      { Id: 9, Module: 'Замовлення', Children: [node(91, '/basket-supply-ukraine-order/cockpit')] },
+    ]
+
+    expect(isNavigationPathAllowed(cockpit, '/sales')).toBe(true)
+    expect(isNavigationPathAllowed(cockpit, '/sales/ukraine/all')).toBe(false)
+  })
+})

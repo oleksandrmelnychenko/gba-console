@@ -133,6 +133,7 @@ import {
   UsersPage,
   VehicleRegistryPage,
 } from './lazyConsolePages'
+import { incomeCashflowFormRoute } from './incomeCashflowFormRoute'
 import { lazyRoute } from './lazyRoute'
 import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
 import { SalesDashboardShell } from '../../shared/ui/SalesDashboardShell'
@@ -581,11 +582,11 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   },
   {
     path: '/accounting/income-cashflows/new/client',
-    element: lazyRoute(<IncomeCashflowClientFormPage />),
+    element: incomeCashflowFormRoute(<IncomeCashflowClientFormPage />),
   },
   {
     path: '/accounting/income-cashflows/new/conversion',
-    element: lazyRoute(<IncomeCashflowConversionFormPage />),
+    element: incomeCashflowFormRoute(<IncomeCashflowConversionFormPage />),
     permissionKey:
       PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
         .CreateOtherIncome,
@@ -597,7 +598,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   },
   {
     path: '/accounting/income-cashflows/new/user',
-    element: lazyRoute(<IncomeCashflowUserFormPage />),
+    element: incomeCashflowFormRoute(<IncomeCashflowUserFormPage />),
     permissionKey:
       PermissionKeys.FinancialAdministration.IncomeCashflows.IncomeOrder
         .CreateColleagueReturn,
