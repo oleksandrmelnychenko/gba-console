@@ -4,6 +4,7 @@ import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-hist
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useProductImageDraft } from '../useProductImageDraft'
 import { partitionProductImageFiles, PRODUCT_IMAGE_ACCEPT } from '../productImageFiles'
+import { parseSpecificationAmount, SPECIFICATION_AMOUNT_MAX } from '../productSpecificationAmounts'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getProductMovementRowKey, withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
@@ -152,11 +153,13 @@ const PRODUCT_SPECIFICATION_CHANGE_PERMISSION = PermissionKeys.ProductsAssortmen
 type ProductWriteOffRuleScope = 'group' | 'product'
 
 type ProductSpecificationDraft = {
-  CustomsValue: number | ''
-  Duty: number | ''
+  CustomsValue: number | string
+  Duty: number | string
   SpecificationCode: string
-  VATValue: number | ''
+  VATValue: number | string
 }
+
+type SpecificationAmountKey = 'CustomsValue' | 'Duty' | 'VATValue'
 
 type ProductEditForm = {
   NativeIsService: boolean | null
@@ -1616,6 +1619,7 @@ function ProductSpecificationPanel({
     VATValue: '',
   })
   const [error, setError] = useState<string | null>(null)
+  const [amountErrors, setAmountErrors] = useState<Partial<Record<SpecificationAmountKey, string>>>({})
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
 
   function updateDraft<K extends keyof ProductSpecificationDraft>(key: K, value: ProductSpecificationDraft[K]) {
@@ -1623,6 +1627,7 @@ function ProductSpecificationPanel({
       ...currentDraft,
       [key]: value,
     }))
+    setAmountErrors((currentErrors) => ({ ...currentErrors, [key]: undefined }))
   }
 
   async function saveSpecification() {
@@ -1630,6 +1635,20 @@ function ProductSpecificationPanel({
 
     if (!specificationCode) {
       setError(t('Вкажіть код специфікації'))
+      return
+    }
+
+    const customsValue = parseSpecificationAmount(draft.CustomsValue, t)
+    const duty = parseSpecificationAmount(draft.Duty, t)
+    const vatValue = parseSpecificationAmount(draft.VATValue, t)
+    const nextAmountErrors = {
+      CustomsValue: customsValue.error ?? undefined,
+      Duty: duty.error ?? undefined,
+      VATValue: vatValue.error ?? undefined,
+    }
+    setAmountErrors(nextAmountErrors)
+
+    if (customsValue.error || duty.error || vatValue.error) {
       return
     }
 
@@ -1646,11 +1665,11 @@ function ProductSpecificationPanel({
               LastName: user.LastName,
             }
           : undefined,
-        CustomsValue: toOptionalNumber(draft.CustomsValue),
-        Duty: toOptionalNumber(draft.Duty),
+        CustomsValue: customsValue.value,
+        Duty: duty.value,
         ProductId: product.Id,
         SpecificationCode: specificationCode,
-        VATValue: toOptionalNumber(draft.VATValue),
+        VATValue: vatValue.value,
       })
 
       notifications.show({ color: 'green', message: t('Специфікацію збережено') })
@@ -1710,15 +1729,16 @@ function ProductSpecificationPanel({
                   onChange={(event) => updateDraft('SpecificationCode', event.currentTarget.value)}
                 />
                 <div className="product-specification-values">
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('Митна вартість')} min={0} hideControls
-                    value={draft.CustomsValue}
-                    onChange={(value) => updateDraft('CustomsValue', typeof value === 'number' ? value : '')} />
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('Мито')} min={0} hideControls
-                    value={draft.Duty}
-                    onChange={(value) => updateDraft('Duty', typeof value === 'number' ? value : '')} />
-                  <NumberInput classNames={{ input: 'app-money' }} decimalScale={2} disabled={isSaving} label={t('ПДВ')} min={0} hideControls
-                    value={draft.VATValue}
-                    onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')} />
+                  {(([
+                    ['CustomsValue', 'Митна вартість'],
+                    ['Duty', 'Мито'],
+                    ['VATValue', 'ПДВ'],
+                  ]) as const).map(([key, label]) => (
+                    <NumberInput key={key} classNames={{ input: 'app-money' }} clampBehavior="none" decimalScale={2} disabled={isSaving}
+                      error={amountErrors[key]} label={t(label)} max={SPECIFICATION_AMOUNT_MAX} min={0} hideControls
+                      value={draft[key]}
+                      onChange={(value) => updateDraft(key, value)} />
+                  ))}
                 </div>
               </DocumentDetailSection>
             </PermissionGate>
@@ -1729,7 +1749,7 @@ function ProductSpecificationPanel({
       <AppModalFooter>
         <Button variant="default" disabled={isSaving} onClick={onClose}>{t('Скасувати')}</Button>
         <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
-          <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void saveSpecification()}>
+          <Button color={CREATE_ACTION_COLOR} disabled={isSaving} leftSection={<Save size={16} />} loading={isSaving} onClick={() => void saveSpecification()}>
             {t('Зберегти')}
           </Button>
         </PermissionGate>
@@ -2834,10 +2854,6 @@ function readPlacementNumber(value: number | string): number {
   const parsedValue = Number(value)
 
   return Number.isFinite(parsedValue) ? parsedValue : 0
-}
-
-function toOptionalNumber(value: number | ''): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 function getPanelFromQuery(searchParams: URLSearchParams): ProductDetailPanel | null {
