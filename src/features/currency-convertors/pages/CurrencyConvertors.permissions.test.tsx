@@ -207,3 +207,47 @@ describe('currency convertor canonical permission guards', () => {
     expect(getCurrencyTrader).toHaveBeenCalledWith('trader-1')
   })
 })
+
+describe('currency trader form limits', () => {
+  beforeEach(() => {
+    allowedPermissions.clear()
+    vi.clearAllMocks()
+    allowedPermissions.add(PermissionKeys.FinancialAdministration.CurrencyConvertors.Page.View)
+    allowedPermissions.add(PermissionKeys.FinancialAdministration.CurrencyConvertors.Converter.Create)
+  })
+
+  it('limits the names to the CurrencyTrader column sizes', () => {
+    renderRoute(<CurrencyConvertorFormPage />, '/accounting/currency-convertors/new', '/accounting/currency-convertors/new')
+
+    expect(screen.getByRole('textbox', { name: /Ім'я/ }).getAttribute('maxlength')).toBe('75')
+    expect(screen.getByRole('textbox', { name: /Прізвище/ }).getAttribute('maxlength')).toBe('75')
+    expect(screen.getByRole('textbox', { name: /По батькові/ }).getAttribute('maxlength')).toBe('75')
+    expect(screen.getByRole('textbox', { name: /Телефон/ }).getAttribute('maxlength')).toBe('30')
+  })
+
+  it('can be cancelled while a save is still pending', async () => {
+    vi.mocked(createCurrencyTrader).mockReturnValue(new Promise(() => {}))
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <MemoryRouter initialEntries={['/accounting/currency-convertors/new']}>
+            <Routes>
+              <Route path="/accounting/currency-convertors/new" element={<CurrencyConvertorFormPage />} />
+              <Route path="/accounting/currency-convertors" element={<p>list</p>} />
+            </Routes>
+          </MemoryRouter>
+        </I18nProvider>
+      </MantineProvider>,
+    )
+    fireEvent.change(screen.getByRole('textbox', { name: /Ім'я/ }), { target: { value: 'Новий' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Прізвище/ }), { target: { value: 'Трейдер' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+    await waitFor(() => expect(createCurrencyTrader).toHaveBeenCalledTimes(1))
+
+    const cancel = screen.getByRole('button', { name: 'Скасувати' }) as HTMLButtonElement
+    expect(cancel.disabled).toBe(false)
+    fireEvent.click(cancel)
+
+    expect(await screen.findByText('list')).toBeTruthy()
+  })
+})

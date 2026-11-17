@@ -192,6 +192,11 @@ function ConsumableProductsPageContent() {
       return
     }
 
+    if (draft.name.trim().length > CATEGORY_NAME_MAX_LENGTH) {
+      setError(t('Назва категорії — не більше 150 символів'))
+      return
+    }
+
     if (!tryStartSaving()) {
       return
     }
@@ -749,7 +754,7 @@ function CategoryEditorForm({
 
   return (
     <Stack className="app-compact-form" gap={10}>
-      <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+      <TextInput label={t('Назва')} maxLength={CATEGORY_NAME_MAX_LENGTH} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <Checkbox
         checked={isSupplyServiceCategory}
         label={t('Послуги')}
@@ -881,7 +886,14 @@ export function ProductEditorForm({
     <Stack className="app-compact-form" gap={10}>
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <SimpleGrid cols={2} spacing={10}>
-        <TextInput className="consumable-product-vendor-input" label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
+        <TextInput
+          className="consumable-product-vendor-input"
+          description={t('До 3 символів; порожній — присвоїться автоматично')}
+          label={t('Артикул')}
+          maxLength={VENDOR_CODE_MAX_LENGTH}
+          value={vendorCode}
+          onChange={(event) => setVendorCode(event.currentTarget.value)}
+        />
         <SearchableSelect
           data={measureUnitOptions}
           label={t('Одиниця виміру')}
@@ -976,6 +988,7 @@ function DeleteModal({
 }) {
   const { t } = useI18n()
   const targetName = target?.kind === 'product' ? target.product.Name : target?.category.Name
+  const categoryProductsCount = target?.kind === 'category' ? target.category.ConsumableProducts?.length || 0 : 0
 
   return (
     <AppModal centered opened={Boolean(target)} title={t('Видалити запис')} onClose={onClose}>
@@ -983,11 +996,16 @@ function DeleteModal({
         <Text>
           {t('Видалити')} <Text span fw={700}>{displayValue(targetName)}</Text>?
         </Text>
+        {categoryProductsCount > 0 && (
+          <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+            {t('У категорії є товари ({count}). Спочатку перенесіть або видаліть їх — категорію з товарами видалити не можна.', { count: categoryProductsCount })}
+          </Alert>
+        )}
         <AppModalFooter>
           <Button color="gray" variant="default" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" loading={isSubmitting} onClick={onConfirm}>
+          <Button color="red" disabled={categoryProductsCount > 0} loading={isSubmitting} onClick={onConfirm}>
             {t('Видалити')}
           </Button>
         </AppModalFooter>
@@ -995,6 +1013,11 @@ function DeleteModal({
     </AppModal>
   )
 }
+
+/** dbo.ConsumableProductCategory.Name is nvarchar(150). */
+const CATEGORY_NAME_MAX_LENGTH = 150
+/** dbo.ConsumableProduct.VendorCode is nvarchar(3). */
+const VENDOR_CODE_MAX_LENGTH = 3
 
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {

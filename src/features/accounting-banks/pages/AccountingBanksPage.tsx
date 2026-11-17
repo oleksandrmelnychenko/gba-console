@@ -14,7 +14,7 @@ import {
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { usePermissions } from '../../auth/usePermissions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
@@ -26,6 +26,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
+import { BANK_FIELD_LIMITS, validateBank } from '../bankValidation'
 import './accounting-banks-page.css'
 
 const ACCOUNTING_BANK_CREATE_PERMISSION = PermissionKeys.FinancialAdministration.Banks.Bank.Create
@@ -82,6 +83,8 @@ function AccountingBanksPageContent() {
   const [isEditorOpen, setEditorOpen] = useState(false)
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
+  // The editor can be closed while a save is pending; its error then goes to a toast.
+  const editorClosedRef = useRef(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [tableToolbarSlot, setTableToolbarSlot] = useState<HTMLDivElement | null>(null)
   const visibleBanks = useMemo(() => filterBanks(banks, searchValue), [banks, searchValue])
@@ -97,6 +100,7 @@ function AccountingBanksPageContent() {
     setEditingBank(bank || null)
     setFormValues(bankToFormValues(bank))
     setFormError(null)
+    editorClosedRef.current = false
     setEditorOpen(true)
   }, [canCreate, canSave])
   const requestDelete = useCallback((bank: AccountingBank) => {
@@ -153,10 +157,7 @@ function AccountingBanksPageContent() {
   }
 
   function closeEditor() {
-    if (isSaving) {
-      return
-    }
-
+    editorClosedRef.current = true
     setEditorOpen(false)
     setEditingBank(null)
     setFormValues(EMPTY_FORM_VALUES)
@@ -202,7 +203,13 @@ function AccountingBanksPageContent() {
       })
       closeEditor()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти банк'))
+      const message = saveError instanceof Error ? saveError.message : t('Не вдалося зберегти банк')
+
+      if (editorClosedRef.current) {
+        notifications.show({ color: 'red', message })
+      } else {
+        setFormError(message)
+      }
     } finally {
       setSaving(false)
     }
@@ -367,7 +374,7 @@ function BankEditorModal({
           <TextInput
             disabled={isSaving || !canSubmit}
             label={t('Назва')}
-            maxLength={180}
+            maxLength={BANK_FIELD_LIMITS.name}
             required
             value={values.name}
             onChange={(event) => onFieldChange('name', event.currentTarget.value)}
@@ -384,7 +391,7 @@ function BankEditorModal({
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('ЄДРПОУ')}
-              maxLength={20}
+              maxLength={8}
               required
               value={values.edrpouCode}
               onChange={(event) => onFieldChange('edrpouCode', event.currentTarget.value)}
@@ -397,14 +404,14 @@ function BankEditorModal({
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('Місто')}
-              maxLength={120}
+              maxLength={BANK_FIELD_LIMITS.city}
               value={values.city}
               onChange={(event) => onFieldChange('city', event.currentTarget.value)}
             />
             <TextInput
               disabled={isSaving || !canSubmit}
               label={t('Телефон')}
-              maxLength={120}
+              maxLength={BANK_FIELD_LIMITS.phones}
               value={values.phones}
               onChange={(event) => onFieldChange('phones', event.currentTarget.value)}
             />
@@ -412,7 +419,7 @@ function BankEditorModal({
           <TextInput
             disabled={isSaving || !canSubmit}
             label={t('Адреса')}
-            maxLength={240}
+            maxLength={BANK_FIELD_LIMITS.address}
             value={values.address}
             onChange={(event) => onFieldChange('address', event.currentTarget.value)}
           />
@@ -435,7 +442,7 @@ function BankEditorModal({
               )}
             </Group>
             <Group gap="xs">
-              <Button disabled={isSaving} type="button" variant="default" onClick={onClose}>
+              <Button type="button" variant="default" onClick={onClose}>
                 {t('Скасувати')}
               </Button>
               <PermissionGate permissionKey={bank?.Id ? ACCOUNTING_BANK_SAVE_PERMISSION : ACCOUNTING_BANK_CREATE_PERMISSION}>
@@ -591,26 +598,6 @@ function buildBankPayload(bank: AccountingBank | null, values: AccountingBankFor
     Name: values.name.trim(),
     Phones: values.phones.trim(),
   }
-}
-
-function validateBank(bank: AccountingBank): string | null {
-  if (!bank.Name?.trim()) {
-    return translate('Вкажіть назву')
-  }
-
-  if (!bank.MfoCode?.trim()) {
-    return translate('Вкажіть МФО')
-  }
-
-  if (bank.MfoCode.trim().length !== 6) {
-    return translate('МФО має містити 6 символів')
-  }
-
-  if (!bank.EdrpouCode?.trim()) {
-    return translate('Вкажіть ЄДРПОУ')
-  }
-
-  return null
 }
 
 function filterBanks(banks: AccountingBank[], searchValue: string): AccountingBank[] {

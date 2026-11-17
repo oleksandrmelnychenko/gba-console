@@ -2,7 +2,7 @@ import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
-import { type FormEvent, useEffect, useReducer } from 'react'
+import { type FormEvent, useEffect, useReducer, useRef } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -60,6 +60,9 @@ export function CurrencyConvertorFormPage() {
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [isDeleting, setDeleting, tryStartDeleting] = useBusyState()
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  // Set when the dialog is closed while a save is still pending: its late
+  // answer must not navigate or touch this closed form.
+  const closedRef = useRef(false)
   const canView = can(PermissionKeys.FinancialAdministration.CurrencyConvertors.Page.View)
   const canSave = can(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
   const canOpenRoute = canView && (isEditMode || canSave)
@@ -122,10 +125,8 @@ export function CurrencyConvertorFormPage() {
   }
 
   function handleCancel() {
-    if (isSaving) {
-      return
-    }
-
+    // Always closable, also while a save is pending.
+    closedRef.current = true
     navigate(returnPath, { replace: true })
   }
 
@@ -150,6 +151,9 @@ export function CurrencyConvertorFormPage() {
 
     try {
       const saved = isEditMode ? await updateCurrencyTrader(payload) : await createCurrencyTrader(payload)
+      if (closedRef.current) {
+        return
+      }
       dispatchPageState({ trader: saved || payload, type: 'set-trader' })
       notifications.show({
         color: 'green',
@@ -157,6 +161,13 @@ export function CurrencyConvertorFormPage() {
       })
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
+      if (closedRef.current) {
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти валютного трейдера'),
+        })
+        return
+      }
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти валютного трейдера'),
         type: 'set-error',
@@ -217,6 +228,7 @@ export function CurrencyConvertorFormPage() {
               <TextInput
                 disabled={isLoading || isSaving || !canSave}
                 label={t("Ім'я")}
+                maxLength={75}
                 required
                 value={form.firstName}
                 onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
@@ -224,6 +236,7 @@ export function CurrencyConvertorFormPage() {
               <TextInput
                 disabled={isLoading || isSaving || !canSave}
                 label={t('Прізвище')}
+                maxLength={75}
                 required
                 value={form.lastName}
                 onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
@@ -231,12 +244,14 @@ export function CurrencyConvertorFormPage() {
               <TextInput
                 disabled={isLoading || isSaving || !canSave}
                 label={t('По батькові')}
+                maxLength={75}
                 value={form.middleName}
                 onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving || !canSave}
                 label={t('Телефон')}
+                maxLength={30}
                 value={form.phoneNumber}
                 onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}
               />
@@ -261,7 +276,7 @@ export function CurrencyConvertorFormPage() {
           )}
         </Group>
         <Group gap="xs">
-          <Button variant="default" disabled={isSaving || isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
+          <Button variant="default" disabled={isDeleting} onClick={handleCancel}>{t('Скасувати')}</Button>
           {canSave && (
             <Button
               color={CREATE_ACTION_COLOR}
