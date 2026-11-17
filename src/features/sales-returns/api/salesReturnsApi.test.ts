@@ -2,15 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   cancelSaleReturn,
-  createDirectSaleReturn,
   createSaleReturn,
   getSalesForReturn,
   getSalesForReturnLimit,
-  getStoragesByOrganization,
   getReturnStorages,
-  getReturnProductByNetId,
   isSalesForReturnResultTruncated,
-  searchReturnProducts,
   searchSalesReturnClients,
 } from './salesReturnsApi'
 
@@ -24,25 +20,6 @@ const operationId = '11111111-1111-4111-8111-111111111111'
 describe('sales returns API', () => {
   beforeEach(() => {
     apiRequestMock.mockReset()
-  })
-
-  it('searches return products with the active product lookup mode and supports Collection payloads', async () => {
-    const products = [{ NetUid: 'product-1', VendorCode: 'CR0017-SF' }]
-
-    apiRequestMock.mockResolvedValueOnce({ Collection: products })
-
-    await expect(searchReturnProducts(' CR0017-SF ')).resolves.toEqual(products)
-
-    expect(apiRequestMock).toHaveBeenCalledWith('/products/search/advanced', {
-      query: {
-        limit: 10,
-        mode: 5,
-        netId: '00000000-0000-0000-0000-000000000000',
-        offset: 0,
-        sortMode: 2,
-        value: 'CR0017-SF',
-      },
-    })
   })
 
   it('requests return storages by order item, organization, and selected reason', async () => {
@@ -96,29 +73,6 @@ describe('sales returns API', () => {
         value: 'CE02501',
       },
     })
-  })
-
-  it('uses sale-return-create scoped product and storage lookups', async () => {
-    apiRequestMock.mockResolvedValue({ Items: [] })
-
-    await getStoragesByOrganization('organization-1', true)
-    await getReturnProductByNetId('product-1')
-
-    expect(apiRequestMock.mock.calls).toEqual([
-      [
-        '/storages/sales-returns/create/filtered',
-        {
-          query: {
-            organizationNetId: 'organization-1',
-            skipDefective: true,
-          },
-        },
-      ],
-      [
-        '/products/sales-returns/create/details',
-        { query: { netId: 'product-1' } },
-      ],
-    ])
   })
 
   it('sends the selected final day as the inclusive end of the return sale search', async () => {
@@ -239,22 +193,6 @@ describe('sales returns API', () => {
       headers: { 'Idempotency-Key': operationId },
       method: 'POST',
     })
-  })
-
-  it('does not send the obsolete direct-return payload to the canonical endpoint', async () => {
-    const payload = {
-      ClientAgreementId: 12,
-      ClientId: 10,
-      Products: [],
-      StorageId: 3,
-    }
-
-    await expect(
-      createDirectSaleReturn(payload, { operationId }),
-    ).rejects.toThrow(
-      'Пряме повернення за партією не має серверного контракту',
-    )
-    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('sends the durable operation key when canceling a return', async () => {

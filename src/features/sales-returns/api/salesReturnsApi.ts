@@ -5,26 +5,20 @@ import {
   type SalesMutationOperationOptions,
 } from '../../sales-ukraine/salesMutationOperation'
 import type {
-  CreateDirectSalesReturnPayload,
   CreateSalesReturnPayload,
   SalesForReturnSearchParams,
   SalesReturn,
-  SalesReturnBatch,
   SalesReturnClient,
   SalesReturnDocument,
   SalesReturnItemStatusValue,
   SalesReturnOrganization,
-  SalesReturnProduct,
   SalesReturnsSearchParams,
   SalesReturnSale,
   SalesReturnStorage,
 } from '../types'
 
-const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_SEARCH_LIMIT = 20
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
-const PRODUCT_RETURN_SEARCH_MODE = 5
-const PRODUCT_RETURN_SORT_MODE = 2
 const FILTERED_SALES_FOR_RETURN_LIMIT = 50
 const SCOPED_SALES_FOR_RETURN_LIMIT = 20
 const UNFILTERED_SALES_FOR_RETURN_LIMIT = 10
@@ -100,18 +94,6 @@ export async function createSaleReturn(
   })
 
   return normalizeSaleReturn(result)
-}
-
-export async function createDirectSaleReturn(
-  payload: CreateDirectSalesReturnPayload,
-  operation: SalesMutationOperationOptions,
-): Promise<SalesReturn | null> {
-  void payload
-  void operation
-
-  throw new Error(
-    'Пряме повернення за партією не має серверного контракту. Використайте повернення з проведеного продажу.',
-  )
 }
 
 export function getSalesForReturnLimit(
@@ -227,20 +209,6 @@ export async function getSalesReturnOrganizations(): Promise<SalesReturnOrganiza
   return readArrayPayload(result, ['Items', 'Organizations', 'Data']) as SalesReturnOrganization[]
 }
 
-export async function getStoragesByOrganization(
-  organizationNetId: string,
-  skipDefective = false,
-): Promise<SalesReturnStorage[]> {
-  const result = await apiRequest<unknown>('/storages/sales-returns/create/filtered', {
-    query: {
-      organizationNetId,
-      skipDefective,
-    },
-  })
-
-  return readArrayPayload(result, ['Items', 'Storages', 'Data']) as SalesReturnStorage[]
-}
-
 export async function getReturnStorages(params: {
   orderItemNetId: string
   organizationNetId: string
@@ -278,53 +246,6 @@ export async function getReturnVatWarning(orderItemNetId: string): Promise<strin
   return ''
 }
 
-export async function searchReturnProducts(value: string): Promise<SalesReturnProduct[]> {
-  const normalizedValue = value.trim()
-
-  if (normalizedValue.length < 4) {
-    return []
-  }
-
-  const result = await apiRequest<unknown>('/products/search/advanced', {
-    query: {
-      limit: 10,
-      mode: PRODUCT_RETURN_SEARCH_MODE,
-      netId: EMPTY_GUID,
-      offset: 0,
-      sortMode: PRODUCT_RETURN_SORT_MODE,
-      value: normalizedValue,
-    },
-  })
-
-  return readArrayPayload(result, ['Items', 'Products', 'Collection', 'Data']) as SalesReturnProduct[]
-}
-
-export async function getReturnProductByNetId(netId: string): Promise<SalesReturnProduct | null> {
-  const result = await apiRequest<unknown>('/products/sales-returns/create/details', {
-    query: {
-      netId,
-    },
-  })
-
-  return normalizeProduct(result)
-}
-
-export async function getIncomeConsignments(params: {
-  from: string
-  productNetId: string
-  to: string
-}): Promise<SalesReturnBatch[]> {
-  const result = await apiRequest<unknown>('/consignments/info/income/filtered', {
-    query: {
-      from: params.from,
-      productNetId: params.productNetId,
-      to: params.to,
-    },
-  })
-
-  return readArrayPayload(result, ['Items', 'Consignments', 'Data']) as SalesReturnBatch[]
-}
-
 function normalizeDocument(result: unknown): SalesReturnDocument {
   if (!result || typeof result !== 'object') {
     return {}
@@ -343,14 +264,6 @@ function normalizeDocument(result: unknown): SalesReturnDocument {
 function normalizeSaleReturn(result: unknown): SalesReturn | null {
   if (result && typeof result === 'object') {
     return result as SalesReturn
-  }
-
-  return null
-}
-
-function normalizeProduct(result: unknown): SalesReturnProduct | null {
-  if (result && typeof result === 'object') {
-    return result as SalesReturnProduct
   }
 
   return null

@@ -71,7 +71,6 @@ export const EditSaleSadPage = lazy(() => import('../../features/sad').then((mod
 export const EditTaxFreePackListPage = lazy(() => import('../../features/tax-free-pack-lists').then((module) => ({ default: module.EditTaxFreePackListPage })))
 export const EditTirSadPage = lazy(() => import('../../features/sad').then((module) => ({ default: module.EditTirSadPage })))
 export const SadSpecificationsPage = lazy(() => import('../../features/sad').then((module) => ({ default: module.SadSpecificationsPage })))
-export const SalesReturnClientPage = lazy(() => import('../../features/sales-returns').then((module) => ({ default: module.SalesReturnClientPage })))
 export const SalesOnlineShopPage = lazy(() => import('../../features/sales-online-shop/pages/SalesOnlineShopPage').then((module) => ({ default: module.SalesOnlineShopPage })))
 export const SalesUkrainePage = lazy(() => import('../../features/sales-ukraine').then((module) => ({ default: module.SalesUkrainePage })))
 export const SalesDebtorsPage = lazy(() => import('../../features/sales-debtors').then((module) => ({ default: module.SalesDebtorsPage })))

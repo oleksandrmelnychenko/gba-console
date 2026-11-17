@@ -157,43 +157,6 @@ export type SalesReturnDocument = {
   PdfDocument?: string
 }
 
-export type SalesReturnBatch = {
-  AccountingGrossPrice?: number
-  Currency?: string
-  GrossPrice?: number
-  IncomeInvoiceDate?: Date | string
-  IncomeInvoiceNumber?: string
-  IncomeQty?: number
-  IncomeToStorageDate?: Date | string
-  IncomeToStorageNumber?: string
-  NetPrice?: number
-  OrganizationName?: string
-  RemainingQty?: number
-  ReturnPrice?: number
-  StorageName?: string
-  SupplierName?: string
-  UnitPriceLocal?: number
-}
-
-export type DirectSalesReturnProduct = {
-  batch: SalesReturnBatch
-  product: SalesReturnProduct
-  qty: number
-  status: SalesReturnItemStatusValue
-}
-
-export type CreateDirectSalesReturnPayload = {
-  ClientAgreementId: number
-  ClientId: number
-  Products: Array<{
-    Batch: SalesReturnBatch
-    ProductId: number
-    ReasoForReturn: SalesReturnItemStatusValue
-    SpecificationQty: number
-  }>
-  StorageId: number
-}
-
 export type CreateSalesReturnPayload = {
   Client: SalesReturnClient
   SaleReturnItems: Array<{
