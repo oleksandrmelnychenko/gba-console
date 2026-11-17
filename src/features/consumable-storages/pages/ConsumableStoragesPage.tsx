@@ -8,7 +8,6 @@ import {
   Card,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -72,6 +71,16 @@ import type {
   UserProfile,
 } from '../types'
 import './consumable-storages-page.css'
+import {
+  formatPremiseMoney,
+  formatPremiseQuantity,
+  formatWriteOffQuantityInput,
+  getCurrencyLabel,
+  getWriteOffAvailableQty,
+  parseWriteOffQuantity,
+  summarizeWriteOffItems,
+  WRITE_OFF_COMMENT_MAX_LENGTH,
+} from '../premiseWriteOff'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -544,12 +553,12 @@ function ConsumableStorageDetailDrawer({
             </div>
           </DocumentDetailSection>
 
-          {totals.length > 0 && (
+          {activeProductsTab === 'remnants' && totals.length > 0 && (
             <DocumentDetailSection title={t('Підсумки за валютами')} stacked>
               {totals.map((total) => (
                 <div className="consumable-storage-detail-total" key={getPriceTotalKey(total)}>
-                  <DocumentDetailRow label={t('Валюта')} value={<TableChip value={total.Currency?.Code || total.Currency?.Name} tone="source" />} />
-                  <DocumentDetailRow label={t('Кількість')} mono value={formatAmount(total.Qty)} />
+                  <DocumentDetailRow label={t('Валюта')} value={<TableChip value={getCurrencyLabel(total.Currency)} tone="source" />} />
+                  <DocumentDetailRow label={t('Кількість')} mono value={formatPremiseQuantity(total.Qty)} />
                   <DocumentDetailRow label={t('Сума')} mono value={formatMoney(total.TotalPrice ?? total.Amount)} />
                 </div>
               ))}
@@ -652,13 +661,13 @@ function getStorageRemnantCurrency(product: ConsumableProduct): string | undefin
   const priceTotals = product.PriceTotals
 
   if (!priceTotals || priceTotals.length === 0) {
-    return product.Currency?.Name || product.Currency?.Code
+    return getCurrencyLabel(product.Currency)
   }
 
   const codes = new Set<string>()
 
   for (const total of priceTotals) {
-    const code = total.Currency?.Code || total.Currency?.Name
+    const code = getCurrencyLabel(total.Currency)
 
     if (code) {
       codes.add(code)
@@ -765,6 +774,10 @@ function DeprecatedConsumableOrdersPanel({
   const { error, isLoading, orders } = ordersState
   const filterError = getDateRangeError(fromDate, toDate)
   const rows = useMemo(() => flattenDeprecatedConsumableOrders(orders), [orders])
+  const writeOffTotals = useMemo(
+    () => summarizeWriteOffItems(rows.flatMap((row) => (row.item ? [row.item] : []))),
+    [rows],
+  )
   const { density, toggleDensity } = useDataTableDensity(
     'consumable-storage-deprecated-orders',
     DEPRECATED_TABLE_DEFAULT_LAYOUT.density,
@@ -914,6 +927,18 @@ function DeprecatedConsumableOrdersPanel({
         toolbarPortalTarget={tableToolbarSlot}
       />
 
+      {writeOffTotals.length > 0 && (
+        <DocumentDetailSection title={t('Підсумки списання за валютами')} stacked>
+          {writeOffTotals.map((total) => (
+            <div className="consumable-storage-detail-total" key={total.currency}>
+              <DocumentDetailRow label={t('Валюта')} value={<TableChip value={total.currency} tone="source" />} />
+              <DocumentDetailRow label={t('Кількість')} mono value={formatPremiseQuantity(total.qty)} />
+              <DocumentDetailRow label={t('Сума')} mono value={formatPremiseMoney(total.total)} />
+            </div>
+          ))}
+        </DocumentDetailSection>
+      )}
+
       {editorOrder && (
         <DeprecatedConsumableOrderEditorModal
           key={getDeprecatedOrderEditorKey(editorOrder)}
@@ -1029,8 +1054,8 @@ function useDeprecatedConsumableOrderColumns({
         header: t('Валюта'),
         width: 120,
         minWidth: 104,
-        accessor: (row) => row.item?.Currency?.Name || row.item?.Currency?.Code,
-        cell: (row) => <TableChip tone="source" value={displayValue(row.item?.Currency?.Name || row.item?.Currency?.Code)} />,
+        accessor: (row) => getCurrencyLabel(row.item?.Currency),
+        cell: (row) => <TableChip tone="source" value={displayValue(getCurrencyLabel(row.item?.Currency))} />,
       },
       {
         id: 'costMovement',
@@ -1112,6 +1137,10 @@ function DeprecatedConsumableOrderEditorModal({
     : CONSUMABLE_STORAGE_WRITE_OFF_CREATE_PERMISSION
   const canSave = hasPermission(savePermission)
   const products = useMemo(() => storage.ConsumableProducts || [], [storage.ConsumableProducts])
+  const getAvailableQty = useCallback(
+    (item: DeprecatedConsumableOrderItem) => getWriteOffAvailableQty(item, products, isEditMode ? order : null),
+    [isEditMode, order, products],
+  )
   const consumableOrders = useMemo(() => storage.ConsumablesOrders || [], [storage.ConsumablesOrders])
   const productOptions = useMemo(
     () =>
@@ -1228,7 +1257,7 @@ function DeprecatedConsumableOrderEditorModal({
       return
     }
 
-    const validationError = validateDeprecatedConsumableOrderDraft(draft, t)
+    const validationError = validateDeprecatedConsumableOrderDraft(draft, t, getAvailableQty)
 
     if (validationError) {
       setError(validationError)
@@ -1253,11 +1282,11 @@ function DeprecatedConsumableOrderEditorModal({
         color: 'green',
         message: isEditMode ? t('Списання оновлено') : t('Списання створено'),
       })
+      /* The lock stays on: the editor closes and must not post the write-off again. */
       onChanged()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти списання'))
-    } finally {
       setSaving(false)
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти списання'))
     }
   }
 
@@ -1307,6 +1336,7 @@ function DeprecatedConsumableOrderEditorModal({
           autosize
           disabled={isSaving}
           label={t('Коментар')}
+          maxLength={WRITE_OFF_COMMENT_MAX_LENGTH}
           minRows={2}
           value={draft.Comment || ''}
           onChange={(event) => updateDraft({ Comment: event.currentTarget.value })}
@@ -1362,6 +1392,7 @@ function DeprecatedConsumableOrderEditorModal({
         )}
 
         <DeprecatedConsumableOrderItemsTable
+          getAvailableQty={getAvailableQty}
           isSaving={isSaving}
           items={draft.DepreciatedConsumableOrderItems || []}
           movements={movements}
@@ -1450,7 +1481,7 @@ function ConsumablesOrderItemsPicker({
                 <Table.Td className="app-table-number">{formatAmount(item.Qty)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.PricePerItem)}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(item.TotalPrice)}</Table.Td>
-                <Table.Td><TableChip tone="source" value={displayValue(getConsumablesOrderItemCurrency(item, order)?.Name || getConsumablesOrderItemCurrency(item, order)?.Code)} /></Table.Td>
+                <Table.Td><TableChip tone="source" value={displayValue(getCurrencyLabel(getConsumablesOrderItemCurrency(item, order)))} /></Table.Td>
                 <Table.Td>
                   <Button
                     disabled={isSaving || selected}
@@ -1472,6 +1503,7 @@ function ConsumablesOrderItemsPicker({
 }
 
 function DeprecatedConsumableOrderItemsTable({
+  getAvailableQty,
   isSaving,
   items,
   movements,
@@ -1480,6 +1512,7 @@ function DeprecatedConsumableOrderItemsTable({
   onUpdate,
   onUpdateMovement,
 }: {
+  getAvailableQty: (item: DeprecatedConsumableOrderItem) => number | undefined
   isSaving: boolean
   items: DeprecatedConsumableOrderItem[]
   movements: PaymentCostMovement[]
@@ -1527,21 +1560,19 @@ function DeprecatedConsumableOrderItemsTable({
                     {displayValue(product?.Name)}
                   </Text>
                 </Table.Td>
-                <Table.Td className="app-table-number">{formatAmount(getDeprecatedItemAvailableQty(item))}</Table.Td>
+                <Table.Td className="app-table-number">{formatPremiseQuantity(getAvailableQty(item))}</Table.Td>
                 <Table.Td className="app-table-number">
-                  <NumberInput
-                    allowNegative={false}
-                    decimalScale={3}
+                  <WriteOffQuantityInput
+                    available={getAvailableQty(item)}
                     disabled={isSaving}
-                    min={0}
-                    value={item.Qty || 0}
-                    w={120}
-                    onChange={(value) => onUpdate(index, { Qty: toNumber(value) })}
+                    qty={item.Qty}
+                    unit={product?.MeasureUnit?.Name}
+                    onChange={(qty) => onUpdate(index, { Qty: qty })}
                   />
                 </Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemPrice(item))}</Table.Td>
                 <Table.Td className="app-table-number">{formatMoney(getDeprecatedItemTotal(item))}</Table.Td>
-                <Table.Td><TableChip tone="source" value={displayValue(getDeprecatedItemCurrency(item)?.Name || getDeprecatedItemCurrency(item)?.Code)} /></Table.Td>
+                <Table.Td><TableChip tone="source" value={displayValue(getCurrencyLabel(getDeprecatedItemCurrency(item)))} /></Table.Td>
                 <Table.Td>
                   <Select
                     clearable
@@ -1568,6 +1599,42 @@ function DeprecatedConsumableOrderItemsTable({
         </Table.Tbody>
       </Table>
     </Table.ScrollContainer>
+  )
+}
+
+/** Free-text quantity: «2,5» is read as 2.5 and every rejected value is explained under the field. */
+function WriteOffQuantityInput({
+  available,
+  disabled,
+  qty,
+  unit,
+  onChange,
+}: {
+  available?: number
+  disabled: boolean
+  qty?: number
+  unit?: string
+  onChange: (qty: number) => void
+}) {
+  const { t } = useI18n()
+  const [text, setText] = useValueState(() => formatWriteOffQuantityInput(qty))
+  const { error } = parseWriteOffQuantity(text, { available, unit }, t)
+
+  return (
+    <TextInput
+      aria-label={t('Кількість')}
+      disabled={disabled}
+      error={error}
+      inputMode="decimal"
+      value={text}
+      w={140}
+      onChange={(event) => {
+        const nextText = event.currentTarget.value
+        const parsed = parseWriteOffQuantity(nextText, { available, unit }, t)
+        setText(nextText)
+        onChange(parsed.qty ?? Number.NaN)
+      }}
+    />
   )
 }
 
@@ -1790,7 +1857,8 @@ function hasDeprecatedConsumableOrderItem(
 
 function validateDeprecatedConsumableOrderDraft(
   draft: DeprecatedConsumableOrder,
-  t: (value: string) => string,
+  t: (value: string, params?: Record<string, string | number>) => string,
+  getAvailableQty: (item: DeprecatedConsumableOrderItem) => number | undefined,
 ): string | null {
   const items = draft.DepreciatedConsumableOrderItems || []
 
@@ -1807,8 +1875,18 @@ function validateDeprecatedConsumableOrderDraft(
       return t('У списанні є позиція без товару')
     }
 
-    if (!item.Qty || item.Qty <= 0) {
+    if (!item.Qty || !Number.isFinite(item.Qty) || item.Qty <= 0) {
       return t('Вкажіть кількість для кожної позиції')
+    }
+
+    const quantityError = parseWriteOffQuantity(
+      String(item.Qty),
+      { available: getAvailableQty(item), unit: item.ConsumablesOrderItem.ConsumableProduct.MeasureUnit?.Name },
+      t,
+    ).error
+
+    if (quantityError) {
+      return `${displayValue(item.ConsumablesOrderItem.ConsumableProduct.Name)}: ${quantityError}`
     }
 
     if (!getDeprecatedItemPaymentCostMovement(item)) {
@@ -1905,10 +1983,6 @@ function getDeprecatedItemTotal(item: DeprecatedConsumableOrderItem): number | u
 
 function getProductAvailableQty(product: ConsumableProduct | null | undefined): number | undefined {
   return product?.SpecificationQty ?? product?.TotalQty
-}
-
-function getDeprecatedItemAvailableQty(item: DeprecatedConsumableOrderItem): number | undefined {
-  return item.ConsumablesOrderItem?.Qty ?? getProductAvailableQty(item.ConsumablesOrderItem?.ConsumableProduct)
 }
 
 function getConsumablesOrderItemCurrency(
@@ -2011,12 +2085,6 @@ function getEntityValue(entity?: NamedEntity | null): string {
   return entity.NetUid || (entity.Id ? String(entity.Id) : '') || entity.Code || entity.Name || ''
 }
 
-function toNumber(value: string | number): number {
-  const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'))
-
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100
 }
@@ -2055,7 +2123,7 @@ function formatAmount(value?: number): string {
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : ''
+  return formatPremiseMoney(value)
 }
 
 function displayValue(value?: string | number | null): string {
