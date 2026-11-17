@@ -192,6 +192,13 @@ export function WizardCartSheet({
             onRemove={onRemove}
             onRowClick={onRowClick}
           />}
+          {/* EUR agreements: the cart revalues the EUR amount at today's rate, while the client's debt in the
+              header keeps the rate stored on the document, so the two UAH figures can differ. */}
+          {useEurToUah && items.length > 0 && (
+            <Text c="dimmed" className="wizard-cart-sheet__rate-note" size="xs">
+              {t('Сума в UAH — за курсом EUR на сьогодні; борг клієнта рахується за курсом документа')}
+            </Text>
+          )}
           {totalVat != null && items.length > 0 && (
             <Text className="wizard-cart-sheet__vat" size="sm">
               {t('ПДВ')}: <span className="app-money">{amountFormatter.format(roundMoney(totalVat))}</span>

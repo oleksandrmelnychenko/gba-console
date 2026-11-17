@@ -30,3 +30,13 @@ it('shares one totals calculation between the cart header, cards and table', () 
   expect(getWizardCartTotals).toHaveBeenCalledTimes(2)
   expect(screen.getAllByText('30,00').length).toBeGreaterThan(0)
 })
+
+it('says that the UAH total of a EUR agreement is at today\'s rate, unlike the debt in the header', () => {
+  const items = [{ NetUid: 'item', Qty: 4, TotalAmount: 62.5, TotalAmountEurToUah: 3200, Product: { VendorCode: 'CODE', CurrentPrice: 15.63 } }]
+  const props = { busy: false, opened: true, localCurrencyCode: 'UAH', onClose: vi.fn(), onOpen: vi.fn(), onEditCart: vi.fn(), onRowClick: vi.fn() }
+  const note = 'Сума в UAH — за курсом EUR на сьогодні; борг клієнта рахується за курсом документа'
+  const view = render(<MantineProvider env="test"><I18nProvider><WizardCartSheet {...props} items={items} useEurToUah /></I18nProvider></MantineProvider>)
+  expect(screen.getByText(note)).toBeTruthy()
+  view.rerender(<MantineProvider env="test"><I18nProvider><WizardCartSheet {...props} items={items} useEurToUah={false} /></I18nProvider></MantineProvider>)
+  expect(screen.queryByText(note)).toBeNull()
+})
