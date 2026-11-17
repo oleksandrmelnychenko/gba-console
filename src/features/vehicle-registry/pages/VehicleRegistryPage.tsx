@@ -62,6 +62,12 @@ import type {
   VehicleRegistryVehicleDetail,
   VehicleRegistryWorkflowStatus,
 } from '../types'
+import {
+  formatEngineVolume,
+  getVehicleRegistryFieldLabel,
+  getVehicleRegistryImportErrorMessage,
+  isInvalidEngineVolume,
+} from '../vehicleRegistryText'
 import './vehicle-registry-page.css'
 import '../../../shared/ui/console-table-page.css'
 
@@ -285,7 +291,7 @@ export function VehicleRegistryPage() {
     } catch (uploadError) {
       notifications.show({
         color: 'red',
-        message: `${t('Не вдалося імпортувати файли')} (${completed}/${files.length}): ${errorMessage(uploadError, '')}`,
+        message: `${t('Не вдалося імпортувати файли')} (${completed}/${files.length}): ${getVehicleRegistryImportErrorMessage(uploadError)}`,
       })
     } finally {
       setUploading(false)
@@ -743,7 +749,7 @@ function VehicleDetailDrawer({
                     </div>
                     <div className="app-detail-metric">
                       <span>{t('Двигун')}</span>
-                      <strong>{formatEngine(detail.EngineVolumeCc)}</strong>
+                      <strong style={isInvalidEngineVolume(detail.EngineVolumeCc) ? INVALID_VALUE_STYLE : undefined}>{formatEngine(detail.EngineVolumeCc)}</strong>
                     </div>
                   </div>
                 </div>
@@ -1092,7 +1098,7 @@ function createVehicleColumns(
           <strong className="vehicle-registry-mono">
             {item.ManufactureYear ? `${item.ManufactureYear} р.` : ''}
           </strong>
-          <small className="vehicle-registry-mono">
+          <small className="vehicle-registry-mono" style={isInvalidEngineVolume(item.EngineVolumeCc) ? INVALID_VALUE_STYLE : undefined}>
             {item.EngineVolumeCc ? formatEngine(item.EngineVolumeCc) : ''}
           </small>
         </span>
@@ -1304,7 +1310,7 @@ function createIssueColumns(t: (value: string) => string): DataTableColumn<Vehic
       width: 230,
     },
     {
-      cell: (item) => <span className="vehicle-registry-mono">{item.Field || item.Code}</span>,
+      cell: (item) => <span>{getVehicleRegistryFieldLabel(item.Field, item.Code)}</span>,
       header: t('Поле'),
       id: 'field',
       width: 150,
@@ -1442,14 +1448,10 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date)
 }
 
-function formatEngine(value?: number | null) {
-  if (!value) {
-    return '—'
-  }
+const INVALID_VALUE_STYLE = { color: 'var(--mantine-color-red-7)' } as const
 
-  return value >= 1000
-    ? `${new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 1 }).format(value / 1000)} л`
-    : `${numberFormatter.format(value)} см³`
+function formatEngine(value?: number | null) {
+  return formatEngineVolume(value)
 }
 
 function errorMessage(error: unknown, fallback: string) {
