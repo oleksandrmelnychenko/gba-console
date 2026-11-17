@@ -250,6 +250,7 @@ export async function updateProductWithImages(
   product: Product,
   files: File[],
   permissionMode: 'delete' | 'upload' | 'upload-and-delete',
+  signal?: AbortSignal,
 ): Promise<Product | null> {
   const formData = new FormData()
 
@@ -259,6 +260,7 @@ export async function updateProductWithImages(
   const result = await apiRequest<unknown>(`/products/assortment/images/${permissionMode}`, {
     method: 'POST',
     body: formData,
+    signal,
     errorMessages: {
       default: 'Не вдалося зберегти зображення товару',
       network: 'Сервер зображень недоступний',

@@ -3,6 +3,7 @@ import type { PhysicalQuantityException } from '../../../shared/ui/product-movem
 import { PhysicalCoverageNotice } from '../../../shared/ui/product-movement-history/PhysicalCoverageNotice'
 import type { PhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage'
 import { useProductImageDraft } from '../useProductImageDraft'
+import { partitionProductImageFiles, PRODUCT_IMAGE_ACCEPT } from '../productImageFiles'
 import { useProductDetailData } from '../useProductDetailData'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getProductMovementRowKey, withProductSourceHistoryColumns } from '../../../shared/ui/product-movement-history/productSourceHistory'
@@ -146,6 +147,7 @@ export type ProductDetailPanel =
 
 const PRODUCT_IMAGE_ADD_PERMISSION = PermissionKeys.ProductsAssortment.Image.Upload
 const PRODUCT_IMAGE_DELETE_PERMISSION = PermissionKeys.ProductsAssortment.Image.Delete
+const PRODUCT_IMAGE_UPLOAD_TIMEOUT_MS = 120_000
 const PRODUCT_SPECIFICATION_CHANGE_PERMISSION = PermissionKeys.ProductsAssortment.Specification.Edit
 type ProductWriteOffRuleScope = 'group' | 'product'
 
@@ -1326,6 +1328,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
+  const fileCheckRef = useRef(0)
   const canSaveChanges =
     (!files.length || hasPermission(PRODUCT_IMAGE_ADD_PERMISSION)) &&
     (!hasExistingImageChanges || hasPermission(PRODUCT_IMAGE_DELETE_PERMISSION))
@@ -1336,12 +1339,25 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
     setError(null)
   }
 
+  async function selectFiles(nextFiles: File[]) {
+    const check = ++fileCheckRef.current
+    const { accepted, errors } = await partitionProductImageFiles(nextFiles, t)
+    if (check !== fileCheckRef.current) {
+      return
+    }
+    updateSelectedFiles(accepted)
+    setError(errors.length > 0 ? errors.join('\n') : null)
+  }
+
   async function saveImages() {
     if (!hasChanges || !canSaveChanges) return
     if (!tryStartSaving()) {
       return
     }
     setError(null)
+    // An upload that never answers must not leave the dialog spinning forever.
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), PRODUCT_IMAGE_UPLOAD_TIMEOUT_MS)
 
     try {
       const nextProduct = await updateProductWithImages(
@@ -1355,6 +1371,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           : files.length > 0
             ? 'upload'
             : 'delete',
+        controller.signal,
       )
 
       onProductSaved(nextProduct)
@@ -1364,8 +1381,11 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
       updateSelectedFiles([])
       notifications.show({ color: 'green', message: t('Зображення збережено') })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зображення'))
+      setError(controller.signal.aborted
+        ? t('Сервер не відповів вчасно. Оновіть картку, щоб перевірити зображення, і повторіть.')
+        : saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зображення'))
     } finally {
+      clearTimeout(timeout)
       setSaving(false)
     }
   }
@@ -1378,7 +1398,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
       </Group>
 
       {error && (
-        <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+        <Alert color="red" icon={<CircleAlert size={18} />} variant="light" style={{ whiteSpace: 'pre-line' }}>
           {error}
         </Alert>
       )}
@@ -1388,13 +1408,13 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           <FileInput
             multiple
             clearable
-            accept="image/*"
+            accept={PRODUCT_IMAGE_ACCEPT}
             aria-label={t('Додати зображення')}
             leftSection={<ImageIcon size={18} />}
             disabled={isSaving}
             placeholder={t('Оберіть файли')}
             value={files}
-            onChange={(nextFiles) => updateSelectedFiles(nextFiles || [])}
+            onChange={(nextFiles) => void selectFiles(nextFiles || [])}
           />
         </Card>
       </PermissionGate>
@@ -1470,7 +1490,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
         <Button variant="default" color="gray" disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
           {t('Скасувати')}
         </Button>
-        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges} onClick={saveImages}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<Save size={16} />} loading={isSaving} disabled={!hasChanges || !canSaveChanges || isSaving} onClick={saveImages}>
           {t('Зберегти')}
         </Button>
       </AppModalFooter>
