@@ -1,4 +1,5 @@
 import {
+  ApiError,
   apiRequest,
   expiresAtFromNow,
   withAuthSessionLock,
@@ -6,24 +7,28 @@ import {
 import { clearSession } from '../../../shared/auth/session'
 import { translate } from '../../../shared/i18n/translate'
 import type { AuthSession, AuthUser, ServerSessionResponse, SignInResponse } from '../types'
+import { getSignInErrorMessage } from './signInError'
 
 export async function signIn(username: string, password: string): Promise<AuthSession> {
-  const token = await apiRequest<SignInResponse>('/usermanagement/token', {
-    method: 'POST',
-    auth: false,
-    body: {
-      Username: username,
-      Password: password,
-    },
-    errorMessages: {
-      400: 'Невірний логін або пароль',
-      401: 'Невірний логін або пароль',
-      403: 'Недостатньо прав для входу',
-      500: 'Сервер тимчасово недоступний. Спробуйте ще раз пізніше.',
-      default: 'Не вдалося увійти. Спробуйте ще раз.',
-      network: 'Сервер авторизації недоступний. Спробуйте ще раз пізніше.',
-    },
-  })
+  let token: SignInResponse
+
+  try {
+    token = await apiRequest<SignInResponse>('/usermanagement/token', {
+      method: 'POST',
+      auth: false,
+      body: {
+        Username: username,
+        Password: password,
+      },
+    })
+  } catch (error) {
+    // Wrong credentials keep the neutral message; any other server reason (blocked user, removed role) is shown.
+    if (error instanceof ApiError) {
+      throw new ApiError(getSignInErrorMessage(error), error.status, error.payload, error.headers)
+    }
+
+    throw error
+  }
 
   if (!token.CsrfToken) {
     throw new Error(translate('Сервер авторизації повернув некоректну відповідь'))
