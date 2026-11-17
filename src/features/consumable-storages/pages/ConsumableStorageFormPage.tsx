@@ -9,7 +9,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -21,6 +21,7 @@ import { useAuth } from '../../auth/useAuth'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { ApiError } from '../../../shared/api/apiClient'
 import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
+import { DiscardChangesModal } from '../../../shared/ui/DiscardChangesModal'
 import {
   createConsumableStorage,
   getConsumableStorage,
@@ -110,6 +111,16 @@ function ConsumableStorageFormPageContent() {
   const { error, form, isLoading, isNotFound, organizations, storage, users } = pageState
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const canSave = hasPermission(isEditMode ? CONSUMABLE_STORAGE_EDIT_PERMISSION : CONSUMABLE_STORAGE_CREATE_PERMISSION)
+  const [discardOpened, setDiscardOpened] = useValueState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  /* Назва takes the dialog's initial focus (data-autofocus; read-only, not disabled, while
+     loading so it stays focusable) and keeps it once the data arrives. */
+  useEffect(() => {
+    if (!isLoading && document.activeElement !== nameInputRef.current) {
+      nameInputRef.current?.focus()
+    }
+  }, [isLoading])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -213,12 +224,27 @@ function ConsumableStorageFormPageContent() {
     return <Navigate replace to={STORAGES_PATH} />
   }
 
+  const hasUnsavedInput = !isLoading && !isNotFound && (
+    form.name !== (storage.Name || '')
+    || form.description !== (storage.Description || '')
+    || form.responsibleUserNetUid !== getEntityValue(storage.ResponsibleUser)
+  )
+
+  function closeForm() {
+    navigate(returnPath, { replace: true })
+  }
+
   function handleCancel() {
     if (isSaving) {
       return
     }
 
-    navigate(returnPath, { replace: true })
+    if (hasUnsavedInput) {
+      setDiscardOpened(true)
+      return
+    }
+
+    closeForm()
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -326,9 +352,12 @@ function ConsumableStorageFormPageContent() {
             <section className="consumable-storage-form-section">
             <h3 className="app-section-title">{t('Основне')}</h3>
             <TextInput
-              disabled={isLoading || isSaving}
+              data-autofocus
+              disabled={isSaving}
               label={t('Назва')}
               maxLength={STORAGE_NAME_MAX_LENGTH}
+              readOnly={isLoading}
+              ref={nameInputRef}
               placeholder={t('Вкажіть назву')}
               required
               value={form.name}
@@ -392,6 +421,7 @@ function ConsumableStorageFormPageContent() {
             <Button color={CREATE_ACTION_COLOR} disabled={isLoading || !canSave} leftSection={<Save size={16} />} loading={isSaving} type="submit">{t('Зберегти')}</Button>
           </AppModalFooter>
         </form>
+        <DiscardChangesModal opened={discardOpened} onDiscard={closeForm} onKeep={() => setDiscardOpened(false)} />
     </AppModal>
   )
 }

@@ -11,7 +11,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Save, Trash2 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { DocumentDetailChip, DocumentDetailLayout, DocumentDetailSummary, DocumentDetailMetric, DocumentDetailSection } from '../../../shared/ui/document-detail/DocumentDetail'
 import './company-car-form-page.css'
@@ -23,6 +23,7 @@ import { useAuth } from '../../auth/useAuth'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { ApiError } from '../../../shared/api/apiClient'
 import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
+import { DiscardChangesModal } from '../../../shared/ui/DiscardChangesModal'
 import {
   COMPANY_CAR_LIMITS,
   formatCarMetric,
@@ -118,6 +119,15 @@ function CompanyCarFormPageContent() {
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const canSave = hasPermission(isEditMode ? COMPANY_CAR_EDIT_PERMISSION : COMPANY_CAR_CREATE_PERMISSION)
   const canDelete = isEditMode && hasPermission(COMPANY_CAR_DELETE_PERMISSION)
+  const [discardOpened, setDiscardOpened] = useValueState(false)
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+
+  /* Марка takes the dialog's initial focus (data-autofocus; read-only, not disabled, while loading). */
+  useEffect(() => {
+    if (!isLoading && document.activeElement !== firstFieldRef.current) {
+      firstFieldRef.current?.focus()
+    }
+  }, [isLoading])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -181,12 +191,25 @@ function CompanyCarFormPageContent() {
     dispatchPageState({ patch, type: 'patch-form' })
   }
 
+  const loadedForm = useMemo(() => toFormState(companyCar, companyCar.Organization || null), [companyCar])
+  const hasUnsavedInput = !isLoading && !isNotFound && (Object.keys(loadedForm) as Array<keyof CompanyCarFormState>)
+    .some((key) => (key !== 'organizationNetUid' || isEditMode) && form[key] !== loadedForm[key])
+
+  function closeForm() {
+    navigate(returnPath, { replace: true })
+  }
+
   function handleCancel() {
     if (isSaving || isDeleting) {
       return
     }
 
-    navigate(returnPath, { replace: true })
+    if (hasUnsavedInput) {
+      setDiscardOpened(true)
+      return
+    }
+
+    closeForm()
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -340,10 +363,13 @@ function CompanyCarFormPageContent() {
             onChange={(value) => updateForm({ organizationNetUid: value || '' })}
           /></div>
                 <TextInput
-              disabled={isLoading || isSaving}
+              data-autofocus
+              disabled={isSaving}
               error={fieldErrors.carBrand}
               label={t('Марка автомобіля')}
               maxLength={COMPANY_CAR_LIMITS.carBrandMaxLength}
+              readOnly={isLoading}
+              ref={firstFieldRef}
               value={form.carBrand}
               onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
             />
@@ -469,6 +495,7 @@ function CompanyCarFormPageContent() {
           </AppModalFooter>
         </Stack>
       </AppModal>
+      <DiscardChangesModal opened={discardOpened} onDiscard={closeForm} onKeep={() => setDiscardOpened(false)} />
     </AppModal>
   )
 }

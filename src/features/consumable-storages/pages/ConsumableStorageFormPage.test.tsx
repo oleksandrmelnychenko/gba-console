@@ -113,4 +113,17 @@ describe('ConsumableStorageFormPage', () => {
     expect(updateConsumableStorage).toHaveBeenCalledTimes(1)
     expect(createConsumableStorage).not.toHaveBeenCalled()
   })
+
+  it('focuses Назва and asks before closing with typed data (WH2-23)', async () => {
+    renderAt('/accounting/storages/new')
+
+    const nameInput = await screen.findByLabelText(/Назва/)
+    await waitFor(() => expect(document.activeElement).toBe(nameInput))
+
+    fireEvent.change(nameInput, { target: { value: 'Чернетка' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+
+    expect(await screen.findByText('Закрити без збереження?')).toBeTruthy()
+    expect(screen.getByDisplayValue('Чернетка')).toBeTruthy()
+  })
 })
