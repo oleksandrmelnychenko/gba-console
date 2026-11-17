@@ -82,7 +82,7 @@ type AgreementsPanelAction =
   | { type: 'patchDraft'; patch: Partial<Agreement> }
   | { type: 'setFormError'; error: string | null; field?: AgreementFormErrorField }
 
-type AgreementFormErrorField = 'name' | 'toDate'
+type AgreementFormErrorField = 'currency' | 'name' | 'toDate'
 
 const initialAgreementsPanelState: AgreementsPanelState = {
   downloadModalOpened: false,
@@ -197,6 +197,12 @@ export function ClientAgreementsPanel({
 
     if (!formDraft.Name || !formDraft.Name.trim()) {
       dispatch({ error: t('Вкажіть найменування'), field: 'name', type: 'setFormError' })
+      return
+    }
+
+    // An agreement without a currency was added to the list and sent with «Створити».
+    if (currencies.length > 0 && !formDraft.Currency?.Id) {
+      dispatch({ error: `${t('Не обрано')} - ${t('Валюта')}`, field: 'currency', type: 'setFormError' })
       return
     }
 

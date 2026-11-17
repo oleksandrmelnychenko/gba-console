@@ -42,7 +42,7 @@ export type AgreementFormProps = {
   promotionalPricings: Pricing[]
   isVatAccountingHidden: boolean
   isRetailClient?: boolean
-  errors?: { name?: string; toDate?: string }
+  errors?: { currency?: string; name?: string; toDate?: string }
   onChange: (patch: Partial<Agreement>) => void
 }
 
@@ -120,6 +120,7 @@ export function AgreementForm({
               disabled={isEdit}
               label={t('Організація')}
               searchable
+              allowDeselect={false}
               value={agreement.Organization?.Id ? String(agreement.Organization.Id) : null}
               onChange={(value) => handleOrganizationChange(findById(organizations, value))}
             />
@@ -129,6 +130,8 @@ export function AgreementForm({
               renderOption={({ option }) => <TableChip tone="source" value={option.label} />}
               label={t('Валюта')}
               searchable
+              allowDeselect={false}
+              error={errors?.currency}
               value={agreement.Currency?.Id ? String(agreement.Currency.Id) : null}
               onChange={(value) => onChange({ Currency: findById(currencies, value) })}
             />
@@ -219,6 +222,7 @@ export function AgreementForm({
                 data={pricingOptions}
                 label={t('Тип ціни')}
                 searchable
+                allowDeselect={false}
                 value={agreement.Pricing?.Id ? String(agreement.Pricing.Id) : null}
                 onChange={(value) => onChange({ Pricing: findById(pricings, value) })}
               />
