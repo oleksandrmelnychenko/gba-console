@@ -34,11 +34,11 @@ import {
 import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } from '../permissions'
 import type { Organization, PaymentAccount, PaymentCurrencyRegister } from '../types'
 import { PaymentRegisterType } from '../types'
+import { getCurrencyCodes } from '../accountCurrencies'
 import { PAYMENT_BALANCE_SOURCE_NOTE } from '../balanceSource'
 import './payment-accounts-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
-const SKIPPED_CURRENCY_CODE = ['P', 'L', 'N'].join('')
 
 const PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -359,8 +359,8 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         header: t('Валюта'),
         width: 120,
         minWidth: 104,
-        accessor: (account) => getPrimaryCurrencyCode(account),
-        cell: (account) => <TableChip tone="source" value={displayValue(getPrimaryCurrencyCode(account))} />,
+        accessor: (account) => getCurrencyCodes(account),
+        cell: (account) => <TableChip tone="source" value={displayValue(getCurrencyCodes(account))} />,
       },
       {
         id: 'organization',
@@ -448,16 +448,6 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
     ],
     [onOpen, t],
   )
-}
-
-function getPrimaryCurrencyCode(account: PaymentAccount): string | undefined {
-  const currencyRegister = account.PaymentCurrencyRegisters?.find(
-    (register) =>
-      register.Currency?.Code !== SKIPPED_CURRENCY_CODE &&
-      (register.IsSelected || register.NetUid || register.Id || Boolean(register.Amount)),
-  )
-
-  return currencyRegister?.Currency?.Code || currencyRegister?.Currency?.Name
 }
 
 function getCurrencyAmount(registers: PaymentCurrencyRegister[] | undefined, code: string): number {
