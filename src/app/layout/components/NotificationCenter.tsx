@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { Bell, CheckCheck, ChevronRight, Heart, ShoppingCart, Sparkles, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useGuardedNavigate } from '../../../shared/router/navigationGuard'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useConsoleNotificationCenter } from '../../../shared/notification-center/store'
 import type { ConsoleNotification } from '../../../shared/notification-center/types'
@@ -35,7 +35,7 @@ const notificationClockFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 export function NotificationCenter({ userKey }: NotificationCenterProps) {
   const [opened, setOpened] = useState(false)
-  const navigate = useNavigate()
+  const navigate = useGuardedNavigate()
   const { t } = useI18n()
   const { clear, items, markAllRead, markRead, unreadCount } = useConsoleNotificationCenter(userKey)
 

@@ -17,6 +17,7 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { setNavigationGuard } from '../../../shared/router/navigationGuard'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -46,6 +47,7 @@ import './user-roles-page.css'
 type PendingWorkspaceAction =
   | { type: 'reload' }
   | { role: UserRole; type: 'role' }
+  | { proceed: () => void; type: 'navigate' }
 
 export function UserRolesPage() {
   const { t } = useI18n()
@@ -87,6 +89,8 @@ function UserRolesPageContent() {
   })
   const [deleteRoleTarget, setDeleteRoleTarget] =
     useValueState<UserRole | null>(null)
+  const [roleFormError, setRoleFormError] = useValueState<string | null>(null)
+  const pendingSelectRoleNameRef = useRef<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
   const eventPermissionsRef = useRef<EventPermissionsCatalogHandle | null>(null)
@@ -96,8 +100,8 @@ function UserRolesPageContent() {
   const canDeleteRole = hasPermission(PermissionKeys.Roles.Role.Delete)
   const canEditEventPermissions = hasPermission(PermissionKeys.Roles.EventPermissions.Edit)
   const filteredRoles = useMemo(
-    () => filterRoles(roles, searchValue),
-    [roles, searchValue],
+    () => filterRoles(roles, searchValue, selectedRoleKey),
+    [roles, searchValue, selectedRoleKey],
   )
   const selectedRole = useMemo(
     () => roles.find((role) => getUserRoleKey(role) === selectedRoleKey) || null,
@@ -119,8 +123,17 @@ function UserRolesPageContent() {
     }
 
     window.addEventListener('beforeunload', preventAccidentalClose)
-    return () => window.removeEventListener('beforeunload', preventAccidentalClose)
-  }, [eventPermissionsDirty])
+    // Main menu, header and notifications navigate through the shared guard.
+    const releaseNavigationGuard = setNavigationGuard((proceed) => {
+      setPendingWorkspaceAction({ proceed, type: 'navigate' })
+      return true
+    })
+
+    return () => {
+      window.removeEventListener('beforeunload', preventAccidentalClose)
+      releaseNavigationGuard()
+    }
+  }, [eventPermissionsDirty, setPendingWorkspaceAction])
 
   useEffect(() => {
     let cancelled = false
@@ -133,7 +146,12 @@ function UserRolesPageContent() {
         const nextRoles = await getRoleManagementRoles()
 
         if (!cancelled) {
+          const pendingName = pendingSelectRoleNameRef.current
+          pendingSelectRoleNameRef.current = null
           const nextRole =
+            (pendingName
+              ? nextRoles.find((role) => normalizeRoleName(getUserRoleName(role)) === pendingName)
+              : undefined) ||
             nextRoles.find(
               (role) => getUserRoleKey(role) === selectedRoleKeyRef.current,
             ) ||
@@ -241,6 +259,8 @@ function UserRolesPageContent() {
 
     if (action.type === 'role') {
       applySelectedRole(action.role)
+    } else if (action.type === 'navigate') {
+      action.proceed()
     } else {
       reloadWorkspace()
     }
@@ -251,13 +271,27 @@ function UserRolesPageContent() {
       ? PermissionKeys.Roles.Role.Edit
       : PermissionKeys.Roles.Role.Create
     if (!hasPermission(requiredPermission)) {
-      setError(t('Недостатньо прав для збереження ролі'))
+      setRoleFormError(t('Недостатньо прав для збереження ролі'))
       return
     }
+
+    const editedRoleKey = roleModalState.role ? getUserRoleKey(roleModalState.role) : null
+    const normalizedName = normalizeRoleName(values.Name)
+    const hasDuplicateName = roles.some(
+      (role) =>
+        getUserRoleKey(role) !== editedRoleKey &&
+        normalizeRoleName(getUserRoleName(role)) === normalizedName,
+    )
+    if (hasDuplicateName) {
+      setRoleFormError(t('Роль з такою назвою вже існує'))
+      return
+    }
+
     if (!tryStartSaving()) {
       return
     }
     setError(null)
+    setRoleFormError(null)
 
     try {
       if (roleModalState.role) {
@@ -275,10 +309,13 @@ function UserRolesPageContent() {
       }
 
       notifications.show({ color: 'green', message: t('Збережено') })
+      if (!roleModalState.role) {
+        pendingSelectRoleNameRef.current = normalizedName
+      }
       setRoleModalState({ open: false, role: null })
       reload()
     } catch (saveError) {
-      setError(
+      setRoleFormError(
         saveError instanceof Error
           ? saveError.message
           : t('Не вдалося зберегти'),
@@ -387,7 +424,10 @@ function UserRolesPageContent() {
               color={CREATE_ACTION_COLOR}
               size="sm"
               leftSection={<Plus size={16} />}
-              onClick={() => setRoleModalState({ open: true, role: null })}
+              onClick={() => {
+                setRoleFormError(null)
+                setRoleModalState({ open: true, role: null })
+              }}
             >
               {t('Створити')}
             </Button>
@@ -407,7 +447,10 @@ function UserRolesPageContent() {
                 isLoading={isLoading}
                 roles={filteredRoles}
                 selectedRoleKey={selectedRoleKey}
-                onEditRole={(role) => setRoleModalState({ open: true, role })}
+                onEditRole={(role) => {
+                  setRoleFormError(null)
+                  setRoleModalState({ open: true, role })
+                }}
                 onSelectRole={selectRole}
               />
             </div>
@@ -447,10 +490,14 @@ function UserRolesPageContent() {
             roleModalState.role &&
             canDeleteUserRole(roleModalState.role),
           )}
+          submitError={roleFormError}
           onClose={() => setRoleModalState({ open: false, role: null })}
           onDelete={() => {
             if (roleModalState.role) {
+              // Close the edit dialog first: both dialogs share one z-index layer,
+              // so the confirmation would otherwise open underneath it.
               setDeleteRoleTarget(roleModalState.role)
+              setRoleModalState({ open: false, role: null })
             }
           }}
           onSubmit={submitRoleForm}
@@ -609,14 +656,24 @@ function RoleListSkeleton() {
   )
 }
 
-function filterRoles(roles: UserRole[], value: string): UserRole[] {
+function normalizeRoleName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk')
+}
+
+function filterRoles(
+  roles: UserRole[],
+  value: string,
+  selectedRoleKey: string | null = null,
+): UserRole[] {
   const normalizedValue = value.trim().toLocaleLowerCase('uk')
 
   if (!normalizedValue) {
     return roles
   }
 
+  // The selected role stays in the list: the editor on the right keeps editing it.
   return roles.filter((role) =>
+    getUserRoleKey(role) === selectedRoleKey ||
     getUserRoleName(role).toLocaleLowerCase('uk').includes(normalizedValue),
   )
 }

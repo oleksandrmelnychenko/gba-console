@@ -1217,40 +1217,10 @@ export type ProductAvailabilitiesPermissionKey =
 
 type Values<T> = T[keyof T]
 
-export type SystemPagePermissionKey =
-  | Values<typeof PermissionKeys.SystemPages.BudgetCart>
-  | Values<typeof PermissionKeys.SystemPages.PurchaseCockpit>
-  | Values<typeof PermissionKeys.SystemPages.SupplyDashboard>
-  | Values<typeof PermissionKeys.SystemPages.SalesCockpit>
-  | Values<typeof PermissionKeys.SystemPages.SalesHeadDashboard>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineOffers>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineInterest>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineCartReserve>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineClientProductMovement>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineDebtors>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkrainePrediction>
-  | Values<typeof PermissionKeys.SystemPages.SalesUkraineReturns>
-  | Values<typeof PermissionKeys.SystemPages.SalesCharts>
-  | Values<typeof PermissionKeys.SystemPages.Dashboard>
-  | Values<typeof PermissionKeys.SystemPages.Users>
-  | Values<typeof PermissionKeys.SystemPages.Roles>
-  | Values<typeof PermissionKeys.SystemPages.VehicleRegistry>
-  | Values<typeof PermissionKeys.SystemPages.ExpenseArticles>
-  | Values<typeof PermissionKeys.SystemPages.AdvancedReports>
-  | Values<typeof PermissionKeys.SystemPages.OutgoingCashflows>
-  | Values<typeof PermissionKeys.SystemPages.ProductAvailabilities>
-  | Values<typeof PermissionKeys.SystemPages.ConsignmentBalances>
-  | Values<typeof PermissionKeys.SystemPages.WriteOff>
-  | Values<typeof PermissionKeys.SystemPages.OnlineShopPayment>
-  | Values<typeof PermissionKeys.SystemPages.IncomeCashflows>
-  | Values<typeof PermissionKeys.SystemPages.SupplyCart>
-  | Values<typeof PermissionKeys.SystemPages.SupplySales>
-  | Values<typeof PermissionKeys.SystemPages.ServiceOrganisations>
-  | Values<typeof PermissionKeys.SystemPages.Sad>
-  | Values<typeof PermissionKeys.SystemPages.TaxFreeCarriers>
-  | Values<typeof PermissionKeys.SystemPages.TaxFreeDocuments>
-  | Values<typeof PermissionKeys.SystemPages.TaxFreePackLists>
-  | Values<typeof PermissionKeys.SystemPages.SalesOnlineShop>
+// Derived from every SystemPages entry so a new page key can never be missing from the type.
+export type SystemPagePermissionKey = {
+  [Page in keyof typeof PermissionKeys.SystemPages]: Values<(typeof PermissionKeys.SystemPages)[Page]>
+}[keyof typeof PermissionKeys.SystemPages]
 
 export type OperationalPermissionKey =
   | Values<typeof PermissionKeys.Operational.SchedulerTasks>

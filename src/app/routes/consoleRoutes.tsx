@@ -320,7 +320,11 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
     element: lazyRoute(<HeadDashboardPage />),
     permissionKey: PermissionKeys.SystemPages.SalesHeadDashboard.View,
   },
-  { path: '/sales/geography', element: lazyRoute(<SalesGeographyPage />) },
+  {
+    path: '/sales/geography',
+    element: lazyRoute(<SalesGeographyPage />),
+    permissionKey: PermissionKeys.SystemPages.SalesGeography.View,
+  },
 ]
 
 const clientMigrationRoutes: ConsoleRoute[] = [
@@ -632,6 +636,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   {
     path: '/accounting/advance-payments',
     element: lazyRoute(<AdvancePaymentsPage />),
+    permissionKey: PermissionKeys.SystemPages.AdvancePayments.View,
   },
   { path: '/accounting/banks', element: lazyRoute(<AccountingBanksPage />) },
   { path: '/accounting/company-cars', element: lazyRoute(<CompanyCarsPage />) },
@@ -667,7 +672,11 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
     element: lazyRoute(<PaymentOnlineShopPage />),
     permissionKey: PermissionKeys.SystemPages.OnlineShopPayment.View,
   },
-  { path: '/accounting/sync/documents', element: lazyRoute(<BalancesPage />) },
+  {
+    path: '/accounting/sync/documents',
+    element: lazyRoute(<BalancesPage />),
+    permissionKey: PermissionKeys.SystemPages.SyncDocuments.View,
+  },
   {
     path: '/accounting/available-payments',
     element: lazyRoute(<AvailablePaymentsPage />),

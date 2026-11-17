@@ -8,6 +8,9 @@ import { consoleRoutes } from './consoleRoutes'
 
 const EXPECTED_NEW_PAGE_PERMISSIONS = {
   '/dashboard': PermissionKeys.SystemPages.Dashboard.View,
+  '/sales/geography': PermissionKeys.SystemPages.SalesGeography.View,
+  '/accounting/advance-payments': PermissionKeys.SystemPages.AdvancePayments.View,
+  '/accounting/sync/documents': PermissionKeys.SystemPages.SyncDocuments.View,
   '/administration/vehicle-registry':
     PermissionKeys.SystemPages.VehicleRegistry.View,
   '/accounting/payment-expense-articles':

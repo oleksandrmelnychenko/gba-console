@@ -19,6 +19,7 @@ type RoleFormModalProps = {
   onClose: () => void
   onDelete?: () => void
   onSubmit: (values: { Dashboard: string; Name: string }) => void
+  submitError?: string | null
 }
 
 export function RoleFormModal({
@@ -29,11 +30,13 @@ export function RoleFormModal({
   onClose,
   onDelete,
   onSubmit,
+  submitError = null,
 }: RoleFormModalProps) {
   const { t } = useI18n()
   const [name, setName] = useValueState(role?.Name || '')
   const dashboard = role?.Dashboard || DEFAULT_DASHBOARD
   const [error, setError] = useValueState<string | null>(null)
+  const [submitErrorDismissed, setSubmitErrorDismissed] = useValueState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,6 +48,7 @@ export function RoleFormModal({
       return
     }
 
+    setSubmitErrorDismissed(false)
     onSubmit({ Dashboard: dashboard, Name: trimmedName })
   }
 
@@ -59,13 +63,14 @@ export function RoleFormModal({
         <Stack gap={10}>
           <TextInput
             disabled={isSaving}
-            error={error}
+            error={error ?? (submitErrorDismissed ? null : submitError)}
             label={t('Найменування')}
             required
             value={name}
             onChange={(event) => {
               setName(event.currentTarget.value)
               setError(null)
+              setSubmitErrorDismissed(true)
             }}
           />
           <AppModalFooter className={role && canDelete ? 'app-modal-footer--split' : undefined}>

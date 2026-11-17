@@ -1,6 +1,6 @@
 import { AppShell, Box, Group, Title, Text } from '@mantine/core'
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useGuardedNavigate } from '../../../shared/router/navigationGuard'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
@@ -56,7 +56,7 @@ const headerDateFormatter = new Intl.DateTimeFormat('uk-UA', {
 export function ConsoleHeader() {
   const { logout, session, user } = useAuth()
   const { t } = useI18n()
-  const navigate = useNavigate()
+  const navigate = useGuardedNavigate()
 
   const displayName =
     user?.FullName ||

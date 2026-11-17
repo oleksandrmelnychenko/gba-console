@@ -1,6 +1,6 @@
 import { Skeleton } from '@mantine/core'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useGuardedNavigate } from '../../../shared/router/navigationGuard'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import type { NavigationModule, NavigationNode } from '../../../features/navigation/types'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
@@ -62,7 +62,7 @@ type ConsoleNavProps = {
 
 export function ConsoleNav({ mode = 'all', availableWidth }: ConsoleNavProps) {
   const { error, getNodePath, isLoading, modules, selectedModule, selectedNode } = useNavigation()
-  const navigate = useNavigate()
+  const navigate = useGuardedNavigate()
   const { t } = useI18n()
 
   const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
