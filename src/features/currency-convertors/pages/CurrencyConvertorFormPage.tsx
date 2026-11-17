@@ -143,6 +143,11 @@ export function CurrencyConvertorFormPage() {
       return
     }
 
+    if (!isValidTraderPhone(form.phoneNumber)) {
+      dispatchPageState({ error: t('Телефон має містити від 10 до 15 цифр (дозволені +, пробіли, дужки та дефіси).'), type: 'set-error' })
+      return
+    }
+
     const payload = toPayload(trader, form)
     if (!tryStartSaving()) {
       return
@@ -413,4 +418,17 @@ function toPayload(trader: CurrencyTrader, form: CurrencyTraderFormState): Curre
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+/** Same rule as the server: empty, or 10-15 digits with +, spaces, () and -. */
+function isValidTraderPhone(value: string): boolean {
+  const phone = value.trim()
+
+  if (!phone) {
+    return true
+  }
+
+  const digits = phone.replace(/\D/g, '').length
+
+  return /^[\d\s()+-]+$/.test(phone) && digits >= 10 && digits <= 15
 }

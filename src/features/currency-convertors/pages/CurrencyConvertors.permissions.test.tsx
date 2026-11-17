@@ -225,6 +225,17 @@ describe('currency trader form limits', () => {
     expect(screen.getByRole('textbox', { name: /Телефон/ }).getAttribute('maxlength')).toBe('30')
   })
 
+  it('rejects a phone without 10-15 digits before saving', async () => {
+    renderRoute(<CurrencyConvertorFormPage />, '/accounting/currency-convertors/new', '/accounting/currency-convertors/new')
+    fireEvent.change(screen.getByRole('textbox', { name: /Ім'я/ }), { target: { value: 'Новий' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Прізвище/ }), { target: { value: 'Трейдер' } })
+    fireEvent.change(screen.getByRole('textbox', { name: /Телефон/ }), { target: { value: 'телефон abc' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(await screen.findByText('Телефон має містити від 10 до 15 цифр (дозволені +, пробіли, дужки та дефіси).')).toBeTruthy()
+    expect(createCurrencyTrader).not.toHaveBeenCalled()
+  })
+
   it('can be cancelled while a save is still pending', async () => {
     vi.mocked(createCurrencyTrader).mockReturnValue(new Promise(() => {}))
     render(
