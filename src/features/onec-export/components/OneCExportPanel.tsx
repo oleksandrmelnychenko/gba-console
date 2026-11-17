@@ -106,6 +106,7 @@ export function OneCExportPanel() {
   const period = resolveOneCExportPeriod(preset, { from: customFrom, to: customTo })
   const showFrom = preset === 'untilToday' || preset === 'custom'
   const showTo = preset === 'custom'
+  const periodError = validateOneCExportPeriod(period)
 
   async function runExport() {
     if (bases.length === 0) {
@@ -116,7 +117,6 @@ export function OneCExportPanel() {
       notifications.show({ color: 'red', message: t('Оберіть хоча б один тип документів') })
       return
     }
-    const periodError = validateOneCExportPeriod(period)
     if (periodError) {
       notifications.show({ color: 'red', message: t(periodError) })
       return
@@ -213,6 +213,7 @@ export function OneCExportPanel() {
                 label={t('Дата від')}
                 type="date"
                 value={customFrom}
+                error={periodError && !showTo ? t(periodError) : undefined}
                 onChange={(event) => setCustomFrom(event.currentTarget.value)}
               />
             )}
@@ -221,12 +222,13 @@ export function OneCExportPanel() {
                 label={t('Дата до')}
                 type="date"
                 value={customTo}
+                error={periodError ? t(periodError) : undefined}
                 onChange={(event) => setCustomTo(event.currentTarget.value)}
               />
             )}
           </SimpleGrid>
-          <Text size="sm" c="dimmed">
-            {period.to
+          <Text size="sm" c={periodError ? 'red' : 'dimmed'} role={periodError ? 'alert' : undefined}>
+            {periodError ? t(periodError) : period.to
               ? t('Документи з {from} по {to}', { from: formatDay(period.from), to: formatDay(period.to) })
               : t('Документи з {from} по сьогодні', { from: formatDay(period.from) })}
           </Text>

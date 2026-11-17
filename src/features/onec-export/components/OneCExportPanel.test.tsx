@@ -86,6 +86,20 @@ describe('1C export panel', () => {
     expect(exportFile).not.toHaveBeenCalled()
   })
 
+  it('shows an inline error next to the dates when Від is later than До', async () => {
+    // jsdom has no scrollIntoView; the Select dropdown calls it for the active option.
+    Element.prototype.scrollIntoView ??= vi.fn()
+    mount()
+    fireEvent.click(screen.getAllByLabelText('Період')[0])
+    fireEvent.click(await screen.findByRole('option', { name: 'Довільний період' }))
+    fireEvent.change(screen.getByLabelText('Дата від'), { target: { value: '31.12.2026' } })
+    fireEvent.change(screen.getByLabelText('Дата до'), { target: { value: '01.01.2026' } })
+
+    expect((await screen.findAllByText('Дата початку має бути не пізніше дати завершення')).length).toBeGreaterThan(0)
+    expect(screen.queryByText('Документи з 31.12.2026 по 01.01.2026')).toBeNull()
+    expect(screen.getByLabelText('Дата до').getAttribute('aria-invalid')).toBe('true')
+  })
+
   it('shows the history and downloads a stored file again', async () => {
     mount()
     expect(await screen.findByText('Петренко Петро')).toBeTruthy()
