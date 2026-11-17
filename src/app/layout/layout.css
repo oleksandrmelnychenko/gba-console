@@ -203,7 +203,7 @@
     minmax(max-content, 1fr)
     minmax(0, max-content)
     minmax(max-content, 1fr);
-  grid-template-rows: 62px 46px; /* grid-exempt: header 62 + subnav 46 = --app-shell-header-offset 108px */
+  grid-template-rows: 64px 44px; /* header 64 + subnav 44 = --app-shell-header-offset 108px */
   column-gap: 16px;
   height: 108px;
   min-height: 108px;
@@ -221,7 +221,7 @@
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: 62px; /* grid-exempt: header row; 62 + 46 = --app-shell-header-offset (108px) */
+  top: 64px; /* divider under the 64px header row */
   z-index: 3;
 }
 
@@ -234,7 +234,7 @@
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  height: 62px; /* grid-exempt: header row; 62 + 46 = --app-shell-header-offset (108px) */
+  height: 64px;
   gap: var(--mantine-spacing-xs);
 }
 

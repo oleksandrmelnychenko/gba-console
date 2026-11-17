@@ -1219,3 +1219,9 @@ button.role-dashboard-attention-item:focus-visible {
 }
 .role-dashboard-kpi.is-warning .role-dashboard-kpi-value,
 .role-dashboard-kpi.is-critical .role-dashboard-kpi-value { color: var(--mantine-color-gray-8); }
+
+/* Group headings that sit on the canvas between cards line up with the card
+   titles inside them: card padding (12px) + its 1px border. */
+.role-dashboard-ai-analytics .ai-fleet-dashboard__header {
+  padding-inline: calc(var(--app-space-3) + 1px);
+}

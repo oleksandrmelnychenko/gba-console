@@ -163,7 +163,7 @@ function ProductGroupsTreePageContent() {
               {isLoading ? (
                 <Stack gap={4}>
                   {Array.from({ length: 6 }, (_, index) => (
-                    <Skeleton key={index} height={46} radius={8} />
+                    <Skeleton key={index} height={44} radius={8} />
                   ))}
                 </Stack>
               ) : groups.length > 0 ? (
