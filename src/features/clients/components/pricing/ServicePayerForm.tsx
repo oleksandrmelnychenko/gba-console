@@ -6,20 +6,16 @@ import { useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ServicePayer } from '../../types'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import {
+  hasServicePayerErrors,
+  type ServicePayerFormErrors,
+  type ServicePayerFormValues,
+  validateServicePayer,
+} from './servicePayerValidation'
 
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
 
-export type ServicePayerFormValues = {
-  LastName: string
-  FirstName: string
-  MiddleName: string
-  MobilePhone: string
-  PaymentAddress: string
-  PaymentCard: string
-  Comment: string
-}
-
-type ServicePayerFormErrors = Partial<Record<'LastName' | 'PaymentCard', string>>
+export type { ServicePayerFormValues } from './servicePayerValidation'
 
 export type ServicePayerFormProps = {
   payer?: ServicePayer | null
@@ -39,17 +35,6 @@ function toFormValues(payer?: ServicePayer | null): ServicePayerFormValues {
     PaymentCard: payer?.PaymentCard || '',
     Comment: payer?.Comment || '',
   }
-}
-
-function validateFormValues(values: ServicePayerFormValues): ServicePayerFormErrors {
-  return {
-    LastName: !values.LastName.trim() ? '*' : undefined,
-    PaymentCard: !values.PaymentCard.trim() ? '*' : undefined,
-  }
-}
-
-function hasFormErrors(errors: ServicePayerFormErrors): boolean {
-  return Boolean(errors.LastName || errors.PaymentCard)
 }
 
 function getPayerFormKey(payer?: ServicePayer | null): string {
@@ -98,13 +83,13 @@ function ServicePayerFormFields({
 
   function update<K extends keyof ServicePayerFormValues>(key: K, value: string) {
     valuesRef.current = { ...valuesRef.current, [key]: value }
-    setErrors((current) => (hasFormErrors(current) ? validateFormValues(valuesRef.current) : current))
+    setErrors((current) => (hasServicePayerErrors(current) ? validateServicePayer(valuesRef.current, initialValues, t) : current))
   }
 
   function handleSubmit() {
-    const nextErrors = validateFormValues(valuesRef.current)
+    const nextErrors = validateServicePayer(valuesRef.current, initialValues, t)
 
-    if (hasFormErrors(nextErrors)) {
+    if (hasServicePayerErrors(nextErrors)) {
       setErrors(nextErrors)
       return
     }
@@ -155,6 +140,7 @@ function ServicePayerFormFields({
         <TextInput
           defaultValue={initialValues.MobilePhone}
           disabled={disabled}
+          error={errors.MobilePhone}
           label={t('Мобільний телефон')}
           maxLength={30}
           onChange={(event) => update('MobilePhone', event.currentTarget.value)}
