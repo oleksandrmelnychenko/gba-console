@@ -182,7 +182,7 @@ describe('product-delivery NewMergedServiceForm validation', () => {
 
     expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.getByText('Перевірте суми, ПДВ і курси')).toBeTruthy()
-    expect(screen.getByText('Вартість має бути від 0 до 922 337 203 685')).toBeTruthy()
+    expect(screen.getByText('Вартість має бути від 0 до 922 337 203 685 477')).toBeTruthy()
     expect(screen.getByText('ПДВ має бути від 0 до 100%')).toBeTruthy()
     expect(screen.getByText('Курс має бути більшим за 0 або порожнім')).toBeTruthy()
 
@@ -216,5 +216,35 @@ describe('product-delivery NewMergedServiceForm validation', () => {
     expect(onSubmit).not.toHaveBeenCalled()
     expect(screen.getAllByText('Вкажіть відповідального за платіжну задачу')).toHaveLength(1)
     expect(screen.getByText('Заповніть обовʼязкові поля')).toBeTruthy()
+  })
+
+  it('a triple click with valid data saves once while the request is in flight', async () => {
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValueOnce([{
+      Name: 'LMAX ATL SP.',
+      NetUid: 'supplier-1',
+      SupplyOrganizationAgreements: [
+        { Currency: { Code: 'EUR' }, Name: 'Main agreement', NetUid: 'agreement-1' },
+      ],
+    }])
+    let finish: () => void = () => undefined
+    const onSubmit = renderForm(vi.fn(() => new Promise<void>((resolve) => { finish = resolve })))
+
+    await waitFor(() => expect(mocks.searchUnifiedServiceCreateSupplyOrganizations).toHaveBeenCalledWith(''))
+    fireEvent.click(getInput('Постачальник послуг'))
+    fireEvent.click(await screen.findByText('LMAX ATL SP.'))
+    fireEvent.click(getInput('Договір'))
+    fireEvent.click(await screen.findByText('Main agreement (EUR)'))
+    fireEvent.change(getInput('Номер інвойса'), { target: { value: 'INV-1' } })
+    fireEvent.change(getInput('Вартість Брутто'), { target: { value: '100' } })
+
+    const save = screen.getByRole('button', { name: 'Зберегти' })
+    await act(async () => {
+      fireEvent.click(save)
+      fireEvent.click(save)
+      fireEvent.click(save)
+    })
+    await act(async () => { finish() })
+
+    expect(onSubmit).toHaveBeenCalledTimes(1)
   })
 })

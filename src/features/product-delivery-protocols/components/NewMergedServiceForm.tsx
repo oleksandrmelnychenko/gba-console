@@ -800,7 +800,7 @@ function validateNewMergedService(
 }
 
 /** The largest amount SQL money stores; bigger values were silently rounded and refused by the server. */
-const MAX_MONEY_AMOUNT = 922_337_203_685
+const MAX_MONEY_AMOUNT = 922_337_203_685_477
 
 function validateMergedServiceAmounts(
   values: NewMergedServiceFormValues,
@@ -812,7 +812,7 @@ function validateMergedServiceAmounts(
     const value = number(values[key])
 
     if (value !== null && (!Number.isFinite(value) || value < 0 || value > MAX_MONEY_AMOUNT)) {
-      errors[key] = t('Вартість має бути від 0 до 922 337 203 685')
+      errors[key] = t('Вартість має бути від 0 до 922 337 203 685 477')
     }
   }
   const percent = (key: 'percent' | 'percentAccounting') => {
