@@ -53,9 +53,11 @@ export function ReportValuePicker({
   const paging = !selectedOnly && !busy && !!hasMore && !!onLoadMore
   const failed = !selectedOnly && !busy && !!lookupError
   const retrying = failed && !!onRetry
-  const serverItems = new Set<ReportValueOption>(data)
-  const storedShared = previewSharedNames(selected.map(item => item.label))
-  const shown = (item: ReportValueOption) => serverItems.has(item) ? item.label : previewCaptionText(item.label, storedShared)
+  const serverLabels = useRef(new Map<string, string>())
+  for (const item of data) serverLabels.current.set(item.value, item.label)
+  const restored = selected.filter(item => !serverLabels.current.has(item.value))
+  const storedShared = previewSharedNames(restored.map(item => item.label))
+  const shown = (item: ReportValueOption) => serverLabels.current.has(item.value) ? item.label : previewCaptionText(item.label, storedShared)
 
   function remove(key: string) {
     onChange(selected.filter(item => item.value !== key).map(item => item.value))

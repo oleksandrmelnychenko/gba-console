@@ -79,6 +79,14 @@ describe('dropdown', () => {
     expect(screen.getByRole('button', { name: 'Видалити Same [1]' })).toBeTruthy()
   })
 
+  it('keeps the id on a picked value whose name the whole list shares, while a restored value loses it', async () => {
+    const data = [{ value: '12', label: 'X [12]' }, { value: '13', label: 'Y' }]
+    const view = render(<Harness data={data} selected={[{ value: '12', label: 'X [12]' }, { value: '99', label: 'Saved [99]' }]} />)
+    expect(screen.getByRole('button', { name: 'Видалити X [12]' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Видалити Saved' })).toBeTruthy()
+    view.unmount()
+  })
+
   it('keeps the id the server sent for a name that two values share', async () => {
     render(<Harness data={[{ value: '2990', label: 'Автопарк Конкорд [2990]' }, { value: '3001', label: 'Автопарк Конкорд [3001]' }]} />)
     await userEvent.click(box())
