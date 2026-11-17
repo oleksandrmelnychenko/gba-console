@@ -18,6 +18,19 @@ const vehicleRegistryNavigationNode: NavigationNode = {
   Children: [],
 }
 const administrationModulePattern = /адміністр|administration/i
+// /service/organisations has its own key (services.organisations.page.view) but no
+// node in the server menu, so the route guard denied it to every role. It is
+// added next to «Постачальники послуг» for roles that hold the key.
+const serviceOrganisationsNavigationNode: NavigationNode = {
+  Id: -902,
+  NetUid: '2f1f8d63-5d0b-4a39-9c5c-4f0f8b7d1e02',
+  Language: 'uk',
+  Module: 'Організації послуг',
+  Route: '/service/organisations',
+  CssClass: 'service_organisations',
+  Children: [],
+}
+const serviceOrganisationsAnchorRoute = '/accounting/supplier-organizations'
 const removedNavigationLabelPatterns = [/allegro/i, /poland/i, /польщ/i]
 const removedNavigationRoutePatterns = [
   /^\/?orders\/poland(?:\/|$)/i,
@@ -132,7 +145,10 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
 
 export function normalizeNavigation(
   modules: NavigationModule[] | null | undefined,
-  { includeVehicleRegistry = false }: { includeVehicleRegistry?: boolean } = {},
+  {
+    includeServiceOrganisations = false,
+    includeVehicleRegistry = false,
+  }: { includeServiceOrganisations?: boolean; includeVehicleRegistry?: boolean } = {},
 ): NavigationModule[] {
   const normalizedModules: NavigationModule[] = []
 
@@ -142,12 +158,18 @@ export function normalizeNavigation(
     }
 
     const children = normalizeNavigationNodes(module.Children, includeVehicleRegistry)
-    const moduleChildren =
+    const withVehicleRegistry =
       includeVehicleRegistry &&
       administrationModulePattern.test(module.Module) &&
       !children.some((node) => normalizePath(node.Route) === vehicleRegistryNavigationNode.Route)
         ? [...children, vehicleRegistryNavigationNode]
         : children
+    const moduleChildren =
+      includeServiceOrganisations &&
+      withVehicleRegistry.some((node) => normalizePath(node.Route) === serviceOrganisationsAnchorRoute) &&
+      !withVehicleRegistry.some((node) => normalizePath(node.Route) === serviceOrganisationsNavigationNode.Route)
+        ? [...withVehicleRegistry, serviceOrganisationsNavigationNode]
+        : withVehicleRegistry
 
     if (moduleChildren.length === 0) {
       continue

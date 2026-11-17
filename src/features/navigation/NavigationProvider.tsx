@@ -99,6 +99,9 @@ export function NavigationProvider({ children, getRoutePermissionKey }: Navigati
   const canViewVehicleRegistry = hasPermission(
     PermissionKeys.SystemPages.VehicleRegistry.View,
   )
+  const canViewServiceOrganisations = hasPermission(
+    PermissionKeys.SystemPages.ServiceOrganisations.View,
+  )
 
   useEffect(() => {
     if (!canLoadMenu || !sessionKey) {
@@ -112,7 +115,10 @@ export function NavigationProvider({ children, getRoutePermissionKey }: Navigati
         if (!cancelled) {
           dispatch({
             type: 'menuLoaded',
-            modules: normalizeNavigation(items, { includeVehicleRegistry: canViewVehicleRegistry }),
+            modules: normalizeNavigation(items, {
+              includeServiceOrganisations: canViewServiceOrganisations,
+              includeVehicleRegistry: canViewVehicleRegistry,
+            }),
             permissionSetKey,
             sessionKey,
           })
@@ -132,7 +138,7 @@ export function NavigationProvider({ children, getRoutePermissionKey }: Navigati
     return () => {
       cancelled = true
     }
-  }, [canLoadMenu, canViewVehicleRegistry, permissionSetKey, sessionKey])
+  }, [canLoadMenu, canViewServiceOrganisations, canViewVehicleRegistry, permissionSetKey, sessionKey])
 
   const isMenuReady = canLoadMenu
     && state.loadedSessionKey === sessionKey
