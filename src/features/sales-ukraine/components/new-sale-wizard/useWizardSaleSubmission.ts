@@ -1238,7 +1238,8 @@ export function useWizardSaleSubmission({
       return false
     }
 
-    if (!scope || !operationId) {
+    // A split submit is linked to the split journal; only a plain (non-split) operation may be given up here.
+    if (!scope || !operationId || (pending?.mode === 'submit' && getWizardSplitRecovery())) {
       notifications.show({ color: 'orange', message: t('Цю незавершену операцію не можна скасувати в цьому вікні') })
 
       return false
