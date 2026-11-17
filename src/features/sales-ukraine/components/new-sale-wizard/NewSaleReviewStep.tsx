@@ -30,6 +30,7 @@ const reviewCheckboxClassNames = {
   root: 'new-sale-review-checkbox',
 }
 export function NewSaleReviewStep({
+  agreementNetId,
   canSubmit = true,
   canConvertMergedToBill = false,
   clientNetId,
@@ -48,6 +49,8 @@ export function NewSaleReviewStep({
   submitFlow = 'edit',
   withVatAccounting,
 }: {
+  /** The sale agreement: the order lines show the same price types as on the products step. */
+  agreementNetId?: string | null
   canSubmit?: boolean
   canConvertMergedToBill?: boolean
   clientNetId: string | null
@@ -214,6 +217,7 @@ export function NewSaleReviewStep({
         <Box className="new-sale-review-form app-form-sheet">
           <Box className="new-sale-review-layout">
             <WizardReviewOrderSummary
+              agreementNetId={agreementNetId}
               items={reviewItems}
               localCurrencyCode={getSaleConvertedCurrencyCode(sale)}
               useEurToUah={isUahConvertedSale(sale)}

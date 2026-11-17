@@ -1475,6 +1475,7 @@ function NewSaleWizardContent({
         )}
         {active === 2 && (
           <NewSaleReviewStep
+            agreementNetId={state.agreementNetId}
             canSubmit={permissionFlow === 'create' ? canSubmitCreate : canSubmitEdit}
             canConvertMergedToBill={canConvertMergedToBill}
             submitDeniedReason={permissionFlow === 'create'

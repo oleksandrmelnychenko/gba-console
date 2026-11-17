@@ -4,6 +4,7 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { TableChip } from '../../../../shared/ui/TableChip'
 import type { SalesUkraineOrderItem } from '../../types'
 import { WizardCartCards } from './WizardCartCards'
+import { useWizardCartPricing } from './useWizardCartPricing'
 import { getWizardCartTotals } from './wizardCartTotals'
 import './wizard-cart-sheet.css'
 import './wizard-review-order-summary.css'
@@ -11,12 +12,15 @@ import './wizard-review-order-summary.css'
 const moneyFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const quantityFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 
-export const WizardReviewOrderSummary = memo(function WizardReviewOrderSummary({ items, localCurrencyCode, useEurToUah }: {
+export const WizardReviewOrderSummary = memo(function WizardReviewOrderSummary({ agreementNetId, items, localCurrencyCode, useEurToUah }: {
+  agreementNetId?: string | null
   items: SalesUkraineOrderItem[]
   localCurrencyCode: string
   useEurToUah: boolean
 }) {
   const { t } = useI18n()
+  // Without the agreement and prices every line read «Типи цін недоступні» a second after step 2 showed them.
+  const { prices, retry } = useWizardCartPricing(items, agreementNetId, Boolean(agreementNetId))
 
   return (
     <section className="wizard-review-order-summary app-table-chips" aria-label={t('Ваше замовлення')}>
@@ -26,7 +30,10 @@ export const WizardReviewOrderSummary = memo(function WizardReviewOrderSummary({
         <TableChip value={items.length} />
       </header>
       <WizardCartCards
+        agreementNetId={agreementNetId}
         items={items}
+        prices={prices}
+        onRetryPricing={retry}
         busy={false}
         localCurrencyCode={localCurrencyCode}
         useEurToUah={useEurToUah}
