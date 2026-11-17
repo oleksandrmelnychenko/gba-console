@@ -171,6 +171,7 @@ const VIRTUAL_PAGE_SIZE = 10
 // "assortment" is a tab sentinel, NOT a product NetUid, so it must not be treated as a
 // product deep-link (which would fail with «Товар не знайдено»).
 const ROUTE_ASSORTMENT_SENTINEL = 'assortment'
+const GUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SEARCH_DEBOUNCE_MS = 250
 const DETAIL_LOAD_DEBOUNCE_MS = 250
 const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
@@ -609,9 +610,9 @@ function ProductsPageContent() {
             setHasRequestedProducts(false)
             setSearchDraft('')
             setSearchValue('')
-            // Unknown/invalid netId (e.g. ?netId=assortment) is not an error — just show the
-            // empty "pick a product" state instead of a red "Товар не знайдено" alert.
-            setError(null)
+            // The «Весь асортимент» sentinel never reaches this point; any other unknown
+            // netId is a broken deep link and must say so instead of the empty picker state.
+            setError(t('Товар не знайдено'))
           } else {
             const nextSearchedProducts = getNextSearchedProducts(nextProduct)
 
@@ -642,7 +643,7 @@ function ProductsPageContent() {
           setHasRequestedProducts(false)
           setSearchDraft('')
           setSearchValue('')
-          setError(routeLoadError(loadError))
+          setError(GUID_SHAPE.test(routeProductNetId) ? routeLoadError(loadError) : t('Товар не знайдено'))
         }
       } finally {
         if (requestId === routeProductRequestRef.current && !controller.signal.aborted) {
@@ -668,6 +669,7 @@ function ProductsPageContent() {
     setSelectedProduct,
     setTopProducts,
     setVirtualLoad,
+    t,
   ])
 
   useEffect(() => {
