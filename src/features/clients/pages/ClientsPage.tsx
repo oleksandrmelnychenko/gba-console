@@ -66,6 +66,11 @@ import type {
   ClientType,
 } from '../types'
 import { getClientSolvencyGaugeScores } from '../api/clientSolvencyApi'
+import {
+  isAiServiceKnownUnavailable,
+  isAiServiceNotConfigured,
+  markAiServiceUnavailable,
+} from '../../../shared/ai/aiServiceUnavailable'
 import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
 import { ClientSourceQualityBadge } from '../components/structure/ClientSourceQualityBadge'
 import type { SolvencyScoreSlim } from '../solvencyTypes'
@@ -77,6 +82,8 @@ import { useSystemOfRecordCutover } from '../../../shared/system-of-record/syste
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
+const SOLVENCY_AI_SERVICE = 'solvency'
+const SOLVENCY_NOT_CONFIGURED_TEXT = 'Сервіс оцінки платоспроможності (ШІ) не налаштовано'
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 const CLIENT_CREATE_PERMISSION = PermissionKeys.Clients.Client.Create
 const CLIENT_CASH_FLOW_PERMISSION = PermissionKeys.Clients.AccountingCashFlow.Open
@@ -332,6 +339,13 @@ function useClientsPageModel() {
       return
     }
 
+    // Known not configured in this session: do not re-fire the batch on every list load.
+    if (isAiServiceKnownUnavailable(SOLVENCY_AI_SERVICE)) {
+      setSolvencyScores(new Map())
+      setSolvencyScoresError(t(SOLVENCY_NOT_CONFIGURED_TEXT))
+      return
+    }
+
     const ids = solvencyClientIdsKey
       .split(',')
       .map((value) => Number(value))
@@ -354,10 +368,16 @@ function useClientsPageModel() {
 
         setSolvencyScores(nextScores)
         setSolvencyScoresError(null)
-      } catch {
+      } catch (loadError) {
+        const notConfigured = isAiServiceNotConfigured(loadError)
+        if (notConfigured) {
+          markAiServiceUnavailable(SOLVENCY_AI_SERVICE)
+        }
         if (!cancelled) {
           setSolvencyScores(new Map())
-          setSolvencyScoresError(t('Оцінки платоспроможності недоступні'))
+          setSolvencyScoresError(notConfigured
+            ? t(SOLVENCY_NOT_CONFIGURED_TEXT)
+            : t('Оцінки платоспроможності недоступні'))
         }
       }
     }
@@ -1261,7 +1281,7 @@ function useClientColumns(
         header: (
           <span style={{ alignItems: 'center', display: 'inline-flex', gap: 4 }}>
             {t('Оцінка')}
-            <AiFeatureBadge compact tooltip={t('AI-оцінка платоспроможності')} />
+            <AiFeatureBadge compact tooltip={solvencyScoresError ?? t('AI-оцінка платоспроможності')} />
           </span>
         ),
         width: 96,

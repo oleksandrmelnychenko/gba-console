@@ -2,6 +2,8 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../../shared/api/apiClient'
+import { resetAiServiceAvailabilityForTests } from '../../../shared/ai/aiServiceUnavailable'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { getClientsForRegistry } from '../api/clientsApi'
 import { getClientSolvencyGaugeScores } from '../api/clientSolvencyApi'
@@ -50,6 +52,7 @@ function renderRegistry() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  resetAiServiceAvailabilityForTests()
   vi.mocked(getClientsForRegistry).mockResolvedValue([client])
   vi.mocked(getClientSolvencyGaugeScores).mockRejectedValue(new Error(unavailable))
 })
@@ -62,7 +65,7 @@ describe('BUG-1527 clients registry optional solvency', () => {
       [632206], expect.any(AbortSignal),
     ))
     expect(screen.queryByText(unavailable)).toBeNull()
-    expect(await screen.findByLabelText('Оцінки платоспроможності недоступні')).toBeTruthy()
+    expect((await screen.findAllByLabelText('Оцінки платоспроможності недоступні')).length).toBeGreaterThan(0)
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.queryByText('0')).toBeNull()
 
@@ -82,6 +85,20 @@ describe('BUG-1527 clients registry optional solvency', () => {
     expect(await screen.findByText('82')).toBeTruthy()
     expect(screen.getAllByText(clientName)).toHaveLength(1)
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('explains a not-configured AI service and stops re-firing the batch in this session', async () => {
+    vi.mocked(getClientSolvencyGaugeScores).mockRejectedValue(
+      new ApiError('SolvencyApi: ai_service_not_configured', 503, null),
+    )
+    const first = renderRegistry()
+    expect((await screen.findAllByLabelText('Сервіс оцінки платоспроможності (ШІ) не налаштовано')).length).toBeGreaterThan(0)
+    expect(getClientSolvencyGaugeScores).toHaveBeenCalledTimes(1)
+    first.unmount()
+
+    renderRegistry()
+    expect((await screen.findAllByLabelText('Сервіс оцінки платоспроможності (ШІ) не налаштовано')).length).toBeGreaterThan(0)
+    expect(getClientSolvencyGaugeScores).toHaveBeenCalledTimes(1)
   })
 
   it('still shows an error when the client registry itself fails', async () => {

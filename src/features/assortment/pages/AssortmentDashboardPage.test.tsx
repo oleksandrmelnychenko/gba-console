@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { theme } from '../../../shared/theme/theme'
@@ -327,6 +328,17 @@ describe('AssortmentDashboardPage', () => {
     expect(screen.getAllByText('Товар нового зрізу').length).toBeGreaterThan(0)
     expect(screen.queryByText('Гальмівний диск передній')).toBeNull()
     expect(screen.queryByText('BR-501')).toBeNull()
+  })
+
+  it('shows one Ukrainian notice when the AI service is not configured, never the raw text', async () => {
+    const notConfigured = () => new ApiError('ProductsApi: ai_service_not_configured (ProductsApi:Url is not configured).', 503, null)
+    for (const load of [getAssortmentOverview, getAssortmentHealth, getAssortmentRegions, getAssortmentStock, getAssortmentMargin, getAssortmentReturns]) {
+      vi.mocked(load).mockRejectedValue(notConfigured())
+    }
+    renderPage()
+
+    expect(await screen.findAllByText('Сервіс аналітики (ШІ) не налаштовано')).toHaveLength(1)
+    expect(screen.queryByText(/ai_service_not_configured/)).toBeNull()
   })
 
   it('shows a meaningful filtered empty state instead of a blank table', async () => {

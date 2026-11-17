@@ -21,6 +21,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AiFeatureBadge } from '../../../shared/ai/AiFeatureBadge'
 import { AiHistoryLineageNote } from '../../../shared/ai/AiHistoryLineageNote'
+import { AI_SERVICE_NOT_CONFIGURED_TEXT, isAiServiceNotConfigured } from '../../../shared/ai/aiServiceUnavailable'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -218,7 +219,8 @@ function getSummaryNumber(summary: Record<string, unknown> | undefined, key: str
 }
 
 function settledErrorMessage(result: PromiseSettledResult<unknown>, fallback: string): string | null {
-  if (result.status === 'fulfilled') {
+  // The AI-not-configured answer is reported once for the whole page, not per section.
+  if (result.status === 'fulfilled' || isAiServiceNotConfigured(result.reason)) {
     return null
   }
 
@@ -391,6 +393,7 @@ function AssortmentDashboardPageContent() {
   const [regions, setRegions] = useValueState<AssortmentRegions | null>(null)
   const [filters, setFilters] = useValueState<AssortmentHealthParams>(DEFAULT_ASSORTMENT_FILTERS)
   const [error, setError] = useValueState<string | null>(null)
+  const [aiNotice, setAiNotice] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState<boolean>(true)
   const [selectedProductId, setSelectedProductId] = useValueState<number | null>(null)
 
@@ -399,6 +402,7 @@ function AssortmentDashboardPageContent() {
 
     async function load() {
       setError(null)
+      setAiNotice(null)
       setLoading(true)
       // Every section belongs to this request scope. A failed response must not
       // leave a previous date or region presented beside the new snapshot.
@@ -454,11 +458,17 @@ function AssortmentDashboardPageContent() {
             setReturns(returnsResult.value)
           }
 
+          const results = [overviewResult, healthResult, regionsResult, stockResult, marginResult, returnsResult]
+          setAiNotice(results.some((result) => result.status === 'rejected' && isAiServiceNotConfigured(result.reason))
+            ? t(AI_SERVICE_NOT_CONFIGURED_TEXT)
+            : null)
           setError(failures.length === 0 ? null : failures.join(' · '))
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {
-          setError(userErrorText(loadError, t('Не вдалося завантажити асортимент')))
+          setError(isAiServiceNotConfigured(loadError)
+            ? t(AI_SERVICE_NOT_CONFIGURED_TEXT)
+            : userErrorText(loadError, t('Не вдалося завантажити асортимент')))
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -469,7 +479,7 @@ function AssortmentDashboardPageContent() {
 
     void load()
     return () => controller.abort()
-  }, [filters, setError, setLoading, setMargin, setOverview, setRegions, setReturns, setRows, setStock, t])
+  }, [filters, setAiNotice, setError, setLoading, setMargin, setOverview, setRegions, setReturns, setRows, setStock, t])
 
   const body = overview?.overview
   const marginSummary = margin?.summary
@@ -544,6 +554,11 @@ function AssortmentDashboardPageContent() {
 
         <div className="assort-dash__body">
           {overview && <AiHistoryLineageNote lineage={overview} />}
+          {aiNotice && (
+            <Alert color="yellow" icon={<CircleAlert size={18} />} variant="light">
+              {aiNotice}
+            </Alert>
+          )}
           {error && (
             <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
               {error}
