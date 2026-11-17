@@ -59,6 +59,9 @@ export function ConsoleNavRow({ kind, className, entries, availableWidth }: Prop
   const visible = new Set(visibleIndices)
   const hidden = entries.filter((_, index) => !visible.has(index))
   const hiddenActive = hidden.some(entry => entry.active)
+  // Nothing but the overflow trigger fits (phone widths): the trigger becomes a picker that shows
+  // the current page instead of a bare «Ще», and its menu lists every item.
+  const collapsedLabel = visible.size === 0 ? entries.find(entry => entry.active)?.label : undefined
   const pillClass = `console-subnav-pill console-subnav-${kind}`
 
   return (
@@ -81,10 +84,10 @@ export function ConsoleNavRow({ kind, className, entries, availableWidth }: Prop
           <Menu.Target>
             <button
               type="button"
-              className={`${pillClass} console-subnav-more${hiddenActive ? ' is-active' : ''}`}
+              className={`${pillClass} console-subnav-more${hiddenActive ? ' is-active' : ''}${collapsedLabel ? ' console-subnav-picker' : ''}`}
               title={hidden.map(entry => entry.label).join(', ')}
             >
-              <span>{t('Ще')}</span>
+              <span>{collapsedLabel ?? t('Ще')}</span>
               <ChevronDown size={14} aria-hidden="true" />
             </button>
           </Menu.Target>

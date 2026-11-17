@@ -1875,3 +1875,29 @@ html[data-gba-env='qa'] .console-header {
     width: 100%;
   }
 }
+
+/* Narrow widths: the module row is hidden, a burger opens the same menu in a drawer. */
+.console-header-burger { display: none; flex: 0 0 auto; }
+
+@media (max-width: 48em) {
+  .console-header-burger { display: inline-flex; }
+  .console-brand-logo { width: 34px; height: 34px; }
+}
+
+/* Phone widths: the sub-nav collapses into one picker showing the current page. */
+.console-subnav-picker { max-width: 100%; min-width: 0; }
+.console-subnav-picker > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 48em) {
+  /* Row 2 col 2 holds only the account button; let the sub-nav use the space beside it. */
+  .console-header-bottom-nav:has(.console-submenu-actions:not(:empty), .console-subnav-items) {
+    grid-column: 1 / -1;
+    padding-right: calc(var(--console-user-panel-width, 48px) + 8px);
+  }
+  .console-header-user-panel { position: relative; z-index: 2; }
+}
+
+@media (max-width: 30em) {
+  /* The burger takes the title's place on phones; the logo still links to the dashboard. */
+  .console-header-title { display: none; }
+}

@@ -76,3 +76,13 @@ it('labels the reports submenu Catalogue while preserving the reports module and
   fireEvent.click(screen.getByRole('button', { name: 'Каталог' }))
   expect(navigate).toHaveBeenCalledWith('/reports/stocks', { state: { nodeTitle: 'Звіти', moduleTitle: 'Звіти' } })
 })
+
+it('collapses into a picker that names the current page when only «Ще» fits (phone widths)', async () => {
+  select(3)
+  render(nav(120))
+  expect(shown()).toEqual(['Склади'])
+  const picker = screen.getByRole('button', { name: 'Склади' })
+  expect(picker.className).toContain('console-subnav-picker')
+  fireEvent.click(picker)
+  expect((await screen.findAllByRole('menuitem')).map(item => item.textContent)).toEqual(['Продажі', 'Замовлення', 'Товари', 'Склади', 'Звіти', 'Послуги'])
+})

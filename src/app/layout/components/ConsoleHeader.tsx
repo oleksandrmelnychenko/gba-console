@@ -7,6 +7,7 @@ import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PageHeaderTitleSlot, PageSubmenuActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleNav } from './ConsoleNav'
+import { ConsoleNavDrawer } from './ConsoleNavDrawer'
 import { DataEnvironmentSwitch } from './DataEnvironmentSwitch'
 import { NotificationCenter } from './NotificationCenter'
 import { ConsoleAccountMenu } from './ConsoleAccountMenu'
@@ -28,11 +29,21 @@ function useHeaderNavWidth(main: RefObject<HTMLDivElement | null>) {
     const read = () => {
       if (!node.clientWidth) return
       const style = getComputedStyle(node)
-      if (style.gridTemplateColumns.trim().split(/\s+/).length !== 3) {
+      const columns = style.gridTemplateColumns.trim().split(/\s+/).length
+      const [brand, date, actions, user] = sides.map(side => side?.getBoundingClientRect().width ?? 0)
+      if (columns === 2) {
+        // Narrow layout: the sub-nav spans row 2 next to the user panel (see layout.css), so fit its
+        // items into the space left of it; the rest go into the overflow («Ще») menu.
+        node.style.setProperty('--console-user-panel-width', `${Math.ceil(user)}px`)
+        const next = Math.max(0, Math.floor(node.clientWidth - pixels(style.paddingLeft) - pixels(style.paddingRight)
+          - pixels(style.columnGap) - user))
+        setWidth(current => current === next ? current : next)
+        return
+      }
+      if (columns !== 3) {
         setWidth(undefined)
         return
       }
-      const [brand, date, actions, user] = sides.map(side => side?.getBoundingClientRect().width ?? 0)
       const next = Math.max(0, Math.floor(node.clientWidth - pixels(style.paddingLeft) - pixels(style.paddingRight)
         - 2 * pixels(style.columnGap) - Math.max(brand, date) - Math.max(actions, user)))
       setWidth(current => current === next ? current : next)
@@ -72,6 +83,7 @@ export function ConsoleHeader() {
     <AppShell.Header className="console-header">
       <Box ref={headerRef} className="console-header-main">
         <Group gap="xs" wrap="nowrap" className="console-header-brand">
+          <ConsoleNavDrawer />
           <button type="button" className="console-brand-button" onClick={() => navigate('/dashboard')}>
             <img className="console-brand-logo" src={gbaLogo} alt="GBA" />
             <Box className="console-header-title">
