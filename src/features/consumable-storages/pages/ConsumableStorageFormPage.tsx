@@ -19,6 +19,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { ApiError } from '../../../shared/api/apiClient'
+import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
 import {
   createConsumableStorage,
   getConsumableStorage,
@@ -48,6 +50,7 @@ type ConsumableStorageFormPageState = {
   error: string | null
   form: StorageFormState
   isLoading: boolean
+  isNotFound: boolean
   organizations: Organization[]
   storage: ConsumablesStorage
   users: UserProfile[]
@@ -65,6 +68,9 @@ function pageStateReducer(
 
 const STORAGES_PATH = '/accounting/storages'
 const USER_SEARCH_DEBOUNCE_MS = 300
+/** ConsumablesStorage.Name / Description column sizes on the server. */
+const STORAGE_NAME_MAX_LENGTH = 50
+const STORAGE_DESCRIPTION_MAX_LENGTH = 250
 
 export function ConsumableStorageFormPage() {
   const { id } = useParams<{ id?: string }>()
@@ -101,22 +107,32 @@ function ConsumableStorageFormPageContent() {
   const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [userSearchValue, setUserSearchValue] = useValueState('')
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
-  const { error, form, isLoading, organizations, storage, users } = pageState
+  const { error, form, isLoading, isNotFound, organizations, storage, users } = pageState
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const canSave = hasPermission(isEditMode ? CONSUMABLE_STORAGE_EDIT_PERMISSION : CONSUMABLE_STORAGE_CREATE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    dispatchPageState({ error: null, isLoading: true })
+    if (id !== undefined && !isRecordGuid(id)) {
+      dispatchPageState({ error: null, isLoading: false, isNotFound: true })
+      return () => controller.abort()
+    }
+
+    dispatchPageState({ error: null, isLoading: true, isNotFound: false })
 
     void Promise.all([
       getConsumableStorageOrganizations(),
       searchConsumableStorageUsers('', id ? 'edit' : 'create'),
-      id ? getConsumableStorage(id) : Promise.resolve(null),
+      id ? getConsumableStorage(id).catch(nullWhenNotFound) : Promise.resolve(null),
     ])
       .then(([nextOrganizations, nextUsers, nextStorage]) => {
         if (controller.signal.aborted) {
+          return
+        }
+
+        if (id && !nextStorage?.NetUid && !nextStorage?.Id) {
+          dispatchPageState({ error: null, isLoading: false, isNotFound: true })
           return
         }
 
@@ -220,6 +236,16 @@ function ConsumableStorageFormPageContent() {
       return
     }
 
+    if (name.length > STORAGE_NAME_MAX_LENGTH) {
+      dispatchPageState({ error: t('Назва складу не може бути довшою за 50 символів') })
+      return
+    }
+
+    if (form.description.trim().length > STORAGE_DESCRIPTION_MAX_LENGTH) {
+      dispatchPageState({ error: t('Опис складу не може бути довшим за 250 символів') })
+      return
+    }
+
     if (!selectedOrganization) {
       dispatchPageState({ error: t('Оберіть організацію') })
       return
@@ -253,14 +279,30 @@ function ConsumableStorageFormPageContent() {
         color: 'green',
         message: isEditMode ? t('Склад оновлено') : t('Склад створено'),
       })
+      /* Keep the lock after success: the dialog stays mounted while the route
+         changes, and a second click / Enter there must not save again. */
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
+      setSaving(false)
       dispatchPageState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти склад'),
       })
-    } finally {
-      setSaving(false)
     }
+  }
+
+  if (isNotFound) {
+    return (
+      <AppModal opened size={480} className="consumable-storage-form-modal" title={t('Редагування складу')} onClose={handleCancel}>
+        <Stack gap="md">
+          <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
+            {t('Склад не знайдено.')}
+          </Alert>
+          <AppModalFooter>
+            <Button variant="default" type="button" onClick={handleCancel}>{t('Закрити')}</Button>
+          </AppModalFooter>
+        </Stack>
+      </AppModal>
+    )
   }
 
   return (
@@ -286,6 +328,7 @@ function ConsumableStorageFormPageContent() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Назва')}
+              maxLength={STORAGE_NAME_MAX_LENGTH}
               placeholder={t('Вкажіть назву')}
               required
               value={form.name}
@@ -298,6 +341,7 @@ function ConsumableStorageFormPageContent() {
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Опис')}
+              maxLength={STORAGE_DESCRIPTION_MAX_LENGTH}
               placeholder={t('Вкажіть опис')}
               value={form.description}
               onChange={(event) =>
@@ -376,6 +420,7 @@ function createInitialPageState(isLoading: boolean): ConsumableStorageFormPageSt
     error: null,
     form: createEmptyForm(),
     isLoading,
+    isNotFound: false,
     organizations: [],
     storage: createEmptyStorage(),
     users: [],
@@ -415,6 +460,14 @@ function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): strin
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.LastName || entity?.FullName || entity?.Name || entity?.Code
+}
+
+function nullWhenNotFound(loadError: unknown): null {
+  if (loadError instanceof ApiError && loadError.status === 404) {
+    return null
+  }
+
+  throw loadError
 }
 
 function isAbortError(error: unknown): boolean {
