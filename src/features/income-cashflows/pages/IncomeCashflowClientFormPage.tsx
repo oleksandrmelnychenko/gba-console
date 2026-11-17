@@ -1,3 +1,5 @@
+import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
+import { ServerExchangeRateField } from '../components/ServerExchangeRateField'
 import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
@@ -14,7 +16,6 @@ import {
   Button,
   Checkbox,
   Group,
-  NumberInput,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -1264,16 +1265,7 @@ function IncomeCashflowClientFormPageContent() {
                 value={form.amount}
                 onChange={handleAmountChanged}
               />
-              <NumberInput
-                className="cashflow-field-rate"
-                allowNegative={false}
-                decimalScale={6}
-                disabled={isLoading || isSaving}
-                label={t('Курс')}
-                min={0}
-                value={form.exchangeRate}
-                onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
-              />
+              <ServerExchangeRateField className="cashflow-field-rate" value={form.exchangeRate} />
               <AmountInput
                 className="cashflow-field-vat"
                 disabled={isLoading || isSaving}
@@ -1413,7 +1405,7 @@ function IncomeCashflowClientFormPageContent() {
                     <div className="income-cashflow-client-form__debt-metric">
                       <span>{t('Баланс договору')}</span>
                       <strong className="app-money">
-                        {formatMoney(selectedClientAgreement.CurrentAmount)} {agreementCurrency?.Code || ''}
+                        {formatClientAgreementBalance(selectedClientAgreement.CurrentAmount, formatMoney)}
                       </strong>
                     </div>
                   ) : null}

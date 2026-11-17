@@ -1,3 +1,4 @@
+import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
@@ -9,7 +10,6 @@ import {
   Button,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SegmentedControl,
   SimpleGrid,
@@ -1040,13 +1040,11 @@ export function OutgoingPaymentGroupForm({
                 value={form.amount}
                 onChange={handleAmountChanged}
               />
-              <NumberInput
+              <AmountInput
                 className="cashflow-field-rate"
-                allowNegative={false}
                 decimalScale={6}
                 disabled={isLoading || isSaving}
                 label={t('Курс')}
-                min={0}
                 value={form.exchangeRate}
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
@@ -1306,7 +1304,7 @@ function getAgreementBalanceLabel({
   }
 
   if (!isSupplierSearch && selectedClientAgreement && typeof selectedClientAgreement.CurrentAmount === 'number') {
-    return `${t('Поточний договір')}: ${moneyFormatter.format(selectedClientAgreement.CurrentAmount)} ${selectedClientAgreement.Agreement?.Currency?.Code || ''}`
+    return `${t('Поточний договір')}: ${formatClientAgreementBalance(selectedClientAgreement.CurrentAmount, (value) => moneyFormatter.format(value))}`
   }
 
   return ''

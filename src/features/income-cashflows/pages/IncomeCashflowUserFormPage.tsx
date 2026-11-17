@@ -1,3 +1,4 @@
+import { ServerExchangeRateField } from '../components/ServerExchangeRateField'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
@@ -8,7 +9,6 @@ import {
   Button,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -593,16 +593,7 @@ function IncomeCashflowUserFormPageContent() {
               value={form.vatAmount}
               onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
             />
-            <NumberInput
-              className="cashflow-field-rate"
-              allowNegative={false}
-              decimalScale={6}
-              disabled={isLoading || isSaving}
-              label={t('Курс')}
-              min={0}
-              value={form.exchangeRate}
-              onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
-            />
+            <ServerExchangeRateField className="cashflow-field-rate" value={form.exchangeRate} />
             </SimpleGrid>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">

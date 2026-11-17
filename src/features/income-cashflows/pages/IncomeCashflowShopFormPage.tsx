@@ -1,3 +1,5 @@
+import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
+import { ServerExchangeRateField } from '../components/ServerExchangeRateField'
 import { paymentAgreementWithoutDocumentaryRead, paymentClientWithoutDocumentaryRead } from '../incomeDocumentaryReadBoundary'
 import { sameGuid } from '../../../shared/guid/sameGuid'
 import { AmountInput } from '../../../shared/ui/AmountInput'
@@ -12,7 +14,6 @@ import {
   Button,
   Checkbox,
   Group,
-  NumberInput,
   Select,
   SimpleGrid,
   Stack,
@@ -1010,16 +1011,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
               value={form.amount}
               onChange={handleAmountChanged}
             />
-            <NumberInput
-              className="cashflow-field-rate"
-              allowNegative={false}
-              decimalScale={6}
-              disabled={isLoading || isSaving}
-              label={t('Курс')}
-              min={0}
-              value={form.exchangeRate}
-              onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
-            />
+            <ServerExchangeRateField className="cashflow-field-rate" value={form.exchangeRate} />
             </SimpleGrid>
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
@@ -1113,7 +1105,7 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
                       <div className="income-cashflow-client-form__debt-metric">
                         <span>{t('Баланс договору')}</span>
                         <strong className="app-money">
-                          {formatMoney(selectedAgreement.CurrentAmount)} {selectedAgreementCurrency?.Code || ''}
+                          {formatClientAgreementBalance(selectedAgreement.CurrentAmount, formatMoney)}
                         </strong>
                       </div>
                     ) : null}

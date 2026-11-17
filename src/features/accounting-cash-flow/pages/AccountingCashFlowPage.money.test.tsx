@@ -62,8 +62,8 @@ describe('cash-flow decimal money presentation', () => {
   })
 
   it.each([
-    [0.0049, '0.00'], [0.005, '0.01'], [0.015, '0.02'], [0.3333, '0.33'],
-    [-0.0049, '-0.00'], [-0.005, '-0.01'], [-0.015, '-0.02'], [-0.3333, '-0.33'],
+    [0.0049, '0,00'], [0.005, '0,01'], [0.015, '0,02'], [0.3333, '0,33'],
+    [-0.0049, '-0,00'], [-0.005, '-0,01'], [-0.015, '-0,02'], [-0.3333, '-0,33'],
   ])('displays raw %s consistently in debit, credit, balances and summary', async (raw, expected) => {
     const cashFlow = {
       BeforeRangeBalance: raw, AfterRangeInAmount: raw, AfterRangeOutAmount: raw,
@@ -96,10 +96,25 @@ describe('cash-flow decimal money presentation', () => {
     }
     const { container } = renderStatement(cashFlow)
     const row = await screen.findByTestId('money-row-0')
-    expect(within(row).getByTestId('debit').textContent).toBe('0.00')
+    expect(within(row).getByTestId('debit').textContent).toBe('0,00')
     const hero = container.querySelector<HTMLElement>('.accounting-cash-flow-metrics')!
-    expect(within(metric(hero, 'Кінцевий баланс')).getByText('0.01')).toBeTruthy()
+    expect(within(metric(hero, 'Кінцевий баланс')).getByText('0,01')).toBeTruthy()
     expect(within(metric(screen.getByTestId('summary'), 'Кінцевий баланс')).getByText('0,01')).toBeTruthy()
     expect(cashFlow.BeforeRangeBalance + cashFlow.AfterRangeInAmount).toBe(0.0098)
+  })
+
+  it('prints document numbers, uk-UA grouping and the real currency of the second amount', async () => {
+    const cashFlow = {
+      AccountingCashFlowHeadItems: [
+        { NetUid: 'pay-1', Number: 'QAU0000000011', CurrentValue: 49.78, CurrentValueLocal: 2300, CurrentBalance: -1234.5, IsCreditValue: false, IncomePaymentOrder: { Currency: { Code: 'UAH' } } },
+        { NetUid: 'pay-2', Number: 'QAU0000000012', CurrentValue: 20, CurrentValueLocal: 1000, CurrentBalance: 0, IsCreditValue: false, IncomePaymentOrder: { Currency: { Code: 'EUR' } } },
+      ],
+    }
+    renderStatement(cashFlow)
+    const row = await screen.findByTestId('money-row-0')
+    expect(within(row).getByTestId('document').textContent).toContain('QAU0000000011')
+    expect(within(row).getByTestId('debit').textContent?.replace(/\s/g, ' ')).toBe('49,78UAH 2 300,00')
+    expect(within(row).getByTestId('balance').textContent?.replace(/\s/g, ' ')).toBe('-1 234,50')
+    expect(within(screen.getByTestId('money-row-1')).getByTestId('debit').textContent).toContain('EUR')
   })
 })

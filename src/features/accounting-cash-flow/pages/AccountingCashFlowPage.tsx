@@ -1,3 +1,4 @@
+import { getCashFlowDocumentTitle, getCashFlowLocalCurrency } from '../cashFlowLocalCurrency'
 import { documentaryAgreementPresentation, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
 import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -85,9 +86,8 @@ type CashFlowViewSummary = {
   closingBalance?: number
 }
 
-// Keep the statement's dot separator while matching summary and Excel decimal rounding.
-const moneyFormatter = new Intl.NumberFormat('en-US', {
-  useGrouping: false,
+// Same money format as the rest of the console (1 234,56) and the summary block; rounding as in Excel.
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
@@ -690,6 +690,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     return !selectedAgreement || currency.toLowerCase() !== 'uah'
   }, [mode, selectedAgreement])
 
+  const agreementCurrency = selectedAgreement ? getAgreementCurrency(selectedAgreement) : ''
   const tableColumns = useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(() => {
     const editedInvoiceLabel = t('Накладна була редагована')
     const columns: DataTableColumn<AccountingCashFlowHeadItem>[] = [
@@ -782,7 +783,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         align: 'right',
         accessor: (item) => (item.IsCreditValue ? undefined : item.CurrentValue),
         cell: (item) => item.IsCreditValue ? null : (
-          <AccountingCashFlowMoneyCell localValue={item.CurrentValueLocal} tone="debit" value={item.CurrentValue} />
+          <AccountingCashFlowMoneyCell localCurrency={getCashFlowLocalCurrency(item, agreementCurrency)} localValue={item.CurrentValueLocal} tone="debit" value={item.CurrentValue} />
         ),
       },
       {
@@ -793,7 +794,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         align: 'right',
         accessor: (item) => (item.IsCreditValue ? item.CurrentValue : undefined),
         cell: (item) => item.IsCreditValue ? (
-          <AccountingCashFlowMoneyCell localValue={item.CurrentValueLocal} tone="credit" value={item.CurrentValue} />
+          <AccountingCashFlowMoneyCell localCurrency={getCashFlowLocalCurrency(item, agreementCurrency)} localValue={item.CurrentValueLocal} tone="credit" value={item.CurrentValue} />
         ) : null,
       },
       {
@@ -810,7 +811,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     )
 
     return columns
-  }, [mode, showExchangeRateColumn, t])
+  }, [agreementCurrency, mode, showExchangeRateColumn, t])
   const summary = useMemo(
     () => ({
       afterInAmount: cashFlow?.AfterRangeInAmount,
@@ -1001,7 +1002,8 @@ function AccountingCashFlowDocumentTableCell({
   showEditedInvoiceBadge: boolean
 }) {
   const dateLabel = formatDateTime(item.FromDate).replace(/,\s*00:00$/u, '')
-  const documentName = displayValue(item.Name)
+  const documentName = getCashFlowDocumentTitle(item)
+  const documentNumber = stringValue(item.Number).trim()
   const title = dateLabel !== '-'
     ? documentName.replace(/\s+Від\s+\d{2}\.\d{2}\.\d{4}(?:\s+\d{1,2}:\d{1,2}(?::\d{2})?)?\s*$/iu, '')
     : documentName
@@ -1020,6 +1022,7 @@ function AccountingCashFlowDocumentTableCell({
           ) : null}
         </span>
         <span className="accounting-cash-flow-document-cell__meta">
+          {documentNumber && documentNumber !== title ? <TableChip tone="document" value={documentNumber} /> : null}
           <TableChip tone="neutral" value={dateLabel} />
         </span>
       </span>
@@ -1028,10 +1031,12 @@ function AccountingCashFlowDocumentTableCell({
 }
 
 function AccountingCashFlowMoneyCell({
+  localCurrency,
   localValue,
   tone,
   value,
 }: {
+  localCurrency?: string
   localValue?: number
   tone?: 'credit' | 'debit' | 'negative' | 'positive'
   value?: number
@@ -1040,7 +1045,7 @@ function AccountingCashFlowMoneyCell({
     <span className={`accounting-cash-flow-money${tone ? ` is-${tone}` : ''}`}>
       <strong>{formatMoney(value)}</strong>
       {shouldShowLocalMoneyValue(value, localValue) ? (
-        <small>UAH {formatMoney(localValue)}</small>
+        <small>{localCurrency ? `${localCurrency} ` : ''}{formatMoney(localValue)}</small>
       ) : null}
     </span>
   )
@@ -1302,7 +1307,8 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
   ]
 
   if (localAmount !== undefined) {
-    fields.splice(8, 0, { label: 'Сума, грн', mono: true, value: `UAH ${formatMoney(localAmount)}` })
+    const localCurrency = getCashFlowLocalCurrency(item, '')
+    fields.splice(8, 0, { label: localCurrency ? `Сума документа, ${localCurrency}` : 'Сума документа', mono: true, value: `${localCurrency ? `${localCurrency} ` : ''}${formatMoney(localAmount)}` })
   }
 
   if (paymentStatus) {
