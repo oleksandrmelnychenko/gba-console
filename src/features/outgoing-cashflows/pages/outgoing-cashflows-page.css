@@ -304,3 +304,16 @@
   .outgoing-cashflow-create-drawer .cashflow-fields-row:where(:has(.cashflow-field-agreement)) > * { flex-basis: 100%; }
   .outgoing-cashflow-create-drawer .cashflow-fields-row > :is(.cashflow-field-date, .cashflow-field-time, .cashflow-field-number, .cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat, .cashflow-field-amount) { flex-basis: calc(50% - 5px); }
 }
+
+/* Phone width: the operation types stack instead of running past the dialog edge. */
+@media (max-width: 480px) {
+  .outgoing-cashflow-create-form__tabs-scroll {
+    width: 100%;
+  }
+
+  .outgoing-cashflow-create-form__tabs-scroll .outgoing-cashflow-create-form__tabs.mantine-SegmentedControl-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+}
