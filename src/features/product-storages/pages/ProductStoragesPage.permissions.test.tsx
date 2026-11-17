@@ -149,4 +149,12 @@ describe('Product storages canonical permission guards', () => {
       }),
     ))
   })
+
+  it('has no «Період» control: the stock list and its export are the current availability', async () => {
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
+    renderPage()
+
+    await screen.findByTestId('product-storages')
+    expect(screen.queryByLabelText(/^Період/)).toBeNull()
+  })
 })

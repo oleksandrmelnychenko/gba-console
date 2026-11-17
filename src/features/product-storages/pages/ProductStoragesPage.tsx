@@ -34,7 +34,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
@@ -448,16 +447,6 @@ function useProductStoragesPageModel() {
     setSearchDraft(nextValue)
   }
 
-  function updateDateRange({ from, to }: { from: string; to: string }) {
-    if (fromDate !== from || toDate !== to) {
-      closeStorageActions()
-    }
-
-    setPage(1)
-    setFromDate(from)
-    setToDate(to)
-  }
-
   function updatePageSize(nextPageSize: number) {
     if (pageSize !== nextPageSize) {
       closeStorageActions()
@@ -820,7 +809,6 @@ function useProductStoragesPageModel() {
     effectiveToStorageNetUid,
     error,
     filterError,
-    fromDate,
     isActionSubmitting,
     canUseManagementActions,
     isExporting,
@@ -840,7 +828,6 @@ function useProductStoragesPageModel() {
     selectedStorageNetId,
     selectedReturnConsignment,
     storageOptions,
-    toDate,
     toStorageOptions,
     totalPages,
     canOpenPreview,
@@ -862,7 +849,6 @@ function useProductStoragesPageModel() {
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    updateDateRange,
     updatePageSize,
     updatePreviewQty,
     updateSearch,
@@ -908,7 +894,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     effectiveToStorageNetUid,
     error,
     filterError,
-    fromDate,
     isActionSubmitting,
     canUseManagementActions,
     isExporting,
@@ -928,7 +913,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectedStorageNetId,
     selectedReturnConsignment,
     storageOptions,
-    toDate,
     toStorageOptions,
     totalPages,
     canOpenAction,
@@ -950,7 +934,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     setPreviewOpened,
     submitAction,
     toggleAvailability,
-    updateDateRange,
     updatePageSize,
     updatePreviewQty,
     updateSearch,
@@ -961,7 +944,8 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       <Card className="app-data-card product-storages-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar product-storages-filter-bar">
           <Group align="end" gap={10} wrap="nowrap" className="app-filter-fields product-storages-filter-row">
-            <ToolbarDateRangeFilter from={fromDate} to={toDate} onChange={updateDateRange} />
+            {/* No «Період» here: the stock list and its export are the current
+                availability; the server endpoints take no from/to (WH-36). */}
             <Select
               className="product-storages-storage-filter"
               classNames={{ dropdown: 'product-storages-filter-dropdown' }}
