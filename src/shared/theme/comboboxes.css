@@ -11,9 +11,9 @@
 }
 
 :is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option) {
-  min-height: 30px;
-  padding: 7px 8px;
-  border-radius: 6px;
+  min-height: 32px;
+  padding: 8px 8px;
+  border-radius: 8px;
 }
 
 :is(.mantine-Combobox-option, .mantine-Select-option, .mantine-MultiSelect-option):is(

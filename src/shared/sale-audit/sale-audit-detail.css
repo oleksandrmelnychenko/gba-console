@@ -21,7 +21,7 @@
   gap: 8px;
   min-width: 0;
   min-height: 48px;
-  padding: 8px 10px;
+  padding: 8px 8px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
@@ -48,13 +48,13 @@
 }
 .sale-audit-lifecycle__step:last-child .sale-audit-lifecycle__connector { display: none; }
 .sale-audit-lifecycle__step.is-connected .sale-audit-lifecycle__connector { color: var(--brand-orange); }
-.sale-audit-lifecycle__step > div { display: grid; min-width: 0; gap: 5px; }
+.sale-audit-lifecycle__step > div { display: grid; min-width: 0; gap: 4px; }
 .sale-audit-lifecycle__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 50%;

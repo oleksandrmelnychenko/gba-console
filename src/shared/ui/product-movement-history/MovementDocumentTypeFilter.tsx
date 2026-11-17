@@ -38,7 +38,7 @@ export function MovementDocumentTypeFilter({ options, value, onChange }: Props) 
         </Button>
       </Popover.Target>
       <Popover.Dropdown className="movement-document-types-popover" role="dialog" aria-labelledby={undefined} aria-label={t('Типи документів')} data-mantine-stop-propagation="true">
-        <Stack gap={10}>
+        <Stack gap={8}>
           <Group justify="space-between" gap={8}>
             <Text fw={600} size="sm">{t('Типи документів')}</Text>
             <Text size="xs" c="dark">{value.length} / {options.length}</Text>

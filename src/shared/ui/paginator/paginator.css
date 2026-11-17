@@ -20,3 +20,9 @@
   padding: 0 4px;
   white-space: nowrap;
 }
+
+/* Concentric corners: items sit inside the 8px pill with 4px of padding, so
+   they use 8 − 4 = 4px (docs/ui-spacing-grid.md). */
+.app-paginator :is(.mantine-Input-input, .mantine-ActionIcon-root, .mantine-Button-root) {
+  border-radius: var(--app-radius-xs);
+}

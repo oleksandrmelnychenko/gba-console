@@ -2,13 +2,13 @@
    `.app-modal` and `.app-form-sheet`, so every feature gets the same title,
    controls and action styling without local copies. */
 .app-modal:not(.app-modal--workspace) .mantine-Modal-content {
-  border-radius: 14px;
+  border-radius: var(--app-radius-lg);
   overflow: hidden;
 }
 
 .app-modal:not(.app-modal--workspace) .mantine-Modal-header {
-  min-height: 50px;
-  padding: 9px 16px;
+  min-height: 48px;
+  padding: 8px 16px;
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -199,7 +199,7 @@
   letter-spacing: 0;
   margin-bottom: -1px;
   min-height: 40px;
-  padding: 9px 2px 10px;
+  padding: 8px 2px 8px;
   white-space: nowrap;
 }
 
@@ -231,9 +231,9 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
-  height: 35px;
+  height: 36px;
   line-height: 1.2;
-  padding: 5px 8px;
+  padding: 4px 8px;
   white-space: nowrap;
 }
 
@@ -242,7 +242,7 @@
   color: var(--mantine-color-gray-8);
   font-size: 13px;
   font-weight: 500;
-  height: 45px;
+  height: 44px;
   line-height: 1.3;
   padding: 8px;
   vertical-align: middle;
@@ -289,7 +289,7 @@
 .app-modal .app-modal-actions { gap: 8px; }
 .app-modal .app-modal-actions .mantine-Button-root {
   height: auto;
-  min-height: 46px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 1px solid var(--mantine-color-gray-2);
   background: var(--mantine-color-gray-0);

@@ -128,7 +128,7 @@ export function DashboardPage() {
   }
 
   return (
-    <Stack className={`role-dashboard-page${usesInternalScroll ? ' role-dashboard-page--bounded' : ''}`} gap={6}>
+    <Stack className={`role-dashboard-page${usesInternalScroll ? ' role-dashboard-page--bounded' : ''}`} gap={8}>
       <PageHeaderTitle>
         <Box className="role-dashboard-title">
           <h1 className="console-subnav-pill console-subnav-item is-active role-dashboard-heading" aria-current="page">

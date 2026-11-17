@@ -92,7 +92,7 @@ export function ConsoleHeader() {
           <NotificationCenter userKey={user?.NetUid || user?.Id?.toString() || session?.userNetUid} />
         </Group>
 
-        <Group gap={6} wrap="nowrap" className="console-header-date">
+        <Group gap={8} wrap="nowrap" className="console-header-date">
           <Text size="sm">{currentDateLabel}</Text>
         </Group>
 

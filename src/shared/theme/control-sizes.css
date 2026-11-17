@@ -1,0 +1,39 @@
+/* Mantine's default control sizes include off-grid steps (18/22/26/30/34/42/50px).
+   Snap them onto the 4px grid (docs/ui-spacing-grid.md). Same specificity as
+   Mantine's own class, loaded later, so these win; explicit inline sizes still win. */
+.mantine-Button-root {
+  --button-height-xs: 28px;
+  --button-height-md: 40px;
+  --button-height-lg: 48px;
+  --button-height-compact-xs: 20px;
+  --button-height-compact-sm: 24px;
+  --button-height-compact-md: 28px;
+  --button-height-compact-lg: 32px;
+}
+
+.mantine-ActionIcon-root {
+  --ai-size-xs: 16px;
+  --ai-size-sm: 20px;
+  --ai-size-lg: 32px;
+  --ai-size-input-xs: 28px;
+  --ai-size-input-md: 40px;
+  --ai-size-input-lg: 48px;
+}
+
+.mantine-Input-wrapper,
+.mantine-InputWrapper-root,
+.mantine-Input-input {
+  --input-height-xs: 28px;
+  --input-height-md: 40px;
+  --input-height-lg: 48px;
+}
+
+.mantine-Pagination-root {
+  --pagination-control-size-xs: 20px;
+  --pagination-control-size-sm: 24px;
+  --pagination-control-size-lg: 36px;
+}
+
+.mantine-Chip-root {
+  --chip-size-xs: 24px;
+}

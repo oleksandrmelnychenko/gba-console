@@ -59,7 +59,7 @@ export function LoginPage() {
               }
             })}
           >
-            <Stack gap={14}>
+            <Stack gap={12}>
               <TextInput
                 aria-label={t('Логін')}
                 placeholder={t('Електронна пошта або телефон')}

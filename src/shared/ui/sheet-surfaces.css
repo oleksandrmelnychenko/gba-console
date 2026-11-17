@@ -61,23 +61,23 @@
 .app-modal.app-compact-form .app-modal-resize > div > form > .mantine-Stack-root,
 .app-drawer.app-compact-form .app-sheet-scroll > .mantine-Stack-root,
 .app-drawer.app-compact-form .app-sheet-scroll > form > .mantine-Stack-root {
-  gap: 10px;
+  gap: 8px;
 }
 
 .app-form-sheet .app-compact-form .app-section-card,
 .app-form-sheet.app-compact-form .app-section-card {
   padding: 12px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 5px;
+  gap: 4px;
   align-content: start;
   align-items: start;
   min-width: 0;
-  padding-block: 6px;
+  padding-block: 8px;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field)::before { display: none; }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) :is(.app-detail-field, .app-leader-row, .product-card-field, .consumable-orders-detail-field, .act-service-detail-field, .accountable-expense-detail-field, .sale-detail-row, .sale-carrier-row, .supply-order-field) > :is(span, strong, .app-leader-row-label, .app-leader-row-value) {
@@ -172,7 +172,7 @@
 }
 .app-drawer .product-remains-detail__section-head {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .app-drawer .product-remains-detail__section-body { border: 0; padding: 0; }
 
@@ -199,18 +199,18 @@
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__tree-head {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-detail__field-list .app-detail-field::before {
   display: none;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__identity { padding-left: 0; }
-:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__facts { gap: 6px; }
+:is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__facts { gap: 8px; }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__facts > div {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 999px;
-  padding: 4px 9px;
+  padding: 4px 8px;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .new-sale-product-summary__metric {
   background: transparent;
@@ -242,7 +242,7 @@
   background: var(--mantine-color-white);
   font: 600 14px / 1.4 var(--font-mono);
   color: var(--mantine-color-gray-8);
-  padding: 10px 12px;
+  padding: 8px 12px;
   text-transform: none;
 }
 :is(.app-drawer, .app-modal, .app-bottom-sheet) .user-sheet-card-body { padding: 12px; }
@@ -347,7 +347,7 @@
   width: fit-content;
   max-width: 100%;
   border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--mantine-color-gray-0);
   padding: 8px 12px;
   font-size: 13px;

@@ -1,7 +1,7 @@
 .document-export-modal-content {
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: none;
   overflow: hidden;
 }
@@ -10,12 +10,12 @@
   align-items: center;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   min-height: 56px;
-  padding: 10px 16px;
+  padding: 8px 16px;
 }
 
 .document-export-modal-title > div {
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
 .document-export-modal-title span {
@@ -34,19 +34,19 @@
 }
 
 .document-export-modal-body {
-  padding: 14px 16px 16px;
+  padding: 12px 16px 16px;
 }
 
 .document-export-modal {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
 .document-export-progress {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 0;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-mono);
@@ -55,7 +55,7 @@
 
 .document-export-options {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -66,11 +66,11 @@
   border-radius: 12px;
   color: inherit;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   min-height: 76px;
   min-width: 0;
-  padding: 11px;
+  padding: 12px;
   text-decoration: none;
   transition: border-color 140ms var(--tx-ease-smooth);
 }
@@ -108,11 +108,11 @@
   align-items: center;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   display: inline-flex;
-  height: 42px;
+  height: 40px;
   justify-content: center;
-  width: 42px;
+  width: 40px;
 }
 
 .document-export-card.is-excel .document-export-card-icon {
@@ -132,7 +132,7 @@
 
 .document-export-card-text {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -163,7 +163,7 @@
   font-weight: 700;
   min-height: 32px;
   line-height: 1;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .document-export-empty {
@@ -172,14 +172,14 @@
   border: 1px dashed var(--mantine-color-gray-3);
   border-radius: 12px;
   display: flex;
-  gap: 11px;
-  min-height: 82px;
-  padding: 13px;
+  gap: 12px;
+  min-height: 80px;
+  padding: 12px;
 }
 
 .document-export-empty > div {
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
 .document-export-empty strong {

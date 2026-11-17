@@ -743,8 +743,8 @@ function ProductStorageLocationHistoryDrawerContent({
 
   return (
     <AppDrawer className="app-compact-form" opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
-      <Stack gap={10}>
-        <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
+      <Stack gap={8}>
+        <Group align="end" gap={8} wrap="wrap" className="product-movement-history-location-filters">
           <AppDateInput
             label={t('З')}
             type="date"
@@ -948,7 +948,7 @@ function ProductMovementPanel({
   return (
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar product-movement-history-filter-bar--extended">
-      <Group align="end" gap={10} wrap="wrap" className="product-movement-history-filter-row">
+      <Group align="end" gap={8} wrap="wrap" className="product-movement-history-filter-row">
         <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
           min="1900-01-01" max="9999-12-30" required
           onChange={({ from, to }) => dispatchFilterState({ type: 'set-date-range', from, to })} />
@@ -987,7 +987,7 @@ function ProductMovementPanel({
       </Group>
 
       </div>
-      <Stack className="product-movement-history-panel__body" gap={10}>
+      <Stack className="product-movement-history-panel__body" gap={8}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -1090,7 +1090,7 @@ export function HistoricalSourceMovementPanel({
   return (
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-filter-bar">
-        <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
+        <Group align="end" gap={8} wrap="nowrap" className="product-movement-history-filter-row">
           <AppDateInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
           <AppDateInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
           <div className="app-filter-actions">
@@ -1105,7 +1105,7 @@ export function HistoricalSourceMovementPanel({
           </div>
         </Group>
       </div>
-      <Stack className="product-movement-history-panel__body" gap={10}>
+      <Stack className="product-movement-history-panel__body" gap={8}>
         <Alert color="gray" icon={<LockKeyhole size={18} />} variant="light">
           {t('Історичні партії з 1С без активної локальної партії. Вони доступні лише для перегляду, не змінюють складську наявність і недоступні для складських операцій.')}
         </Alert>
@@ -1250,7 +1250,7 @@ function InformationalMovementContent({
   return (
     <Stack className="product-movement-history-panel" gap={0}>
       <div className="app-filter-bar product-movement-history-panel__filters">
-        <Group align="end" gap={10} wrap="wrap" className="product-movement-history-location-filters">
+        <Group align="end" gap={8} wrap="wrap" className="product-movement-history-location-filters">
           <AppDateInput
             label={t('З')}
             type="date"
@@ -1316,7 +1316,7 @@ function InformationalMovementContent({
           </div>
         </Group>
       </div>
-      <Stack className="product-movement-history-panel__body" gap={10}>
+      <Stack className="product-movement-history-panel__body" gap={8}>
         <Text size="sm" c="dimmed">
           {t('Перевіряємо зв’язки джерел: приходи 1С без активної партії, САД і Tax Free без фізичного джерела, зняття резерву без джерела руху та незастосовані різниці звірки. Це не повна звірка залишків, резервів, розміщень або FIFO.')}
         </Text>
@@ -1867,7 +1867,7 @@ function ProductIncomeMovementPanel({
         onRefresh={() => reload()}
       />
       </div>
-      <Stack className="product-movement-history-panel__body" gap={10}>
+      <Stack className="product-movement-history-panel__body" gap={8}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -2077,7 +2077,7 @@ function ProductOutcomeMovementPanel({
         onRefresh={() => reload()}
       />
       </div>
-      <Stack className="product-movement-history-panel__body" gap={10}>
+      <Stack className="product-movement-history-panel__body" gap={8}>
       {activeError ? (
         <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<CircleAlert size={18} />} variant="light">
           {activeError}
@@ -2131,7 +2131,7 @@ function MovementDateToolbar({
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap={10} wrap="nowrap" className="product-movement-history-filter-row">
+    <Group align="end" gap={8} wrap="nowrap" className="product-movement-history-filter-row">
       <ToolbarDateRangeFilter from={dateFrom} to={dateTo} fromLabel={t('З')} toLabel={t('По')}
         min="1900-01-01" max="9999-12-30" required onChange={onDateChange} />
       <div className="app-filter-actions">

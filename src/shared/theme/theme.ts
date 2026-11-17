@@ -4,6 +4,8 @@ import './table-chips.css'
 import './static-tables.css'
 import './comboboxes.css'
 import './segmented-controls.css'
+import './overlays.css'
+import './control-sizes.css'
 import { translate } from '../i18n/translate'
 import { IosLoader } from '../ui/IosLoader'
 
@@ -53,6 +55,8 @@ export const theme = createTheme({
   primaryColor: 'brand',
   primaryShade: 6,
   defaultRadius: 'md',
+  // 4px grid (docs/ui-spacing-grid.md): Mantine's xs step is 10px by default.
+  spacing: { xs: '0.5rem' },
   components: {
     Combobox: Combobox.extend({
       defaultProps: { position: 'bottom-start' },

@@ -208,7 +208,7 @@ function DataTableHeaderCellInner<TData>({
         textAlign: align,
       }}
     >
-      <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify={justify}>
+      <Group className="data-table-header-inner" gap={8} wrap="nowrap" justify={justify}>
         <UnstyledButton
           {...(canReorder ? attributes : {})}
           {...(canReorder ? listeners : {})}

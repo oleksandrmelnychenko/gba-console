@@ -171,11 +171,11 @@
 }
 
 .data-table-density-compact .data-table-th {
-  padding: 3px 7px;
+  padding: 4px 8px;
 }
 
 .data-table-density-normal .data-table-th {
-  padding: 5px 8px;
+  padding: 4px 8px;
 }
 
 .data-table-th.is-dragging {
@@ -345,7 +345,7 @@
 .data-table-density-compact .data-table-cell {
   font-size: 12px;
   line-height: 1.2;
-  padding: 3px 8px;
+  padding: 4px 8px;
 }
 
 .data-table-density-normal .data-table-cell {
@@ -381,7 +381,7 @@
 
 .data-table-cell .mantine-Badge-root {
   height: 18px;
-  padding-inline: 6px;
+  padding-inline: 8px;
 }
 
 .data-table-cell .mantine-Badge-label {
@@ -514,7 +514,7 @@
 .data-table-empty {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
-  padding: 22px 14px;
+  padding: 20px 12px;
   text-align: center;
 }
 
@@ -574,7 +574,7 @@
 .data-table-toolbar .data-table-layout-control {
   height: var(--app-filter-control-height, 36px);
   min-height: var(--app-filter-control-height, 36px);
-  padding-inline: 9px;
+  padding-inline: 8px;
   border: 1px solid var(--mantine-color-gray-3);
   border-radius: 8px;
   background: var(--mantine-color-gray-1);

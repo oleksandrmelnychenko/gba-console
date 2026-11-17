@@ -32,7 +32,7 @@
   font-weight: 500;
   letter-spacing: 0;
   margin-bottom: -1px;
-  padding: 9px 2px 12px;
+  padding: 8px 2px 12px;
   white-space: nowrap;
 }
 
@@ -75,7 +75,7 @@
 
 .product-movement-history-panel__body {
   min-width: 0;
-  padding: 10px 8px 8px;
+  padding: 8px 8px 8px;
 }
 
 .product-income-movement-branches {
@@ -83,7 +83,7 @@
   border-radius: 8px;
   min-width: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
 }
 
 .product-income-movement-branches__count {
@@ -110,5 +110,5 @@
   border-radius: 8px;
   min-width: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 8px;
 }

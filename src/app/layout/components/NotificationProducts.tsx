@@ -42,7 +42,7 @@ export function NotificationProducts({ saleNetUid }: { saleNetUid: string }) {
   const items = sale?.Order?.OrderItems || []
   return (
     <div ref={root} className="console-notification-products" aria-busy={state === 'loading'}>
-      {state === 'loading' ? <Skeleton height={80} radius={10} /> : null}
+      {state === 'loading' ? <Skeleton height={80} radius={8} /> : null}
       {state === 'error' ? <Text size="xs" c="dimmed">{t('Не вдалося завантажити товари')}</Text> : null}
       {state === 'ready' && !items.length ? <Text size="xs" c="dimmed">{t('Товарів не знайдено')}</Text> : null}
       {items.map((item, index) => {

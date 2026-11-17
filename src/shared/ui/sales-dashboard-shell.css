@@ -1,11 +1,11 @@
 .sales-dashboard-shell {
   box-sizing: border-box;
   height: calc(
-    100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px
+    100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px
   );
   min-height: 0;
   overflow: hidden;
-  padding: 6px 4px 0;
+  padding: 8px 4px 0;
 }
 
 .sales-dashboard-shell__card {

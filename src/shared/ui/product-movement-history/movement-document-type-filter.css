@@ -8,9 +8,9 @@
 .movement-document-types-count {
   display: inline-block;
   margin-left: 8px;
-  padding: 1px 6px;
+  padding: 1px 8px;
   border: 1px solid var(--mantine-color-gray-3);
-  border-radius: 6px;
+  border-radius: 8px;
   background: white;
   font-variant-numeric: tabular-nums;
 }
@@ -30,7 +30,7 @@
 
 .movement-document-types-list .mantine-Checkbox-root {
   padding: 8px 4px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .movement-document-types-list .mantine-Checkbox-root:hover {

@@ -6,7 +6,7 @@
 .mantine-SegmentedControl-root {
   background: var(--mantine-color-white) !important;
   border-color: transparent !important;
-  border-radius: 9px !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
   outline: 1px solid var(--mantine-color-gray-2);
   outline-offset: -1px;
@@ -15,7 +15,7 @@
 .mantine-SegmentedControl-root .mantine-SegmentedControl-indicator,
 .mantine-SegmentedControl-root .mantine-SegmentedControl-label[data-active]::before {
   background: var(--brand-orange, var(--mantine-color-brand-6)) !important;
-  border-radius: 6px !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
 }
 
@@ -25,7 +25,7 @@
 
 .mantine-SegmentedControl-root .mantine-SegmentedControl-label {
   background: transparent !important;
-  border-radius: 6px !important;
+  border-radius: 8px !important;
 }
 
 .mantine-SegmentedControl-root .mantine-SegmentedControl-label:not([data-active]):not([data-disabled]) {

@@ -12,7 +12,7 @@
   flex: 0 0 auto;
   font-family: var(--font-mono);
   font-weight: 700;
-  gap: 3px;
+  gap: 4px;
   letter-spacing: 0;
   line-height: 1;
   vertical-align: middle;
@@ -21,13 +21,13 @@
 .ai-feature-badge--xs {
   font-size: 10px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 4px;
 }
 
 .ai-feature-badge--sm {
   font-size: 11px;
   height: 22px;
-  padding: 0 7px;
+  padding: 0 8px;
 }
 
 .ai-feature-badge--compact {

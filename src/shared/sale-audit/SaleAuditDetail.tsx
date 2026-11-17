@@ -235,7 +235,7 @@ export function SaleAuditDetail({
           </>}
           metrics={(statistic.SaleExchangeRates || []).length ? <div className="sale-audit-rates">
             <span className="sale-audit-rates__label">{t('Курси валют')}</span>
-            <Group gap="md" wrap="wrap">{(statistic.SaleExchangeRates || []).map((rate, index) => <Group key={rate.NetUid || rate.Id || index} gap={6} wrap="nowrap">
+            <Group gap="md" wrap="wrap">{(statistic.SaleExchangeRates || []).map((rate, index) => <Group key={rate.NetUid || rate.Id || index} gap={8} wrap="nowrap">
               <TableChip tone="source" value={rate.ExchangeRate?.Code} />
               <span className="app-money">{rate.ExchangeRate?.Amount ?? ''}</span>
             </Group>)}</Group>

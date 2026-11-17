@@ -47,6 +47,32 @@
   --app-selected-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
   --app-focus-border: rgba(var(--brand-orange-rgb), 0.58);
   --app-focus-ring: 0 0 0 2px rgba(var(--brand-orange-rgb), 0.1);
+
+  /* ── Spacing / radius / size scale (docs/ui-spacing-grid.md) ────────────
+     Every padding, margin, gap and radius sits on the 4px grid. Prefer these
+     tokens in new CSS; literal px values must still be multiples of 4
+     (`npm run audit:spacing` checks it). */
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 20px;
+  --app-space-6: 24px;
+  --app-space-8: 32px;
+
+  /* Radius tiers. Nested surfaces are concentric: inner = outer − padding.
+     A 4px-padded popover (12) holds 8px items; a 16px modal with 12px+ body
+     padding holds 8px controls/sections as separate surfaces. */
+  --app-radius-xs: 4px;
+  --app-radius-sm: 8px; /* controls, menu items, chips-in-cards, sections */
+  --app-radius-md: 12px; /* cards, popovers, menus, dropdowns */
+  --app-radius-lg: 16px; /* modals, drawers, console frame */
+  --app-radius-pill: 999px;
+
+  /* Control heights (toolbar density). */
+  --app-control-height: 36px;
+  --app-control-height-sm: 32px;
+  --app-control-height-xs: 28px;
 }
 
 html,
@@ -226,14 +252,19 @@ select {
   border-color: var(--app-focus-border);
 }
 
-/* Modal / Drawer close (X): drop the violet focus ring so it never reads as
-   "selected" after a click. */
-.mantine-Modal-close:focus,
-.mantine-Modal-close:focus-visible,
-.mantine-Drawer-close:focus,
-.mantine-Drawer-close:focus-visible {
+/* Modal / Drawer close (X): drop the focus ring after a mouse click so it never
+   reads as "selected", but keep a visible ring for keyboard focus (a11y). */
+.mantine-Modal-close:focus:not(:focus-visible),
+.mantine-Drawer-close:focus:not(:focus-visible) {
   box-shadow: none;
   outline: none;
+}
+
+.mantine-Modal-close:focus-visible,
+.mantine-Drawer-close:focus-visible {
+  box-shadow: var(--app-focus-ring);
+  outline: 1px solid var(--app-focus-border);
+  outline-offset: 1px;
 }
 
 /* Money values (docs/ui-patterns.md §5.1): mono 600, neutral gray in grids
@@ -292,7 +323,7 @@ text.app-money {
 .mantine-Tabs-list {
   background: #f8f9fa;
   border-color: var(--mantine-color-gray-2);
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 8px 8px;
   justify-content: center;
 }
 
@@ -420,7 +451,7 @@ text.app-money {
   height: auto;
   letter-spacing: 0;
   min-height: 36px;
-  padding-block: 5px;
+  padding-block: 4px;
   padding-left: 24px;
   position: relative;
 }

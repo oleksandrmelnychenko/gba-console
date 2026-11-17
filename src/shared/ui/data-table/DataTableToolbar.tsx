@@ -140,7 +140,7 @@ export function DataTableToolbar<TData>({
         ) : null}
         {toolbarLeft}
       </Group>
-      <Group className="data-table-toolbar-right" gap={6} wrap="nowrap">
+      <Group className="data-table-toolbar-right" gap={8} wrap="nowrap">
         {toolbarRight}
 
       </Group>

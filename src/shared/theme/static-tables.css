@@ -14,8 +14,8 @@
 
 .app-static-table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  height: 35px;
-  padding: 6px 10px;
+  height: 36px;
+  padding: 8px 8px;
   vertical-align: middle;
 }
 

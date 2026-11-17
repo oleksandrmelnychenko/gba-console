@@ -21,10 +21,10 @@
   flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
-  margin: 6px 4px 0;
+  margin: 8px 4px 0;
   padding: 0;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
+  border-top-left-radius: var(--app-radius-lg);
+  border-top-right-radius: var(--app-radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(57, 73, 76, 0.06);
 }
@@ -49,7 +49,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  min-height: 38px;
+  min-height: 36px;
   margin: 8px 8px 0;
 }
 
@@ -59,7 +59,7 @@
   justify-content: space-between;
   flex: 1 1 auto;
   gap: 8px;
-  min-height: 38px;
+  min-height: 36px;
   min-width: 0;
   padding: 4px 12px;
   background: var(--mantine-color-gray-0);
@@ -112,14 +112,14 @@
 /* Keep page action controls compact & uniform so the fixed-height bar fits them */
 .console-content-header-panel-actions .mantine-Button-root,
 .console-content-header-actions .mantine-Button-root {
-  height: 30px;
-  min-height: 30px;
-  padding-inline: 10px;
+  height: 28px;
+  min-height: 28px;
+  padding-inline: 8px;
 }
 
 .console-content-header-panel-actions .mantine-Button-section,
 .console-content-header-actions .mantine-Button-section {
-  margin-inline-end: 5px;
+  margin-inline-end: 4px;
 }
 
 .console-content-header-panel-actions .mantine-Button-label,
@@ -193,7 +193,7 @@
   margin: 8px;
   height: calc(100% - 16px);
   max-width: calc(100vw - 16px);
-  border-radius: 14px;
+  border-radius: var(--app-radius-lg);
   overflow: hidden;
 }
 
@@ -221,7 +221,7 @@
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: 62px;
+  top: 62px; /* grid-exempt: header row; 62 + 46 = --app-shell-header-offset (108px) */
   z-index: 3;
 }
 
@@ -234,7 +234,7 @@
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  height: 62px;
+  height: 62px; /* grid-exempt: header row; 62 + 46 = --app-shell-header-offset (108px) */
   gap: var(--mantine-spacing-xs);
 }
 
@@ -248,15 +248,15 @@
   color: inherit;
   cursor: pointer;
   font: inherit;
-  gap: 10px;
+  gap: 8px;
   height: 48px;
   text-align: left;
 }
 
 .console-brand-logo {
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
@@ -386,9 +386,9 @@
 
 /* Compact, evenly-centred create buttons in the header */
 .console-header-page-actions .mantine-Button-root {
-  height: 30px;
-  min-height: 30px;
-  padding-inline: 13px;
+  height: 28px;
+  min-height: 28px;
+  padding-inline: 12px;
   font-size: 13px;
 }
 
@@ -479,7 +479,7 @@
 .console-notification-header,
 .write-off-rules-header {
   min-height: 52px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
   background: var(--mantine-color-gray-0);
 }
@@ -543,7 +543,7 @@
   height: 36px;
   place-items: center;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--mantine-color-gray-0);
   color: var(--mantine-color-gray-7);
 }
@@ -553,7 +553,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 14px;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   padding: 12px !important;
   border-bottom: 1px solid var(--mantine-color-gray-2);
@@ -589,7 +589,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  margin-top: 6px;
+  margin-top: 8px;
   color: var(--mantine-color-gray-8);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -599,7 +599,7 @@
 
 .console-notification-message > span { min-width: 0; max-width: 100%; }
 .console-notification-client { flex: 1 1 100%; order: 1; }
-.console-notification-amount { display: inline-flex; align-items: center; gap: 6px; }
+.console-notification-amount { display: inline-flex; align-items: center; gap: 8px; }
 .console-notification-amount strong {
   font-family: var(--font-mono);
   font-size: 14px;
@@ -626,7 +626,7 @@
 
 @media (max-width: 440px) {
   .console-notification-item-heading { flex-wrap: wrap; }
-  .console-notification-copy .console-notification-time { flex-basis: 100%; padding-left: 30px; }
+  .console-notification-copy .console-notification-time { flex-basis: 100%; padding-left: 28px; }
 }
 
 .console-notification-chevron { color: var(--mantine-color-gray-5); }
@@ -656,7 +656,7 @@
 
 .console-notification-product-copy {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -715,12 +715,12 @@
 .console-sidebar-inner {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 10px 24px;
+  gap: 8px;
+  padding: 12px 8px 24px;
 }
 
 .console-sidebar-state {
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--mantine-color-gray-6);
   font-size: 13px;
 }
@@ -733,7 +733,7 @@
 
 .console-sidebar-section-title {
   margin: 0;
-  padding: 0 10px 4px;
+  padding: 0 8px 4px;
   color: var(--mantine-color-gray-9);
   font-size: 10px;
   font-weight: 700;
@@ -753,9 +753,9 @@
 .console-sidebar-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 7px 10px;
+  padding: 8px 8px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -821,7 +821,7 @@
   grid-row: 2;
   align-self: center;
   justify-self: start;
-  height: 42px;
+  height: 40px;
   align-items: center;
   color: var(--brand-orange);
   font-size: 13px;
@@ -845,7 +845,7 @@
   grid-row: 2;
   align-self: center;
   justify-self: end;
-  height: 42px;
+  height: 40px;
   align-items: center;
   overflow: visible;
   position: relative;
@@ -914,7 +914,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 2px 10px;
+  padding: 2px 8px;
 }
 
 .console-env-switch.is-qa .mantine-SegmentedControl-indicator {
@@ -932,10 +932,10 @@ html[data-gba-env='qa'] .console-header {
 .document-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 10px;
+  border-radius: 8px;
   background: #ffffff;
   color: var(--mantine-color-gray-9);
   text-decoration: none;
@@ -957,8 +957,8 @@ html[data-gba-env='qa'] .console-header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   flex: 0 0 auto;
 }
@@ -988,17 +988,17 @@ html[data-gba-env='qa'] .console-header {
 
 .sync-modal .sync-session-panel > .mantine-Group-root .mantine-Text-root:first-child { font-family: var(--font-mono); font-size: 13px; }
 .sync-modal .sync-session-meta-item > .mantine-Text-root:first-child { color: var(--mantine-color-text) !important; }
-.sync-modal .sync-config-panel > .mantine-Stack-root { gap: 10px; }
+.sync-modal .sync-config-panel > .mantine-Stack-root { gap: 8px; }
 .sync-modal .sync-session-panel > .mantine-Stack-root { margin-top: 8px; gap: 8px; }
 .sync-modal .sync-composite-progress { margin-top: 8px; }
 .sync-modal .sync-composite-progress .mantine-Progress-root { height: 4px; }
 .sync-modal .sync-composite-stage .mantine-Badge-root { height: 18px; font-size: 10px; flex-shrink: 0; }
 .sync-modal .sync-session-panel > .mantine-Group-root { gap: 8px; }
 .sync-modal .sync-session-panel > .mantine-Group-root > .mantine-Group-root:first-child { min-width: 0; gap: 8px; }
-.sync-modal .sync-session-panel > .mantine-Group-root > .mantine-Group-root:last-child { flex-shrink: 0; gap: 6px; }
+.sync-modal .sync-session-panel > .mantine-Group-root > .mantine-Group-root:last-child { flex-shrink: 0; gap: 8px; }
 .sync-modal .mantine-Text-root.app-section-title { font-size: 13px; }
 .sync-modal .sync-config-panel .mantine-Divider-root { margin-block: 8px; }
-.sync-modal .sync-safe-mode { gap: 6px; }
+.sync-modal .sync-safe-mode { gap: 8px; }
 .sync-modal .sync-session-meta-value { font-size: 12px; font-weight: 500; }
 .sync-modal .sync-config-panel .mantine-InputWrapper-label { color: var(--mantine-color-text); }
 
@@ -1032,7 +1032,7 @@ html[data-gba-env='qa'] .console-header {
 }
 
 .sync-modal .mantine-Divider-root {
-  margin-block: 10px;
+  margin-block: 8px;
 }
 
 /* Sync modal follows docs/ui-patterns.md: mono buttons (§8), orange
@@ -1073,10 +1073,10 @@ html[data-gba-env='qa'] .console-header {
 .pill-tabs {
   background: #f8f9fa;
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 8px 8px;
   display: flex;
   flex-wrap: nowrap;
-  gap: 22px;
+  gap: 20px;
   /* `safe` falls back to start when the strip overflows, keeping the leading
      tabs scrollable-to instead of clipped past the unreachable start edge. */
   justify-content: safe center;
@@ -1098,10 +1098,10 @@ html[data-gba-env='qa'] .console-header {
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
-  gap: 6px;
+  gap: 8px;
   letter-spacing: 0;
   margin-bottom: -1px;
-  padding: 9px 2px 10px;
+  padding: 8px 2px 8px;
   white-space: nowrap;
   transition:
     border-color 160ms var(--tx-ease-spring),
@@ -1127,7 +1127,7 @@ html[data-gba-env='qa'] .console-header {
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 3px;
+  padding: 4px;
 }
 
 .sync-mode-control .mantine-SegmentedControl-label,
@@ -1147,10 +1147,10 @@ html[data-gba-env='qa'] .console-header {
 .sync-mode-control .mantine-SegmentedControl-indicator,
 .sync-source-control .mantine-SegmentedControl-indicator { background: var(--brand-orange); box-shadow: none; }
 .sync-mode-control .mantine-SegmentedControl-label,
-.sync-source-control .mantine-SegmentedControl-label { min-height: 30px; padding: 6px 10px; border-radius: 6px; }
+.sync-source-control .mantine-SegmentedControl-label { min-height: 28px; padding: 8px 8px; border-radius: 8px; }
 .sync-mode-control .mantine-SegmentedControl-control::before,
 .sync-source-control .mantine-SegmentedControl-control::before { display: none; }
-.sync-source-control { min-width: 150px; }
+.sync-source-control { min-width: 148px; }
 
 .sync-mode-label-short {
   display: none;
@@ -1162,7 +1162,7 @@ html[data-gba-env='qa'] .console-header {
   background: #ffffff;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .sync-session-panel {
@@ -1241,7 +1241,7 @@ html[data-gba-env='qa'] .console-header {
   border-left: 2px solid var(--brand-orange);
   color: var(--mantine-color-text);
   overflow-wrap: anywhere;
-  padding: 6px 8px;
+  padding: 8px 8px;
 }
 
 .sync-composite-progress {
@@ -1267,7 +1267,7 @@ html[data-gba-env='qa'] .console-header {
   border-bottom: 1px solid var(--mantine-color-gray-1);
   border-left: 2px solid transparent;
   min-width: 0;
-  padding: 4px 6px;
+  padding: 4px 8px;
 }
 
 .sync-composite-stage:last-child {
@@ -1302,7 +1302,7 @@ html[data-gba-env='qa'] .console-header {
   background: var(--mantine-color-gray-0);
   border-left: 2px solid var(--brand-orange);
   color: var(--mantine-color-text);
-  padding: 8px 10px;
+  padding: 8px 8px;
 }
 
 .sync-fixed-types svg {
@@ -1312,7 +1312,7 @@ html[data-gba-env='qa'] .console-header {
 .sync-action-bar {
   background: transparent;
   border-top: 1px solid var(--mantine-color-gray-2);
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .sync-confirmation {
@@ -1373,7 +1373,7 @@ html[data-gba-env='qa'] .console-header {
 
 .write-off-rule-row {
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
@@ -1421,7 +1421,7 @@ html[data-gba-env='qa'] .console-header {
   display: block;
   width: 100%;
   min-height: 116px;
-  padding: 18px;
+  padding: 16px;
   color: inherit;
   text-align: left;
   background: #ffffff;
@@ -1463,7 +1463,7 @@ html[data-gba-env='qa'] .console-header {
 
 .dashboard-action-arrow {
   flex: 0 0 auto;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .console-footer.console-footer {
@@ -1556,7 +1556,7 @@ html[data-gba-env='qa'] .console-header {
 }
 
 .qa-build-count {
-  padding: 0 5px;
+  padding: 0 4px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -1567,8 +1567,8 @@ html[data-gba-env='qa'] .console-header {
 }
 
 .qa-build-status {
-  margin-left: 6px;
-  padding: 1px 7px;
+  margin-left: 8px;
+  padding: 1px 8px;
   display: inline-block;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -1586,8 +1586,8 @@ html[data-gba-env='qa'] .console-header {
 .qa-build-status.status-blocked { color: #b42318; background: #fef3f2; border-color: #fecdca; }
 
 .qa-build-origin {
-  margin-left: 6px;
-  padding: 1px 5px;
+  margin-left: 8px;
+  padding: 1px 4px;
   display: inline-block;
   color: var(--mantine-color-gray-6);
   background: var(--mantine-color-gray-1);
@@ -1602,8 +1602,8 @@ html[data-gba-env='qa'] .console-header {
 
 .qa-build-bug.qa-build-bug {
   display: block;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 8px 8px;
+  border-radius: 8px;
   border: 1px solid var(--mantine-color-gray-3);
 }
 
@@ -1617,9 +1617,9 @@ html[data-gba-env='qa'] .console-header {
   min-width: 220px;
   max-width: min(42vw, 520px);
   height: 28px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 1px solid var(--mantine-color-teal-2);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--mantine-color-teal-0);
   color: var(--mantine-color-teal-9);
 }
@@ -1703,8 +1703,8 @@ html[data-gba-env='qa'] .console-header {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
+  gap: 8px;
+  height: 28px;
   padding: 0 var(--console-subnav-pill-inline);
   border: 0;
   border-radius: 999px;
@@ -1730,7 +1730,7 @@ html[data-gba-env='qa'] .console-header {
 /* AI marker as a superscript hugging the text's top-right corner. */
 .console-subnav-pill .ai-feature-badge {
   align-self: center;
-  margin-left: -3px;
+  margin-left: -4px;
   transform: translateY(-5px) scale(0.8);
   transform-origin: bottom left;
 }
@@ -1777,7 +1777,7 @@ html[data-gba-env='qa'] .console-header {
 }
 
 .console-subnav-state {
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--mantine-color-dimmed);
   font-size: 13px;
 }
@@ -1834,7 +1834,7 @@ html[data-gba-env='qa'] .console-header {
 @media (min-width: 62.0625em) and (max-width: 100em) {
   .console-header-main {
     column-gap: 12px;
-    padding: 0 14px;
+    padding: 0 12px;
   }
 }
 
@@ -1849,7 +1849,7 @@ html[data-gba-env='qa'] .console-header {
   }
 
   .console-header-bottom-nav > .console-subnav-mode-items .console-subnav-row {
-    padding: 0 6px;
+    padding: 0 8px;
   }
 
   .console-header-top-nav .console-subnav-pill,
