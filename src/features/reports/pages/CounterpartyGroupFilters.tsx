@@ -5,6 +5,7 @@ import { Alert, Button, Group, MultiSelect, Stack } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { changeCounterpartyGroupList, SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS, sourceCounterpartyGroups, type CounterpartyGroupChoice } from '../data/sourceCounterpartyGroups'
+import { distinctCaptions } from '../data/distinctCaptions'
 
 const PAGE_SIZE = 30
 
@@ -51,6 +52,9 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
     const known = SETTLEMENT_WORKBOOK_EXCLUDED_GROUPS.find(group => group.Id === id.toUpperCase())
     options.set(id.toUpperCase(), { value: id.toUpperCase(), label: known?.Name ?? 'Збережена група' })
   }
+  const listed = [...options.values()]
+  const captions = distinctCaptions(listed.map(item => ({ id: item.value, caption: item.label })))
+  const choices = listed.map((item, index) => ({ value: item.value, label: captions[index] }))
   const count = selectedIds.length
   return <Stack gap="xs">
     {(['IncludeGroupIds', 'ExcludeGroupIds'] as const).map(list => <MultiSelect key={list}
@@ -59,7 +63,7 @@ export function CounterpartyGroupFilters({ value, disabled, onChange }: {
         {list === 'IncludeGroupIds' ? 'Включити групи контрагентів' : 'Виключити групи контрагентів'}
       </Group>}
       placeholder="Пошук групи або контрагента"
-      data={[...options.values()]} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
+      data={choices} value={selected?.[list].map(id => id.toUpperCase()) ?? []}
       disabled={disabled} searchable clearable searchValue={search}
       maxValues={64 - count + (selected?.[list].length ?? 0)}
       onSearchChange={next => { const text = next.slice(0, 120); if (text !== search) { setSearch(text); setLoading(true) } }}

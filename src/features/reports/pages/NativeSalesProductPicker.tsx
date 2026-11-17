@@ -97,6 +97,7 @@ function useResolvedProductNames(
   field: number,
   requestedSource: number | undefined,
   values: ReportSelectedValue[],
+  disabled: boolean,
 ) {
   const binding = productLookupBinding(dataset, requestedSource)
   const lookupKey = field === 1 && binding ? `${binding.kind}:${binding.dataSource}` : null
@@ -112,7 +113,7 @@ function useResolvedProductNames(
   ].slice(0, RESOLVE_LIMIT)
   const pendingKey = missing.join(',')
   useEffect(() => {
-    if (!lookupKey || !pendingKey) return
+    if (disabled || !lookupKey || !pendingKey) return
     const [kind, source] = lookupKey.split(':')
     const controller = new AbortController()
     void Promise.all(
@@ -121,20 +122,21 @@ function useResolvedProductNames(
           const result = await (kind === 'report'
             ? searchNativeReportProducts(Number(source) as ReportProductLookupSource, { exactId: id }, controller.signal)
             : searchNativeSalesProducts({ exactId: id }, controller.signal))
-          return [id, result.length ? productBusinessName(result[0]) : null] as const
+          return [[id, result.length ? productBusinessName(result[0]) : null] as const]
         } catch {
-          return [id, null] as const
+          return []
         }
       }),
-    ).then((entries) => {
-      if (controller.signal.aborted) return
+    ).then((found) => {
+      const entries = found.flat()
+      if (controller.signal.aborted || !entries.length) return
       setResolved((previous) => ({
         lookupKey,
         names: { ...(previous.lookupKey === lookupKey ? previous.names : {}), ...Object.fromEntries(entries) },
       }))
     })
     return () => controller.abort()
-  }, [lookupKey, pendingKey])
+  }, [disabled, lookupKey, pendingKey])
   return known
 }
 
@@ -159,7 +161,13 @@ export function NativeSalesProductPicker({
   const mode: ProductSearchMode = exactId === null ? 'text' : 'id'
   const requestedSource = dataSource ?? dataset?.DataSource
   const binding = productLookupBinding(dataset, requestedSource)
-  const resolvedNames = useResolvedProductNames(dataset, selection.SelectedField.Type, requestedSource, selection.Values)
+  const resolvedNames = useResolvedProductNames(
+    dataset,
+    selection.SelectedField.Type,
+    requestedSource,
+    selection.Values,
+    !!disabled,
+  )
   const admitted = !!binding && selection.SelectedField.Type === 1
   const sharedSource = binding?.kind === 'report' ? binding.dataSource : undefined
   const options = useNativeSalesProductOptions(mode, exactId ?? query, admitted && !disabled && exactId !== '', sharedSource)
