@@ -113,7 +113,8 @@ describe('ProcureDashboardTab', () => {
     )
 
     expect(await screen.findByText('Дашборд постачання')).not.toBeNull()
-    expect(screen.getByText(/Зріз попиту: 24\.07\.2026\./)).not.toBeNull()
+    // The slice date lives in the toolbar snapshot chip (the explanatory captions were removed).
+    expect(screen.getByText('24.07.2026')).not.toBeNull()
     expect(
       screen.getByText('Всього позицій').closest('article')?.textContent,
     ).toContain('25')
@@ -234,7 +235,7 @@ describe('ProcureDashboardTab', () => {
     expect(getSupplyDashboardCharts).toHaveBeenCalledOnce()
   })
 
-  it('measures the shortage on the service position and totals recommendations per unit', async () => {
+  it('measures the shortage on the service position', async () => {
     vi.mocked(getSupplyDashboardCharts).mockResolvedValue({
       ...charts,
       population: {
@@ -253,9 +254,6 @@ describe('ProcureDashboardTab', () => {
     })
     renderDashboard()
     await screen.findByText('Гальмівний диск')
-    const summaryText = screen.getByText(/Рекомендовано загалом/).textContent?.replace(/\u00a0/g, ' ')
-    expect(summaryText).toContain('Рекомендовано загалом: 22 861 шт · 2 187 компл · 3 179,19 м.')
-    expect(summaryText).toContain(': 25 позицій, 25 унікальних товарів.')
     const productRow = screen.getByText('Гальмівний диск').closest('tr')!
     const shortage = within(productRow).getByTitle('Точка замовлення мінус доступно з урахуванням резервів і замовленого')
     expect(shortage.textContent).toBe('4')
@@ -271,7 +269,6 @@ describe('ProcureDashboardTab', () => {
     })
     renderDashboard()
     await screen.findByText('Гальмівний диск')
-    expect(screen.getByText(/Рекомендовано загалом/).textContent).toContain('Рекомендовано загалом: 310.')
     const productRow = screen.getByText('Гальмівний диск').closest('tr')!
     expect(within(productRow).getByTitle('Точка замовлення мінус доступно з урахуванням резервів і замовленого').textContent).toBe('8')
   })
