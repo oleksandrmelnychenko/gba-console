@@ -87,6 +87,20 @@ export function classifySalesMutationFailure(error: unknown): SalesMutationFailu
     : 'pending-reconciliation'
 }
 
+/**
+ * The server explicitly said the mutation never entered (or rolled back / was rejected by) its ledger, via
+ * the X-Mutation-Ledger-State header or the MutationLedgerState body field. Only this proof may release an
+ * operation whose request was already submitted.
+ */
+export function hasDefinitiveLedgerState(error: unknown): boolean {
+  if (!(error instanceof ApiError) || error.status < 400 || error.status >= 500) {
+    return false
+  }
+
+  return isDefinitiveLedgerState(normalizeLedgerState(error.headers.get(SALES_MUTATION_LEDGER_STATE_HEADER))) ||
+    isDefinitiveLedgerState(getMutationLedgerState(error.payload))
+}
+
 const AMBIGUOUS_CLIENT_ERROR_STATUSES = new Set([408, 409, 425, 429])
 
 function isDefinitiveLedgerState(value: string): boolean {

@@ -752,6 +752,18 @@ function transitionWizardSplitExtractionPhase(
 }
 
 export function rollbackWizardSplitExtraction(operationId: string): boolean {
+  return rollbackWizardSplitExtractionCore(operationId, false)
+}
+
+/**
+ * The server definitively refused the submitted cart change (4xx before its ledger): the extraction never
+ * happened, so the staged split goes back to its fallback items even after submission.
+ */
+export function rejectWizardSplitExtraction(operationId: string): boolean {
+  return rollbackWizardSplitExtractionCore(operationId, true)
+}
+
+function rollbackWizardSplitExtractionCore(operationId: string, rejectedByServer: boolean): boolean {
   if (fencedWizardSplitOperationIds.has(normalizeNetUid(operationId))) {
     throw new WizardSplitRecoveryFenceError()
   }
@@ -765,7 +777,7 @@ export function rollbackWizardSplitExtraction(operationId: string): boolean {
     return false
   }
 
-  if (recovery.pendingExtraction.phase !== 'prepared') {
+  if (!rejectedByServer && recovery.pendingExtraction.phase !== 'prepared') {
     throw new Error('Submitted split extraction requires server reconciliation or manual resolution')
   }
 

@@ -6,6 +6,7 @@ import {
   markSalesPendingMutationCorrupt,
   markSalesPendingMutationSubmitted,
   markSalesPendingMutationUnknown,
+  resolveRejectedSalesPendingMutation,
   resolveSalesPendingMutation,
   subscribeSalesPendingMutations,
   synchronizeSalesPendingMutationUser,
@@ -21,6 +22,7 @@ import {
   hasWizardSplitRecoveryOperation,
   markWizardSplitExtractionSubmitted,
   markWizardSplitExtractionUnknown,
+  rejectWizardSplitExtraction,
 } from './newSaleWizardState'
 import {
   createPersistedWizardCartMutation,
@@ -472,18 +474,30 @@ export function useWizardCartMutation({
     lease: SalesPendingMutationLease<PersistedWizardCartMutation>,
     result: WizardMutationAttemptResult<SalesUkraineSale>,
   ): Promise<boolean> {
-    if (result.status === 'pending-retry' || result.status === 'definitive-failure') {
+    if (result.status === 'definitive-failure') {
+      // The server refused the change before it entered its ledger (a 4xx such as «товару вже немає»): nothing
+      // to verify or repeat. Drop the journal entry and the staged split so the cart stays usable, and show the
+      // refusal once — keeping it as an unconfirmed operation locked the bill behind «Перевірити та повторити».
+      rejectWizardSplitExtraction(lease.operationId)
+      resolveRejectedSalesPendingMutation(lease)
+
+      if (isCurrentMutationContext(context)) {
+        clearPendingCartMutation(operation)
+        notifications.show({
+          color: 'red',
+          message: getRequestErrorMessage(result.mutationError, operation.fallbackMessage),
+        })
+      }
+
+      return false
+    }
+
+    if (result.status === 'pending-retry') {
       markSalesPendingMutationUnknown(lease)
       markWizardSplitExtractionUnknown(lease.operationId)
 
       if (isCurrentMutationContext(context)) {
-        if (result.status === 'pending-retry') {
-          retainPendingCartMutation(operation, result)
-        } else {
-          pendingMutationRef.current = operation
-          setPendingMutationError(getRequestErrorMessage(result.mutationError, operation.fallbackMessage))
-          onPendingMutationChange?.(true)
-        }
+        retainPendingCartMutation(operation, result)
       }
 
       return false

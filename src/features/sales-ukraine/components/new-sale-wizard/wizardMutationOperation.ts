@@ -1,4 +1,4 @@
-import { classifySalesMutationFailure } from '../../salesMutationOperation'
+import { classifySalesMutationFailure, hasDefinitiveLedgerState } from '../../salesMutationOperation'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 
 export type WizardMutationCommitState =
@@ -224,6 +224,13 @@ async function reconcileUnknownWizardMutation<TSnapshot>(
       return { snapshot, status: 'committed-after-reconcile' }
     }
 
+    // The server proved the change never entered its ledger (X-Mutation-Ledger-State not-entered / rolled-back /
+    // rejected, e.g. «товару вже немає»): report it as refused instead of an unconfirmed operation that locks the
+    // cart behind «Перевірити та повторити». A bare 4xx after request entry stays pending (it proves nothing).
+    if (hasDefinitiveLedgerState(mutationError)) {
+      return { mutationError, status: 'definitive-failure' }
+    }
+
     return {
       mutationError,
       reconciliationError: null,
@@ -231,6 +238,10 @@ async function reconcileUnknownWizardMutation<TSnapshot>(
       status: 'pending-retry',
     }
   } catch (reconciliationError) {
+    if (hasDefinitiveLedgerState(mutationError)) {
+      return { mutationError, status: 'definitive-failure' }
+    }
+
     return {
       mutationError,
       reconciliationError,

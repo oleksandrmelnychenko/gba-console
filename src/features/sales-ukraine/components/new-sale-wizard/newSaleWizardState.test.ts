@@ -25,6 +25,7 @@ import {
   markWizardSplitExtractionSubmitted,
   markWizardSplitExtractionUnknown,
   markWizardSplitFinalMutationSubmitted,
+  rejectWizardSplitExtraction,
   replaceWizardMergedOrderItems,
   rollbackWizardSplitExtraction,
   setWizardMergedSale,
@@ -231,6 +232,20 @@ describe('wizard split order items store', () => {
       'requires server reconciliation or manual resolution',
     )
     expect(getWizardSplitOrderItems()).toEqual([])
+  })
+
+  it('rolls a submitted split extraction back when the server definitively refused it (4xx)', () => {
+    stageWizardSplitExtraction({
+      fallbackItems: [],
+      items: [splitItem],
+      mutation: extractionMutation,
+      source: recoverySource,
+    })
+
+    expect(markWizardSplitExtractionSubmitted(extractionMutation.operationId)).toBe(true)
+    expect(rejectWizardSplitExtraction(extractionMutation.operationId)).toBe(true)
+    expect(getWizardSplitOrderItems()).toEqual([])
+    expect(getWizardSplitRecovery()).toBe(null)
   })
 
   it('persists the linked final operation across hydration until it is explicitly settled', () => {

@@ -141,6 +141,26 @@ describe('wizard cart mutation controller', () => {
     expect(loadSalesPendingMutation({ ...scope, context: 'agreement-1:' })).toBeNull()
   })
 
+  it('drops a change the server refused with a 400 instead of locking the bill behind «Перевірити та повторити»', async () => {
+    const refusal = 'На жаль товару вже немає в наявності, його списали, перемістили або додали в інший рахунок/накладну.'
+    // The server marks a business refusal of the cart change with X-Mutation-Ledger-State: rejected.
+    mocks.remove.mockRejectedValueOnce(new ApiError(refusal, 400, null, { 'X-Mutation-Ledger-State': 'rejected' }))
+    const props = options()
+    const { result } = renderHook(useWizardCartMutation, { initialProps: props })
+    await act(async () => {
+      const context = result.current.beginBusy() as string
+      expect(await result.current.runCartMutation(context, deletion(result.current, context))).toBe(false)
+      result.current.endBusy(context)
+    })
+
+    expect(loadSalesPendingMutation(scope)).toBeNull()
+    expect(result.current.pendingMutationError).toBeNull()
+    expect(mocks.notify).toHaveBeenCalledWith(expect.objectContaining({ color: 'red', message: refusal }))
+    let next: string | null = null
+    act(() => { next = result.current.beginBusy() })
+    expect(next).not.toBeNull()
+  })
+
   it('shows an unknown first add in place and blocks further changes until it is checked', async () => {
     mocks.remove.mockRejectedValueOnce(new ApiError('Сервер не відповів вчасно', 503, null))
     const draft: SalesUkraineSale = { NetUid: '00000000-0000-0000-0000-000000000000' }

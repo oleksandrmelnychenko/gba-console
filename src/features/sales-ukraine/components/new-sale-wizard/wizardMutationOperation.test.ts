@@ -119,6 +119,26 @@ describe('wizard mutation idempotency and reconciliation', () => {
     expect(mutate.mock.calls.map(([id]) => id)).toEqual([operationId, operationId])
   })
 
+  it('settles a refusal the server marked as never entered its ledger', async () => {
+    const mutate = vi
+      .fn<(id: string) => Promise<void>>()
+      .mockRejectedValueOnce(new ApiError('На жаль товару вже немає в наявності', 400, null, { 'X-Mutation-Ledger-State': 'rejected' }))
+    const reconcile = vi.fn(async () => sale([{ NetUid: 'row-1', Qty: 1 }]))
+    const operation: WizardMutationOperation<SalesUkraineSale> = {
+      context: 'agreement-1:sale-1',
+      inspect: (snapshot) => inspectWizardCartMutation(snapshot, operationId, {
+        afterQty: 2,
+        beforeQty: 1,
+        kind: 'row-quantity',
+        rowNetUid: 'row-1',
+      }),
+      mutate,
+      operationId,
+    }
+
+    await expect(attemptWizardMutation(operation, reconcile)).resolves.toMatchObject({ status: 'definitive-failure' })
+  })
+
   it('retains an unknown pending retry after another 5xx and keeps the same key', async () => {
     const mutate = vi
       .fn<(id: string) => Promise<void>>()
