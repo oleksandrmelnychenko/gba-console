@@ -100,6 +100,10 @@ const COMPETITOR_SOURCES: CompetitorSource[] = [
 ]
 
 const DEFAULT_SOURCES = COMPETITOR_SOURCES.map((source) => source.key)
+// Server contract (pricing/competitors/search): the query must have 2–180 characters.
+const QUERY_MIN_LENGTH = 2
+const QUERY_MAX_LENGTH = 180
+const QUERY_LENGTH_MESSAGE = 'Пошуковий запит має містити від 2 до 180 символів'
 
 function buildSiteSearchUrl(domain: string, query: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(`site:${domain} ${query}`)}`
@@ -124,7 +128,7 @@ function buildDefaultQuery(product: SalesUkraineProduct | null): string {
     return true
   })
 
-  return unique.join(' ')
+  return unique.join(' ').slice(0, QUERY_MAX_LENGTH)
 }
 
 export function CompetitorWebSearchPanel({ product }: CompetitorWebSearchPanelProps) {
@@ -159,7 +163,11 @@ function CompetitorWebSearchPanelContent({
   const controllerRef = useRef<AbortController | null>(null)
 
   const trimmedQuery = query.trim()
-  const searchDisabled = !canRunCompetitorSearch || trimmedQuery.length < 2 || selectedSources.length === 0 || status === 'loading'
+  const queryLengthError = trimmedQuery.length > 0
+    && (trimmedQuery.length < QUERY_MIN_LENGTH || trimmedQuery.length > QUERY_MAX_LENGTH)
+    ? t(QUERY_LENGTH_MESSAGE)
+    : undefined
+  const searchDisabled = !canRunCompetitorSearch || trimmedQuery.length < QUERY_MIN_LENGTH || trimmedQuery.length > QUERY_MAX_LENGTH || selectedSources.length === 0 || status === 'loading'
 
   useEffect(() => () => controllerRef.current?.abort(), [])
 
@@ -204,7 +212,10 @@ function CompetitorWebSearchPanelContent({
       }
 
       setStatus('error')
-      setError(userErrorText(searchError, t('Не вдалося просканувати ринок')))
+      // A 400 about the query length is the user's input, not a reason to «try later».
+      setError(searchError instanceof ApiError && searchError.status === 400 && /2-180|characters/i.test(searchError.message)
+        ? t(QUERY_LENGTH_MESSAGE)
+        : userErrorText(searchError, t('Не вдалося просканувати ринок')))
     }
   }
 
@@ -236,6 +247,8 @@ function CompetitorWebSearchPanelContent({
           <TextInput
             aria-label={t('Пошуковий запит')}
             className="competitor-radar__query"
+            error={queryLengthError}
+            maxLength={QUERY_MAX_LENGTH}
             leftSection={<Search size={17} strokeWidth={2} />}
             onChange={(event) => setQuery(event.currentTarget.value)}
             onKeyDown={(event) => {
