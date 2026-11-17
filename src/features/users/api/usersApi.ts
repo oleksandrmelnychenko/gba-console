@@ -1,8 +1,33 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { IdentityResponse, UserProfile, UserRole } from '../types'
 
-export async function getUsers(value?: string, signal?: AbortSignal): Promise<UserProfile[]> {
+/**
+ * The search endpoint never returns deleted users, so the «Видалені» status filter reads the registry with
+ * `includeDeleted` and narrows it by the typed text here.
+ */
+export async function getUsers(
+  value?: string,
+  signal?: AbortSignal,
+  filter?: { includeDeleted?: boolean },
+): Promise<UserProfile[]> {
   const normalizedValue = value?.trim()
+
+  if (filter?.includeDeleted) {
+    const result = await apiRequest<unknown>('/usermanagement/profiles/users/registry', {
+      query: { includeDeleted: true },
+      ...(signal ? { signal } : {}),
+    })
+    const users = normalizeUsers(result)
+    const needle = normalizedValue?.toLocaleLowerCase('uk')
+
+    return needle
+      ? users.filter((user) =>
+          [user.FirstName, user.LastName, user.MiddleName, user.Email, user.PhoneNumber].some((field) =>
+            field?.toLocaleLowerCase('uk').includes(needle),
+          ),
+        )
+      : users
+  }
   const path = normalizedValue
     ? '/usermanagement/profiles/users/search'
     : '/usermanagement/profiles/users/registry'

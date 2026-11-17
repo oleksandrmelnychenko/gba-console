@@ -50,6 +50,20 @@ describe('users permission-scoped transport', () => {
     )
   })
 
+  it('asks the registry for deleted users when the «Видалені» filter is picked and narrows by the typed text', async () => {
+    vi.mocked(apiRequest).mockResolvedValueOnce([
+      { NetUid: 'a', LastName: 'Анна', Deleted: true },
+      { NetUid: 'b', LastName: 'Борис', Deleted: true },
+    ])
+
+    const users = await getUsers('анн', undefined, { includeDeleted: true })
+
+    expect(apiRequest).toHaveBeenCalledWith('/usermanagement/profiles/users/registry', {
+      query: { includeDeleted: true },
+    })
+    expect(users.map((item) => item.NetUid)).toEqual(['a'])
+  })
+
   it('uses independent create, edit, delete and password-reset façades', async () => {
     await createUser(user, 'secret')
     await updateUser(user)

@@ -160,6 +160,9 @@ function UsersPageContent() {
   )
   const columns = useUserColumns()
 
+  // Deleted users come from the registry only on request; the other statuses keep the default list.
+  const includeDeleted = statusFilter === USER_STATUS_DELETED
+
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -169,7 +172,7 @@ function UsersPageContent() {
       setError(null)
 
       try {
-        const nextUsers = await getUsers(normalizedSearchValue, controller.signal)
+        const nextUsers = await getUsers(normalizedSearchValue, controller.signal, { includeDeleted })
 
         if (!cancelled) {
           setUsers(nextUsers)
@@ -200,7 +203,7 @@ function UsersPageContent() {
       cancelled = true
       controller.abort()
     }
-  }, [reloadKey, normalizedSearchValue, setError, setLoading, setUsers, t])
+  }, [includeDeleted, reloadKey, normalizedSearchValue, setError, setLoading, setUsers, t])
 
   function resetFilters() {
     setSearchValue('')
