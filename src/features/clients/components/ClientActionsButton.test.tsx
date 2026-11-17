@@ -78,7 +78,11 @@ describe('client actions from a report', () => {
       expect(await screen.findByText('Вкажіть ціле число днів від 0 до 365')).toBeTruthy()
     }
     expect(updateClientOrderExpireDaysForRegistry).not.toHaveBeenCalled()
-    fireEvent.change(field, { target: { value: '30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Скасувати' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Дні резерву' }))
+    await screen.findByRole('textbox', { name: 'Днів резерву' })
+    expect(screen.queryByText('Вкажіть ціле число днів від 0 до 365')).toBeNull()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Днів резерву' }), { target: { value: '30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
     await waitFor(() => expect(updateClientOrderExpireDaysForRegistry).toHaveBeenCalledWith('client-1', 30))
   })

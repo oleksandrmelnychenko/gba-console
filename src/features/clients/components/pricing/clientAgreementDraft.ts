@@ -51,3 +51,10 @@ export function isAgreementPeriodInverted(agreement: Pick<Agreement, 'FromDate' 
 
   return Boolean(from && to && from > to)
 }
+
+/** The first agreement with an inverted period: the new-client wizard refuses to create it. */
+export function findInvertedAgreement(clientAgreements: ClientAgreement[] | undefined): Agreement | null {
+  return (clientAgreements || [])
+    .map((clientAgreement) => clientAgreement.Agreement)
+    .find((agreement): agreement is Agreement => Boolean(agreement) && isAgreementPeriodInverted(agreement as Agreement)) ?? null
+}

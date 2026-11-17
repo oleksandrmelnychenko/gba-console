@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appendNewClientAgreementDraft, isAgreementPeriodInverted } from './clientAgreementDraft'
+import { appendNewClientAgreementDraft, findInvertedAgreement, isAgreementPeriodInverted } from './clientAgreementDraft'
 
 describe('appendNewClientAgreementDraft', () => {
   it('does not treat a UI-only identifier as a persisted NetUid', () => {
@@ -52,5 +52,13 @@ describe('isAgreementPeriodInverted', () => {
     expect(isAgreementPeriodInverted({ FromDate: '2020-01-01', ToDate: '2020-01-01' })).toBe(false)
     expect(isAgreementPeriodInverted({ FromDate: '2020-01-01', ToDate: '2030-01-01' })).toBe(false)
     expect(isAgreementPeriodInverted({ FromDate: '2030-01-01' })).toBe(false)
+  })
+
+  it('finds the wizard agreement that blocks client creation', () => {
+    expect(findInvertedAgreement([
+      { Agreement: { Name: 'Ок', FromDate: '2020-01-01', ToDate: '2030-01-01' } },
+      { Agreement: { Name: 'Навпаки', FromDate: '2030-01-01', ToDate: '2020-01-01' } },
+    ])?.Name).toBe('Навпаки')
+    expect(findInvertedAgreement(undefined)).toBeNull()
   })
 })

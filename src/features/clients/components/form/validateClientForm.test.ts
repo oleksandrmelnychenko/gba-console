@@ -104,6 +104,8 @@ describe('validateClientForm format rules', () => {
       { t },
     )
     expect(individual.USREOU).toBeUndefined()
+    expect(validateClientForm({ USREOU: '00000000' } as Client, buyerRole, 'Too many characters', { t }).USREOU)
+      .toBe('ЄДРПОУ має містити 8 цифр')
     expect(individual.TIN).toBe('ІПН фізичної особи має містити 10 цифр')
   })
 

@@ -224,11 +224,15 @@ export function ReserveDaysModal({
 }) {
   const { t } = useI18n()
   const [daysError, setDaysError] = useState<string | null>(null)
+  const [errorClientNetUid, setErrorClientNetUid] = useState<string | undefined>(undefined)
+  // A stale error must not greet the next opening (another client or the same one reopened).
+  const visibleDaysError = client && client.NetUid === errorClientNetUid ? daysError : null
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (parseReserveDays(days) === null) {
       event.preventDefault()
       setDaysError(t('Вкажіть ціле число днів від 0 до 365'))
+      setErrorClientNetUid(client?.NetUid)
       return
     }
 
@@ -245,14 +249,17 @@ export function ReserveDaysModal({
       centered
       opened={Boolean(client)}
       title={client ? `${t('Резерв')}: ${getClientDisplayName(client)}` : t('Резерв')}
-      onClose={onClose}
+      onClose={() => {
+        setDaysError(null)
+        onClose()
+      }}
     >
       <form noValidate onSubmit={handleSubmit}>
         <Stack className="app-compact-form" gap="md">
           <NumberInput
             allowDecimal={false}
             clampBehavior="none"
-            error={daysError}
+            error={visibleDaysError}
             label={t('Днів резерву')}
             max={MAX_RESERVE_DAYS}
             min={0}
@@ -263,7 +270,14 @@ export function ReserveDaysModal({
             }}
           />
           <AppModalFooter>
-            <Button variant="default" color="gray" onClick={onClose}>
+            <Button
+              variant="default"
+              color="gray"
+              onClick={() => {
+                setDaysError(null)
+                onClose()
+              }}
+            >
               {t('Скасувати')}
             </Button>
             <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} type="submit">

@@ -50,7 +50,7 @@ export function ContactInfoFields({ client, errors, role, sourceManaged, onChang
               disabled={sourceManaged}
               error={errors?.ClientNumber}
               label={t('Телефон')}
-              maxLength={25}
+              maxLength={30}
               value={client.ClientNumber || ''}
               onChange={(event) => onChange('ClientNumber', event.currentTarget.value)}
             />

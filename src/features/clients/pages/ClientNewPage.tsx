@@ -48,6 +48,7 @@ import { PricingPanel } from '../components/pricing/PricingPanel'
 import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { type ClientFormErrors, validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
+import { findInvertedAgreement } from '../components/pricing/clientAgreementDraft'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 import './client-new-page.css'
 
@@ -732,6 +733,13 @@ export function ClientNewPage() {
 
     if ((draftToSubmit.ClientAgreements || []).length === 0) {
       setError(t('Додайте договір'))
+      return
+    }
+
+    const invertedAgreement = findInvertedAgreement(draftToSubmit.ClientAgreements)
+
+    if (invertedAgreement) {
+      setError(`${t('Договір')} «${invertedAgreement.Name || ''}»: ${t('дата «Діє з» пізніша за «Діє по»')}`)
       return
     }
 

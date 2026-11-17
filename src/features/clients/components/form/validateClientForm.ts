@@ -27,7 +27,8 @@ const PHONE_FIELDS = ['ClientNumber', 'SMSNumber', 'AccountantNumber', 'Director
 
 function digitsOnly(value: string): string | null {
   const compact = value.replace(/\s+/g, '')
-  return /^\d+$/.test(compact) ? compact : null
+  // All zeros is a placeholder, not a code (the server's NormalizeLegalCode rejects it too).
+  return /^\d+$/.test(compact) && /[1-9]/.test(compact) ? compact : null
 }
 
 /** Lenient phone: digits, spaces, +, -, parentheses; 10–15 digits in total. */
