@@ -1,13 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { OrbSplash } from '../../../shared/ui/orb/Orb'
 import { useAuth } from '../useAuth'
+import { SessionBootScreen } from './SessionBootScreen'
 
 export function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
-    return <OrbSplash className="app-orb-splash--viewport" label="Завантаження" />
+    return <SessionBootScreen />
   }
 
   if (!isAuthenticated) {
