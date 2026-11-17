@@ -335,7 +335,14 @@ function isFromPortaledLayer(event: ReactKeyboardEvent<HTMLElement>): boolean {
   const root = event.currentTarget
   const target = event.target
 
-  return root instanceof Node && target instanceof Node && root !== target && !root.contains(target)
+  if (root instanceof Node && target instanceof Node && root !== target && !root.contains(target)) {
+    return true
+  }
+
+  // A nested dialog (e.g. ЕКСПОРТ after «Друк») can be open while focus stayed in the wizard: its own
+  // Escape handler closes it, the wizard must not ask «Закрити вікно?» on the same key press.
+  return root instanceof Element && Array.from(root.ownerDocument.querySelectorAll('[role="dialog"]'))
+    .some((dialog) => !dialog.contains(root) && !root.contains(dialog))
 }
 
 export function dispatchWizardKey(event: ReactKeyboardEvent<HTMLElement>): boolean {

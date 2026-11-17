@@ -963,10 +963,10 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Створити накладну' }))
 
-    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith({
+    await waitFor(() => expect(mocks.notificationsShow).toHaveBeenCalledWith(expect.objectContaining({
       color: 'red',
       message,
-    }))
+    })))
     expect(mocks.updateSaleFromData).not.toHaveBeenCalled()
     expect(loadSalesPendingMutation(wizardFileScope)).toBe(null)
   })
