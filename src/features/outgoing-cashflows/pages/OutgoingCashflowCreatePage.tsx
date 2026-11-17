@@ -56,7 +56,9 @@ function OutgoingCashflowCreatePageContent() {
   const navigate = useNavigate()
   const [isFormDirty, setFormDirty] = useState(false)
   // Escape / X on a filled order ask before the data is dropped.
-  const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(isFormDirty)
+  const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(isFormDirty, {
+    onBack: () => navigate(OUTGOING_CASHFLOWS_PATH, { replace: true }),
+  })
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [paymentGroupTitle, setPaymentGroupTitle] = useState(

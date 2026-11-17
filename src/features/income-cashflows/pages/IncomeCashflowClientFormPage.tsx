@@ -230,6 +230,7 @@ function IncomeCashflowClientFormPageContent() {
   // Escape / X / Скасувати on a filled order ask before the data is dropped.
   const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(
     Boolean(form.amount) || Boolean(form.comment.trim()),
+    { onBack: () => navigate(INCOME_CASHFLOWS_PATH, { replace: true }) },
   )
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)

@@ -1,11 +1,11 @@
 import { MantineProvider } from '@mantine/core'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18nProvider'
 import { useUnsavedChangesGuard } from './UnsavedChangesGuard'
 
-function Form({ isDirty, onClose }: { isDirty: boolean; onClose: () => void }) {
-  const { guard, modal } = useUnsavedChangesGuard(isDirty)
+function Form({ isDirty, onBack, onClose }: { isDirty: boolean; onBack?: () => void; onClose: () => void }) {
+  const { guard, modal } = useUnsavedChangesGuard(isDirty, { onBack })
 
   return (
     <>
@@ -58,5 +58,26 @@ describe('useUnsavedChangesGuard', () => {
     window.dispatchEvent(event)
 
     expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('asks on browser Back for a filled form and leaves only on «Закрити без збереження»', async () => {
+    const onBack = vi.fn()
+
+    render(
+      <MantineProvider>
+        <I18nProvider>
+          <Form isDirty onBack={onBack} onClose={vi.fn()} />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    await act(async () => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: null }))
+    })
+
+    expect(await screen.findByText('Є незбережені зміни')).toBeTruthy()
+    expect(onBack).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Закрити без збереження' }))
+    expect(onBack).toHaveBeenCalledTimes(1)
   })
 })
