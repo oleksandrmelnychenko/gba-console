@@ -34,6 +34,7 @@ import type {
   Pricing,
 } from '../../types'
 import { useClientSourceOwnership, type SourceEditMode } from '../../clientSourceOwnership'
+import { isWholeDays } from './agreementFormRules'
 
 const EDIT_AGREEMENT_PERMISSION = PermissionKeys.Clients.Contract.Edit
 const EXPORT_AGREEMENT_DOCUMENT_PERMISSION = PermissionKeys.Clients.Contract.ExportDocument
@@ -201,6 +202,11 @@ export function ClientAgreementsPanel({
 
     if (isAgreementPeriodInverted(formDraft)) {
       dispatch({ error: t('Дата «Діє по» не може бути раніше за «Діє з»'), field: 'toDate', type: 'setFormError' })
+      return
+    }
+
+    if (!isWholeDays(formDraft.NumberDaysDebt)) {
+      dispatch({ error: t('Кількість днів — ціле число'), type: 'setFormError' })
       return
     }
 

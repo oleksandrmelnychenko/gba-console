@@ -29,11 +29,17 @@ export function toMoneyAmount(value: number | string): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : 0
 }
 
-/* Кількість днів боргу: a whole non-negative number (7.5 made the card save fail with 400). */
-export function toWholeDays(value: number | string): number {
-  const parsed = typeof value === 'number' ? value : Number(value)
+/* Кількість днів боргу is kept as typed (blocking «.» turned 7.5 into 75 silently);
+   a fraction is reported under the field and the agreement is not saved
+   (7.5 made the card save fail with 400 and lose the agreement). */
+export function toDaysValue(value: number | string): number {
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
 
-  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 0
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+export function isWholeDays(value: number | undefined): boolean {
+  return value === undefined || Number.isInteger(value)
 }
 
 function findByName<T extends { Name?: string }>(items: T[], name: string): T | undefined {

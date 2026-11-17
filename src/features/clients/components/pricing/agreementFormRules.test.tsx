@@ -5,7 +5,7 @@ import { I18nProvider } from '../../../../shared/i18n/I18nProvider'
 import { theme } from '../../../../shared/theme/theme'
 import type { Agreement, Pricing } from '../../types'
 import { ClientAgreementsPanel } from './ClientAgreementsPanel'
-import { toMoneyAmount, toOptions, toWholeDays, vatAccountingPatch } from './agreementFormRules'
+import { isWholeDays, toDaysValue, toMoneyAmount, toOptions, vatAccountingPatch } from './agreementFormRules'
 import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
 
 vi.mock('../../../auth/useAuth', () => ({
@@ -31,9 +31,11 @@ describe('agreement form rules', () => {
     expect(toMoneyAmount(500.555)).toBe(500.56)
     expect(toMoneyAmount('500,5')).toBe(500.5)
     expect(toMoneyAmount(-5)).toBe(0)
-    expect(toWholeDays(7.5)).toBe(7)
-    expect(toWholeDays(-3)).toBe(0)
-    expect(toWholeDays('')).toBe(0)
+    // Days stay as typed so «7.5» is not silently 75 or 7; the fraction is reported.
+    expect(toDaysValue('7.5')).toBe(7.5)
+    expect(isWholeDays(7.5)).toBe(false)
+    expect(isWholeDays(30)).toBe(true)
+    expect(toDaysValue(-3)).toBe(0)
   })
 
   it('a new buyer agreement is not «full prepayment» by default', () => {
@@ -70,5 +72,35 @@ describe('agreement pickers', () => {
       { label: 'Без назви (#3)', value: '3' },
       { label: 'QA ТОВ', value: '4' },
     ])
+  })
+})
+
+describe('«Кількість днів боргу» with a fraction', () => {
+  it('is reported under the field and the agreement is not saved', () => {
+    const onSave = vi.fn()
+    render(
+      <MantineProvider env="test" theme={theme}>
+        <I18nProvider>
+          <ClientAgreementsPanel
+            agreements={[{ Id: 1, NetUid: 'ca-1', Agreement: { Id: 2, NetUid: 'a-2', Name: 'Основний', Pricing: nonVat, NumberDaysDebt: 7.5 } }]}
+            currencies={[]}
+            isProvider={false}
+            organizations={[]}
+            pricings={[nonVat, vat]}
+            promotionalPricings={[nonVat, vat]}
+            sourceEditMode="manual"
+            onDeleteAgreement={vi.fn()}
+            onSaveAgreement={onSave}
+          />
+        </I18nProvider>
+      </MantineProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Зберегти' }))
+
+    expect(within(dialog).getAllByText('Кількість днів — ціле число').length).toBeGreaterThan(0)
+    expect(onSave).not.toHaveBeenCalled()
   })
 })

@@ -28,7 +28,7 @@ import {
 } from './pricingNames'
 import type { Agreement, Currency, Organization, Pricing, ProviderPricing } from '../../types'
 import { organizationHasVat } from './organizationVat'
-import { filterPricingsByVat, toOptions, toMoneyAmount, toWholeDays, vatAccountingPatch } from './agreementFormRules'
+import { filterPricingsByVat, isWholeDays, toDaysValue, toOptions, toMoneyAmount, vatAccountingPatch } from './agreementFormRules'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDateInput } from '../../../../shared/ui/AppDateInput'
 
@@ -263,12 +263,12 @@ export function AgreementForm({
                   onChange={(value) => onChange({ AmountDebt: toMoneyAmount(value) })}
                 />
                 <NumberInput
-                  allowDecimal={false}
                   allowNegative={false}
+                  error={isWholeDays(agreement.NumberDaysDebt) ? undefined : t('Кількість днів — ціле число')}
                   label={t('Кількість днів боргу')}
                   min={0}
                   value={agreement.NumberDaysDebt ?? ''}
-                  onChange={(value) => onChange({ NumberDaysDebt: toWholeDays(value) })}
+                  onChange={(value) => onChange({ NumberDaysDebt: toDaysValue(value) })}
                 />
               </Group>
             )}
