@@ -205,8 +205,11 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   useEffect(() => {
     const value = form.userSearch.trim()
     let cancelled = false
+    // A picked employee shows its own label: searching that label again
+    // could replace the list without the picked employee.
+    const isPicked = Boolean(form.selectedColleagueValue)
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
+      if (!value || isPicked) {
         return
       }
 
@@ -223,7 +226,7 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [form.userSearch, setUsers])
+  }, [form.selectedColleagueValue, form.userSearch, setUsers])
 
   function updateForm(patch: Partial<CreateFormState>) {
     setForm((current) => ({ ...current, ...patch }))

@@ -240,8 +240,10 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
     const value = form.supplierSearch.trim()
     const requestId = (searchRequestRef.current.supplier || 0) + 1
     searchRequestRef.current.supplier = requestId
+    // A picked supplier shows its own label: no need to search it again.
+    const isPicked = Boolean(form.selectedSupplierValue)
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
+      if (!value || isPicked) {
         return
       }
 

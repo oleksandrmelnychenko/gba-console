@@ -3,7 +3,7 @@ import {
   type AutocompleteProps,
   type ComboboxItem,
 } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 export interface SearchableSelectProps extends AutocompleteProps {
   nothingFoundMessage?: ReactNode
@@ -48,7 +48,14 @@ export function SearchableSelect({
   style,
   value = '',
 }: SearchableSelectProps) {
-  const options = normalizeOptions(data)
+  // The option the user picked last. Consumers usually refresh their lookup
+  // with the picked label; if that answer no longer contains the option, the
+  // select would lose its value and clear the field (and the consumer's pick).
+  const [pickedOption, setPickedOption] = useState<SearchableOption | null>(null)
+  // Label already reported to the consumer for the option being submitted, so
+  // Mantine's own onChange echo does not report it a second time.
+  const submittedLabelRef = useRef<string | null>(null)
+  const options = withPickedOption(normalizeOptions(data), pickedOption, value)
   const selectedOption = findOptionByLabel(options, value)
   const resolvedClassName = className
     ? `app-searchable-select ${className}`
@@ -81,16 +88,36 @@ export function SearchableSelect({
       onBlur={onBlur}
       onChange={(nextValue, option) => {
         if (nextValue === null) {
+          setPickedOption(null)
           onChange?.('')
           return
         }
 
-        onChange?.(option?.label ?? nextValue)
+        const nextLabel = option?.label ?? nextValue
+
+        if (submittedLabelRef.current === nextLabel) {
+          submittedLabelRef.current = null
+          return
+        }
+
+        onChange?.(nextLabel)
       }}
       onClear={onClear}
       onDropdownClose={onDropdownClose}
       onDropdownOpen={onDropdownOpen}
-      onOptionSubmit={onOptionSubmit}
+      onOptionSubmit={(submittedValue) => {
+        const option = options.find((item) => item.value === submittedValue)
+
+        if (option) {
+          setPickedOption(option)
+          submittedLabelRef.current = option.label
+          // Text first, pick second: a consumer that clears its pick on every
+          // text change still ends up with the pick, not an empty selection.
+          onChange?.(option.label)
+        }
+
+        onOptionSubmit?.(submittedValue)
+      }}
       onSearchChange={(search) => {
         if (search !== selectedOption?.label) {
           onChange?.(search)
@@ -98,6 +125,20 @@ export function SearchableSelect({
       }}
     />
   )
+}
+
+function withPickedOption(
+  options: SearchableOption[],
+  pickedOption: SearchableOption | null,
+  value: string | undefined,
+) {
+  if (!pickedOption || !value || pickedOption.label !== value) {
+    return options
+  }
+
+  return options.some((option) => option.label === value)
+    ? options
+    : [pickedOption, ...options]
 }
 
 function findOptionByLabel(options: SearchableOption[], label: string | undefined) {

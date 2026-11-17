@@ -248,7 +248,14 @@ function IncomeCashflowUserFormPageContent() {
   useEffect(() => {
     const value = form.userSearch.trim()
     let cancelled = false
+    // A picked colleague shows its own label: searching that label again
+    // could replace the list without the picked colleague.
+    const isPicked = Boolean(form.selectedUserValue)
     const timeoutId = window.setTimeout(() => {
+      if (isPicked) {
+        return
+      }
+
       if (!value) {
         setUsers([])
         return
@@ -267,7 +274,7 @@ function IncomeCashflowUserFormPageContent() {
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [form.userSearch, setUsers])
+  }, [form.selectedUserValue, form.userSearch, setUsers])
 
   function updateForm(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
