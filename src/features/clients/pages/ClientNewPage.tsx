@@ -69,6 +69,7 @@ const NEW_CLIENT_FIELD_STEPS: Partial<Record<string, NewClientStep>> = {
   TIN: 'general-information',
   USREOU: 'general-information',
   EmailAddress: 'contact-information',
+  ClientNumber: 'contact-information',
   FaxNumber: 'contact-information',
   ICQ: 'contact-information',
   SMSNumber: 'contact-information',
@@ -704,7 +705,7 @@ export function ClientNewPage() {
     }
 
     const draftToSubmit = applyPendingDiscountDraft(draft, pendingDiscountDraftRef.current) as ClientDraft
-    const validationErrors = validateClientForm(draftToSubmit, role, t('Забагато символів'))
+    const validationErrors = validateClientForm(draftToSubmit, role, t('Забагато символів'), { t })
     setFormErrors(validationErrors)
 
     if (Object.keys(validationErrors).length > 0) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appendNewClientAgreementDraft } from './clientAgreementDraft'
+import { appendNewClientAgreementDraft, isAgreementPeriodInverted } from './clientAgreementDraft'
 
 describe('appendNewClientAgreementDraft', () => {
   it('does not treat a UI-only identifier as a persisted NetUid', () => {
@@ -43,5 +43,14 @@ describe('appendNewClientAgreementDraft', () => {
     expect(second.agreement.TempId).toBe(6)
     expect(second.clientAgreements[0]).toBe(existing[0])
     expect(second.clientAgreements[1]).toBe(existing[1])
+  })
+})
+
+describe('isAgreementPeriodInverted', () => {
+  it('flags a start date after the end date only', () => {
+    expect(isAgreementPeriodInverted({ FromDate: '2030-01-01', ToDate: '2020-01-01' })).toBe(true)
+    expect(isAgreementPeriodInverted({ FromDate: '2020-01-01', ToDate: '2020-01-01' })).toBe(false)
+    expect(isAgreementPeriodInverted({ FromDate: '2020-01-01', ToDate: '2030-01-01' })).toBe(false)
+    expect(isAgreementPeriodInverted({ FromDate: '2030-01-01' })).toBe(false)
   })
 })

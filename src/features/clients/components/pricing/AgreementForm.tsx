@@ -41,7 +41,7 @@ export type AgreementFormProps = {
   promotionalPricings: Pricing[]
   isVatAccountingHidden: boolean
   isRetailClient?: boolean
-  errors?: { name?: string }
+  errors?: { name?: string; toDate?: string }
   onChange: (patch: Partial<Agreement>) => void
 }
 
@@ -269,6 +269,7 @@ export function AgreementForm({
                 onChange={(event) => onChange({ FromDate: event.currentTarget.value || undefined })}
               />
               <AppDateInput
+                error={errors?.toDate}
                 label={t('Діє по')}
                 type="date"
                 value={toInputDate(agreement.ToDate)}

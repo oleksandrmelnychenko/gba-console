@@ -23,6 +23,7 @@ import { PermissionKeys } from '../../../../shared/auth/permissionKeys'
 import { AgreementForm } from './AgreementForm'
 import { organizationHasVat } from './organizationVat'
 import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
+import { isAgreementPeriodInverted } from './clientAgreementDraft'
 import './client-agreements.css'
 import type {
   Agreement,
@@ -65,6 +66,8 @@ type AgreementsPanelState = {
   downloadModalOpened: boolean
   formDraft: Agreement | null
   formError: string | null
+  /** The field the error belongs to: it is shown under that field instead of at the bottom. */
+  formErrorField: AgreementFormErrorField | null
   formIsEdit: boolean
   formOpened: boolean
 }
@@ -76,12 +79,15 @@ type AgreementsPanelAction =
   | { type: 'openDownload' }
   | { type: 'openEdit'; agreement: Agreement }
   | { type: 'patchDraft'; patch: Partial<Agreement> }
-  | { type: 'setFormError'; error: string | null }
+  | { type: 'setFormError'; error: string | null; field?: AgreementFormErrorField }
+
+type AgreementFormErrorField = 'name' | 'toDate'
 
 const initialAgreementsPanelState: AgreementsPanelState = {
   downloadModalOpened: false,
   formDraft: null,
   formError: null,
+  formErrorField: null,
   formIsEdit: false,
   formOpened: false,
 }
@@ -97,6 +103,7 @@ function agreementsPanelReducer(state: AgreementsPanelState, action: AgreementsP
         ...state,
         formDraft: action.draft,
         formError: null,
+        formErrorField: null,
         formIsEdit: false,
         formOpened: true,
       }
@@ -107,6 +114,7 @@ function agreementsPanelReducer(state: AgreementsPanelState, action: AgreementsP
         ...state,
         formDraft: { ...action.agreement },
         formError: null,
+        formErrorField: null,
         formIsEdit: true,
         formOpened: true,
       }
@@ -115,9 +123,10 @@ function agreementsPanelReducer(state: AgreementsPanelState, action: AgreementsP
         ...state,
         formDraft: state.formDraft ? { ...state.formDraft, ...action.patch } : state.formDraft,
         formError: null,
+        formErrorField: null,
       }
     case 'setFormError':
-      return { ...state, formError: action.error }
+      return { ...state, formError: action.error, formErrorField: action.field ?? null }
   }
 }
 
@@ -150,7 +159,7 @@ export function ClientAgreementsPanel({
   const canExportDocument = hasPermission(EXPORT_AGREEMENT_DOCUMENT_PERMISSION)
 
   const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
-  const { downloadModalOpened, formDraft, formError, formIsEdit, formOpened } = state
+  const { downloadModalOpened, formDraft, formError, formErrorField, formIsEdit, formOpened } = state
   const formIsSourceManaged = isSourceManagedAgreement(formDraft)
 
   // Permissions refresh on window focus: close an open form once contract editing is revoked.
@@ -186,7 +195,12 @@ export function ClientAgreementsPanel({
     }
 
     if (!formDraft.Name || !formDraft.Name.trim()) {
-      dispatch({ error: t('Вкажіть найменування'), type: 'setFormError' })
+      dispatch({ error: t('Вкажіть найменування'), field: 'name', type: 'setFormError' })
+      return
+    }
+
+    if (isAgreementPeriodInverted(formDraft)) {
+      dispatch({ error: t('Дата «Діє по» не може бути раніше за «Діє з»'), field: 'toDate', type: 'setFormError' })
       return
     }
 
@@ -322,7 +336,7 @@ export function ClientAgreementsPanel({
             <AgreementForm
               agreement={formDraft}
               currencies={currencies}
-              errors={formError ? { name: !formDraft.Name?.trim() ? '*' : undefined } : undefined}
+              errors={formError && formErrorField ? { [formErrorField]: formError } : undefined}
               isEdit={formIsEdit}
               isProvider={isProvider}
               isRetailClient={isRetailClient}
@@ -333,7 +347,7 @@ export function ClientAgreementsPanel({
               onChange={patchDraft}
             />
 
-            {formError && (
+            {formError && !formErrorField && (
               <Text c="red" size="sm">
                 {formError}
               </Text>

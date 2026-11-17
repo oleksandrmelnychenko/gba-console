@@ -244,6 +244,8 @@ export function ClientEditPage() {
   const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
   const [manualSourceOverrideClientNetId, setManualSourceOverrideClientNetId] = useValueState<string | null>(null)
   const originalRegionRef = useRef<{ regionNetUid?: string; regionCode?: Client['RegionCode'] }>({})
+  // Server snapshots by NetUid: format rules only re-check values the user changed.
+  const loadedClientsRef = useRef(new Map<string, Client>())
   const pendingDiscountDraftRef = useRef<{
     clientNetUid: string
     draft: DiscountsTreeDraft
@@ -324,6 +326,9 @@ export function ClientEditPage() {
 
         if (!cancelled) {
           setClient(nextClient)
+          if (nextClient?.NetUid) {
+            loadedClientsRef.current.set(nextClient.NetUid, nextClient)
+          }
           if (!nextClient) {
             setStructureLoading(false)
           }
@@ -476,6 +481,9 @@ export function ClientEditPage() {
           return
         }
         setFolderClient(nextClient)
+        if (nextClient?.NetUid) {
+          loadedClientsRef.current.set(nextClient.NetUid, nextClient)
+        }
         if (!nextClient) {
           setFolderClientError(t('Дочірню картку не знайдено'))
         }
@@ -996,7 +1004,10 @@ export function ClientEditPage() {
     const clientRole = getClientRole(contentClient)
     const errors = isEcommerceSettingsUpdate
       ? {}
-      : validateClientForm(clientToSave, clientRole, t('Забагато символів'))
+      : validateClientForm(clientToSave, clientRole, t('Забагато символів'), {
+          t,
+          baseline: clientToSave.NetUid ? loadedClientsRef.current.get(clientToSave.NetUid) : null,
+        })
     setFormErrors(errors)
 
     if (Object.keys(errors).length > 0) {
@@ -1020,6 +1031,9 @@ export function ClientEditPage() {
         pendingDiscountDraftRef.current = null
       }
       const savedClient = updatedClient || clientToSave
+      if (savedClient.NetUid) {
+        loadedClientsRef.current.set(savedClient.NetUid, savedClient)
+      }
       if (savedClient.NetUid === client?.NetUid) {
         setClient(savedClient)
       } else if (selectedFolderClientNetUidRef.current === savedClient.NetUid) {

@@ -48,7 +48,9 @@ export function ContactInfoFields({ client, errors, role, sourceManaged, onChang
             />
             <TextInput
               disabled={sourceManaged}
+              error={errors?.ClientNumber}
               label={t('Телефон')}
+              maxLength={25}
               value={client.ClientNumber || ''}
               onChange={(event) => onChange('ClientNumber', event.currentTarget.value)}
             />

@@ -59,3 +59,63 @@ describe('validateClientForm', () => {
     expect(errors).not.toHaveProperty('USREOU')
   })
 })
+
+describe('validateClientForm format rules', () => {
+  const t = (value: string) => value
+
+  it('rejects malformed ЄДРПОУ, ІПН, email and phone before create', () => {
+    const errors = validateClientForm(
+      {
+        USREOU: 'abcxyz123456789012345',
+        TIN: 'ІПН-текст',
+        EmailAddress: 'not-an-email',
+        ClientNumber: 'телефон abc',
+        SMSNumber: '123',
+      } as Client,
+      buyerRole,
+      'Too many characters',
+      { t },
+    )
+
+    expect(errors.USREOU).toBe('ЄДРПОУ має містити 8 цифр')
+    expect(errors.TIN).toBe('ІПН має містити 10 або 12 цифр')
+    expect(errors.EmailAddress).toBe('Вкажіть коректний email, наприклад name@example.com')
+    expect(errors.ClientNumber).toBe('Телефон: 10–15 цифр; дозволені пробіли, +, -, дужки')
+    expect(errors.SMSNumber).toBe('Телефон: 10–15 цифр; дозволені пробіли, +, -, дужки')
+  })
+
+  it('accepts well-formed values and the individual 10-digit codes', () => {
+    expect(validateClientForm(
+      {
+        USREOU: '12345678',
+        TIN: '123456789012',
+        EmailAddress: 'buyer@example.com',
+        ClientNumber: '+38 (067) 123-45-67',
+      } as Client,
+      buyerRole,
+      'Too many characters',
+      { t },
+    )).toEqual({})
+
+    const individual = validateClientForm(
+      { IsIndividual: true, USREOU: '1234567890', TIN: '12345678' } as Client,
+      buyerRole,
+      'Too many characters',
+      { t },
+    )
+    expect(individual.USREOU).toBeUndefined()
+    expect(individual.TIN).toBe('ІПН фізичної особи має містити 10 цифр')
+  })
+
+  it('does not block a card save on a legacy value the user did not change', () => {
+    const legacy = { USREOU: '0000-legacy', EmailAddress: 'legacy', ClientNumber: 'n/a' } as Client
+
+    expect(validateClientForm({ ...legacy }, buyerRole, 'Too many characters', { t, baseline: legacy })).toEqual({})
+    expect(validateClientForm(
+      { ...legacy, EmailAddress: 'still-wrong' },
+      buyerRole,
+      'Too many characters',
+      { t, baseline: legacy },
+    )).toEqual({ EmailAddress: 'Вкажіть коректний email, наприклад name@example.com' })
+  })
+})
