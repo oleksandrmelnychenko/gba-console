@@ -5,7 +5,7 @@
 .wizard-cross-sell-graph {
   display: grid;
   gap: 56px;
-  grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(268px, 320px) minmax(0, 1fr);
   height: min(680px, calc(100vh - 220px));
   min-height: 440px;
   overflow: hidden;

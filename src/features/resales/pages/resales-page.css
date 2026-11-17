@@ -426,7 +426,7 @@
   align-items: stretch;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(250px, 1fr) minmax(520px, auto) auto;
+  grid-template-columns: minmax(248px, 1fr) minmax(520px, auto) auto;
   padding: 12px 12px;
   position: relative;
 }
@@ -457,7 +457,7 @@
   align-items: stretch;
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(4, minmax(110px, 1fr));
+  grid-template-columns: repeat(4, minmax(108px, 1fr));
 }
 
 .resale-detail-heading__meta {
@@ -680,7 +680,7 @@
 
 .resale-detail-command-bar {
   flex: 0 0 auto;
-  grid-template-columns: minmax(320px, 1fr) 180px 230px auto;
+  grid-template-columns: minmax(320px, 1fr) 180px 228px auto;
 }
 
 .resale-detail-command-bar__actions,
@@ -726,7 +726,7 @@
   }
 
   .resale-detail-command-bar {
-    grid-template-columns: minmax(260px, 1fr) 170px 200px auto;
+    grid-template-columns: minmax(260px, 1fr) 168px 200px auto;
   }
 }
 

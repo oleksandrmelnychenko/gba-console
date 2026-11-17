@@ -22,7 +22,7 @@
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   gap: 8px;
-  grid-template-columns: 310px minmax(300px, 1fr) auto auto;
+  grid-template-columns: 308px minmax(300px, 1fr) auto auto;
   overflow-x: auto;
 }
 
@@ -294,7 +294,7 @@
 .accountable-expense-detail-hero {
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.78fr);
+  grid-template-columns: minmax(0, 1fr) minmax(388px, 0.78fr);
   padding: 12px;
 }
 

@@ -606,7 +606,7 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: 150px minmax(150px, 1fr);
+  grid-template-columns: 148px minmax(148px, 1fr);
   min-height: 188px;
 }
 
@@ -841,7 +841,7 @@
 
   .procure-dashboard__forecast-list-cell {
     gap: 8px;
-    grid-template-columns: minmax(190px, 1fr) 32px;
+    grid-template-columns: minmax(188px, 1fr) 32px;
   }
 
   .procure-dashboard__forecast-list-meta {
@@ -974,7 +974,7 @@
 }
 
 .procure-cockpit-bar__lens {
-  flex: 0 1 270px;
+  flex: 0 1 268px;
   min-width: 0;
   width: 100%;
 }
@@ -1360,7 +1360,7 @@
   border-radius: 50%;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
-  flex: 0 0 34px;
+  flex: 0 0 32px;
   height: 32px;
   justify-content: center;
   width: 32px;
@@ -1821,7 +1821,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: flex;
-  flex: 0 0 clamp(360px, 28vw, 410px);
+  flex: 0 0 clamp(360px, 28vw, 408px);
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
@@ -2105,7 +2105,7 @@
   .basket-supply-command-bar.is-split .data-table-layout-control .mantine-Button-section,
   .procure-cockpit-bar .data-table-layout-control .mantine-Button-section { margin: 0; }
   .procure-cockpit .procure-cockpit-bar__search,
-  .procure-cockpit .procure-cockpit-bar__producer { flex-basis: 150px; width: 148px; }
+  .procure-cockpit .procure-cockpit-bar__producer { flex-basis: 148px; width: 148px; }
 }
 @media (max-width: 600px) {
   .procure-cockpit .procure-cockpit-bar > * { max-width: 100%; }

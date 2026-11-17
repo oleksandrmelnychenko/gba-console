@@ -203,7 +203,7 @@
     minmax(max-content, 1fr)
     minmax(0, max-content)
     minmax(max-content, 1fr);
-  grid-template-rows: 62px 46px;
+  grid-template-rows: 62px 46px; /* grid-exempt: header 62 + subnav 46 = --app-shell-header-offset 108px */
   column-gap: 16px;
   height: 108px;
   min-height: 108px;
@@ -1320,7 +1320,7 @@ html[data-gba-env='qa'] .console-header {
 }
 
 .sync-confirmation-summary {
-  flex: 1 1 430px;
+  flex: 1 1 428px;
   min-width: 0;
 }
 

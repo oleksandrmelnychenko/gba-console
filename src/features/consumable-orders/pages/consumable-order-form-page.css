@@ -407,7 +407,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.92fr);
+  grid-template-columns: minmax(0, 1fr) minmax(328px, 0.92fr);
   min-width: 0;
 }
 
@@ -539,7 +539,7 @@
   border-top: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 150px));
+  grid-template-columns: repeat(3, minmax(0, 148px));
   justify-content: flex-end;
   padding: 12px 12px 12px;
 }
@@ -565,7 +565,7 @@
   border-bottom: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 8px;
-  grid-template-columns: 30px minmax(0, 1fr) 32px;
+  grid-template-columns: 28px minmax(0, 1fr) 32px;
   min-height: 48px;
   padding: 8px 0;
 }
@@ -692,7 +692,7 @@
 
   .consumable-order-form-meta-pill,
   .consumable-order-form-amount-pill {
-    flex: 1 1 130px;
+    flex: 1 1 128px;
   }
 }
 

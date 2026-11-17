@@ -70,7 +70,7 @@
 }
 
 /* Navigation stays beside the content at sheet widths, independently of viewport breakpoints. */
-.client-edit-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 12px; align-items: start; }
+.client-edit-layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 12px; align-items: start; }
 .client-edit-sidebar { position: sticky; top: 0; min-width: 0; }
 .client-edit-content { min-width: 0; }
 .client-edit-nav { gap: 4px; padding: 8px; background: white; border: 1px solid var(--mantine-color-gray-2); border-radius: 12px; }

@@ -30,15 +30,15 @@
 }
 
 .sales-chart-filter-row.is-topnx {
-  grid-template-columns: 310px 150px minmax(34px, 1fr) auto;
+  grid-template-columns: 308px 148px minmax(32px, 1fr) auto;
 }
 
 .sales-chart-filter-row.is-manager-top {
-  grid-template-columns: 310px 240px 240px minmax(34px, 1fr) auto;
+  grid-template-columns: 308px 240px 240px minmax(32px, 1fr) auto;
 }
 
 .sales-chart-filter-row.is-client {
-  grid-template-columns: 310px minmax(240px, 300px) 160px minmax(34px, 1fr);
+  grid-template-columns: 308px minmax(240px, 300px) 160px minmax(32px, 1fr);
 }
 
 .sales-chart-filter-control {

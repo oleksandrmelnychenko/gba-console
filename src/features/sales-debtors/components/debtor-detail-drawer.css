@@ -166,7 +166,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 90px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   min-width: 0;
 }
 

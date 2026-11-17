@@ -130,7 +130,7 @@
 @media (max-width: 420px) {
   .exchange-rates-panel-header { padding-inline: 12px; }
   .exchange-rates-current { padding: 8px 12px; }
-  .exchange-rates-panel-rate.mantine-Button-root { flex-basis: 90px; }
+  .exchange-rates-panel-rate.mantine-Button-root { flex-basis: 88px; }
   .exchange-rates-history-card .app-filter-bar .app-filter-date-range { flex-basis: 100%; }
 }
 

@@ -1092,7 +1092,7 @@
   border-top: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(150px, 0.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(148px, 0.35fr) minmax(0, 1fr);
   min-width: 0;
   padding-top: 8px;
 }
@@ -1245,8 +1245,8 @@
 .suppliers-filter-dropdown :is([data-combobox-option], .suppliers-filter-dropdown-option) { font-family: var(--font-mono); font-size: 12px; line-height: 16px; padding: 8px 8px !important; }
 .suppliers-filter-dropdown :is([data-combobox-option], .suppliers-filter-dropdown-option):is(:hover, [data-combobox-selected], [aria-selected='true']) { background: var(--mantine-color-gray-1); }
 @container registry (max-width: 1250px) {
- .app-filter-bar.suppliers-filter-bar .suppliers-filter-search-input { flex-basis: 170px; width: 168px; }
- .app-filter-bar.suppliers-filter-bar .suppliers-filter-field { flex-basis: 130px; width: 128px; }
+ .app-filter-bar.suppliers-filter-bar .suppliers-filter-search-input { flex-basis: 168px; width: 168px; }
+ .app-filter-bar.suppliers-filter-bar .suppliers-filter-field { flex-basis: 128px; width: 128px; }
 }
 @container registry (max-width: 1250px) {
  .suppliers-filter-bar .data-table-layout-control { width: var(--app-control-height); min-width: var(--app-control-height); padding-inline: 0; }

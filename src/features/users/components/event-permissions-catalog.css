@@ -19,11 +19,11 @@
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-risk {
-  flex: 0 0 150px;
+  flex: 0 0 148px;
 }
 
 .app-filter-bar.event-permissions-filters > .event-permissions-selection {
-  flex: 0 0 130px;
+  flex: 0 0 128px;
 }
 
 .event-permissions-actions,
@@ -66,7 +66,7 @@
 
   .app-filter-bar.event-permissions-filters > .event-permissions-risk,
   .app-filter-bar.event-permissions-filters > .event-permissions-selection {
-    flex: 0 0 130px;
+    flex: 0 0 128px;
   }
 
   .event-permissions-stats {
@@ -200,7 +200,7 @@
 
 /* The extra selection action appears only for filtered results. Keep all captions. */
 @container event-permissions (max-width: 1250px) {
-  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-search { flex-basis: 150px; width: 148px; }
+  .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-search { flex-basis: 148px; width: 148px; }
   .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-risk { flex-basis: 120px; width: 120px; }
   .app-filter-bar.event-permissions-filters.has-active-filters > .event-permissions-selection { flex-basis: 100px; width: 100px; }
 }

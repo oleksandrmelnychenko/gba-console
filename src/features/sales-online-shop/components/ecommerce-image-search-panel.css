@@ -41,7 +41,7 @@
 .image-search-audit-list-head,
 .image-search-audit-row {
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) 130px 88px 78px 90px 148px;
+  grid-template-columns: minmax(360px, 1fr) 128px 88px 76px 88px 148px;
   align-items: center;
   gap: 12px;
 }
@@ -96,7 +96,7 @@
 .image-search-audit-thumb {
   width: 56px;
   height: 56px;
-  flex: 0 0 58px;
+  flex: 0 0 56px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: var(--mantine-color-gray-0);
@@ -339,7 +339,7 @@
 
 .image-search-detail-section dl > div {
   display: grid;
-  grid-template-columns: minmax(130px, 0.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(128px, 0.35fr) minmax(0, 1fr);
   gap: 12px;
 }
 

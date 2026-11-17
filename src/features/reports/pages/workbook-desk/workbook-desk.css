@@ -739,7 +739,7 @@
 .workbook-settings__advanced[open] > summary > svg:last-child { transform: rotate(180deg); }
 .workbook-settings__advanced > .workbook-settings__control { padding: 12px; }
 .workbook-settings__advanced > summary:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: 2px; border-radius: 8px; }
-.workbook-inline-selection { display: grid; grid-template-columns: auto minmax(160px, 1fr) minmax(150px, .8fr) minmax(220px, 1.5fr) auto; align-items: start; gap: 8px; padding: 8px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--mantine-color-gray-0); }
+.workbook-inline-selection { display: grid; grid-template-columns: auto minmax(160px, 1fr) minmax(148px, .8fr) minmax(220px, 1.5fr) auto; align-items: start; gap: 8px; padding: 8px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--mantine-color-gray-0); }
 .workbook-inline-selection > :first-child, .workbook-inline-selection > :last-child { margin-top: 28px; }
 .workbook-inline-selection__error { grid-column: 2 / -1; }
 .workbook-inline-selection .mantine-InputWrapper-label { font: 500 12px/1.5 var(--font-mono); margin-bottom: 4px; }

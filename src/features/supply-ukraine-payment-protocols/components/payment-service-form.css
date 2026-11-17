@@ -18,7 +18,7 @@
 
 .payment-service-form__amounts {
   display: grid;
-  grid-template-columns: minmax(0, 310px) minmax(0, 120px) minmax(0, 160px);
+  grid-template-columns: minmax(0, 308px) minmax(0, 120px) minmax(0, 160px);
   gap: 8px;
   align-items: start;
 }

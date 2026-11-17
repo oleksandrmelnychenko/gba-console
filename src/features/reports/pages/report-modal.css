@@ -11,7 +11,7 @@
 }
 
 .report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='date']) {
-  flex-basis: 170px;
+  flex-basis: 168px;
 }
 
 .report-modal .mantine-Group-root > .mantine-InputWrapper-root:has(input[type='number']) {

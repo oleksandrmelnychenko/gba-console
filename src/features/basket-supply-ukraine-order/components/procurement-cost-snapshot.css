@@ -33,7 +33,7 @@
 .procure-cost-proof__detail-body { padding: 2px 0 4px; font-size: 11px; }
 .procure-cost-proof__detail-body > p + p { margin-top: 8px; }
 .procure-cost-proof__references { margin: 8px 0 0; }
-.procure-cost-proof__references > div { display: grid; grid-template-columns: minmax(110px, 35%) minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px solid var(--mantine-color-gray-2); }
+.procure-cost-proof__references > div { display: grid; grid-template-columns: minmax(108px, 35%) minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px solid var(--mantine-color-gray-2); }
 .procure-cost-proof__references dt { color: var(--mantine-color-gray-6); overflow-wrap: anywhere; }
 .procure-cost-proof__references dd { margin: 0; font-family: var(--font-mono); font-size: 10.5px; overflow-wrap: anywhere; }
 

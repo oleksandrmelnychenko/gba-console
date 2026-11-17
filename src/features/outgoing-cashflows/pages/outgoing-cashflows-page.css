@@ -290,13 +290,13 @@
 
 .outgoing-cashflow-create-drawer .cashflow-fields-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 8px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > * { flex: 0 1 280px; min-width: 0; max-width: 100%; }
-.outgoing-cashflow-create-drawer .cashflow-fields-row:where(:has(.cashflow-field-agreement)) > * { flex-basis: 230px; }
+.outgoing-cashflow-create-drawer .cashflow-fields-row:where(:has(.cashflow-field-agreement)) > * { flex-basis: 228px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-agreement { flex-basis: 260px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-date { flex-basis: 140px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-time { flex-basis: 100px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-number { flex-basis: 160px; }
-.outgoing-cashflow-create-drawer .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 130px; }
-.outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-amount { flex-basis: 150px; }
+.outgoing-cashflow-create-drawer .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 128px; }
+.outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-amount { flex-basis: 148px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-article { flex-basis: 320px; }
 .outgoing-cashflow-create-drawer .cashflow-fields-row > .cashflow-field-purpose { flex: 1 1 280px; }
 @media (max-width: 600px) {

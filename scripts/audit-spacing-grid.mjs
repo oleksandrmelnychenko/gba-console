@@ -2,7 +2,7 @@
 // Audits src/**/*.css for spacing / radius / size values that are off the 4px grid.
 // Usage: node scripts/audit-spacing-grid.mjs [--json] [--files] [path-prefix]
 // Checked properties: padding*, margin*, gap, row-gap, column-gap, border-radius*,
-// inset/top/right/bottom/left, width/height/min-*/max-* (px only).
+// inset/top/right/bottom/left, width/height/min-*/max-*, flex/flex-basis and grid tracks (px only).
 // Allowed: 0, 1px, 2px (hairlines / borders / focus offsets), 999px+ pills, 50%, multiples of 4.
 // Exempt: sizes/offsets below 24px (icon glyphs, status dots, optical nudges) and any
 // declaration followed by a `/* grid-exempt: reason */` comment.
@@ -20,7 +20,7 @@ if (!prefixes.length) prefixes.push('src')
 
 const SPACING = /^(padding|margin)(-(top|right|bottom|left|inline|block)(-(start|end))?)?$|^(gap|row-gap|column-gap)$/
 const RADIUS = /^border(-(top|bottom)-(left|right)|-(start|end)-(start|end))?-radius$/
-const SIZE = /^(min-|max-)?(width|height|inline-size|block-size)$|^(inset|top|right|bottom|left)$/
+const SIZE = /^(min-|max-)?(width|height|inline-size|block-size)$|^(inset|top|right|bottom|left)$|^(flex|flex-basis|grid-template-columns|grid-template-rows|grid-auto-columns|grid-auto-rows)$/
 
 function walk(dir, out = []) {
   if (statSync(dir).isFile()) return dir.endsWith('.css') ? [...out, dir] : out

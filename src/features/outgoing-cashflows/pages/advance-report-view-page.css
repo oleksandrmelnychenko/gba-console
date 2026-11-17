@@ -70,7 +70,7 @@
 .advance-report-detail-totals__metrics {
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(2, minmax(140px, 210px));
+  grid-template-columns: repeat(2, minmax(140px, 208px));
   justify-content: end;
 }
 

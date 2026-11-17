@@ -22,7 +22,7 @@
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
-  grid-template-columns: minmax(180px, 1fr) 110px 110px auto auto auto;
+  grid-template-columns: minmax(180px, 1fr) 108px 108px auto auto auto;
   overflow-x: auto;
 }
 

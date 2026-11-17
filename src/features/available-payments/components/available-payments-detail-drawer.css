@@ -137,7 +137,7 @@
 .available-payment-cash-flow-table__summary-row {
   align-items: stretch;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 120px 135px;
+  grid-template-columns: minmax(0, 1fr) 120px 120px 136px;
   min-height: 32px;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .available-payment-outcome-row > .available-payment-outcome-time {
-  flex-basis: 110px;
+  flex-basis: 108px;
 }
 
 @media (max-width: 520px) {

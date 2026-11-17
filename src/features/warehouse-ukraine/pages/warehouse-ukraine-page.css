@@ -45,7 +45,7 @@
 }
 
 .warehouse-ukraine-filter-bar.is-orders {
-  grid-template-columns: 260px minmax(170px, 190px) minmax(0, 1fr) max-content max-content;
+  grid-template-columns: 260px minmax(168px, 188px) minmax(0, 1fr) max-content max-content;
 }
 
 .warehouse-ukraine-filter-bar.is-orders .warehouse-ukraine-filter-actions {
@@ -57,7 +57,7 @@
 }
 
 .warehouse-ukraine-filter-bar.is-invoice-register {
-  grid-template-columns: minmax(180px, 1fr) minmax(148px, 170px) max-content max-content;
+  grid-template-columns: minmax(180px, 1fr) minmax(148px, 168px) max-content max-content;
 }
 
 .warehouse-ukraine-filter-bar.is-verification {
@@ -126,11 +126,11 @@
 }
 
 .warehouse-ukraine-filter-bar.is-auto-shipments {
-  grid-template-columns: 260px 170px 170px minmax(0, 1fr) max-content max-content max-content;
+  grid-template-columns: 260px 168px 168px minmax(0, 1fr) max-content max-content max-content;
 }
 
 .warehouse-ukraine-filter-bar.is-all-shipments {
-  grid-template-columns: 260px 170px 170px minmax(0, 1fr) max-content max-content max-content;
+  grid-template-columns: 260px 168px 168px minmax(0, 1fr) max-content max-content max-content;
 }
 
 .warehouse-ukraine-filter-bar.is-auto-shipments .warehouse-ukraine-filter-actions,

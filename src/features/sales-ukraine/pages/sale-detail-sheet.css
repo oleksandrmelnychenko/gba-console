@@ -186,7 +186,7 @@
 .sale-detail-metrics {
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(88px, 0.72fr) minmax(104px, 0.78fr) minmax(118px, 0.82fr) minmax(220px, 1.68fr);
+  grid-template-columns: minmax(88px, 0.72fr) minmax(104px, 0.78fr) minmax(116px, 0.82fr) minmax(220px, 1.68fr);
   min-width: 0;
 }
 

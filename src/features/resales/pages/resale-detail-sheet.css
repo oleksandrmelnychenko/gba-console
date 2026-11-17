@@ -99,7 +99,7 @@
 }
 .resale-detail-sheet .resale-detail-table-heading { padding: 8px 8px; }
 .resale-detail-sheet .resale-detail-command-bar {
-  grid-template-columns: minmax(180px, 1fr) minmax(130px, .55fr) minmax(150px, .7fr) auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(128px, .55fr) minmax(148px, .7fr) auto;
   gap: 8px;
 }
 .resale-detail-sheet .resale-detail-table-body { flex: none; min-height: 0; }

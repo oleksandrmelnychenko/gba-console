@@ -309,7 +309,7 @@ span.constructor-tree-row__toggle {
 .constructor-selection-row {
   display: grid;
   gap: 4px 8px;
-  grid-template-columns: 28px minmax(170px, 1.1fr) minmax(150px, 0.8fr) minmax(240px, 2.2fr) 64px;
+  grid-template-columns: 28px minmax(168px, 1.1fr) minmax(148px, 0.8fr) minmax(240px, 2.2fr) 64px;
   min-width: 720px;
 }
 

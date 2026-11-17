@@ -376,7 +376,7 @@
   .income-cashflow-client-form__debt-metric {
     border-left: 0;
     border-top: 1px solid var(--mantine-color-gray-2);
-    flex: 1 1 145px;
+    flex: 1 1 144px;
     padding: 8px 0 0;
   }
 }
@@ -438,8 +438,8 @@
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-date { flex-basis: 140px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-time { flex-basis: 100px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-number { flex-basis: 160px; }
-.income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 130px; }
-.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-amount { flex-basis: 150px; }
+.income-cashflow-compact-form .cashflow-fields-row > :is(.cashflow-field-currency, .cashflow-field-rate, .cashflow-field-vat) { flex-basis: 128px; }
+.income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-amount { flex-basis: 148px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-article { flex-basis: 320px; }
 .income-cashflow-compact-form .cashflow-fields-row > .cashflow-field-purpose { flex: 1 1 280px; }
 @media (max-width: 600px) {

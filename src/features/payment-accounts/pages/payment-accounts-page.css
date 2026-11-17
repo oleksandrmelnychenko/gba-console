@@ -27,7 +27,7 @@
 
 .payment-accounts-page .payment-accounts-filter-row {
   display: grid;
-  grid-template-columns: minmax(170px, 220px) max-content minmax(170px, 220px) max-content max-content max-content;
+  grid-template-columns: minmax(168px, 220px) max-content minmax(168px, 220px) max-content max-content max-content;
   width: 100%;
   min-width: max-content;
   gap: 8px;
@@ -581,7 +581,7 @@
 }
 
 .payment-account-transaction-row > * {
-  flex: 0 1 230px;
+  flex: 0 1 228px;
   min-width: 0;
   max-width: 100%;
 }
@@ -592,7 +592,7 @@
 
 
 .payment-account-transaction-row > .mantine-Stack-root {
-  flex-basis: 150px;
+  flex-basis: 148px;
 }
 
 .payment-account-transaction-row > .mantine-Stack-root > .mantine-Text-root:first-child {

@@ -1554,8 +1554,8 @@ function ProductAuditPanel({ product }: { product: Product }) {
               key={`${entry.NetUid || entry.Id || index}`}
               style={{
                 border: '1px solid var(--mantine-color-gray-2)',
-                borderRadius: 6,
-                padding: '8px 10px',
+                borderRadius: 8,
+                padding: '8px 12px',
               }}
             >
               <Text size="sm" style={{ overflowWrap: 'anywhere' }}>{displayValue(entry.NewValues?.[0]?.Value)}</Text>

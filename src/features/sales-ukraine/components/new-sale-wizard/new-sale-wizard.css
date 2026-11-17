@@ -7,7 +7,7 @@
   box-shadow: 0 8px 22px rgba(20, 28, 38, 0.035);
   display: grid;
   gap: 0;
-  grid-template-columns: minmax(350px, 388px) minmax(0, 1fr);
+  grid-template-columns: minmax(348px, 388px) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
@@ -1736,10 +1736,10 @@
   gap: 8px;
   grid-template-columns:
     minmax(240px, 1.25fr)
-    minmax(110px, 0.52fr)
+    minmax(108px, 0.52fr)
     minmax(116px, 0.42fr)
     minmax(72px, 0.28fr)
-    minmax(138px, 0.46fr)
+    minmax(136px, 0.46fr)
     112px;
   min-height: 32px;
   padding: 0 8px 0 12px;
@@ -1812,10 +1812,10 @@
   gap: 8px;
   grid-template-columns:
     minmax(240px, 1.25fr)
-    minmax(110px, 0.52fr)
+    minmax(108px, 0.52fr)
     minmax(116px, 0.42fr)
     minmax(72px, 0.28fr)
-    minmax(138px, 0.46fr)
+    minmax(136px, 0.46fr)
     112px;
   min-height: 60px;
   padding: 8px 8px 8px 12px;
@@ -2035,7 +2035,7 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(300px, 1fr) minmax(106px, 0.24fr) minmax(82px, 0.16fr) minmax(150px, 0.32fr);
+  grid-template-columns: minmax(300px, 1fr) minmax(104px, 0.24fr) minmax(80px, 0.16fr) minmax(148px, 0.32fr);
   min-height: 60px;
   padding: 8px 12px 8px 8px;
   position: relative;
@@ -2069,7 +2069,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -4312,7 +4312,7 @@
 
 @media (max-width: 1180px) {
   .new-sale-client-step {
-    grid-template-columns: minmax(320px, 350px) minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 348px) minmax(0, 1fr);
   }
 
   .new-sale-client-hero {
@@ -5174,7 +5174,7 @@
 
 /* Step 1 composition: client wheel + agreements + document register. */
 .new-sale-client-step {
-  grid-template-columns: minmax(330px, 364px) minmax(0, 1fr);
+  grid-template-columns: minmax(328px, 364px) minmax(0, 1fr);
 }
 
 .new-sale-client-workspace {
@@ -5552,7 +5552,7 @@
 }
 
 .new-sale-register-row__document {
-  grid-template-columns: 8px 26px minmax(0, 1fr);
+  grid-template-columns: 8px 24px minmax(0, 1fr);
 }
 
 .new-sale-register-row__expand {
@@ -7138,7 +7138,7 @@
 }
 
 .new-sale-product-picker-card .new-sale-product-picker-row__facts {
-  flex: 0 1 250px;
+  flex: 0 1 248px;
   margin-top: 0;
   order: 3;
 }
@@ -7202,7 +7202,7 @@
 
 .new-sale-product-picker-card .new-sale-product-price-strip.is-dense {
   flex: 0 0 min(420px, 28vw);
-  grid-template-columns: repeat(4, minmax(78px, 1fr));
+  grid-template-columns: repeat(4, minmax(76px, 1fr));
   margin-top: 0;
   order: 4;
 }
@@ -7848,7 +7848,7 @@
   color: inherit;
   display: grid;
   gap: 12px;
-  grid-template-columns: 38px minmax(0, 1fr) 20px;
+  grid-template-columns: 36px minmax(0, 1fr) 20px;
   min-height: 64px;
   padding: 8px 12px;
   text-decoration: none;
@@ -8116,7 +8116,7 @@
 .new-sale-review-layout {
   align-content: start;
   display: grid;
-  grid-template-columns: minmax(0, 642px);
+  grid-template-columns: minmax(0, 640px);
   justify-content: center;
   min-height: 0;
   overflow: auto;
@@ -8148,7 +8148,7 @@
   border-radius: 8px;
   color: var(--mantine-color-gray-7);
   display: inline-flex;
-  flex: 0 0 34px;
+  flex: 0 0 32px;
   height: 32px;
   justify-content: center;
   width: 32px;
@@ -8210,7 +8210,7 @@
   align-items: end;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(190px, 0.78fr) minmax(0, 1fr);
+  grid-template-columns: minmax(188px, 0.78fr) minmax(0, 1fr);
   min-height: 0;
   padding: 0;
 }
@@ -8226,7 +8226,7 @@
 }
 
 .new-sale-review-option-row.is-upload {
-  grid-template-columns: minmax(190px, 0.78fr) minmax(0, 1fr);
+  grid-template-columns: minmax(188px, 0.78fr) minmax(0, 1fr);
   min-height: 40px;
   padding-top: 0;
 }
@@ -8491,7 +8491,7 @@
   align-items: baseline;
   display: grid;
   gap: 4px;
-  grid-template-columns: minmax(0, 1fr) 26px;
+  grid-template-columns: minmax(0, 1fr) 24px;
 }
 
 .new-sale-cart__value-cell:not(.is-inline) .mantine-Group-root .mantine-Text-root:first-child {

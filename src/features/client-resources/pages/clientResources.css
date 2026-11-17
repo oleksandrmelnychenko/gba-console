@@ -100,7 +100,7 @@
 }
 
 .app-filter-bar.client-resources-filter-bar > .client-resources-filter-fields.has-filter {
-  flex-basis: 450px;
+  flex-basis: 448px;
 }
 
 .client-resources-filter-fields > * {

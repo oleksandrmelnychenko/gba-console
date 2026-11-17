@@ -429,7 +429,7 @@
   align-self: flex-start;
   color: var(--mantine-color-gray-8);
   display: grid;
-  flex: 0 0 82px;
+  flex: 0 0 80px;
   font-family: var(--font-mono);
   gap: 4px;
   justify-items: end;
@@ -515,7 +515,7 @@
   border-radius: 8px;
   display: grid;
   gap: 8px;
-  grid-template-columns: 64px minmax(0, 1fr) 82px;
+  grid-template-columns: 64px minmax(0, 1fr) 80px;
   padding: 8px;
 }
 

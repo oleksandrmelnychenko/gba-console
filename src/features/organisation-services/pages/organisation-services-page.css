@@ -17,7 +17,7 @@
   display: grid;
   flex: 0 0 auto;
   grid-template-columns:
-    310px
+    308px
     minmax(260px, 1fr)
     var(--app-multi-select-width, 240px)
     var(--app-multi-select-width, 240px)

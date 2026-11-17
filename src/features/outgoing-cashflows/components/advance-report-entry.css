@@ -10,13 +10,13 @@
 }
 
 .advance-report-entry-parties > * {
-  flex: 0 1 210px;
+  flex: 0 1 208px;
   min-width: 0;
   max-width: 100%;
 }
 
 .advance-report-entry-parties--order > * {
-  flex-basis: 250px;
+  flex-basis: 248px;
 }
 
 .advance-report-entry-document,

@@ -82,7 +82,7 @@
 }
 
 .cockpit-head-page .cockpit-board-filter {
-  grid-template-columns: minmax(180px, 220px) minmax(150px, 180px) minmax(170px, 220px) minmax(max-content, 1fr);
+  grid-template-columns: minmax(180px, 220px) minmax(148px, 180px) minmax(168px, 220px) minmax(max-content, 1fr);
 }
 
 .cockpit-head-page .cockpit-progress-panel {
@@ -210,7 +210,7 @@
 .cockpit-head-page .cockpit-ai-status > .mantine-Group-root { gap: 8px; }
 .cockpit-head-page .cockpit-ai-status .app-section-title { font-size: 13px; font-weight: 600; }
 .cockpit-coaching-toolbar { flex-wrap: wrap; border: 1px solid var(--mantine-color-gray-2); border-radius: 8px; }
-.cockpit-coaching-toolbar > .mantine-InputWrapper-root { flex: 1 1 170px; min-width: 0; }
+.cockpit-coaching-toolbar > .mantine-InputWrapper-root { flex: 1 1 168px; min-width: 0; }
 .cockpit-head-page .cockpit-head-sidebar { min-width: 0; }
 
 .cockpit-head-page .cockpit-escalated-row .app-table-chip,

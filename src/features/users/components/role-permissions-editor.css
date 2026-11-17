@@ -122,7 +122,7 @@
   background: transparent;
   display: grid;
   gap: 8px;
-  grid-template-columns: 26px 24px 28px minmax(0, 1fr) auto;
+  grid-template-columns: 24px 24px 28px minmax(0, 1fr) auto;
   min-height: 44px;
   padding: 8px 8px;
 }
@@ -206,7 +206,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 26px 24px 26px minmax(0, 1fr) auto;
+  grid-template-columns: 24px 24px 24px minmax(0, 1fr) auto;
   min-height: 44px;
   padding: 8px 8px 8px calc(8px + var(--role-tree-indent, 0px));
   transition: background-color 110ms var(--tx-ease-smooth);
@@ -397,7 +397,7 @@
 
 @media (max-width: 720px) {
   .role-tree-module-header {
-    grid-template-columns: 26px 24px 28px minmax(0, 1fr);
+    grid-template-columns: 24px 24px 28px minmax(0, 1fr);
   }
 
   .role-tree-module-stats {
@@ -406,7 +406,7 @@
   }
 
   .role-tree-node-row {
-    grid-template-columns: 26px 24px 26px minmax(0, 1fr);
+    grid-template-columns: 24px 24px 24px minmax(0, 1fr);
   }
 
   .role-tree-node-actions {

@@ -231,9 +231,9 @@
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 16px; /* 8 + 16 + 8 = 32px option, same tier as shared comboboxes */
   max-width: none;
-  min-height: 28px;
+  min-height: 32px;
   min-width: 100%;
   overflow: visible;
   padding: 8px 8px !important;
@@ -664,7 +664,7 @@
   grid-template-columns: repeat(2, 28px);
   align-items: center;
   column-gap: 2px;
-  flex: 0 0 62px;
+  flex: 0 0 62px; /* grid-exempt: pairs with .sg-client-actions width 62px */
   width: 62px; /* grid-exempt: 2×28px buttons + 2px gap + 4px padding, mirrors flex-basis */
   padding-right: 4px;
   position: relative;
@@ -1405,7 +1405,7 @@
 .sale-expand-discount-line {
   align-items: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 62px 28px;
+  grid-template-columns: minmax(0, 1fr) 62px 28px; /* grid-exempt: client actions column = .sg-client-actions 62px */
   gap: 8px;
   min-height: 22px;
   min-width: 0;
@@ -1537,22 +1537,22 @@
 /* Use natural field widths. Only crowded toolbars switch to compact controls. */
 .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex: 0 1 140px; }
 .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex: 0 1 180px; }
-.sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex: 0 1 150px; }
-.sales-ukraine-page .app-filter-fields > .sales-filter-search { flex: 0 1 190px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex: 0 1 148px; }
+.sales-ukraine-page .app-filter-fields > .sales-filter-search { flex: 0 1 188px; }
 .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex: 0 1 200px; }
 
 @container registry (max-width: 1700px) {
-  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 108px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 140px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 130px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 128px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 140px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 150px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 148px; }
 }
 
 @container registry (max-width: 1360px) {
   .sales-ukraine-page .app-filter-fields > .sales-filter-status { flex-basis: 100px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 130px; }
-  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 110px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-organisation-picker { flex-basis: 128px; }
+  .sales-ukraine-page .app-filter-fields > .sales-filter-manager { flex-basis: 108px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-search { flex-basis: 120px; }
   .sales-ukraine-page .app-filter-fields > .sales-filter-client { flex-basis: 140px; }
   .sales-ukraine-page .sales-filter-ecommerce .mantine-Checkbox-label { display: none; }

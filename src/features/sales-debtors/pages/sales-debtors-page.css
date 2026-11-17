@@ -24,7 +24,7 @@
 }
 
 .sales-debtors-command-bar > .sales-debtors-filter {
-  flex: 1 1 150px;
+  flex: 1 1 148px;
   min-width: 0;
 }
 
@@ -270,7 +270,7 @@
 }
 
 .sales-debtors-page .sales-debtors-command-bar > .sales-debtors-filter {
-  flex: 0 1 190px;
+  flex: 0 1 188px;
   min-width: 0;
 }
 
@@ -283,11 +283,11 @@
 }
 
 .sales-debtors-page .sales-debtors-command-bar > .is-currency {
-  flex: 0 0 90px;
+  flex: 0 0 88px;
 }
 
 .sales-debtors-page .sales-debtors-command-bar > .is-days {
-  flex: 0 0 150px;
+  flex: 0 0 148px;
 }
 
 .sales-debtors-page .sales-debtors-command-bar .sales-debtors-command-actions {
@@ -300,11 +300,11 @@
 }
 
 @container registry (max-width: 1550px) {
-  .sales-debtors-page .sales-debtors-command-bar > .is-manager { flex-basis: 130px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-manager { flex-basis: 128px; }
   .sales-debtors-page .sales-debtors-command-bar > .is-organization { flex-basis: 160px; }
-  .sales-debtors-page .sales-debtors-command-bar > .is-type { flex-basis: 110px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-type { flex-basis: 108px; }
   .sales-debtors-page .sales-debtors-command-bar > .is-currency { flex-basis: 76px; }
-  .sales-debtors-page .sales-debtors-command-bar > .is-days { flex-basis: 145px; }
+  .sales-debtors-page .sales-debtors-command-bar > .is-days { flex-basis: 144px; }
 }
 
 @container registry (max-width: 1320px) {

@@ -831,7 +831,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   display: grid;
-  grid-template-columns: 150px 150px max-content max-content;
+  grid-template-columns: 148px 148px max-content max-content;
   grid-auto-columns: max-content;
   justify-content: start;
 }
@@ -1704,7 +1704,7 @@
 .product-movement-sheet .product-movement-sheet-filters > .app-filter-date-range {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(2, 130px);
+  grid-template-columns: repeat(2, 128px);
   gap: 8px;
   width: auto;
 }

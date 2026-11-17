@@ -313,7 +313,7 @@
   align-items: stretch;
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  grid-template-columns: repeat(3, minmax(108px, 1fr));
 }
 
 .accounting-cash-flow-return__metric {
@@ -391,9 +391,9 @@
   grid-template-columns:
     minmax(300px, 1fr)
     minmax(92px, 0.2fr)
-    minmax(126px, 0.26fr)
-    minmax(110px, 0.22fr)
-    minmax(170px, 0.36fr);
+    minmax(124px, 0.26fr)
+    minmax(108px, 0.22fr)
+    minmax(168px, 0.36fr);
   min-width: 0;
 }
 

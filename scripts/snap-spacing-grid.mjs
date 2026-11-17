@@ -5,7 +5,8 @@
 // CSS: padding*, margin*, gap, row-gap, column-gap, border-radius* (px literals only).
 // TSX: Mantine numeric spacing props (gap/p/px/py/pt/pb/pl/pr/m/mx/my/mt/mb/ml/mr/
 //      rowGap/columnGap/spacing/verticalSpacing/horizontalSpacing/radius={N}).
-// Sizes are NOT touched unless --sizes is passed (then width/height/min-*/max-* ≥ 24px): they are often coupled to JS
+// Sizes are NOT touched unless --sizes is passed (then width/height/min-*/max-*, flex,
+// flex-basis and grid tracks ≥ 24px, so paired values move together): they are often coupled to JS
 // constants (row heights, virtualizer sizes, sticky offsets) and are reviewed by hand.
 //
 // Mapping: nearest multiple of 4. Ties (6, 10, 14, 18 …) round DOWN to keep the
@@ -26,7 +27,7 @@ export function snap(n) {
   return Math.sign(n) * r
 }
 
-const SIZE_PROP = /^(min-|max-)?(width|height)$/
+const SIZE_PROP = /^(min-|max-)?(width|height)$|^(flex|flex-basis|grid-template-columns|grid-template-rows|grid-auto-columns|grid-auto-rows)$/
 const CSS_PROP = /^(padding|margin)(-(top|right|bottom|left|inline|block)(-(start|end))?)?$|^(gap|row-gap|column-gap)$|^border(-(top|bottom)-(left|right)|-(start|end)-(start|end))?-radius$/
 const TSX_PROPS = 'gap|p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|rowGap|columnGap|spacing|verticalSpacing|horizontalSpacing|radius'
 const TSX_RE = new RegExp(`(\\s(?:${TSX_PROPS}))=\\{(-?\\d+)\\}`, 'g')

@@ -371,7 +371,7 @@
 }
 
 :is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar) .app-filter-fields > :is(.mantine-InputWrapper-root, .app-filter-field) {
-  flex: 1 1 170px;
+  flex: 1 1 168px;
   min-width: 0;
   max-width: 100%;
 }

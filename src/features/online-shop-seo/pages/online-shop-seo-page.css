@@ -84,7 +84,7 @@
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   display: grid;
-  grid-template-columns: 242px auto minmax(0, 1fr);
+  grid-template-columns: 240px auto minmax(0, 1fr);
   height: var(--seo-page-command-control-height);
   min-width: 0;
   overflow: hidden;
@@ -647,7 +647,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(74px, max-content) minmax(0, 1fr);
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr);
   min-width: 0;
 }
 
@@ -1895,5 +1895,5 @@
 .seo-page-command-bar .seo-page-command-combo-control { grid-template-columns: 180px auto minmax(0, 1fr); }
 .seo-page-command-bar .seo-page-toolbar-actions { justify-content: flex-start; }
 @container registry (max-width: 600px) {
- .seo-page-command-bar .seo-page-command-combo-control { grid-template-columns: 145px auto minmax(0, 1fr); }
+ .seo-page-command-bar .seo-page-command-combo-control { grid-template-columns: 144px auto minmax(0, 1fr); }
 }

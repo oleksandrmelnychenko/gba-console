@@ -26,7 +26,7 @@
 .cockpit-command-bar {
   align-items: end;
   display: grid;
-  grid-template-columns: 170px 450px max-content minmax(390px, 1fr);
+  grid-template-columns: 168px 448px max-content minmax(388px, 1fr);
   min-width: 0;
   overflow-x: auto;
 }
@@ -47,7 +47,7 @@
 }
 
 .cockpit-head-command-bar {
-  grid-template-columns: 170px minmax(240px, auto) minmax(0, 1fr);
+  grid-template-columns: 168px minmax(240px, auto) minmax(0, 1fr);
 }
 
 .role-dashboard-content .cockpit-head-title {
@@ -55,7 +55,7 @@
 }
 
 .role-dashboard-content .cockpit-head-command-bar {
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 168px minmax(0, 1fr);
 }
 
 .cockpit-head-kpis {
@@ -814,11 +814,11 @@
 .cockpit-table-skeleton-row {
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(130px, 1.1fr) repeat(5, minmax(82px, 0.7fr));
+  grid-template-columns: minmax(128px, 1.1fr) repeat(5, minmax(80px, 0.7fr));
 }
 
 .cockpit-table-skeleton.is-board .cockpit-table-skeleton-row {
-  grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 1fr) minmax(220px, 1.4fr) repeat(5, minmax(96px, 0.7fr));
+  grid-template-columns: minmax(120px, 0.8fr) minmax(148px, 1fr) minmax(220px, 1.4fr) repeat(5, minmax(96px, 0.7fr));
 }
 
 .cockpit-table-skeleton-line {
@@ -840,7 +840,7 @@
 .cockpit-board-filter {
   align-items: end;
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(170px, 200px) minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 220px) minmax(168px, 200px) minmax(0, 1fr);
   min-width: 0;
   overflow-x: auto;
 }

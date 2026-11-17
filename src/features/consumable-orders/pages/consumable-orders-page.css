@@ -23,7 +23,7 @@
 
   align-items: end;
   display: grid;
-  grid-template-columns: 310px minmax(280px, 1fr) auto auto auto;
+  grid-template-columns: 308px minmax(280px, 1fr) auto auto auto;
   overflow-x: auto;
 }
 

@@ -83,7 +83,7 @@
   }
 
   .procure-cockpit .procure-cockpit-bar :is(.procure-cockpit-bar__search, .procure-cockpit-bar__producer) {
-    flex-basis: 150px;
+    flex-basis: 148px;
     min-width: 148px;
   }
 

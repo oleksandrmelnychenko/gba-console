@@ -16,7 +16,7 @@
   align-items: end;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(170px, 210px) minmax(170px, 210px) minmax(280px, 1fr) auto;
+  grid-template-columns: minmax(168px, 208px) minmax(168px, 208px) minmax(280px, 1fr) auto;
 }
 
 .console-table-command-bar.is-search-only {

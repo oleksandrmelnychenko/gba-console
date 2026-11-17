@@ -368,7 +368,7 @@
 
 .role-dashboard-system-grid {
   display: grid;
-  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(248px, 320px) minmax(0, 1fr);
   align-items: stretch;
   gap: 12px;
   min-width: 0;
@@ -717,7 +717,7 @@
 
 .role-dashboard-action {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: start;
   gap: 12px;
   min-width: 0;

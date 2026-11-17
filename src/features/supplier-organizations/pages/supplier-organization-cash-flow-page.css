@@ -30,7 +30,7 @@
   border-radius: var(--mantine-radius-md);
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(240px, 1.25fr) repeat(3, minmax(170px, 1fr));
+  grid-template-columns: minmax(240px, 1.25fr) repeat(3, minmax(168px, 1fr));
   padding: 8px;
 }
 
