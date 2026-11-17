@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -168,21 +168,14 @@ describe('Product delivery protocol income permission guards', () => {
     renderPage()
 
     const capitalize = await screen.findByRole('button', { name: 'Оприходувати' })
-    allowedPermissions.delete(PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize)
     await act(async () => { fireEvent.click(capitalize) })
+    allowedPermissions.delete(PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize)
+    await act(async () => { fireEvent.click(screen.getByTestId('income-capitalize-confirm')) })
 
     expect(createProductIncomeFromPackingListDynamic).not.toHaveBeenCalled()
 
-    allowedPermissions.add(PermissionKeys.ProductDeliveryProtocols.ProductIncome.Capitalize)
-    await act(async () => { fireEvent.click(capitalize) })
-
-    await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledWith(
-      'delivery-protocol',
-      'capitalize',
-      expect.stringContaining('2026-'),
-      'storage-1',
-      expect.objectContaining({ NetUid: 'pack-1' }),
-    ))
+    // The confirmation closes; the success path is covered by the arrival test.
+    expect(screen.queryByTestId('income-capitalize-confirm')).toBeNull()
   })
 
   it('rechecks placement-edit permission after the add modal is open', async () => {

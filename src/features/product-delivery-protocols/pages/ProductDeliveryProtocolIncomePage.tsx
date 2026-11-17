@@ -346,6 +346,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   const [columnModalOpen, setColumnModalOpen] = useValueState(false)
   const [columnToRemove, setColumnToRemove] = useValueState<DynamicProductPlacementColumn | null>(null)
   const [confirmCarryOut, setConfirmCarryOut] = useValueState(false)
+  // «Оприходувати» asks first, like the supply-order placement does.
+  const [confirmCapitalize, setConfirmCapitalize] = useValueState(false)
   const [drawer, setDrawer] = useValueState<DrawerState | null>(null)
   const [pendingDirtyAction, setPendingDirtyAction] = useValueState<PendingDirtyAction | null>(null)
   const [pzDownload, setPzDownload] = useValueState<DownloadState>(CLOSED_DOWNLOAD_STATE)
@@ -1144,6 +1146,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   ])
 
   const handleProductIncome = useCallback(async () => {
+    setConfirmCapitalize(false)
+
     if (!hasPermission(permissions.capitalize) || !canUseIncome || isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
@@ -1176,6 +1180,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
         selectedStorage.NetUid,
         packingList,
       )
+      notifications.show({ color: 'green', message: t('Оприходування виконано') })
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
@@ -1184,7 +1189,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     }
   }, [
     canUseIncome, fromDate, hasPermission, invoice, isDirty, isSaving, packingList, permissions.capitalize,
-    reloadFromServer, selectedStorage, setError, setSaving, source, t,
+    reloadFromServer, selectedStorage, setConfirmCapitalize, setError, setSaving, source, t,
     tryStartSaving,
   ])
 
@@ -1209,7 +1214,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
   )
 
   return {
-    cancelDiscardChanges, columnModalOpen, columnToRemove, confirmCarryOut, confirmDiscardChanges, confirmRemoveColumn,
+    cancelDiscardChanges, columnModalOpen, columnToRemove, confirmCapitalize, confirmCarryOut, confirmDiscardChanges, confirmRemoveColumn,
     drawer, error, fromDate, gridRows,
     closePzDownload, handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut,
     handleDownloadPzDocument, handleMoveRemnants, handleOpenPlacements,
@@ -1220,7 +1225,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     selectPackingList: requestSelectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, source,
     sourceId: id,
-    setConfirmCarryOut, setDrawer, setFromDate, setSelectedInvoiceId: requestSelectInvoiceId, setSelectedStorageId,
+    setConfirmCapitalize, setConfirmCarryOut, setDrawer, setFromDate, setSelectedInvoiceId: requestSelectInvoiceId, setSelectedStorageId,
     setVatPercent, storages,
     totalQty, vatPercent,
   }
@@ -1904,7 +1909,7 @@ function ProductIncomeControlsCard({
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               variant="outline"
               data-testid="income-capitalize"
-              onClick={() => void model.handleProductIncome()}
+              onClick={() => model.setConfirmCapitalize(true)}
             >
               {t('Оприходувати')}
             </Button>
@@ -2099,6 +2104,30 @@ function ProductIncomeDialogs({
             onClick={model.confirmRemoveColumn}
           >
             {t('Видалити')}
+          </Button>
+        </AppModalFooter>
+      </AppModal>
+
+      <AppModal
+        opened={model.confirmCapitalize}
+        title={t('Оприходувати товар?')}
+        onClose={() => {
+          if (!model.isSaving) {
+            model.setConfirmCapitalize(false)
+          }
+        }}
+      >
+        <AppModalFooter>
+          <Button color="gray" disabled={model.isSaving} variant="default" onClick={() => model.setConfirmCapitalize(false)}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            data-testid="income-capitalize-confirm"
+            disabled={model.isSaving}
+            loading={model.isSaving}
+            onClick={() => void model.handleProductIncome()}
+          >
+            {t('Підтвердити')}
           </Button>
         </AppModalFooter>
       </AppModal>

@@ -160,6 +160,7 @@ describe('Product delivery protocol placement-to-receipt flow', () => {
     fireEvent.click(screen.getByTestId('placement-apply'))
     await waitFor(() => expect(screen.getByTestId('placement-cell').getAttribute('data-placed-qty')).toBe('60'))
     fireEvent.click(screen.getByTestId('income-capitalize'))
+    fireEvent.click(screen.getByTestId('income-capitalize-confirm'))
     await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledOnce())
     const payload = vi.mocked(createProductIncomeFromPackingListDynamic).mock.calls[0][4]
     const savedRow = payload.DynamicProductPlacementColumns[0].DynamicProductPlacementRows[0]
@@ -232,6 +233,7 @@ describe('Product delivery protocol placement-to-receipt flow', () => {
     for (const value of expected) expect(drawer.getByText(String(value))).not.toBeNull()
     fireEvent.click(drawer.getByRole('button', { name: 'Скасувати' }))
     fireEvent.click(screen.getByTestId('income-capitalize'))
+    fireEvent.click(screen.getByTestId('income-capitalize-confirm'))
     await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledOnce())
     const saved = vi.mocked(createProductIncomeFromPackingListDynamic).mock.calls[0][4].DynamicProductPlacementColumns[0].DynamicProductPlacementRows[0]
     expect(saved.Qty).toBe(222.6)

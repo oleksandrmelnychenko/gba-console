@@ -1,3 +1,4 @@
+import { notifications } from '@mantine/notifications'
 import { MantineProvider } from '@mantine/core'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -46,6 +47,8 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
     opened ? <section>{title}{children}</section> : null,
   AppDrawerFooter: ({ children }: { children: ReactNode }) => <footer>{children}</footer>,
 }))
+
+vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }))
 
 vi.mock('../../../shared/ui/AppModal', () => ({
   AppModalFooter: ({ children }: { children: import('react').ReactNode }) => <div>{children}</div>,
@@ -156,6 +159,8 @@ describe('BUG-1199 direct-order product income arrival gate', () => {
     expect(getSupplyOrderInvoiceItems).toHaveBeenCalledWith('direct-supply-order', INVOICE_ID)
 
     fireEvent.click(capitalize)
+    expect(createProductIncomeFromPackingListDynamic).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('income-capitalize-confirm'))
 
     await waitFor(() => expect(createProductIncomeFromPackingListDynamic).toHaveBeenCalledWith(
       'direct-supply-order',
@@ -164,6 +169,7 @@ describe('BUG-1199 direct-order product income arrival gate', () => {
       'storage-1',
       expect.objectContaining({ NetUid: PACKING_LIST_ID }),
     ))
+    await waitFor(() => expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'green', message: 'Оприходування виконано' })))
   })
 
   it('keeps income blocked when the selected invoice protocol has not arrived', async () => {
