@@ -1,4 +1,5 @@
 import { Stack, Text } from '@mantine/core'
+import { useUnsavedChangesGuard } from '../../../shared/ui/UnsavedChangesGuard'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import {
@@ -53,6 +54,9 @@ function OutgoingCashflowCreatePermissionDenied() {
 function OutgoingCashflowCreatePageContent() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [isFormDirty, setFormDirty] = useState(false)
+  // Escape / X on a filled order ask before the data is dropped.
+  const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(isFormDirty)
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const [paymentGroupTitle, setPaymentGroupTitle] = useState(
@@ -117,7 +121,7 @@ function OutgoingCashflowCreatePageContent() {
 
   function renderActiveForm(nextMode: OutgoingCreateMode) {
     if (nextMode === OUTGOING_CREATE_MODE.Simple) {
-      return <OutgoingCashOrderForm onCancel={handleBackToSelector} onCreated={handleCreated} />
+      return <OutgoingCashOrderForm onCancel={handleBackToSelector} onCreated={handleCreated} onDirtyChange={setFormDirty} />
     }
 
     if (nextMode === OUTGOING_CREATE_MODE.PaymentGroup) {
@@ -125,6 +129,7 @@ function OutgoingCashflowCreatePageContent() {
         <OutgoingPaymentGroupForm
           onCancel={handleBackToSelector}
           onCreated={handleCreated}
+          onDirtyChange={setFormDirty}
           onTitleChange={setPaymentGroupTitle}
         />
       )
@@ -139,11 +144,12 @@ function OutgoingCashflowCreatePageContent() {
       opened
       size={960}
       title={<span style={{ fontFamily: 'var(--font-mono)' }}>{drawerTitle}</span>}
-      onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}
+      onClose={() => guardClose(() => navigate(OUTGOING_CASHFLOWS_PATH))}
     >
       <Stack gap="md">
         {activeMode ? renderActiveForm(activeMode) : <OutgoingCreateModeSelector onNavigate={handleNavigate} />}
       </Stack>
+      {unsavedChangesModal}
     </AppModal>
   )
 }

@@ -1,4 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { useUnsavedChangesGuard } from '../../../shared/ui/UnsavedChangesGuard'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
@@ -133,6 +134,10 @@ function IncomeCashflowConversionFormPageContent() {
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
   const [counterparties, setCounterparties] = useValueState<NamedEntity[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm())
+  // Escape / X / Скасувати on a filled order ask before the data is dropped.
+  const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(
+    Boolean(form.amount) || Boolean(form.comment.trim()),
+  )
   const [euroExchangeRate, setEuroExchangeRate] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -532,7 +537,7 @@ function IncomeCashflowConversionFormPageContent() {
           </div>
         </Group>
       )}
-      onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+      onClose={() => guardClose(() => navigate(INCOME_CASHFLOWS_PATH))}
     >
       <form className="income-cashflow-conversion-form" id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
         <Stack gap="md">
@@ -737,7 +742,7 @@ function IncomeCashflowConversionFormPageContent() {
         </Stack>
       </form>
       <AppModalFooter>
-        <Button color="gray" variant="default" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>{t('Скасувати')}</Button>
+        <Button color="gray" variant="default" onClick={() => guardClose(() => navigate(INCOME_CASHFLOWS_PATH))}>{t('Скасувати')}</Button>
 
         <Button
           color={CREATE_ACTION_COLOR}
@@ -750,6 +755,7 @@ function IncomeCashflowConversionFormPageContent() {
           {t('Зберегти')}
         </Button>
       </AppModalFooter>
+      {unsavedChangesModal}
     </AppModal>
   )
 }

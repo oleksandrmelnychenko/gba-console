@@ -112,6 +112,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 type OutgoingPaymentGroupFormProps = {
   onCancel: () => void
   onCreated: () => void
+  onDirtyChange?: (isDirty: boolean) => void
   onTitleChange: (title: string) => void
 }
 
@@ -148,6 +149,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function OutgoingPaymentGroupForm({
   onCancel,
   onCreated,
+  onDirtyChange,
   onTitleChange,
 }: OutgoingPaymentGroupFormProps) {
   const runActionOnce = useSingleFlight()
@@ -172,6 +174,12 @@ export function OutgoingPaymentGroupForm({
   const [unpaidConsumableOrders, setUnpaidConsumableOrders] = useValueState<ConsumablesOrder[]>([])
   const [selectedUnpaidOrderValues, setSelectedUnpaidOrderValues] = useValueState<string[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(initialOperationType, initialRegisterType))
+  // Lets the page ask before a filled order is closed.
+  const isFormDirty = Boolean(form.amount) || Boolean(form.comment.trim())
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty)
+  }, [isFormDirty, onDirtyChange])
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingUnpaidOrders, setLoadingUnpaidOrders] = useValueState(false)

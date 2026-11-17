@@ -1,4 +1,5 @@
 import { differsFromAgreementAccounting, getAgreementAccountingFlags } from '../incomeAccountingFlags'
+import { useUnsavedChangesGuard } from '../../../shared/ui/UnsavedChangesGuard'
 import { keepPickedRegister, pickRegisterCurrency } from '../incomeRegisterSelection'
 import { buildIncomeConfirmLines, formatOrderDate, isFutureOrderDate } from '../incomeCashflowConfirm'
 import { formatClientAgreementBalance } from '../../../shared/money/clientAgreementBalance'
@@ -226,6 +227,10 @@ function IncomeCashflowClientFormPageContent() {
   const [agreementsLoadState, setAgreementsLoadState] =
     useValueState<AgreementsLoadState>('idle')
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(operationType))
+  // Escape / X / Скасувати on a filled order ask before the data is dropped.
+  const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(
+    Boolean(form.amount) || Boolean(form.comment.trim()),
+  )
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingCounterparty, setResolvingCounterparty] = useValueState(false)
@@ -1112,7 +1117,7 @@ function IncomeCashflowClientFormPageContent() {
             />
           </Group>
         }
-        onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+        onClose={() => guardClose(() => navigate(INCOME_CASHFLOWS_PATH))}
         footer={
           <Button
             color={CREATE_ACTION_COLOR}
@@ -1487,7 +1492,8 @@ function IncomeCashflowClientFormPageContent() {
           )}
         </Stack>
       </form>
-      </AppDrawer>
+        {unsavedChangesModal}
+    </AppDrawer>
 
       <AppModal
         opened={Boolean(pendingSubmission)}

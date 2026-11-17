@@ -58,6 +58,7 @@ import { AppDateInput } from '../../../shared/ui/AppDateInput'
 type OutgoingCashOrderFormProps = {
   onCancel: () => void
   onCreated: () => void
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 const FORM_ID = 'outgoing-cash-order-form'
@@ -73,7 +74,7 @@ type SelectOption = {
   value: string
 }
 
-export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrderFormProps) {
+export function OutgoingCashOrderForm({ onCancel, onCreated, onDirtyChange }: OutgoingCashOrderFormProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
@@ -81,6 +82,12 @@ export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrder
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
   const [users, setUsers] = useValueState<OutcomePaymentUser[]>([])
   const [form, setForm] = useValueState<CreateFormState>(() => createInitialForm())
+  // Lets the page ask before a filled order is closed.
+  const isFormDirty = Boolean(form.amount) || Boolean(form.comment.trim())
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty)
+  }, [isFormDirty, onDirtyChange])
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving, tryStartSaving] = useBusyState()
