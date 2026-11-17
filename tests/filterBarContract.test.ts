@@ -13,7 +13,8 @@ const featureStyles = readCssFiles(join(cwd(), 'src/features'))
 const BAR_CLASS_PATTERN = /^(?:app-filter-bar|sales-filter-bar|console-table-command-bar|[\w-]+-filter-bar|[\w-]+-command-bar|assort-filter)$/
 const FILTER_ROW_CLASS_PATTERN = /(?:filter-content|filter-form|filter-row)$/
 const FIELD_GEOMETRY_SELECTOR_PATTERN = /mantine-(?:Input-wrapper|Input-input|InputWrapper-label|Select-input|TextInput-input)/
-const CANONICAL_GEOMETRY_LITERALS = new Set(['4px', '17px', '36px'])
+// Literal copies of the shared toolbar geometry (docs/ui-spacing-grid.md): label 16, gap 4, control 32.
+const CANONICAL_GEOMETRY_LITERALS = new Set(['4px', '16px', '32px'])
 const SHARED_BAR_SCOPE = ':is(.app-filter-bar, .sales-filter-bar, .console-table-command-bar)'
 const CANONICAL_BAR_BLOCK_PADDING = '8px'
 const VERTICAL_GEOMETRY_PROPERTIES = new Set([
@@ -30,7 +31,7 @@ const VERTICAL_GEOMETRY_PROPERTIES = new Set([
 describe('filter-bar CSS contract', () => {
   const root = postcss.parse(filterBarCss)
 
-  it('owns the canonical 74px bar geometry and wraps instead of clipping', () => {
+  it('owns the canonical token-derived bar geometry and wraps instead of clipping', () => {
     const tokenRule = findRule(root, '--app-filter-bar-height', ':root')
     const barRule = findRule(root, 'min-height', '.app-filter-bar', '.sales-filter-bar', '.console-table-command-bar')
     const stackedBarRule = findRule(root, 'flex-direction', '.app-filter-bar.app-filter-bar--stacked')
@@ -40,11 +41,14 @@ describe('filter-bar CSS contract', () => {
       `${SHARED_BAR_SCOPE}:not(:has(.mantine-InputWrapper-label, .app-filter-label, .sales-filter-label))`,
     )
 
+    // 8px padding × 2 + label + gap + control + 1px bottom border = 69px.
+    expect(declarations(tokenRule)['--app-filter-bar-height'].replace(/\s+/g, ' ')).toBe(
+      'calc( 2 * var(--app-space-2, 8px) + var(--app-filter-label-height) + var(--app-filter-label-gap) + var(--app-filter-control-height) + 1px )',
+    )
     expect(declarations(tokenRule)).toMatchObject({
-      '--app-filter-bar-height': '74px',
-      '--app-filter-control-height': '36px',
-      '--app-filter-label-gap': '4px',
-      '--app-filter-label-height': '17px',
+      '--app-filter-control-height': 'var(--app-control-height, 32px)',
+      '--app-filter-label-gap': 'var(--app-space-1, 4px)',
+      '--app-filter-label-height': '16px',
     })
     expect(declarations(barRule)).toMatchObject({
       'align-items': 'end',
@@ -52,7 +56,7 @@ describe('filter-bar CSS contract', () => {
       display: 'flex',
       flex: '0 0 auto',
       'flex-wrap': 'wrap',
-      gap: '10px',
+      gap: '8px',
       'min-height': 'var(--app-filter-bar-height)',
       'min-width': '0',
       padding: '8px',
@@ -63,7 +67,7 @@ describe('filter-bar CSS contract', () => {
       'flex-wrap': 'nowrap',
     })
     expect(declarations(labelFreeBarRule)).toMatchObject({
-      'min-height': '53px',
+      'min-height': 'calc(2 * var(--app-space-2) + var(--app-control-height) + 1px)',
     })
   })
 
@@ -110,8 +114,8 @@ describe('filter-bar CSS contract', () => {
       'row-gap': 'var(--app-filter-label-gap)',
     })
     expect(declarations(inputRule)).toMatchObject({
-      height: 'var(--app-filter-control-height, 36px)',
-      'min-height': 'var(--app-filter-control-height, 36px)',
+      height: 'var(--app-filter-control-height)',
+      'min-height': 'var(--app-filter-control-height)',
     })
     expect(declarations(scrollableRowRule)).toMatchObject({
       'padding-bottom': '0',
@@ -125,17 +129,17 @@ describe('filter-bar CSS contract', () => {
 
     expect(declarations(actionsRule)).toMatchObject({
       'flex-wrap': 'nowrap',
-      gap: '10px',
+      gap: '8px',
       'margin-left': 'auto',
     })
     expect(declarations(slotRule)).toMatchObject({
       'align-items': 'center',
       'align-self': 'end',
       display: 'flex',
-      'min-height': 'var(--app-filter-control-height, 36px)',
+      'min-height': 'var(--app-filter-control-height)',
     })
     expect(declarations(toolbarRule)).toMatchObject({
-      gap: '10px',
+      gap: '8px',
       margin: '0',
       'min-height': '0',
     })
@@ -149,11 +153,11 @@ describe('filter-bar CSS contract', () => {
     expect(declarations(dateRangeRule)).toMatchObject({
       'align-items': 'end',
       display: 'grid',
-      flex: '0 0 310px',
-      gap: '10px',
+      flex: '0 0 312px',
+      gap: '8px',
       'grid-template-columns': 'repeat(2, minmax(0, 1fr))',
       'max-width': '100%',
-      width: '310px',
+      width: '312px',
     })
     expect(declarations(stackedDateRangeRule)).toMatchObject({
       flex: '0 0 auto',
@@ -267,15 +271,15 @@ describe('filter-bar CSS contract', () => {
 describe('console page shell spacing contract', () => {
   const root = postcss.parse(consoleTablePageCss)
 
-  it('keeps the registry card 6px below the console frame', () => {
+  it('keeps the registry card 8px below the console frame', () => {
     const pageRule = findRule(root, 'height', '.console-table-page')
 
     expect(declarations(pageRule)).toMatchObject({
       'box-sizing': 'border-box',
-      height: 'calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 12px)',
+      height: 'calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 16px)',
       'min-height': '0',
       overflow: 'hidden',
-      padding: '6px 4px 0',
+      padding: '8px 4px 0',
     })
   })
 })

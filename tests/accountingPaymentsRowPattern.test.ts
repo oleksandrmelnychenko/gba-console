@@ -82,7 +82,7 @@ describe('accounting payments body-row pattern', () => {
     const badge = findRule(root, `${summarySelector} .mantine-Badge-root`)
 
     expect(declarations(summary)).toMatchObject({
-      'min-height': '30px',
+      'min-height': '28px',
       'overflow-x': 'auto',
       padding: '4px 12px',
     })

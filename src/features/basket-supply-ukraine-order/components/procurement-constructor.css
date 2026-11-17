@@ -17,7 +17,6 @@
 }
 
 .procure-cockpit .app-filter-bar.procure-cockpit-bar {
-  --app-filter-control-height: 32px;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 8px;
