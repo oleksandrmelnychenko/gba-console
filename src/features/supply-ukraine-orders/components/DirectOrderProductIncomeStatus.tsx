@@ -124,3 +124,40 @@ function formatDateTime(value?: Date | string): string {
 function getUserName(user?: User | null): string {
   return user?.FullName || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ') || user?.Name || '-'
 }
+
+export function DirectOrderIncomeStorageChip({ orderNetId }: { orderNetId?: string | null }) {
+  const { t } = useI18n()
+  const [storage, setStorage] = useState<{ netId: string, name: string } | null>(null)
+
+  useEffect(() => {
+    if (!orderNetId) {
+      return
+    }
+
+    let cancelled = false
+
+    void getSupplyOrderProductIncome(orderNetId, 'direct')
+      .then((income) => {
+        const name = income?.Storage?.Name?.trim()
+
+        if (!cancelled) {
+          setStorage(name ? { name, netId: orderNetId } : null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStorage(null)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [orderNetId])
+
+  if (!orderNetId || !storage || storage.netId !== orderNetId) {
+    return null
+  }
+
+  return <TableChip tone="storage" value={`${t('Склад')}: ${storage.name}`} />
+}

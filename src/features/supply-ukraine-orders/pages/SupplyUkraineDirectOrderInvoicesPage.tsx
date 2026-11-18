@@ -41,6 +41,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { DirectOrderIncomeStorageChip } from '../components/DirectOrderProductIncomeStatus'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { useAuth } from '../../auth/useAuth'
@@ -282,7 +283,7 @@ function SupplyUkraineDirectOrderInvoicesPageContent() {
       closeOnClickOutside={false}
       opened
       size="full"
-      title={<Group gap={8} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}</Group>}
+      title={<Group gap={8} wrap="wrap"><span className="supply-direct-invoices-sheet-title">{t('Інвойси і пак листи')}</span>{orderNumber && <TableChip tone="document" value={orderNumber} />}<DirectOrderIncomeStorageChip orderNetId={model.order?.NetUid} /></Group>}
       onClose={() => navigate(-1)}
     >
       <SupplyUkraineDirectOrderInvoicesView embedded model={model} />

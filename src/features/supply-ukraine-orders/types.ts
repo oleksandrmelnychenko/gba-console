@@ -253,7 +253,9 @@ export type SupplyInvoice = EntityFields & {
   SupplyOrganizationId?: number
   SupplyInvoiceDeliveryDocuments?: SupplyInvoiceDeliveryDocument[]
   SupplyInvoiceOrderItems?: SupplyInvoiceOrderItem[]
+  ImportedStorageName?: string
   SupplyOrder?: DirectSupplyOrder | null
+  SupplyOrderNetUid?: string | null
   TotalGrossWeight?: number
   TotalNetPrice?: number
   TotalNetPriceWithVat?: number
@@ -574,5 +576,6 @@ export type SupplyUkraineOrderRow = {
   supplier?: string
   source?: 'AMG' | 'Fenix'
   storage?: string
+  storages?: string[]
   vatAmount?: number
 }

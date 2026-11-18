@@ -54,6 +54,7 @@ import {
 } from '../allOrdersUkraineFilter'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { canOpenDirectProductIncomeFromRow } from '../directOrderActions'
+import { getDirectOrderStorageCopies, getDirectOrderStorages, type DirectOrderStorageCopy } from '../directOrderStorageCopies'
 import type {
   Currency,
   DirectSupplyOrder,
@@ -1112,12 +1113,12 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
     metaItems.push({ label: t('джерело'), tag: true, tagTone: 'cyan', value: row.source })
   }
 
-  if (row.storage) {
+  for (const storage of row.storages?.length ? row.storages : row.storage ? [row.storage] : []) {
     metaItems.push({
       label: t('склад'),
       tag: true,
-      tagTone: getStorageTagTone(row.storage),
-      value: row.storage,
+      tagTone: getStorageTagTone(storage),
+      value: storage,
     })
   }
 
@@ -1211,6 +1212,9 @@ function InvoiceMainCell({ row }: { row: SupplyUkraineOrderRow }) {
               <TableChip tone="document" value={agreement} />
             </span>
           ) : null}
+          {row.storage ? (
+            <OrderMetaValue label={t('склад')} tag tagTone={getStorageTagTone(row.storage)} value={row.storage} />
+          ) : null}
         </div>
       </div>
     </div>
@@ -1255,7 +1259,7 @@ function OrderMetaLine({
   return (
     <div className="supply-order-main-meta">
       {items.map((item, index) => (
-        <Fragment key={item.label}>
+        <Fragment key={`${item.label}-${item.value}-${index}`}>
           {index > 0 && !item.tag ? <OrderMetaSeparator /> : null}
           <OrderMetaValue {...item} />
         </Fragment>
@@ -1508,6 +1512,7 @@ export function OrderActionsModal({
     canOpenToUkraineView,
   } = permissions
   const directHasProForma = hasSupplyProForm(row?.directOrder)
+  const directCopies: DirectOrderStorageCopy[] = row?.kind === 'direct' ? getDirectOrderStorageCopies(row.directOrder) : []
 
   return (
     <AppModal
@@ -1525,7 +1530,7 @@ export function OrderActionsModal({
     >
       {row && (
         <Stack className="app-modal-actions" gap="xs">
-          {row.kind === 'direct' && row.netUid && (
+          {row.kind === 'direct' && directCopies.length < 2 && row.netUid && (
             <DirectOrderProductIncomeStatus key={`direct:${row.netUid}`} compact orderNetId={row.netUid} />
           )}
 
@@ -1578,40 +1583,90 @@ export function OrderActionsModal({
             />
           )}
 
-          {row.kind === 'direct' && canOpenDirectLogistics && row.netUid && (
-            <OrderActionButton
-              icon={<Route size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Логістика')}
-              onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}`)}
+          {row.kind === 'direct' && directCopies.length < 2 && row.netUid && (
+            <DirectOrderActionButtons
+              canOpenLogistics={canOpenDirectLogistics}
+              canOpenInvoices={canOpenDirectInvoices}
+              canOpenProductIncome={canOpenDirectProductIncomeFromRow(row, canOpenDirectProductIncome)}
+              canOpenSpecifications={canOpenDirectSpecifications && directHasProForma}
+              netUid={row.netUid}
+              onNavigate={onNavigate}
             />
           )}
 
-          {row.kind === 'direct' && canOpenDirectInvoices && row.netUid && (
-            <OrderActionButton
-              icon={<FileText size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Товари')}
-              onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/supply-invoices`)}
-            />
-          )}
-
-          {row.kind === 'direct' && canOpenDirectSpecifications && directHasProForma && row.netUid && (
-            <OrderActionButton
-              icon={<ListChecks size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Специфікації')}
-              onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/specifications`)}
-            />
-          )}
-
-          {canOpenDirectProductIncomeFromRow(row, canOpenDirectProductIncome) && (
-            <OrderActionButton
-              icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
-              label={t('Оприходування')}
-              onClick={() => onNavigate(`/orders/ukraine/all/edit/${row.netUid}/product-income`)}
-            />
-          )}
+          {row.kind === 'direct' && directCopies.length > 1 && directCopies.map((copy) => (
+            <Stack key={copy.netUid} className="supply-order-actions-storage" gap={4}>
+              <Text className="supply-order-actions-storage__title" fw={600} size="sm">
+                {t('Склад')}: {copy.storage || '-'}
+              </Text>
+              <DirectOrderProductIncomeStatus key={`direct:${copy.netUid}`} compact orderNetId={copy.netUid} />
+              <DirectOrderActionButtons
+                canOpenLogistics={canOpenDirectLogistics}
+                canOpenInvoices={canOpenDirectInvoices}
+                canOpenProductIncome={canOpenDirectProductIncomeFromRow(row, canOpenDirectProductIncome)}
+                canOpenSpecifications={canOpenDirectSpecifications && directHasProForma}
+                netUid={copy.netUid}
+                onNavigate={onNavigate}
+              />
+            </Stack>
+          ))}
         </Stack>
       )}
     </AppModal>
+  )
+}
+
+function DirectOrderActionButtons({
+  canOpenInvoices,
+  canOpenLogistics,
+  canOpenProductIncome,
+  canOpenSpecifications,
+  netUid,
+  onNavigate,
+}: {
+  canOpenInvoices: boolean
+  canOpenLogistics: boolean
+  canOpenProductIncome: boolean
+  canOpenSpecifications: boolean
+  netUid: string
+  onNavigate: (path: string) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      {canOpenLogistics && (
+        <OrderActionButton
+          icon={<Route size={20} color="var(--mantine-color-gray-7)" />}
+          label={t('Логістика')}
+          onClick={() => onNavigate(`/orders/ukraine/all/edit/${netUid}`)}
+        />
+      )}
+
+      {canOpenInvoices && (
+        <OrderActionButton
+          icon={<FileText size={20} color="var(--mantine-color-gray-7)" />}
+          label={t('Товари')}
+          onClick={() => onNavigate(`/orders/ukraine/all/edit/${netUid}/supply-invoices`)}
+        />
+      )}
+
+      {canOpenSpecifications && (
+        <OrderActionButton
+          icon={<ListChecks size={20} color="var(--mantine-color-gray-7)" />}
+          label={t('Специфікації')}
+          onClick={() => onNavigate(`/orders/ukraine/all/edit/${netUid}/specifications`)}
+        />
+      )}
+
+      {canOpenProductIncome && (
+        <OrderActionButton
+          icon={<PackageCheck size={20} color="var(--mantine-color-gray-7)" />}
+          label={t('Оприходування')}
+          onClick={() => onNavigate(`/orders/ukraine/all/edit/${netUid}/product-income`)}
+        />
+      )}
+    </>
   )
 }
 
@@ -2162,6 +2217,7 @@ function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
     responsible: getEntityName(order.Responsible),
     source: order.ImportedForAmg === true ? 'AMG' : order.ImportedForAmg === false ? 'Fenix' : undefined,
     storage: order.ImportedStorageName,
+    storages: getDirectOrderStorages(order),
     supplier: getEntityName(order.Client),
     vatAmount: amounts.vat,
   }
@@ -2189,7 +2245,7 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
     qty: positiveNumber(invoice.TotalQuantity),
     responsible: getEntityName(order.Responsible),
     source: order.ImportedForAmg === true ? 'AMG' : order.ImportedForAmg === false ? 'Fenix' : undefined,
-    storage: order.ImportedStorageName,
+    storage: invoice.ImportedStorageName || order.ImportedStorageName,
     supplier: getEntityName(order.Client),
     vatAmount: amounts.vat,
   }
@@ -2278,6 +2334,7 @@ function buildPrintColumns(t: (key: string) => string) {
     { Number: 12, ColumnName: 'Organization', TableName: 'SupplyOrderModel', Translate: t('Організація') },
     { Number: 13, ColumnName: 'Placed', TableName: 'SupplyOrderModel', Translate: t(SUPPLY_ORDER_INCOME_STATUS_LABEL) },
     { Number: 14, ColumnName: 'Responsible', TableName: 'SupplyOrderModel', Translate: t('Відповідальний') },
+    { Number: 15, ColumnName: 'Storage', TableName: 'SupplyOrderModel', Translate: t('Склад') },
   ]
 }
 
