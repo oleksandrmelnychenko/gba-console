@@ -27,3 +27,13 @@ describe('transfer target storages', () => {
     expect(buildToStorageOptions(storages, { NetUid: 's-a' })).toHaveLength(3)
   })
 })
+
+describe('management transfer targets', () => {
+  it('may list other organisations only when allowed (management operation)', () => {
+    const source = { Id: 1, NetUid: 's-a', OrganizationId: 10 }
+    const storages = [source, { Id: 2, NetUid: 's-b', OrganizationId: 10 }, { Id: 3, NetUid: 's-f', OrganizationId: 20 }]
+
+    expect(buildToStorageOptions(storages, source).map((option) => option.value)).toEqual(['s-b'])
+    expect(buildToStorageOptions(storages, source, { allowOtherOrganizations: true }).map((option) => option.value)).toEqual(['s-b', 's-f'])
+  })
+})

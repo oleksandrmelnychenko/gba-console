@@ -74,8 +74,7 @@ describe('Product storages canonical permission guards', () => {
     vi.clearAllMocks()
     vi.mocked(getProductStorageStorages).mockResolvedValue([
       { Name: 'Основний склад', NetUid: 'storage-1', Organization: { Id: 1, Name: 'Організація 1' } },
-      { Name: 'Склад іншої організації', NetUid: 'storage-3', Organization: { Id: 2, Name: 'Організація 2' } },
-      { Name: 'Інший склад', NetUid: 'storage-2', Organization: { Id: 1, Name: 'Організація 1' } },
+      { Name: 'Інший склад', NetUid: 'storage-2', Organization: { Id: 2, Name: 'Організація 2' } },
     ])
     vi.mocked(getAvailableProductsByStorage).mockResolvedValue({
       items: [{
@@ -132,7 +131,7 @@ describe('Product storages canonical permission guards', () => {
     expect(screen.queryByRole('button', { name: 'Операція зі складської позиції' })).toBeNull()
   })
 
-  it('submits a management action only with its canonical key, never to another organisation (N3-01)', async () => {
+  it('submits a management cross-organization action only with its canonical key', async () => {
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
     allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management)
     renderPage()
@@ -151,11 +150,31 @@ describe('Product storages canonical permission guards', () => {
         }),
       }),
     ))
-    expect(createProductStorageTransfer).not.toHaveBeenCalledWith(
+  })
+
+  it('offers only the source organisation for a normal transfer, even with the management key (N3-01)', async () => {
+    vi.mocked(getProductStorageStorages).mockResolvedValue([
+      { Name: 'Основний склад', NetUid: 'storage-1', Organization: { Id: 1, Name: 'Організація 1' } },
+      { Name: 'Інший склад', NetUid: 'storage-2', Organization: { Id: 2, Name: 'Організація 2' } },
+      { Name: 'Склад тієї ж організації', NetUid: 'storage-3', Organization: { Id: 1, Name: 'Організація 1' } },
+    ])
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.Page.View)
+    allowedPermissions.add(PermissionKeys.WarehouseAccounting.Storages.PositionAction.Management)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Операція зі складської позиції' }))
+    fireEvent.change(screen.getByRole('textbox', { name: /Кількість/ }), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Перемістити' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Так' }))
+
+    await waitFor(() => expect(createProductStorageTransfer).toHaveBeenCalledWith(
       expect.objectContaining({
-        productTransfer: expect.objectContaining({ ToStorage: expect.objectContaining({ NetUid: 'storage-3' }) }),
+        productTransfer: expect.objectContaining({
+          IsManagement: false,
+          ToStorage: expect.objectContaining({ NetUid: 'storage-3' }),
+        }),
       }),
-    )
+    ))
   })
 
   it('has no «Період» control: the stock list and its export are the current availability', async () => {

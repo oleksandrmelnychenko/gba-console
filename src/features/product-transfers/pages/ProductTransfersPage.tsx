@@ -176,8 +176,10 @@ function useProductTransfersPageModel({
       return storageOptions
     }
 
-    // A transfer never crosses organisations, management transfers included (chaos3 N3-01).
-    const availableStorages = storages.filter((storage) => storage.OrganizationId === fromStorage.OrganizationId)
+    // A normal transfer stays inside the organisation (chaos3 N3-01); a management transfer may cross it.
+    const availableStorages = createForm.isManagement
+      ? storages
+      : storages.filter((storage) => storage.OrganizationId === fromStorage.OrganizationId)
 
     return availableStorages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
       if (isSameStorage(storage, fromStorage)) {
@@ -192,7 +194,7 @@ function useProductTransfersPageModel({
 
       return options
     }, [])
-  }, [fromStorage, storageOptions, storages])
+  }, [createForm.isManagement, fromStorage, storageOptions, storages])
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === createForm.toStorageNetUid)
     ? createForm.toStorageNetUid
     : toStorageOptions[0]?.value || ''
@@ -756,7 +758,9 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               onChange={(value) =>
                 setCreateForm((current) => {
                   const nextFromStorage = storages.find((storage) => storage.NetUid === value)
-                  const nextToStorage = getDefaultToStorage(storages, nextFromStorage)?.NetUid || ''
+                  const nextToStorage = current.isManagement
+                    ? current.toStorageNetUid
+                    : getDefaultToStorage(storages, nextFromStorage)?.NetUid || ''
 
                   return {
                     ...current,
@@ -1278,7 +1282,9 @@ function resolveStorageDefaults(form: CreateFormState, storages: ProductTransfer
 
   const fromStorage =
     storages.find((storage) => storage.NetUid === form.fromStorageNetUid) || storages.find((storage) => storage.NetUid)
-  const toStorages = storages.filter((storage) => storage.OrganizationId === fromStorage?.OrganizationId)
+  const toStorages = form.isManagement
+    ? storages
+    : storages.filter((storage) => storage.OrganizationId === fromStorage?.OrganizationId)
   const toStorage =
     toStorages.find((storage) => storage.NetUid === form.toStorageNetUid && !isSameStorage(storage, fromStorage))
     || getDefaultToStorage(toStorages, fromStorage)
@@ -1303,7 +1309,7 @@ function validateCreateForm(form: CreateFormState, storages: ProductTransferStor
     return translate('Склади не можуть збігатися')
   }
 
-  if (fromStorage.OrganizationId !== toStorage.OrganizationId) {
+  if (!form.isManagement && fromStorage.OrganizationId !== toStorage.OrganizationId) {
     return translate('Переміщення між складами різних організацій заборонене.')
   }
 

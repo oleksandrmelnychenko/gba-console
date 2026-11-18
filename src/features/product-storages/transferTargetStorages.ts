@@ -3,16 +3,21 @@ import type { ProductStorageStorage } from './types'
 export type StorageOption = { label: string; value: string }
 
 /**
- * Target storages for a transfer from `fromStorage`: other storages of the SAME organisation only.
- * A transfer never moves stock between legal entities (chaos3 N3-01) — the server refuses it too,
- * management transfers included.
+ * Target storages for a transfer from `fromStorage`. A normal transfer offers other storages of the SAME
+ * organisation only (chaos3 N3-01; the server refuses the rest). A management operation
+ * («Управлінська операція», with its permission) may target any organisation — existing behaviour.
  */
 export function buildToStorageOptions(
   storages: ProductStorageStorage[],
   fromStorage: ProductStorageStorage | null,
+  { allowOtherOrganizations = false }: { allowOtherOrganizations?: boolean } = {},
 ): StorageOption[] {
   return storages.reduce<StorageOption[]>((options, storage) => {
-    if (!storage.NetUid || isSameStorage(storage, fromStorage) || !isSameStorageOrganization(storage, fromStorage)) {
+    if (
+      !storage.NetUid
+      || isSameStorage(storage, fromStorage)
+      || (!allowOtherOrganizations && !isSameStorageOrganization(storage, fromStorage))
+    ) {
       return options
     }
 

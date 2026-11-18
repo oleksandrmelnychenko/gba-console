@@ -214,8 +214,11 @@ function useProductStoragesPageModel() {
   )
   const toStorageOptions = useMemo(
     () =>
-      buildToStorageOptions(storages, actionFromStorage),
-    [actionFromStorage, storages],
+      buildToStorageOptions(storages, actionFromStorage, {
+        // Only a management operation may move stock to another organisation (N3-01).
+        allowOtherOrganizations: canUseManagementActions && actionForm.isManagement,
+      }),
+    [actionForm.isManagement, actionFromStorage, canUseManagementActions, storages],
   )
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === actionForm.toStorageNetUid)
     ? actionForm.toStorageNetUid
