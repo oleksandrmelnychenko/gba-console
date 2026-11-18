@@ -1,6 +1,7 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
+import { buildToStorageOptions, isSameStorage } from '../transferTargetStorages'
 import {
   Alert,
   Badge,
@@ -213,12 +214,8 @@ function useProductStoragesPageModel() {
   )
   const toStorageOptions = useMemo(
     () =>
-      buildToStorageOptions(storages, actionFromStorage, {
-        canUseManagementActions,
-        isManagement: actionForm.isManagement,
-        scope: actionModal?.scope || 'single',
-      }),
-    [actionForm.isManagement, actionFromStorage, actionModal?.scope, canUseManagementActions, storages],
+      buildToStorageOptions(storages, actionFromStorage),
+    [actionFromStorage, storages],
   )
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === actionForm.toStorageNetUid)
     ? actionForm.toStorageNetUid
@@ -2067,48 +2064,6 @@ function buildStorageOptions(storages: ProductStorageStorage[]): { label: string
   }, [])
 }
 
-function buildToStorageOptions(
-  storages: ProductStorageStorage[],
-  fromStorage: ProductStorageStorage | null,
-  actionOptions: {
-    isManagement: boolean
-    canUseManagementActions: boolean
-    scope: ProductStorageActionScope
-  },
-): { label: string; value: string }[] {
-  const canUseCrossOrganizationStorages =
-    actionOptions.canUseManagementActions && (actionOptions.scope === 'single' || actionOptions.isManagement)
-
-  return storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
-    if (!storage.NetUid || isSameStorage(storage, fromStorage)) {
-      return options
-    }
-
-    if (!canUseCrossOrganizationStorages && !isSameStorageOrganization(storage, fromStorage)) {
-      return options
-    }
-
-    options.push({
-      label: [storage.Name, storage.Organization?.Name ? `(${storage.Organization.Name})` : ''].filter(Boolean).join(' '),
-      value: storage.NetUid,
-    })
-
-    return options
-  }, [])
-}
-
-function isSameStorage(firstStorage?: ProductStorageStorage | null, secondStorage?: ProductStorageStorage | null): boolean {
-  if (!firstStorage || !secondStorage) {
-    return false
-  }
-
-  if (firstStorage.NetUid && secondStorage.NetUid) {
-    return firstStorage.NetUid === secondStorage.NetUid
-  }
-
-  return Boolean(firstStorage.Id && secondStorage.Id && firstStorage.Id === secondStorage.Id)
-}
-
 function resolveStorage(
   selectedStorage: ProductStorageStorage | null,
   availability?: ProductStorageAvailability,
@@ -2133,33 +2088,6 @@ function resolveStorage(
     Organization: availabilityStorage.Organization || selectedStorage.Organization,
     OrganizationId: availabilityStorage.OrganizationId ?? selectedStorage.OrganizationId,
   }
-}
-
-function isSameStorageOrganization(
-  storage: ProductStorageStorage,
-  fromStorage: ProductStorageStorage | null,
-): boolean {
-  const fromOrganizationKey = getStorageOrganizationKey(fromStorage)
-
-  if (!fromOrganizationKey) {
-    return true
-  }
-
-  return getStorageOrganizationKey(storage) === fromOrganizationKey
-}
-
-function getStorageOrganizationKey(storage?: ProductStorageStorage | null): string {
-  if (!storage) {
-    return ''
-  }
-
-  if (storage.Organization?.NetUid) {
-    return storage.Organization.NetUid
-  }
-
-  const organizationId = storage.OrganizationId ?? storage.Organization?.Id
-
-  return organizationId ? String(organizationId) : ''
 }
 
 function getAvailabilityKey(availability?: ProductStorageAvailability): string {
