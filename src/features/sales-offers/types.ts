@@ -30,6 +30,7 @@ export type OfferCurrency = OfferEntity & {
 
 export type OfferAgreement = OfferEntity & {
   Currency?: OfferCurrency
+  IsActive?: boolean
   Name?: string
   WithVATAccounting?: boolean
 }

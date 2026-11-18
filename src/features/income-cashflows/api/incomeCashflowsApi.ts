@@ -1,5 +1,6 @@
 import { normalizeIncomePaymentAllocationSummary } from '../incomePaymentAllocationSummary'
 import { apiRequest } from '../../../shared/api/apiClient'
+import { agreementsForNewOperation } from '../../../shared/agreementOperationPolicy'
 import {
   executeAccountingMutation,
   type AccountingMutationOperationOptions,
@@ -116,27 +117,6 @@ export async function updateIncomeCashflowClient(
   })
 
   return normalizeCancelResult(result)
-}
-
-export async function updateIncomeCashflow(
-  order: IncomePaymentOrder,
-  operation?: AccountingMutationOperationOptions,
-): Promise<IncomePaymentOrder | null> {
-  const result = await executeAccountingMutation({
-    identity: order,
-    kind: 'income-payment:update',
-    operation,
-    payload: order,
-    request: (payload, context) => apiRequest<unknown>('/payments/orders/income/update', {
-      body: payload,
-      dedupe: false,
-      headers: context.headers,
-      method: 'POST',
-      ...(context.signal ? { signal: context.signal } : {}),
-    }),
-  })
-
-  return normalizeIncomePaymentOrder(result)
 }
 
 export async function getIncomeCashflowCurrencies(): Promise<Currency[]> {
@@ -400,7 +380,10 @@ export async function getIncomeCashflowClientAgreements(
     },
   })
 
-  return readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ClientAgreement[]
+  // These lookups start a new payment (or move one onto an agreement): inactive agreements are not offered.
+  return agreementsForNewOperation(
+    readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ClientAgreement[],
+  )
 }
 
 export async function getIncomeCashflowSupplyOrganizationAgreements(id: number): Promise<SupplyOrganizationAgreement[]> {
@@ -518,7 +501,10 @@ export async function getIncomeCashflowRetailClientAgreements(netId: string): Pr
     },
   })
 
-  return readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ClientAgreement[]
+  // These lookups start a new payment (or move one onto an agreement): inactive agreements are not offered.
+  return agreementsForNewOperation(
+    readArrayPayload(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']) as ClientAgreement[],
+  )
 }
 
 export async function getIncomeCashflowRetailClientSales(netId: string): Promise<Sale[]> {

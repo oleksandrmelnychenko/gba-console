@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { getSalesWizardClientSubClients } from '../../../clients/api/clientCabinetApi'
+import { agreementsForNewOperation } from '../../../../shared/agreementOperationPolicy'
 import type { Client, ClientAgreement, ClientIdentityAttentionSummary, ClientInDebt } from '../../../clients/types'
 import type { SalesUkraineClientAgreement } from '../../types'
 import { getWizardClientAgreements, getWizardClientGroupedDebts, getWizardClientIdentityAttention, type WizardSaleRegisterQuery } from './wizardClientStepApi'
@@ -125,14 +126,16 @@ export function useWizardClientSelection(options: Options) {
     if (session.agreementsPromise) return session.agreementsPromise
     if (session.agreementsLoaded) return Promise.resolve(true)
     publish({ agreementsLoading: true })
-    session.agreementsPromise = getWizardClientAgreements(netId, permissionFlow, session.controller.signal).then((list) => {
+    session.agreementsPromise = getWizardClientAgreements(netId, permissionFlow, session.controller.signal).then((allAgreements) => {
       if (sessionRef.current !== session) return false
       session.agreementsLoaded = true
       const restore = restoreAgreementRef.current
       restoreAgreementRef.current = null
       const restored = restore && restore.clientNetId === netId
-        ? list.find((item) => item.NetUid?.trim().toLowerCase() === restore.agreementNetId)
+        ? allAgreements.find((item) => item.NetUid?.trim().toLowerCase() === restore.agreementNetId)
         : undefined
+      // A new sale is not offered an inactive agreement; a sale already on one keeps showing it.
+      const list = agreementsForNewOperation(allAgreements, (item) => item === restored)
       const active = restored ?? list.find((item) => item.Agreement?.IsActive) ?? list[0]
       publish({ agreements: list, agreementsError: false, selectedAgreementKey: active ? getWizardAgreementKey(active) : '' })
       latestRef.current.onAgreementChange(active?.NetUid ?? null, active ? toSalesAgreement(active) : null)

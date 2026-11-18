@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { agreementsForNewOperation } from '../../../shared/agreementOperationPolicy'
 import { SHOP_BASE_URL } from '../../../shared/config/env'
 import { formatDateForQuery } from '../../../shared/date/dateTime'
 import {
@@ -124,7 +125,8 @@ export async function getOffersClientAgreements(clientNetId: string): Promise<Of
     query: { netId: clientNetId },
   })
 
-  return normalizeArray(result) as OfferClientAgreement[]
+  // A new offer is not offered an inactive agreement (the server refuses it).
+  return agreementsForNewOperation(normalizeArray(result) as OfferClientAgreement[])
 }
 
 export async function searchOffersProducts(value: string): Promise<OffersProduct[]> {

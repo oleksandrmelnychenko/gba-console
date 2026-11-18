@@ -9,7 +9,9 @@ vi.mock('./wizardSaleHeaderApi', () => ({ getWizardHeaderClient: mocks.header })
 vi.mock('../../../clients/api/clientCabinetApi', () => ({ getClientSubClients: mocks.children }))
 vi.mock('./wizardKeyboard', () => ({ setWizardKeyboardState: mocks.keyboard }))
 const client = (id: number): Client => ({ Id: id, NetUid: `client-${id}`, RegionCode: { Value: `CN0100${id}` } })
-const first: ClientAgreement = { Id: 1, NetUid: 'agreement-1', Agreement: { IsActive: false } }
+// No IsActive flag: kept by the new-sale picker (only an explicit inactive agreement is hidden).
+const first: ClientAgreement = { Id: 1, NetUid: 'agreement-1', Agreement: {} }
+const inactive: ClientAgreement = { Id: 3, NetUid: 'agreement-3', Agreement: { IsActive: false } }
 const active: ClientAgreement = { Id: 2, NetUid: 'agreement-2', Agreement: { IsActive: true } }
 function options() {
   return {
@@ -37,6 +39,14 @@ afterEach(() => { cleanup(); vi.useRealTimers() })
 async function tick() { await act(async () => { await vi.advanceTimersByTimeAsync(220) }) }
 
 describe('wizard client selection', () => {
+  it('does not offer an inactive agreement for a new sale (owner decision)', async () => {
+    mocks.agreements.mockResolvedValueOnce([inactive, first, active])
+    const { result } = renderHook(useWizardClientSelection, { initialProps: options() })
+    await act(async () => result.current.confirmClient(client(1)))
+    expect(result.current.agreements).toEqual([first, active])
+    expect(result.current.selectedAgreement).toBe(active)
+  })
+
   it('loads independent details in parallel and preserves the chosen agreement on repeated confirmation', async () => {
     const pending = deferred<ClientInDebt[]>()
     mocks.debts.mockReturnValueOnce(pending.promise)

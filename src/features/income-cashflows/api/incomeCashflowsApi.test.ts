@@ -26,7 +26,6 @@ import {
   searchIncomeCashflowRegistryPaymentRegisters,
   searchIncomeCashflowPaymentPurposes,
   searchIncomeCashflowRetailClients,
-  updateIncomeCashflow,
   updateIncomeCashflowClient,
 } from './incomeCashflowsApi'
 
@@ -520,10 +519,9 @@ describe('income cashflow API lookup contracts', () => {
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
-  it('covers cancel, update-client, and update with backward-compatible operation options', async () => {
+  it('covers cancel and update-client with backward-compatible operation options; no payment edit call', async () => {
     const cancelOperationId = '22222222-2222-4222-8222-222222222222'
     const clientOperationId = '33333333-3333-4333-8333-333333333333'
-    const updateOperationId = '44444444-4444-4444-8444-444444444444'
     apiRequestMock.mockResolvedValue({ NetUid: 'income-1' })
 
     await cancelIncomeCashflow('income-1', {
@@ -535,13 +533,6 @@ describe('income cashflow API lookup contracts', () => {
       incomeNetId: 'income-1',
     }, {
       operationId: clientOperationId,
-    })
-    await updateIncomeCashflow({
-      Amount: 300,
-      AssignedPaymentOrders: [],
-      NetUid: 'income-1',
-    }, {
-      operationId: updateOperationId,
     })
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(
@@ -570,20 +561,9 @@ describe('income cashflow API lookup contracts', () => {
         },
       },
     )
-    expect(apiRequestMock).toHaveBeenNthCalledWith(
-      3,
-      '/payments/orders/income/update',
-      {
-        body: {
-          Amount: 300,
-          AssignedPaymentOrders: [],
-          NetUid: 'income-1',
-        },
-        dedupe: false,
-        headers: { 'Idempotency-Key': updateOperationId },
-        method: 'POST',
-      },
-    )
+    // Payments are not edited after creation (cancel + create a new one): the console has no update call.
+    expect(apiRequestMock).toHaveBeenCalledTimes(2)
+    expect(apiRequestMock.mock.calls.map(([path]) => path)).not.toContain('/payments/orders/income/update')
   })
 })
 
