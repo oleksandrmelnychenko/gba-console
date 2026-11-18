@@ -227,9 +227,11 @@ function IncomeCashflowClientFormPageContent() {
   const [agreementsLoadState, setAgreementsLoadState] =
     useValueState<AgreementsLoadState>('idle')
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(operationType))
-  // Escape / X / Скасувати on a filled order ask before the data is dropped.
+  // Escape / X / Скасувати on a filled order ask before the data is dropped. A picked counterparty,
+  // payer, purpose, incoming number or debt is entered data too: an order with only those used to
+  // close at once.
   const { guard: guardClose, modal: unsavedChangesModal } = useUnsavedChangesGuard(
-    Boolean(form.amount) || Boolean(form.comment.trim()),
+    isIncomeCashflowClientFormDirty(form),
     { onBack: () => navigate(INCOME_CASHFLOWS_PATH, { replace: true }) },
   )
   const [error, setError] = useValueState<string | null>(null)
@@ -1663,6 +1665,16 @@ function IncomeCashflowDebtTable({
       tableId="income-cashflow-client-debts"
     />
   )
+}
+
+function isIncomeCashflowClientFormDirty(form: FormState): boolean {
+  return Boolean(form.amount)
+    || Boolean(form.comment.trim())
+    || Boolean(form.counterpartySearch.trim())
+    || Boolean(form.payerSearch.trim())
+    || Boolean(form.paymentPurpose.trim())
+    || Boolean(form.entranceNumber.trim())
+    || form.selectedDebtValues.length > 0
 }
 
 function createInitialForm(operationType: IncomePaymentOperationType): FormState {
