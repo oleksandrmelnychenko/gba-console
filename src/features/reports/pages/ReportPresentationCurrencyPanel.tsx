@@ -10,7 +10,7 @@ export function ReportPresentationCurrencyPanel({ dataset, request, disabled, on
 }) {
   const supported = presentationCurrencySupported(dataset)
   const value = requestPresentationCurrency(request)
-  if (!supported && value == null) return null
+  if ((!supported || !presentationCurrencyModeSupported(request)) && value == null) return null
   if (!supported || !presentationCurrencyModeSupported(request)) return <Stack gap="xs">
     <Alert color="yellow" title="Валюта звіту">{presentationCurrencyError(request, dataset) ?? 'Вибір валюти доступний для поточних документів ВП.'}</Alert>
     {value != null ? <Button variant="subtle" disabled={disabled} onClick={() => onChange(undefined)}>Використовувати EUR за замовчуванням</Button> : null}

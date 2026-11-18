@@ -1,5 +1,4 @@
 import { Alert, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
-import { useId } from 'react'
 import type { ReportDataset, ReportRequestBody, ReportTopGroupsCapabilities } from '../types'
 import { defaultReportTopGroups, readTopGroupsCapabilities, readTopGroupsDraft, reportTopGroupsError, requestTopGroups, type ReportTopGroupsDraft } from '../data/reportTopGroups'
 import { ReportRankingPrerequisites } from './ReportRankingPrerequisites'
@@ -17,20 +16,19 @@ const modes = [{ value: '1', label: 'Кількість груп' }, { value: '2
 const directions = [{ value: '2', label: 'Найбільші значення' }, { value: '1', label: 'Найменші значення' }]
 
 export function ReportTopGroupsPanel({ data, dataset, disabled, onChange, onConfigureGrouping, onConfigureMeasures }: Props) {
-  const reasonId = useId()
   const raw = requestTopGroups(data), draft = readTopGroupsDraft(raw), cap = readTopGroupsCapabilities(dataset)
   const error = reportTopGroupsError(data, dataset), initial = defaultReportTopGroups(data, dataset)
-  const prerequisites = getRankingPrerequisites('TOP', data, cap)
+  const prerequisites = getRankingPrerequisites(data, cap)
   return <Stack component="section" aria-label="TOP цілих груп" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>TOP цілих груп</Text>
       {raw != null ? <Button type="button" variant="default" size="compact-sm" disabled={disabled}
-        aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => onChange(undefined)}>Вимкнути TOP: залишити всі групи</Button> : cap ?
+        onClick={() => onChange(undefined)}>Вимкнути TOP: залишити всі групи</Button> : cap ?
         <Button type="button" variant="default" size="compact-sm" disabled={disabled || !initial}
-          aria-describedby={prerequisites.reasons ? reasonId : undefined} onClick={() => { if (initial) onChange(initial) }}>Увімкнути TOP цілих груп</Button> : null}
+          onClick={() => { if (initial) onChange(initial) }}>Увімкнути TOP цілих груп</Button> : null}
     </Group>
     {error ? <Alert color="red">{error}</Alert> : null}
-    <ReportRankingPrerequisites kind="TOP" reasonId={reasonId} {...prerequisites} disabled={disabled}
+    <ReportRankingPrerequisites kind="TOP" {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />
     {draft && cap ? <TopGroupsFields data={data} dataset={dataset!} value={draft} cap={cap} disabled={disabled} onChange={onChange} /> : null}
   </Stack>

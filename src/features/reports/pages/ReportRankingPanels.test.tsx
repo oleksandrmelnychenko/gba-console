@@ -9,9 +9,9 @@ import { ReportTopGroupsPanel } from './ReportTopGroupsPanel'
 
 const cases = [
   { name: 'TOP', Component: ReportTopGroupsPanel, dataset: topDataset, enable: 'Увімкнути TOP цілих груп',
-    disable: 'Вимкнути TOP: залишити всі групи', unsupported: /не підтвердив підтримку TOP цілих груп/ },
+    disable: 'Вимкнути TOP: залишити всі групи' },
   { name: 'ABC', Component: ReportAbcClassificationPanel, dataset: abcDataset, enable: 'Увімкнути ABC-класифікацію',
-    disable: 'Вимкнути ABC-класифікацію', unsupported: /не підтвердив підтримку ABC-класифікації/ },
+    disable: 'Вимкнути ABC-класифікацію' },
 ] as const
 
 function inactiveRequest(): ReportRequestBody {
@@ -20,7 +20,7 @@ function inactiveRequest(): ReportRequestBody {
   return data
 }
 
-describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, Component, dataset, enable, disable, unsupported }) => {
+describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, Component, dataset, enable, disable }) => {
   function show(data = inactiveRequest(), source: ReportDataset | undefined = dataset, disabled = false) {
     const onChange = vi.fn(), onConfigureGrouping = vi.fn(), onConfigureMeasures = vi.fn()
     const view = render(<MantineProvider env="test"><Component data={data} dataset={source} disabled={disabled}
@@ -28,28 +28,32 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     return { ...view, onChange, onConfigureGrouping, onConfigureMeasures }
   }
 
-  it('explains an unsupported or unverified dataset without offering an unsafe enable action', () => {
+  function expectNoCaption(button?: HTMLButtonElement) {
+    expect(screen.queryByText(/додайте до рядків|увімкніть показник|не підтвердив|Редагування недоступне/)).toBeNull()
+    expect(button?.getAttribute('aria-describedby') ?? null).toBeNull()
+  }
+
+  it('hides an unsupported or unverified dataset without a caption or an unsafe enable action', () => {
     const source = structuredClone(dataset)
     if (name === 'TOP') source.TopGroups = { Version: 99 }
     else source.AbcClassification = { Version: 99 }
     const data = inactiveRequest(), original = structuredClone(data), { onChange } = show(data, source)
-    expect(screen.getByText(unsupported)).toBeTruthy()
+    expectNoCaption()
     expect(screen.queryByRole('button', { name: enable })).toBeNull()
     expect(screen.queryByRole('button', { name: `Налаштувати групування для ${name}` })).toBeNull()
     expect(onChange).not.toHaveBeenCalled()
     expect(data).toEqual(original)
   })
 
-  it('explains the missing row grouping even when that field is selected in columns', () => {
+  it('offers only grouping navigation when the row field is missing even if it is selected in columns', () => {
     const data = inactiveRequest()
     data.sorted.Col = data.sorted.Row
     data.sorted.Row = []
     const original = structuredClone(data), { onChange, onConfigureGrouping, onConfigureMeasures } = show(data)
     const button = screen.getByRole('button', { name: enable }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
-    const description = document.getElementById(button.getAttribute('aria-describedby')!)
-    expect(description?.textContent).toContain(`Для ${name} додайте до рядків`)
-    expect(description?.textContent).not.toContain('увімкніть показник')
+    expectNoCaption(button)
+    expect(screen.queryByRole('button', { name: `Налаштувати показники для ${name}` })).toBeNull()
     fireEvent.click(button)
     fireEvent.click(screen.getByRole('button', { name: `Налаштувати групування для ${name}` }))
     expect(onConfigureGrouping).toHaveBeenCalledOnce()
@@ -58,15 +62,14 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     expect(data).toEqual(original)
   })
 
-  it('explains the missing enabled additive measure separately and only navigates on request', () => {
+  it('offers only measure navigation when no additive measure is enabled and navigates on request', () => {
     const data = inactiveRequest()
     data.sorted.Measurements = data.sorted.Measurements.map(field => ({ ...field, IsChecked: false }))
     const original = structuredClone(data), { onChange, onConfigureGrouping, onConfigureMeasures } = show(data)
     const button = screen.getByRole('button', { name: enable }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
-    const description = document.getElementById(button.getAttribute('aria-describedby')!)
-    expect(description?.textContent).toContain(`Для ${name} увімкніть показник, який сервер дозволяє підсумовувати`)
-    expect(description?.textContent).not.toContain('додайте до рядків')
+    expectNoCaption(button)
+    expect(screen.queryByRole('button', { name: `Налаштувати групування для ${name}` })).toBeNull()
     fireEvent.click(button)
     fireEvent.click(screen.getByRole('button', { name: `Налаштувати показники для ${name}` }))
     expect(onConfigureMeasures).toHaveBeenCalledOnce()
@@ -75,16 +78,16 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     expect(data).toEqual(original)
   })
 
-  it('shows both missing prerequisites and never enables a rule on render', () => {
+  it('offers both prerequisite actions and never enables a rule on render', () => {
     const data = inactiveRequest()
     data.sorted.Row = []
     data.sorted.Measurements = []
     const { onChange } = show(data)
     const button = screen.getByRole('button', { name: enable }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
-    const description = document.getElementById(button.getAttribute('aria-describedby')!)
-    expect(description?.textContent).toContain(`Для ${name} додайте до рядків`)
-    expect(description?.textContent).toContain(`Для ${name} увімкніть показник`)
+    expectNoCaption(button)
+    expect(screen.getByRole('button', { name: `Налаштувати групування для ${name}` })).toBeTruthy()
+    expect(screen.getByRole('button', { name: `Налаштувати показники для ${name}` })).toBeTruthy()
     expect(onChange).not.toHaveBeenCalled()
   })
 
@@ -123,8 +126,7 @@ describe.each(cases)('$name panel prerequisites and explicit actions', ({ name, 
     const navigate = screen.getByRole('button', { name: `Налаштувати групування для ${name}` }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     expect(navigate.disabled).toBe(true)
-    expect(document.getElementById(button.getAttribute('aria-describedby')!)?.textContent).toContain(`Для ${name} додайте до рядків`)
-    expect(screen.queryByText(/Редагування недоступне/)).toBeNull()
+    expectNoCaption(button)
     fireEvent.click(button)
     fireEvent.click(navigate)
     expect(onChange).not.toHaveBeenCalled()

@@ -8,7 +8,7 @@ export function CurrentProductFieldsPanel({ capability, request, value, disabled
   capability: WorkbookCapability | null; request: ReportRequestBody; value: unknown; disabled: boolean
   onChange: (value: WorkbookSelection | undefined) => void
 }) {
-  const { selection, supported, error, selected, productRow, selectedRank, fields, canAdd } = currentProductFieldsControls(capability, request, value)
+  const { selection, supported, error, selected, selectedRank, fields, canAdd } = currentProductFieldsControls(capability, request, value)
   if (!supported && value == null) return null
   function change(next: number[]) { onChange(nextCurrentProductFieldsSelection(capability, selection, next)) }
   function move(index: number, delta: number) {
@@ -18,7 +18,6 @@ export function CurrentProductFieldsPanel({ capability, request, value, disabled
     <Text component="h4">Додаткові поля</Text>
     {error ? <Alert color="yellow">{error} Збережені налаштування не змінено.</Alert> : null}
     {!supported ? <Alert color="yellow">Для цього звіту додаткові поля недоступні. Збережені налаштування не змінено.</Alert> : null}
-    {supported && !productRow && !error ? <Text size="sm">Додайте «Товар» або «Назва товару» до групування рядків.</Text> : null}
     <section aria-label="Додаткові поля"><Stack gap="xs">
       {fields.map(field => { const index = selectedRank.get(field.type) ?? -1; return <Group key={field.type} gap="xs">
         <Checkbox label={field.caption} checked={index >= 0} disabled={disabled || index < 0 && !canAdd}

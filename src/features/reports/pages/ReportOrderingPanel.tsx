@@ -1,28 +1,23 @@
 import { Alert, Button, Group, Select, SimpleGrid, Stack, Text } from '@mantine/core'
-import { useId } from 'react'
 import type { ReportDataset, ReportOrderRule, ReportRequestBody } from '../types'
 import { readOrderingCapabilities, readReportOrdering, reportOrderingError, requestOrdering, setReportOrderRule } from '../data/reportOrdering'
 
 const byOptions = [{ value: '1', label: 'За значенням поля' }, { value: '2', label: 'За точним підписом' }, { value: '3', label: 'За підсумком показника' }]
 const directions = [{ value: '1', label: 'За зростанням' }, { value: '2', label: 'За спаданням' }]
 const nullPositions = [{ value: '1', label: 'Порожні на початку' }, { value: '2', label: 'Порожні в кінці' }]
-type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; notice: string | null; onChange: (value: unknown) => void }
+type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; onChange: (value: unknown) => void }
 
-export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange }: Props) {
-  const reasonId = useId()
+export function ReportOrderingPanel({ data, dataset, disabled, onChange }: Props) {
   const raw = requestOrdering(data), ordering = readReportOrdering(raw), capability = readOrderingCapabilities(dataset)
   const error = reportOrderingError(data, dataset), invalidShape = raw != null && !ordering
   const activeMeasures = data.sorted.Measurements.filter(item => item.IsChecked)
-  const reason = orderingSetupReason(disabled, !!capability, data.sorted.Row.length + data.sorted.Col.length)
   return <Stack component="section" aria-label="Сортування значень груп" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>Сортування значень груп</Text>
       {raw != null ? <Button type="button" variant="default" size="compact-sm" disabled={disabled}
-        aria-describedby={reason ? reasonId : undefined} onClick={() => onChange(undefined)}>Очистити збережене сортування</Button> : null}
+        onClick={() => onChange(undefined)}>Очистити збережене сортування</Button> : null}
     </Group>
     {error ? <Alert color="red">{error}</Alert> : null}
-    {notice ? <Text role="status" size="sm">{notice}</Text> : null}
-    {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}
     {capability && !invalidShape ? ([['Rows', 'Row', 'Рядки'], ['Columns', 'Col', 'Стовпці']] as const).map(([ruleAxis, layoutAxis, title]) =>
       <Stack key={ruleAxis} gap="xs" aria-label={`Сортування: ${title}`}>
         {data.sorted[layoutAxis].map(group => {
@@ -31,7 +26,7 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
           const rule = ordering?.[ruleAxis].find(item => item.Grouping === group.type), scope = `${title}: ${group.label}`
           const occupied = (ordering?.Rows.length ?? 0) + (ordering?.Columns.length ?? 0)
           const unavailable = disabled || !allowed.length || (!rule && occupied >= capability.MaximumRules)
-          const unavailableReason = orderingFieldReason(disabled, allowed.length, !!rule, occupied, capability.MaximumRules)
+          const unavailableReason = orderingLimitReason(disabled, !!rule, occupied, capability.MaximumRules)
           const set = (next: ReportOrderRule | null) => onChange(setReportOrderRule(raw, ruleAxis, group.type, next))
           const selectedMeasure = rule?.Measure == null ? null : dataset?.Measurements.find(field => field.Type === rule.Measure)
           const choices = activeMeasures.map(field => ({ value: String(field.Type), label: dataset?.Measurements.find(item => item.Type === field.Type)?.Name ?? field.Label ?? field.Name }))
@@ -64,16 +59,9 @@ export function ReportOrderingPanel({ data, dataset, disabled, notice, onChange 
   </Stack>
 }
 
-function orderingSetupReason(disabled: boolean, supported: boolean, groupCount: number) {
-  if (disabled) return null
-  if (!supported) return 'Для цього набору даних сервер не підтвердив підтримку сортування.'
-  if (!groupCount) return 'Додайте поля до рядків або стовпців, щоб налаштувати порядок їхніх значень.'
-  return null
-}
 
-function orderingFieldReason(disabled: boolean, allowedCount: number, hasRule: boolean, occupied: number, maximum: number) {
+function orderingLimitReason(disabled: boolean, hasRule: boolean, occupied: number, maximum: number) {
   if (disabled) return undefined
-  if (!allowedCount) return 'Для цього поля сортування недоступне.'
   if (!hasRule && occupied >= maximum) return `Досягнуто межі ${maximum} правил. Приберіть одне правило, щоб додати інше.`
   return undefined
 }

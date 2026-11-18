@@ -62,7 +62,6 @@ function WorkbookFieldControls({ capability, selection, request, disabled, onCha
     {capability.additionalFields.map(field => <WorkbookFieldItem key={field.type} field={field} selection={selection}
       disabled={controlsDisabled} fenix={availability.fenix} onChange={onChange} />)}
       </div>
-      <WorkbookFieldsNote dataSource={request.dataSource} />
     </section>
     {capability.orderings.length > 0 ? <section className="workbook-advanced-card" aria-label="Порядок рядків">
       <Group gap={8} className="workbook-advanced-card__heading"><ArrowDownWideNarrow size={16} aria-hidden="true" /><Text component="h4">Порядок рядків</Text></Group>
@@ -98,9 +97,3 @@ function WorkbookOrderingControl({ selection, disabled, onChange }: {
       { value: 'MonthAscending', label: 'За місяцями, за зростанням' }]} onChange={changeOrdering} />
 }
 
-function WorkbookFieldsNote({ dataSource }: { dataSource: number | undefined }) {
-  if (dataSource === 35) return <Text size="xs" c="dimmed">
-    У рядках «день / організація» Артикул і Топ порожні.
-  </Text>
-  return null
-}

@@ -1,5 +1,4 @@
 import { Alert, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
-import { useId } from 'react'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { defaultAbcClassification, readAbcCapabilities, readAbcDraft, reportAbcClassificationError, requestAbcClassification, type ReportAbcDraft } from '../data/reportAbcClassification'
 import { ReportRankingPrerequisites } from './ReportRankingPrerequisites'
@@ -9,32 +8,29 @@ type Props = {
   data: ReportRequestBody
   dataset?: ReportDataset
   disabled: boolean
-  notice?: string | null
   onChange: (value: unknown) => void
   onConfigureGrouping?: () => void
   onConfigureMeasures?: () => void
 }
-export function ReportAbcClassificationPanel({ data, dataset, disabled, notice, onChange, onConfigureGrouping, onConfigureMeasures }: Props) {
-  const reasonId = useId()
+export function ReportAbcClassificationPanel({ data, dataset, disabled, onChange, onConfigureGrouping, onConfigureMeasures }: Props) {
   const raw = requestAbcClassification(data), draft = readAbcDraft(raw), cap = readAbcCapabilities(dataset)
   const error = reportAbcClassificationError(data, dataset), initial = defaultAbcClassification(data, dataset)
-  const prerequisites = getRankingPrerequisites('ABC', data, cap)
+  const prerequisites = getRankingPrerequisites(data, cap)
   return <Stack component="section" aria-label="ABC-класифікація" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>ABC-класифікація</Text>
       {<AbcToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
-        descriptionId={prerequisites.reasons ? reasonId : undefined} onChange={onChange} />}
+        onChange={onChange} />}
     </Group>
     {error ? <Alert color="red">{error}</Alert> : null}
-    {notice ? <Text role="status" size="sm">{notice}</Text> : null}
-    <ReportRankingPrerequisites kind="ABC" reasonId={reasonId} {...prerequisites} disabled={disabled}
+    <ReportRankingPrerequisites kind="ABC" {...prerequisites} disabled={disabled}
       onConfigureGrouping={onConfigureGrouping} onConfigureMeasures={onConfigureMeasures} />
     {draft && cap && dataset ? <AbcFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
   </Stack>
 }
 
-function AbcToggleButton({ active, supported, initial, disabled, descriptionId, onChange }: Pick<Props, 'disabled' | 'onChange'> & {
-  active: boolean; supported: boolean; initial: ReturnType<typeof defaultAbcClassification>; descriptionId?: string
+function AbcToggleButton({ active, supported, initial, disabled, onChange }: Pick<Props, 'disabled' | 'onChange'> & {
+  active: boolean; supported: boolean; initial: ReturnType<typeof defaultAbcClassification>
 }) {
   if (!active && !supported) return null
   const toggle = () => {
@@ -42,7 +38,7 @@ function AbcToggleButton({ active, supported, initial, disabled, descriptionId, 
     else if (initial) onChange(initial)
   }
   return <Button type="button" variant="default" size="compact-sm" disabled={disabled || (!active && !initial)}
-    aria-describedby={active && !disabled ? undefined : descriptionId} onClick={toggle}>
+    onClick={toggle}>
     {active ? 'Вимкнути ABC-класифікацію' : 'Увімкнути ABC-класифікацію'}
   </Button>
 }

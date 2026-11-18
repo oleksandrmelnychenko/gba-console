@@ -1,4 +1,4 @@
-import { Group, Select, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Group, Select, SimpleGrid, Stack } from '@mantine/core'
 import { Hash } from 'lucide-react'
 import type { ReportDataset } from '../types'
 import { numberPrecisionKinds, numberPresentationSupported, readNumberPresentation, readValueSemantics, type ReportNumberPresentation } from '../data/reportNumberPresentation'
@@ -13,7 +13,6 @@ export function ReportNumberPresentationPanel({ value, dataset, disabled, onChan
     <Select label={<Group component="span" gap={8} wrap="nowrap"><Hash size={16} aria-hidden="true" />Формат чисел</Group>} value={value == null ? 'legacy' : 'custom'} disabled={disabled || !supported}
       data={[{ value: 'legacy', label: 'Як у звіті' }, { value: 'custom', label: 'Налаштувати' }]}
       onChange={next => onChange(next === 'custom' ? { version: 1, moneyScale: 1 } : undefined)} allowDeselect={false} />
-    {!supported ? <Text size="xs" c="dimmed">Налаштування чисел недоступні на цьому сервері.</Text> : null}
     {presentation ? <>
       <Select label="Масштаб грошових сум" value={String(presentation.moneyScale)} disabled={disabled}
         data={[{ value: '1', label: 'Одиниці' }, { value: '1000', label: 'Тисячі (тис.)' }, { value: '1000000', label: 'Мільйони (млн.)' }]}
@@ -27,7 +26,6 @@ export function ReportNumberPresentationPanel({ value, dataset, disabled, onChan
             else if (next !== null) places[kind] = Number(next)
             onChange({ ...presentation, decimalPlacesByKind: places })
           }} />)}</SimpleGrid>
-      <Text size="xs" c="dimmed">Масштаб змінює лише грошові суми. Ціни, кількість, курси й відсотки зберігають свої одиниці; цілі лічильники не мають дробової частини.</Text>
     </> : null}
   </Stack>
 }

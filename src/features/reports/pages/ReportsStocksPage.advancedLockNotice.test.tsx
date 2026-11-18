@@ -65,7 +65,9 @@ it('removes repeated notices while gross profit is generating and restores edita
   fireEvent.click(ordering.getAllByRole('combobox')[0])
   fireEvent.click(await screen.findByRole('option', { name: 'За значенням поля' }))
   expect(ordering.getAllByRole('combobox')[0]).toHaveProperty('value', 'За значенням поля')
-  expect(screen.getByText(/Залиште в рядках одне початкове поле/)).toBeTruthy()
+  const extras = document.getElementById('constructor-extras')!
+  expect(within(extras).queryByText(/Залиште в рядках|додайте до рядків|увімкніть показник|не підтвердив|Масштаб змінює|Додайте «Товар»|Використовується звичайний порядок|додано першим/)).toBeNull()
+  expect(extras.querySelectorAll('[aria-describedby]').length).toBe(0)
 })
 
 it('removes editing controls without repeated notices when report generation permission is revoked', async () => {

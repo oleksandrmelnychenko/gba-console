@@ -988,13 +988,13 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     setSourceBuyerSubtree={setSourceBuyerSubtree} setRowGroups={setRowGroups} />
 
   const analysisPanels = {
-    abc: !analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} notice={abc.notice} onChange={abc.change} />,
+    abc: !analysisRules.abc ? null : <ReportAbcClassificationPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={abc.change} />,
     threshold: !analysisRules.threshold ? null : <ReportThresholdPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setThreshold} />,
     topGroups: !analysisRules.topGroups ? null : <ReportTopGroupsPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled} onChange={setTopGroups} />,
     filterExpression: !analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
       notice={filterLogic.notice} onChange={filterLogic.change} />,
     ordering: !analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
-      notice={groupingOrdering.notice} onChange={groupingOrdering.changeOrdering} />,
+      onChange={groupingOrdering.changeOrdering} />,
   }
   const exportModal = (
     <DocumentExportModal

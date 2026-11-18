@@ -1,30 +1,24 @@
 import { Alert, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text } from '@mantine/core'
-import { useId } from 'react'
-import type { ReportDataset, ReportRequestBody, ReportThresholdCapabilities } from '../types'
-import { ABC_CLASS_GROUPING } from '../data/reportAbcClassification'
+import type { ReportDataset, ReportRequestBody } from '../types'
 import { defaultReportThreshold, readThresholdCapabilities, readThresholdDraft, reportThresholdError, requestThreshold, type ReportThresholdDraft } from '../data/reportThreshold'
 
 type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; onChange: (value: unknown) => void }
 export function ReportThresholdPanel({ data, dataset, disabled, onChange }: Props) {
-  const reasonId = useId()
   const raw = requestThreshold(data), draft = readThresholdDraft(raw), cap = readThresholdCapabilities(dataset)
   const error = reportThresholdError(data, dataset), initial = defaultReportThreshold(data, dataset)
-  const setupReason = !initial ? thresholdSetupReason(data, cap) : null
-  const reason = !disabled && raw == null ? setupReason : null
   return <Stack component="section" aria-label="Поріг групування" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">
       <Text component="h3" className="app-section-title" fw={600}>Поріг групування</Text>
       <ThresholdToggleButton active={raw != null} supported={!!cap} initial={initial} disabled={disabled}
-        descriptionId={reason ? reasonId : undefined} onChange={onChange} />
+        onChange={onChange} />
     </Group>
     {error ? <Alert color="red">{error}</Alert> : null}
-    {reason ? <Text id={reasonId} size="xs" c="dimmed">{reason}</Text> : null}
     {draft && cap && dataset ? <ThresholdFields data={data} dataset={dataset} disabled={disabled} value={draft} onChange={onChange} /> : null}
   </Stack>
 }
 
-function ThresholdToggleButton({ active, supported, initial, disabled, descriptionId, onChange }: Pick<Props, 'disabled' | 'onChange'> & {
-  active: boolean; supported: boolean; initial: ReturnType<typeof defaultReportThreshold>; descriptionId?: string
+function ThresholdToggleButton({ active, supported, initial, disabled, onChange }: Pick<Props, 'disabled' | 'onChange'> & {
+  active: boolean; supported: boolean; initial: ReturnType<typeof defaultReportThreshold>
 }) {
   if (!active && !supported) return null
   const toggle = () => {
@@ -32,20 +26,11 @@ function ThresholdToggleButton({ active, supported, initial, disabled, descripti
     else if (initial) onChange(initial)
   }
   return <Button type="button" variant="default" size="compact-sm" disabled={disabled || (!active && !initial)}
-    aria-describedby={descriptionId} onClick={toggle}>
+    onClick={toggle}>
     {active ? 'Вимкнути поріг: показати початкові групи' : 'Увімкнути поріг групування'}
   </Button>
 }
 
-function thresholdSetupReason(data: ReportRequestBody, cap: ReportThresholdCapabilities | null) {
-  if (!cap) return 'Для цього набору даних сервер не підтвердив підтримку порогу групування.'
-  const rows = data.sorted.Row.filter(field => field.type !== ABC_CLASS_GROUPING)
-  const measures = data.sorted.Measurements.filter(field => field.IsChecked)
-  if (rows.length !== 1 || !new Set(cap.GroupingTypes).has(rows[0].type)) return 'Залиште в рядках одне початкове поле, для якого доступний поріг. ABC-клас можна додати окремо.'
-  if (data.sorted.Col.length) return 'Для порогу приберіть поля зі стовпців.'
-  if (measures.length !== 1 || !new Set(cap.RankingMeasures).has(measures[0].Type)) return 'Для порогу залиште один увімкнений показник, який сервер дозволяє підсумовувати.'
-  return null
-}
 function ThresholdFields({ data, dataset, value, disabled, onChange }: Props & { dataset: ReportDataset; value: ReportThresholdDraft }) {
   const cap = readThresholdCapabilities(dataset)!
   const rows = new Set(data.sorted.Row.map(field => field.type)), checked = new Set(data.sorted.Measurements.flatMap(field => field.IsChecked ? [field.Type] : []))
