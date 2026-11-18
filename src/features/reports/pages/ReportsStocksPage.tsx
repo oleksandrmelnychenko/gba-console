@@ -425,7 +425,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const settlementDataset = useMemo(() => settlementFormDataset(dataset, groupedSettlementPeriod, settlementReadMode), [dataset, groupedSettlementPeriod, settlementReadMode])
   const cashDataset = useMemo(() => cashFormDataset(settlementDataset, groupedCashPeriod), [settlementDataset, groupedCashPeriod])
   const reportBody = useMemo<ReportRequestBody>(
-    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, from, to, ordering, filterExpression, topGroups, threshold, abcClassification, rowGroups, colGroups, measurements, selections }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
+    () => upgradeCurrentVparivanieAnalysis(withCurrentVparivanieMovementScope({ ...(dataSource === 46 ? {nativePriceComparison} : {}), ...(dataSource === 44 ? {customerGroups} : {}), ...(currentVparivanieAnalysisCapability(dataset) ? { currentVparivanieAnalysis: { version: 1 } } : {}), ...buildReportBuilderRequest({ stockQuantityFilter, constructorPresentation, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, dataSource, returnsOnly, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbookPresentation: workbook.value, from, to, ordering, filterExpression, topGroups, threshold, abcClassification, rowGroups, colGroups, measurements, selections: withoutEmptyManufacturerRows(selections, filterExpression) }), ...(dataSource === 39 && (movementQuantities.Incoming || movementQuantities.Outgoing) ? { currentVparivanieMovements: movementQuantities } : {}), ...(dataSource === 39 && fullCurrentVparivanie ? { currentVparivanieFullScope: true } : {}) }), dataset),
     [dataset, nativePriceComparison, stockQuantityFilter, constructorPresentation, customerGroups, reportProfile, supplierWarehouse, presentationCurrency, numberPresentation, movementQuantities, fullCurrentVparivanie, abcClassification, settlementPeriod, groupedSettlementPeriod, settlementReadMode, sourceCounterpartyGroups, cashPeriod, groupedCashPeriod, cashReadMode, workbook.value, colGroups, productClassification, productServiceFilter, sourceOrganizations, sourceBuyerSubtree, profitReadMode, dayOrganizationBasis, supplierBasis, returnsOnly, dataSource, filterExpression, from, measurements, ordering, rowGroups, selections, to, topGroups, threshold],
   )
   const effectiveConfiguration = effectiveReportConfiguration(dataset, reportBody)
@@ -476,7 +476,8 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   // A row whose field is chosen but whose value list is still empty is not «no filter»: the engine compares the
   // column against nothing, so «Дорівнює» empties the report and «Не дорівнює» drops the filter altogether. The
   // sheet that comes back looks plausible either way, so the row has to be finished before the request goes out.
-  const incompleteSelectionIndex = selections.findIndex(selection => isIncompleteSelection(selection)
+  const incompleteSelectionIndex = selections.findIndex(selection => (isIncompleteSelection(selection)
+    && !(filterExpression == null && isEmptyManufacturerRow(selection)))
     || selection.IsChecked !== false && !selection.SelectedField.Name)
   const incompleteSelectionMessage =
     incompleteSelectionIndex < 0
@@ -2103,7 +2104,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
   const lookupUnavailable = documentLookup.unavailable
   const manufacturerSuppliers = useMemo(() => selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer
     ? chosenGoodsSuppliers(selections) : EMPTY_SUPPLIERS, [selection.SelectedField.Type, selections])
-  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period, manufacturerSuppliers])
+  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period, manufacturerSuppliers === NO_GOODS_SUPPLIERS ? 'none' : manufacturerSuppliers])
   const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
   const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
@@ -2368,6 +2369,14 @@ function isSupportedReportDate(value: string, maxDate: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= REPORT_MIN_DATE && value <= maxDate
 }
 
+function isEmptyManufacturerRow(selection: ReportSelection): boolean {
+  return selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer && selection.Values.length === 0
+}
+
+function withoutEmptyManufacturerRows(selections: ReportSelection[], filterExpression: unknown): ReportSelection[] {
+  return filterExpression == null && selections.some(isEmptyManufacturerRow) ? selections.filter(selection => !isEmptyManufacturerRow(selection)) : selections
+}
+
 function isIncompleteSelection(selection: ReportSelection): boolean {
   return selection.IsChecked && Boolean(selection.SelectedField.Name) && selection.Values.length === 0
 }
@@ -2484,15 +2493,22 @@ function setAllMeasurements(
 
 
 const EMPTY_SUPPLIERS: readonly number[] = []
+const MANUFACTURER_PAGE_SIZE = 50
+
+export const NO_GOODS_SUPPLIERS: readonly number[] = Object.freeze([])
 
 export function chosenGoodsSuppliers(selections: readonly ReportSelection[]): readonly number[] {
-  const ids = selections.filter(selection => selection.IsChecked !== false && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.supplier
-    && [0, 2].includes(selection.FilterCondition.Type))
-    .flatMap(selection => selection.Values.flatMap(value => {
-      const id = exactId(value.Data)
-      return id !== null && Number.isSafeInteger(Number(id)) ? [Number(id)] : []
-    }))
-  return ids.length ? [...new Set(ids)].sort((a, b) => a - b) : EMPTY_SUPPLIERS
+  const rows = selections.filter(selection => selection.IsChecked !== false && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.supplier
+    && selection.Values.length > 0)
+  const ids = (selection: ReportSelection) => new Set(selection.Values.flatMap(value => {
+    const id = exactId(value.Data)
+    return id !== null && Number.isSafeInteger(Number(id)) ? [Number(id)] : []
+  }))
+  const included = rows.filter(selection => [0, 2].includes(selection.FilterCondition.Type)).map(ids)
+  if (!included.length) return EMPTY_SUPPLIERS
+  const excluded = new Set(rows.filter(selection => [1, 4].includes(selection.FilterCondition.Type)).flatMap(selection => [...ids(selection)]))
+  const chosen = [...included[0]].filter(id => included.every(set => set.has(id)) && !excluded.has(id)).sort((a, b) => a - b)
+  return chosen.length ? chosen : NO_GOODS_SUPPLIERS
 }
 
 function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: number): boolean {
@@ -2595,8 +2611,10 @@ async function loadSelectionLookupOptions(
   if (dataSource === 46 && [0,1,2,6,9,20].includes(fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer)
-    return searchReportManufacturers(dataSource, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, manufacturerSuppliers, signal)
-  if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType))
+    return manufacturerSuppliers === NO_GOODS_SUPPLIERS ? []
+      : searchReportManufacturers(dataSource, { limit: MANUFACTURER_PAGE_SIZE, offset: 0, value }, manufacturerSuppliers, signal)
+  if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType)
+    || dataSource === 2 && fieldType === REPORT_FILTER_FIELD_TYPES.supplier)
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, fieldType)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
