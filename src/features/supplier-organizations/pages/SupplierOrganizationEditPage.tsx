@@ -1,4 +1,6 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { isConflictError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { TableChip } from '../../../shared/ui/TableChip'
 import {
@@ -294,7 +296,10 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
         }
       }
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти постачальника послуг'))
+      // Saved meanwhile in another tab: the alert offers to reload the newer version.
+      setError(isConflictError(saveError)
+        ? STALE_RECORD_MESSAGE
+        : saveError instanceof Error ? saveError.message : t('Не вдалося зберегти постачальника послуг'))
     } finally {
       setSaving(false)
     }
@@ -401,7 +406,9 @@ function SupplierOrganizationEditPageContent({ canOpenOverview }: { canOpenOverv
           </Group>
         )}
 
-        {error && (
+        {error === STALE_RECORD_MESSAGE ? (
+          <StaleRecordAlert message={t(STALE_RECORD_MESSAGE)} onReload={() => window.location.reload()} />
+        ) : error && (
           <Alert color="red" icon={<CircleAlert size={18} />} mt="md" variant="light">
             {error}
           </Alert>
@@ -1315,3 +1322,6 @@ function isAgreementDocumentFile(file: File): boolean {
 
   return AGREEMENT_DOCUMENT_EXTENSIONS.some((extension) => name.endsWith(extension))
 }
+
+/** The server's 409 text when the supplier was saved meanwhile in another tab. */
+const STALE_RECORD_MESSAGE = 'Запис змінено в іншій вкладці — оновіть сторінку.'

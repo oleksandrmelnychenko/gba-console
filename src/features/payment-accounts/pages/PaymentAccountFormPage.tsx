@@ -1,4 +1,6 @@
 import { getOpeningAmountError } from '../openingAmount'
+import { isConflictError } from '../../../shared/api/staleRecord'
+import { StaleRecordAlert } from '../../../shared/ui/StaleRecordAlert'
 import { formatExchangeRate, getExchangeSystemRate, isExchangeRateFarFromSystem, type SystemExchangeRate } from '../exchangeRateGuard'
 import { toBankOptions } from '../paymentAccountBankOptions'
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
@@ -287,6 +289,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
+/** The server's 409 text when the account was saved meanwhile in another tab. */
+const STALE_RECORD_MESSAGE = 'Запис змінено в іншій вкладці — оновіть сторінку.'
+
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
@@ -520,7 +525,10 @@ function PaymentAccountFormPageContent() {
       )
     } catch (saveError) {
       dispatchPageState({
-        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти рахунок'),
+        // Saved meanwhile in another tab: the alert offers to reload the newer version.
+        error: isConflictError(saveError)
+          ? STALE_RECORD_MESSAGE
+          : saveError instanceof Error ? saveError.message : t('Не вдалося зберегти рахунок'),
       })
     } finally {
       setSaving(false)
@@ -804,7 +812,9 @@ function PaymentAccountFormCard({
   return (
     <form id="payment-account-form" onSubmit={onSubmit}>
       <Stack gap={10}>
-        {error && (
+        {error === STALE_RECORD_MESSAGE ? (
+          <StaleRecordAlert message={t(STALE_RECORD_MESSAGE)} onReload={() => window.location.reload()} />
+        ) : error && (
           <Alert color="red" icon={<CircleAlert size={18} />} variant="light">
             {error}
           </Alert>

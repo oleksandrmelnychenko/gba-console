@@ -227,3 +227,21 @@ describe('SupplierOrganizationEditPage agreement documents', () => {
     await waitFor(() => expect(editSupplierOrganizationAgreement).toHaveBeenCalledWith(expect.anything(), [pdf]))
   })
 })
+
+describe('SupplierOrganizationEditPage two tabs', () => {
+  it('sends the loaded version and offers a reload when the supplier changed in another tab', async () => {
+    vi.mocked(getSupplierOrganizationOverviewDetails).mockResolvedValue({ ...EXISTING_SUPPLIER, Updated: '2026-11-18T09:30:00.1234567' })
+    vi.mocked(editSupplierOrganization).mockRejectedValue(Object.assign(new Error('Запис змінено в іншій вкладці — оновіть сторінку.'), { status: 409 }))
+    renderPage('/accounting/supplier-organizations/edit/supplier-1')
+
+    const nameInput = await screen.findByRole('textbox', { name: /Назва/ })
+    fireEvent.change(nameInput, { target: { value: 'QA-CF2 Пост TAB2' } })
+    fireEvent.submit(nameInput.closest('form') as HTMLFormElement)
+
+    await waitFor(() => expect(editSupplierOrganization).toHaveBeenCalledWith(expect.objectContaining({
+      Updated: '2026-11-18T09:30:00.1234567',
+    })))
+    expect(await screen.findByText('Запис змінено в іншій вкладці — оновіть сторінку.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Перезавантажити' })).toBeTruthy()
+  })
+})
