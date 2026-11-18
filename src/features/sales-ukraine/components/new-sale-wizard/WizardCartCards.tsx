@@ -7,6 +7,7 @@ import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { getProductMainOriginalNumber } from '../../../products/utils'
 import type { SalesUkraineOrderItem } from '../../types'
 import { WizardProductPhoto } from './WizardProductPhoto'
+import { WizardCartReservationNote } from './WizardCartReservationNote'
 import type { WizardCartPricing } from './useWizardCartPricing'
 import { getOrderItemLocalPrice, getOrderItemLocalTotal, getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -69,6 +70,7 @@ const WizardCartCard = memo(function WizardCartCard({ item, index, agreementNetI
         {product?.Size && <span>{t('Розмір')} <TableChip tone="warning" value={product.Size} /></span>}
       </div>
       {item.Comment && <Text size="xs" c="dimmed">{item.Comment}</Text>}
+      <WizardCartReservationNote item={item} />
       <Group gap={10} className="wizard-cart-card__actions">
         <span className="wizard-cart-card__quantity">{t('К-сть')} <TableChip value={`${qty.format(getWizardProductNumber(item.Qty) ?? 0)} ${product?.MeasureUnit?.Name || t('шт')}`} /></span>
         {onRowClick && <Button data-cart-card-action disabled={busy} variant="default" size="compact-xs" leftSection={<Ellipsis size={14} />} aria-label={`${t('Дії з товаром')} · ${code}`} onClick={() => onRowClick(item)}>{t('Дії')}</Button>}

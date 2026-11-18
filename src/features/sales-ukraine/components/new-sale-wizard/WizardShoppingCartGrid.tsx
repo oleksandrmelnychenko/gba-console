@@ -7,6 +7,7 @@ import { DataTable } from '../../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../../shared/ui/data-table/types'
 import { TableRowAction } from '../../../../shared/ui/table-row-action'
 import { getWizardCartTotals, type WizardCartTotals } from './wizardCartTotals'
+import { WizardCartReservationNote } from './WizardCartReservationNote'
 import type { SalesUkraineOrderItem } from '../../types'
 import {
   getOrderItemDiscount,
@@ -290,6 +291,7 @@ function WizardCartProductCell({
         <Text className="new-sale-cart__product-name" title={name} truncate>
           {name}
         </Text>
+        <WizardCartReservationNote item={item} />
       </Box>
     </Group>
   )

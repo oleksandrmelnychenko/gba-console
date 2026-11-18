@@ -255,6 +255,15 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   }>
   ShiftStatuses?: SalesUkraineOrderItemShiftStatus[]
   User?: SalesUkraineUser
+  /** Live reservations of an open sale line with the storage they hold (storage priority rule). */
+  ProductReservations?: Array<{
+    Qty?: number
+    IsReSaleReservation?: boolean
+    ProductAvailability?: {
+      StorageId?: number
+      Storage?: { Name?: string; RetailPriority?: number; AvailableForReSale?: boolean } | null
+    } | null
+  }>
 }
 
 export type SalesUkraineOrder = SalesUkraineEntity & {
