@@ -91,8 +91,9 @@ export function validateBankDetails(
 }
 
 /**
- * The card sends only what the user filled: a new IBAN or account entry without its number is
- * dropped (the server rejects it), and a new, entirely empty bank record is not sent at all.
+ * The wizard and the card send only what the user filled: an IBAN or account entry without its
+ * number means "none" and is not sent (a stored one with an empty number — left by older wizards —
+ * is detached), and a new, entirely empty bank record is not sent at all.
  */
 export function prepareBankDetailsForSave(bank: ClientBankDetails | undefined): ClientBankDetails | undefined {
   if (!bank) {
@@ -100,10 +101,10 @@ export function prepareBankDetailsForSave(bank: ClientBankDetails | undefined): 
   }
 
   const next: ClientBankDetails = { ...bank }
-  if (next.ClientBankDetailIbanNo && !next.ClientBankDetailIbanNo.Id && !next.ClientBankDetailIbanNo.IBANNO?.trim()) {
+  if (next.ClientBankDetailIbanNo && !next.ClientBankDetailIbanNo.IBANNO?.trim()) {
     delete next.ClientBankDetailIbanNo
   }
-  if (next.AccountNumber && !next.AccountNumber.Id && !next.AccountNumber.AccountNumber?.trim()) {
+  if (next.AccountNumber && !next.AccountNumber.AccountNumber?.trim()) {
     delete next.AccountNumber
   }
 

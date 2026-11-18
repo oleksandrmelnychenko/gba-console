@@ -88,7 +88,12 @@ export async function createClient(client: Client, parentId?: string | null): Pr
     query: {
       parentId: parentId || undefined,
     },
-    body: prepareClientSavePayload(client),
+    // The supplier wizard seeds IBAN/account entries with a currency only; sent as is, they were
+    // stored with an empty number and every later save of the card was refused.
+    body: prepareClientSavePayload({
+      ...client,
+      ClientBankDetails: prepareBankDetailsForSave(client.ClientBankDetails),
+    }),
   })
 
   return normalizeClient(result)

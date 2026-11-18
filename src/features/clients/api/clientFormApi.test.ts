@@ -175,6 +175,44 @@ describe('client form API contracts', () => {
     expect(body.ClientAgreements?.[1].Agreement?.PromotionalPricingId).toBeUndefined()
   })
 
+  it('creates a supplier without the wizard\'s currency-only IBAN and account entries', async () => {
+    const EUR = { Id: 1, Name: 'Euro' }
+    const client: Client = {
+      FullName: 'Supplier',
+      ClientBankDetails: {
+        BankAndBranch: 'QA Банк',
+        AccountNumber: { Currency: EUR },
+        ClientBankDetailIbanNo: { IBANNO: '  ', Currency: EUR },
+      },
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await createClient(client)
+
+    const body = apiRequestMock.mock.calls[0][1]?.body as Client
+    expect(body.ClientBankDetails).toEqual({ BankAndBranch: 'QA Банк' })
+  })
+
+  it('does not send back a stored IBAN or account entry with an empty number', async () => {
+    const EUR = { Id: 1, Name: 'Euro' }
+    const client: Client = {
+      NetUid: 'supplier-net-id',
+      ClientBankDetails: {
+        Id: 9,
+        NetUid: 'bank-net-id',
+        BankAndBranch: 'QA Банк',
+        AccountNumber: { Id: 7, NetUid: 'account-net-id', Currency: EUR },
+        ClientBankDetailIbanNo: { Id: 9, NetUid: 'iban-net-id', Currency: EUR },
+      },
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await updateClient(client)
+
+    const body = apiRequestMock.mock.calls[0][1]?.body as Client
+    expect(body.ClientBankDetails).toEqual({ Id: 9, NetUid: 'bank-net-id', BankAndBranch: 'QA Банк' })
+  })
+
   it('creates a root client without a parent id query value', async () => {
     const client: Client = { FullName: 'Client' }
     apiRequestMock.mockResolvedValueOnce(client)
