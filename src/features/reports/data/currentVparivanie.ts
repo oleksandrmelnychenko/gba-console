@@ -136,7 +136,7 @@ export function isCurrentVparivanieDataset(dataset: ReportDataset): boolean {
     && dataset.Measurements.map(item => item.Type).join(',') === '83'
     && dataset.Measurements[0].Name === 'Результат' && dataset.Measurements[0].Selectable !== false
     && dataset.Groupings.every(item => item.Selectable !== false)
-    && dataset.Filters.map(item => item.Type).join(',') === '1,4,5,21,60'
+    && ['1,4,5,21,60', '1,4,75,5,21,60'].includes(dataset.Filters.map(item => item.Type).join(','))
     && dataset.Filters.filter(item => item.Type !== 60).every(item => item.Selectable !== false)
     && (record(dataset.currentVparivanie) && dataset.currentVparivanie.ManagerFilterSupported === true
       ? dataset.Filters.find(item => item.Type === 60)?.Selectable === true
@@ -198,11 +198,11 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
     const field = selection?.SelectedField?.Type
     if (field === 60 && dataset && !currentVparivanieManagerSupported(dataset))
       return 'Відбір за менеджером покупця поки недоступний: точний зв’язок із синхронізованими даними не підтверджено.'
-    if (![1, 4, 5, 21, 60].includes(field) || fields.has(field) || selection.IsChecked === false
+    if (![1, 4, 75, 5, 21, 60].includes(field) || fields.has(field) || selection.IsChecked === false
       || (selection.IsChecked != null && typeof selection.IsChecked !== 'boolean') || !Array.isArray(selection.Values)) return invalid
     const condition = selection.FilterCondition?.Type
     const max = field === 1 ? (full ? 4096 : 128) : field === 21 ? 32 : 1
-    if ((field === 4 ? condition !== 6 : field === 5 || field === 60 ? condition !== 0 : condition !== 0 && condition !== 2)
+    if ((field === 4 ? condition !== 6 : field === 5 || field === 60 || field === 75 ? condition !== 0 : condition !== 0 && condition !== 2)
       || selection.Values.length < 1 || selection.Values.length > max
       || (condition === 0 && selection.Values.length !== 1)) return invalid
     const ids = selection.Values.map(item => field === 60 ? currentVparivanieManagerReference(item?.Data) : exactId(item?.Data))
@@ -215,5 +215,6 @@ export function currentVparivanieConfigurationError(data: ReportRequestBody, dat
       || field === 60 && selection.Values.some(item => item.Value !== 0)) return invalid
     fields.add(field)
   }
-  return fields.has(1) || fields.has(4) ? null : invalid
+  if (fields.has(4) && fields.has(75)) return 'Оберіть товарну групу або виробника — не обидва відбори разом.'
+  return fields.has(1) || fields.has(4) || fields.has(75) ? null : invalid
 }

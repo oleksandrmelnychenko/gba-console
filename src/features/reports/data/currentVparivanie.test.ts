@@ -25,6 +25,12 @@ describe('current native Vparivanie form contract', () => {
     expect(currentVparivanieFilterConditions(1).map(value => value.Type)).toEqual([0, 2])
     expect(datasetFilters(dataset).map(value => value.field.Type)).toEqual([1, 4, 5, 21])
   })
+  it('accepts one brand as the product scope but not together with a product group', () => {
+    expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(75), exactSelection(5)] })).toBeNull()
+    expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(75, 2, ['1', '2'])] })).not.toBeNull()
+    expect(currentVparivanieConfigurationError({ ...request(), selections: [exactSelection(4, 6), exactSelection(75)] }))
+      .toBe('Оберіть товарну групу або виробника — не обидва відбори разом.')
+  })
   it('accepts exact upper key and refuses rounded, repeated and overflowing identities', () => {
     const data = request()
     expect(currentVparivanieConfigurationError(data)).toBeNull()
