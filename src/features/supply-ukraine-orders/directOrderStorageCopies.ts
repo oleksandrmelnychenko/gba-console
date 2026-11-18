@@ -1,6 +1,7 @@
 import type { DirectSupplyOrder } from './types'
 
 export type DirectOrderStorageCopy = {
+  hasArrivedDeliveryProtocol?: boolean
   netUid: string
   storage?: string
 }
@@ -21,14 +22,23 @@ export function getDirectOrderStorageCopies(order: DirectSupplyOrder | null | un
     }
 
     const storage = normalizeText(invoice.ImportedStorageName)
+    const hasArrivedDeliveryProtocol = typeof invoice.SupplyOrderHasArrivedDeliveryProtocol === 'boolean'
+      ? invoice.SupplyOrderHasArrivedDeliveryProtocol
+      : undefined
     const existing = byNetUid.get(netUid.toLowerCase())
 
     if (existing) {
       existing.storage ||= storage
+      existing.hasArrivedDeliveryProtocol ??= hasArrivedDeliveryProtocol
       continue
     }
 
-    const copy = { netUid, storage }
+    const copy: DirectOrderStorageCopy = { netUid, storage }
+
+    if (hasArrivedDeliveryProtocol !== undefined) {
+      copy.hasArrivedDeliveryProtocol = hasArrivedDeliveryProtocol
+    }
+
     byNetUid.set(netUid.toLowerCase(), copy)
     copies.push(copy)
   }

@@ -255,6 +255,7 @@ export type SupplyInvoice = EntityFields & {
   SupplyInvoiceOrderItems?: SupplyInvoiceOrderItem[]
   ImportedStorageName?: string
   SupplyOrder?: DirectSupplyOrder | null
+  SupplyOrderHasArrivedDeliveryProtocol?: boolean | null
   SupplyOrderNetUid?: string | null
   TotalGrossWeight?: number
   TotalNetPrice?: number

@@ -7,14 +7,14 @@ describe('direct order storage copies', () => {
       ImportedStorageName: 'СКЛАД -3',
       NetUid: 'copy-3',
       SupplyInvoices: [
-        { ImportedStorageName: 'СКЛАД -3', SupplyOrderNetUid: 'copy-3' },
-        { ImportedStorageName: 'СКЛАД -1', SupplyOrderNetUid: 'copy-1' },
+        { ImportedStorageName: 'СКЛАД -3', SupplyOrderHasArrivedDeliveryProtocol: false, SupplyOrderNetUid: 'copy-3' },
+        { ImportedStorageName: 'СКЛАД -1', SupplyOrderHasArrivedDeliveryProtocol: true, SupplyOrderNetUid: 'copy-1' },
       ],
     }
 
-    expect(getDirectOrderStorageCopies(order)).toEqual([
-      { netUid: 'copy-3', storage: 'СКЛАД -3' },
-      { netUid: 'copy-1', storage: 'СКЛАД -1' },
+    expect(getDirectOrderStorageCopies(order)).toStrictEqual([
+      { hasArrivedDeliveryProtocol: false, netUid: 'copy-3', storage: 'СКЛАД -3' },
+      { hasArrivedDeliveryProtocol: true, netUid: 'copy-1', storage: 'СКЛАД -1' },
     ])
     expect(getDirectOrderStorages(order)).toEqual(['СКЛАД -1', 'СКЛАД -3'])
   })

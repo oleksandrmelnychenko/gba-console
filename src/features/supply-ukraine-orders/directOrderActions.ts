@@ -1,3 +1,4 @@
+import type { DirectOrderStorageCopy } from './directOrderStorageCopies'
 import type { DirectSupplyOrder, SupplyUkraineOrderRow } from './types'
 
 export function canOpenDirectProductIncomeFromOrder(
@@ -17,6 +18,19 @@ export function canOpenDirectProductIncomeFromRow(
     row?.kind === 'direct' &&
     Boolean(row.netUid) &&
     row.directOrder?.HasArrivedDeliveryProtocol === true
+}
+
+export function canOpenDirectProductIncomeFromCopy(
+  row: Pick<SupplyUkraineOrderRow, 'directOrder' | 'kind'> | null | undefined,
+  copy: Pick<DirectOrderStorageCopy, 'hasArrivedDeliveryProtocol' | 'netUid'>,
+  hasPermission: boolean,
+): boolean {
+  const hasArrivedDeliveryProtocol = copy.hasArrivedDeliveryProtocol ?? row?.directOrder?.HasArrivedDeliveryProtocol === true
+
+  return hasPermission &&
+    row?.kind === 'direct' &&
+    Boolean(copy.netUid) &&
+    hasArrivedDeliveryProtocol
 }
 
 export function hasArrivedDeliveryProtocolForInvoice(

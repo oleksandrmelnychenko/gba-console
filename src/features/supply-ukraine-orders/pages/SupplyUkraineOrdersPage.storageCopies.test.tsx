@@ -51,12 +51,12 @@ function renderActions(order: DirectSupplyOrder) {
 describe('one row per 1C document in the supply-order list', () => {
   it('opens the lines of every storage copy from one row, each under its storage', () => {
     const onNavigate = renderActions({
-      HasArrivedDeliveryProtocol: true,
+      HasArrivedDeliveryProtocol: false,
       ImportedStorageName: 'СКЛАД -3',
       NetUid: 'copy-3',
       SupplyInvoices: [
-        { ImportedStorageName: 'СКЛАД -3', Number: 'К0000000392', SupplyOrderNetUid: 'copy-3' },
-        { ImportedStorageName: 'СКЛАД -1', Number: 'К0000000392', SupplyOrderNetUid: 'copy-1' },
+        { ImportedStorageName: 'СКЛАД -3', Number: 'К0000000392', SupplyOrderHasArrivedDeliveryProtocol: false, SupplyOrderNetUid: 'copy-3' },
+        { ImportedStorageName: 'СКЛАД -1', Number: 'К0000000392', SupplyOrderHasArrivedDeliveryProtocol: true, SupplyOrderNetUid: 'copy-1' },
       ],
       SupplyOrderNumber: { Number: 'К0000000392' },
     })
@@ -72,6 +72,9 @@ describe('one row per 1C document in the supply-order list', () => {
     fireEvent.click(within(secondCopy).getByRole('button', { name: 'Оприходування' }))
     expect(onNavigate).toHaveBeenCalledWith('/orders/ukraine/all/edit/copy-1/product-income')
     expect(screen.getAllByRole('button', { name: 'Товари' })).toHaveLength(2)
+    const firstCopy = screen.getByText('Склад: СКЛАД -3').closest('.supply-order-actions-storage') as HTMLElement
+    expect(within(firstCopy).queryByRole('button', { name: 'Оприходування' })).toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Оприходування' })).toHaveLength(1)
   })
 
   it('keeps the single set of actions for an order held in one storage', () => {

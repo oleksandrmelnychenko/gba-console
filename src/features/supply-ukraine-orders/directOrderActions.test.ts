@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   canOpenDirectProductIncomeFromOrder,
+  canOpenDirectProductIncomeFromCopy,
   canOpenDirectProductIncomeFromRow,
   hasArrivedDeliveryProtocolForInvoice,
 } from './directOrderActions'
@@ -54,5 +55,14 @@ describe('direct order actions', () => {
     expect(hasArrivedDeliveryProtocolForInvoice({
       DeliveryProductProtocol: { Deleted: false, IsCompleted: true },
     })).toBe(true)
+  })
+
+  it('uses each storage copy\'s own arrived delivery protocol and falls back to the row for older responses', () => {
+    const row = { directOrder: { HasArrivedDeliveryProtocol: true }, kind: 'direct' as const }
+
+    expect(canOpenDirectProductIncomeFromCopy(row, { hasArrivedDeliveryProtocol: false, netUid: 'copy-1' }, true)).toBe(false)
+    expect(canOpenDirectProductIncomeFromCopy({ ...row, directOrder: { HasArrivedDeliveryProtocol: false } }, { hasArrivedDeliveryProtocol: true, netUid: 'copy-2' }, true)).toBe(true)
+    expect(canOpenDirectProductIncomeFromCopy(row, { netUid: 'copy-3' }, true)).toBe(true)
+    expect(canOpenDirectProductIncomeFromCopy(row, { hasArrivedDeliveryProtocol: true, netUid: 'copy-4' }, false)).toBe(false)
   })
 })

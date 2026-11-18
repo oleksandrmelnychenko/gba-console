@@ -53,7 +53,7 @@ import {
   saveAllOrdersUkraineFilter,
 } from '../allOrdersUkraineFilter'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
-import { canOpenDirectProductIncomeFromRow } from '../directOrderActions'
+import { canOpenDirectProductIncomeFromCopy, canOpenDirectProductIncomeFromRow } from '../directOrderActions'
 import { getDirectOrderStorageCopies, getDirectOrderStorages, type DirectOrderStorageCopy } from '../directOrderStorageCopies'
 import type {
   Currency,
@@ -1603,7 +1603,7 @@ export function OrderActionsModal({
               <DirectOrderActionButtons
                 canOpenLogistics={canOpenDirectLogistics}
                 canOpenInvoices={canOpenDirectInvoices}
-                canOpenProductIncome={canOpenDirectProductIncomeFromRow(row, canOpenDirectProductIncome)}
+                canOpenProductIncome={canOpenDirectProductIncomeFromCopy(row, copy, canOpenDirectProductIncome)}
                 canOpenSpecifications={canOpenDirectSpecifications && directHasProForma}
                 netUid={copy.netUid}
                 onNavigate={onNavigate}
