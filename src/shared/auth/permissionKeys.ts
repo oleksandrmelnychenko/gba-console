@@ -1096,6 +1096,8 @@ export const PermissionKeys = {
       OpenProductIncome: 'orders.ukraine.order.open_product_income',
       OpenProducts: 'orders.ukraine.order.open_products',
       OpenSpecificationCodes: 'orders.ukraine.order.open_specification_codes',
+      /** Choose another «Курс розрахунків» kind or type a rate when a supplier file creates the order. */
+      OverrideSettlementRate: 'orders.ukraine.order.override_settlement_rate',
     },
     PackList: {
       Delete: 'orders.ukraine.pack_list.delete',
@@ -1229,6 +1231,8 @@ export const PermissionKeys = {
     Order: {
       Create: 'accounting.outgoing_cashflows.order.create',
       Cancel: 'accounting.outgoing_cashflows.order.cancel',
+      /** Choose another EUR rate kind or type a rate on a supplier payment. */
+      OverrideSettlementRate: 'accounting.outgoing_cashflows.order.override_settlement_rate',
     },
   },
   ProductAvailabilities: {
