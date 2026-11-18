@@ -7,16 +7,20 @@ import { ownPresentationPreview } from '../data/constructorPresentation.native.t
 import { ReportInlinePreview } from './ReportInlinePreview'
 
 afterEach(() => { cleanup() })
-const view = (source: string) => {
+const view = (unconfirmed: boolean) => {
   const wire = ownPresentationPreview(3)
-  wire.Request.DataSource = source
+  wire.Request.DataSource = 'NativeSalesNet'
+  if (unconfirmed) {
+    wire.Cells[3].Value.Provenance = 'unconfirmedCurrency'
+    wire.Totals.Values[3].Value.Provenance = 'unconfirmedCurrency'
+  }
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></I18nProvider></MantineProvider>)
 }
-it('shades only the undetermined cells of the sales report, totals included', () => {
-  const shaded = [...view('NativeSalesNet').container.querySelectorAll('td.is-unknown')]
-  expect(shaded).toHaveLength(3)
-  expect(shaded.map(cell => cell.textContent)).toEqual(['—', '—', '—'])
+it('shades only the cells whose currency is not confirmed', () => {
+  const shaded = [...view(true).container.querySelectorAll('td.is-unknown')]
+  expect(shaded).toHaveLength(2)
+  expect(shaded.map(cell => cell.textContent)).toEqual(['—', '—'])
 })
-it('leaves other reports unshaded', () => {
-  expect(view('NativePurchases').container.querySelector('td.is-unknown')).toBeNull()
+it('leaves other undetermined cells unshaded', () => {
+  expect(view(false).container.querySelector('td.is-unknown')).toBeNull()
 })
