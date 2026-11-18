@@ -36,6 +36,7 @@ import { CircleAlert, Download, FileSpreadsheet, Plus, RotateCcw } from 'lucide-
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { readDashboardTransferPeriod } from '../../role-dashboards/utils/metricScope'
+import { downloadTransferImportTemplate, resolveTransferImportEndRow } from '../transferImport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -175,9 +176,8 @@ function useProductTransfersPageModel({
       return storageOptions
     }
 
-    const availableStorages = createForm.isManagement
-      ? storages
-      : storages.filter((storage) => storage.OrganizationId === fromStorage.OrganizationId)
+    // A transfer never crosses organisations, management transfers included (chaos3 N3-01).
+    const availableStorages = storages.filter((storage) => storage.OrganizationId === fromStorage.OrganizationId)
 
     return availableStorages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
       if (isSameStorage(storage, fromStorage)) {
@@ -192,7 +192,7 @@ function useProductTransfersPageModel({
 
       return options
     }, [])
-  }, [createForm.isManagement, fromStorage, storageOptions, storages])
+  }, [fromStorage, storageOptions, storages])
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === createForm.toStorageNetUid)
     ? createForm.toStorageNetUid
     : toStorageOptions[0]?.value || ''
@@ -378,7 +378,7 @@ function useProductTransfersPageModel({
       const messages = await addProductTransferFromFile({
         file: createForm.file,
         parseConfiguration: {
-          EndRow: Number(createForm.endRow),
+          EndRow: Number(resolveTransferImportEndRow(createForm.startRow, createForm.endRow)),
           QtyColumnNumber: Number(createForm.qtyColumnNumber),
           StartRow: Number(createForm.startRow),
           VendorCodeColumnNumber: Number(createForm.vendorCodeColumnNumber),
@@ -756,9 +756,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               onChange={(value) =>
                 setCreateForm((current) => {
                   const nextFromStorage = storages.find((storage) => storage.NetUid === value)
-                  const nextToStorage = current.isManagement
-                    ? current.toStorageNetUid
-                    : getDefaultToStorage(storages, nextFromStorage)?.NetUid || ''
+                  const nextToStorage = getDefaultToStorage(storages, nextFromStorage)?.NetUid || ''
 
                   return {
                     ...current,
@@ -848,7 +846,9 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
                 allowNegative={false}
                 disabled={isCreating}
                 label={t('Кінцевий рядок')}
+                description={t('Порожньо — до кінця файлу')}
                 min={1}
+                placeholder={t('до кінця')}
                 value={createForm.endRow}
                 onChange={(value) => setCreateForm((current) => ({ ...current, endRow: toNumberInputValue(value) }))}
               />
@@ -865,6 +865,22 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               value={createForm.file}
               onChange={(file) => setCreateForm((current) => ({ ...current, file }))}
             />
+            <Group justify="flex-start">
+              <Button
+                disabled={isCreating}
+                leftSection={<Download size={14} />}
+                size="xs"
+                type="button"
+                variant="subtle"
+                onClick={() => {
+                  void downloadTransferImportTemplate(t).catch(() =>
+                    notifications.show({ color: 'red', message: t('Не вдалося сформувати Excel') }),
+                  )
+                }}
+              >
+                {t('Завантажити шаблон')}
+              </Button>
+            </Group>
 
             {!canCreateManagement && (
               <Text c="dimmed" size="xs">
@@ -1262,9 +1278,7 @@ function resolveStorageDefaults(form: CreateFormState, storages: ProductTransfer
 
   const fromStorage =
     storages.find((storage) => storage.NetUid === form.fromStorageNetUid) || storages.find((storage) => storage.NetUid)
-  const toStorages = form.isManagement
-    ? storages
-    : storages.filter((storage) => storage.OrganizationId === fromStorage?.OrganizationId)
+  const toStorages = storages.filter((storage) => storage.OrganizationId === fromStorage?.OrganizationId)
   const toStorage =
     toStorages.find((storage) => storage.NetUid === form.toStorageNetUid && !isSameStorage(storage, fromStorage))
     || getDefaultToStorage(toStorages, fromStorage)
@@ -1289,8 +1303,8 @@ function validateCreateForm(form: CreateFormState, storages: ProductTransferStor
     return translate('Склади не можуть збігатися')
   }
 
-  if (!form.isManagement && fromStorage.OrganizationId !== toStorage.OrganizationId) {
-    return translate('Для звичайного переміщення склади мають належати одній організації')
+  if (fromStorage.OrganizationId !== toStorage.OrganizationId) {
+    return translate('Переміщення між складами різних організацій заборонене.')
   }
 
   if (!form.fromDate) {
@@ -1305,7 +1319,7 @@ function validateCreateForm(form: CreateFormState, storages: ProductTransferStor
     return translate('Номери колонок мають бути більші за 0')
   }
 
-  if (!isPositiveNumber(form.startRow) || !isPositiveNumber(form.endRow)) {
+  if (!isPositiveNumber(form.startRow) || (form.endRow !== '' && !isPositiveNumber(form.endRow))) {
     return translate('Номери рядків мають бути більші за 0')
   }
 
@@ -1313,7 +1327,7 @@ function validateCreateForm(form: CreateFormState, storages: ProductTransferStor
     return translate('Колонка коду товару не може збігатися з колонкою кількості')
   }
 
-  if (Number(form.endRow) < Number(form.startRow)) {
+  if (form.endRow !== '' && Number(form.endRow) < Number(form.startRow)) {
     return translate('Кінцевий рядок не може бути меншим за початковий')
   }
 
@@ -1360,7 +1374,12 @@ function getDefaultToStorage(
   storages: ProductTransferStorage[],
   fromStorage?: ProductTransferStorage | null,
 ): ProductTransferStorage | undefined {
-  return storages.find((storage) => storage.NetUid && !isSameStorage(storage, fromStorage))
+  return storages.find(
+    (storage) =>
+      storage.NetUid &&
+      !isSameStorage(storage, fromStorage) &&
+      (!fromStorage || storage.OrganizationId === fromStorage.OrganizationId),
+  )
 }
 
 function isSameStorage(firstStorage?: ProductTransferStorage | null, secondStorage?: ProductTransferStorage | null): boolean {
