@@ -49,6 +49,7 @@ import { Can } from '../../auth/components/Can'
 import { getProductForOrderInvoices } from '../../products/api/productsApi'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { EXCEL_FILE_ACCEPT, isExcelFile } from '../excelFiles'
+import { ColumnNumberInput } from '../components/ColumnNumberInput'
 import {
   createInvoiceMetadataPayload,
   type InvoiceMetadataForm,
@@ -1699,13 +1700,13 @@ function PackListUploadModal({
                 onChange={(file) => setForm((current) => ({ ...current, file }))}
               />
               <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="sm">
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Код товару')} min={1} value={form.vendorCodeColumnNumber} onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Кількість')} min={1} value={form.qtyColumnNumber} onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('З рядка')} min={1} value={form.startRow} onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('До рядка')} min={1} value={form.endRow} onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Ціна')} min={1} value={form.unitPriceColumnNumber} onChange={(value) => setForm((current) => ({ ...current, unitPriceColumnNumber: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Нетто')} min={1} value={form.netWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, netWeightColumnNumber: toPositiveNumber(value) }))} />
-                <NumberInput allowDecimal={false} disabled={isSaving} label={t('Брутто')} min={1} value={form.grossWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: toPositiveNumber(value) }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('Код товару')} value={form.vendorCodeColumnNumber} onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('Кількість')} value={form.qtyColumnNumber} onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('З рядка')} value={form.startRow} onChange={(value) => setForm((current) => ({ ...current, startRow: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('До рядка')} value={form.endRow} onChange={(value) => setForm((current) => ({ ...current, endRow: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('Ціна')} value={form.unitPriceColumnNumber} onChange={(value) => setForm((current) => ({ ...current, unitPriceColumnNumber: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('Нетто')} value={form.netWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, netWeightColumnNumber: value }))} />
+                <ColumnNumberInput disabled={isSaving} label={t('Брутто')} value={form.grossWeightColumnNumber} onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: value }))} />
               </SimpleGrid>
               <Checkbox
                 checked={form.isWeightPerUnit}
@@ -2083,12 +2084,12 @@ function ParseGrid({
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-      <NumberInput allowDecimal={false} disabled={isSaving} label={t('Код товару')} min={1} value={form.vendorCodeColumnNumber} onChange={(value) => onChange((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))} />
-      <NumberInput allowDecimal={false} disabled={isSaving} label={t('Кількість')} min={1} value={form.qtyColumnNumber} onChange={(value) => onChange((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))} />
-      <NumberInput allowDecimal={false} disabled={isSaving} label={t('З рядка')} min={1} value={form.startRow} onChange={(value) => onChange((current) => ({ ...current, startRow: toPositiveNumber(value) }))} />
-      <NumberInput allowDecimal={false} disabled={isSaving} label={t('До рядка')} min={1} value={form.endRow} onChange={(value) => onChange((current) => ({ ...current, endRow: toPositiveNumber(value) }))} />
-      <NumberInput allowDecimal={false} disabled={isSaving || form.withTotalAmount} label={t('Ціна')} min={1} value={form.unitPriceColumnNumber} onChange={(value) => onChange((current) => ({ ...current, unitPriceColumnNumber: toPositiveNumber(value) }))} />
-      <NumberInput allowDecimal={false} disabled={isSaving || !form.withTotalAmount} label={t('Сума')} min={1} value={form.totalAmountColumnNumber} onChange={(value) => onChange((current) => ({ ...current, totalAmountColumnNumber: toPositiveNumber(value) }))} />
+      <ColumnNumberInput disabled={isSaving} label={t('Код товару')} value={form.vendorCodeColumnNumber} onChange={(value) => onChange((current) => ({ ...current, vendorCodeColumnNumber: value }))} />
+      <ColumnNumberInput disabled={isSaving} label={t('Кількість')} value={form.qtyColumnNumber} onChange={(value) => onChange((current) => ({ ...current, qtyColumnNumber: value }))} />
+      <ColumnNumberInput disabled={isSaving} label={t('З рядка')} value={form.startRow} onChange={(value) => onChange((current) => ({ ...current, startRow: value }))} />
+      <ColumnNumberInput disabled={isSaving} label={t('До рядка')} value={form.endRow} onChange={(value) => onChange((current) => ({ ...current, endRow: value }))} />
+      <ColumnNumberInput disabled={isSaving || form.withTotalAmount} label={t('Ціна')} value={form.unitPriceColumnNumber} onChange={(value) => onChange((current) => ({ ...current, unitPriceColumnNumber: value }))} />
+      <ColumnNumberInput disabled={isSaving || !form.withTotalAmount} label={t('Сума')} value={form.totalAmountColumnNumber} onChange={(value) => onChange((current) => ({ ...current, totalAmountColumnNumber: value }))} />
     </SimpleGrid>
   )
 }
@@ -3348,12 +3349,6 @@ function hasRequiredNumbers(form: InvoiceUploadForm): form is InvoiceUploadForm 
   vendorCodeColumnNumber: number
 } {
   return Boolean(form.vendorCodeColumnNumber && form.qtyColumnNumber && form.startRow && form.endRow)
-}
-
-function toPositiveNumber(value: number | string): NumberFieldValue {
-  const numberValue = typeof value === 'number' ? value : Number(value)
-
-  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : ''
 }
 
 function formatDateTimeInput(date: Date): string {

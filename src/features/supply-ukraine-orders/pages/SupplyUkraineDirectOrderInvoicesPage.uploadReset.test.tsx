@@ -511,4 +511,22 @@ describe.each(scenarios)('$name creation draft lifecycle', (scenario) => {
     expect((form.getByLabelText('До рядка') as HTMLInputElement).value).toBe('2')
     expect(form.getByText('9992.xlsx')).toBeTruthy()
   })
+
+  it('keeps garbage in the import columns as typed with an inline error and sends nothing (w1-11)', async () => {
+    renderPage()
+    const form = await openForm(scenario)
+    fillForm(scenario)
+    const field = (label: string) => form.getByLabelText(label, { exact: true, selector: 'input:not([type=radio]), textarea' }) as HTMLInputElement
+    fireEvent.change(field('Код товару'), { target: { value: 'abc-1e99' } })
+    fireEvent.change(field('Кількість'), { target: { value: '-5' } })
+
+    expect(field('Код товару').value).toBe('abc-1e99')
+    expect(field('Кількість').value).toBe('-5')
+    expect(form.getByText('Введіть ціле число від 1, наприклад 3')).toBeTruthy()
+    expect(form.getByText('Номер не може бути від’ємним')).toBeTruthy()
+
+    fireEvent.click(form.getByRole('button', { name: 'Створити' }))
+    expect(scenario.upload).not.toHaveBeenCalled()
+    expect(field('Код товару').value).toBe('abc-1e99')
+  })
 })
