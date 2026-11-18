@@ -74,6 +74,7 @@ import {
   selectIncomePackingList,
 } from '../productIncomePlacementState'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { hasZeroPrice, ZERO_PRICE_CONFIRM_MESSAGE } from '../../../shared/pricing/zeroPriceConfirm'
 import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
@@ -1207,6 +1208,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     return t('Не оприходуваний')
   }, [invoice, packingList, t])
 
+  /* Owner decision: free goods (price 0) are received only after an explicit «Продовжити» in the confirm. */
+  const hasZeroPriceLines = hasZeroPrice((packingList?.PackingListPackageOrderItems || []).map((item) => item.UnitPrice))
   const totalQty = useMemo(
     () =>
       (packingList?.PackingListPackageOrderItems || []).reduce((total, item) => total + (item.Qty || 0), 0),
@@ -1218,7 +1221,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource, sourceId?: string) 
     drawer, error, fromDate, gridRows,
     closePzDownload, handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut,
     handleDownloadPzDocument, handleMoveRemnants, handleOpenPlacements,
-    handleProductIncome,
+    handleProductIncome, hasZeroPriceLines,
     canUseIncome, handleSave, invoice, isDirty, isLoading, isSaving, navigate: requestNavigate, packingList, pendingDirtyAction,
     isInvoiceAllNotPlaced: isInvoiceAllNotPlaced(invoice, packingList),
     placementStatus, productIncome, protocol, pzDownload, reloadFromServer: requestReloadFromServer,
@@ -2117,6 +2120,9 @@ function ProductIncomeDialogs({
           }
         }}
       >
+        {model.hasZeroPriceLines ? (
+          <Text c="orange.8" data-testid="zero-price-warning" mb="md" size="sm">{t(ZERO_PRICE_CONFIRM_MESSAGE)}</Text>
+        ) : null}
         <AppModalFooter>
           <Button color="gray" disabled={model.isSaving} variant="default" onClick={() => model.setConfirmCapitalize(false)}>
             {t('Скасувати')}
@@ -2141,6 +2147,9 @@ function ProductIncomeDialogs({
           }
         }}
       >
+        {model.hasZeroPriceLines ? (
+          <Text c="orange.8" mb="md" size="sm">{t(ZERO_PRICE_CONFIRM_MESSAGE)}</Text>
+        ) : null}
         <AppModalFooter>
           <Button color="gray" disabled={model.isSaving} variant="default" onClick={() => model.setConfirmCarryOut(false)}>
             {t('Скасувати')}

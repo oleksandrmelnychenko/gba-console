@@ -50,6 +50,9 @@ import type {
 import { ProductCapitalizationMissingItemsModal } from './ProductCapitalizationMissingItemsModal'
 import { ProductCapitalizationUploadModal } from './ProductCapitalizationUploadModal'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import { ZeroPriceConfirmModal } from '../../../shared/pricing/ZeroPriceConfirmModal'
+import { useZeroPriceConfirm } from '../../../shared/pricing/useZeroPriceConfirm'
+import { hasZeroPrice } from '../../../shared/pricing/zeroPriceConfirm'
 import './product-capitalization-sheet.css'
 
 const VENDOR_CODE_DEBOUNCE_MS = 280
@@ -309,6 +312,8 @@ export function NewProductCapitalizationPanel({ canCreate, opened, onClose, onCr
         />
       )}
 
+      <ZeroPriceConfirmModal {...model.zeroPriceModalProps} />
+
       <ProductCapitalizationMissingItemsModal
         items={model.missingVendorCodes}
         opened={model.missingModalOpened}
@@ -370,6 +375,7 @@ function useNewProductCapitalizationModel(
   const submitRequestRef = useRef(0)
   const pendingStorageNetUidRef = useRef<string | null>(null)
   const submitIdentityRef = useRef<object>({})
+  const { confirmZeroPrice, zeroPriceModalProps } = useZeroPriceConfirm()
   const storages = storageState.items
   const selectedStorageNetId = storageState.selectedNetId
   const isLoadingStorages = storageState.isLoading
@@ -640,7 +646,8 @@ function useNewProductCapitalizationModel(
 
     const quantity = parsedQuantity.qty
 
-    if (unitPrice <= 0) {
+    // Price 0 is allowed (free goods) and confirmed at «Провести»; only a blank price is refused here.
+    if (itemEntry.unitPrice === '' || unitPrice < 0) {
       notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
       return
     }
@@ -904,7 +911,7 @@ function useNewProductCapitalizationModel(
       return
     }
 
-    if (items.some((item) => item.__priceRequired && toFiniteNumber(item.UnitPrice) <= 0)) {
+    if (items.some((item) => item.__priceRequired && typeof item.UnitPrice !== 'number')) {
       showSubmitNotice({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
       return
     }
@@ -934,7 +941,11 @@ function useNewProductCapitalizationModel(
       return
     }
 
-    if (!tryStartSubmitting()) {
+    if (hasZeroPrice(items.map((item) => toFiniteNumber(item.UnitPrice))) && !(await confirmZeroPrice())) {
+      return
+    }
+
+    if (!isCurrentSubmit() || !tryStartSubmitting()) {
       return
     }
     setError(null)
@@ -973,6 +984,7 @@ function useNewProductCapitalizationModel(
     comment,
     fromDate,
     canCreate,
+    confirmZeroPrice,
     isParsing,
     isSubmitting,
     items,
@@ -1051,6 +1063,7 @@ function useNewProductCapitalizationModel(
     uploadModalOpened,
     vendorCodeOptions,
     vendorCodeQuery,
+    zeroPriceModalProps,
     addItem,
     changeVendorCodeQuery,
     closeUploadModal,

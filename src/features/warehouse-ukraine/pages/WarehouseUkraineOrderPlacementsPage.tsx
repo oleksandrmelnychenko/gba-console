@@ -45,6 +45,7 @@ import type {
 } from '../placementsTypes'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { userErrorText } from '../../../shared/api/userErrorText'
+import { hasZeroPrice, ZERO_PRICE_CONFIRM_MESSAGE } from '../../../shared/pricing/zeroPriceConfirm'
 import './warehouse-ukraine-page.css'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Save
@@ -697,9 +698,11 @@ function useOrderPlacementsModel() {
 
   const totalProductsCount = order ? order.SupplyOrderUkraineItems.length : 0
   const totalNetWeight = order?.TotalNetWeight || 0
+  /* Owner decision: free goods (price 0) are received only after an explicit «Продовжити» in the confirm. */
+  const hasZeroPriceLines = hasZeroPrice((order?.SupplyOrderUkraineItems ?? []).map((item) => item.UnitPrice))
 
   return {
-    closeSheet, columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn,
+    closeSheet, columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn, hasZeroPriceLines,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
     isBusy, isLoading, isNotFound, isPlacing, isSaving, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setOrder, setSelectedStorageId,
@@ -1256,6 +1259,9 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 ? t('Провести замовлення повністю?')
                 : t('Оприходувати замовлення?')}
             </Text>
+            {model.hasZeroPriceLines ? (
+              <Text c="orange.8" data-testid="zero-price-warning" size="sm">{t(ZERO_PRICE_CONFIRM_MESSAGE)}</Text>
+            ) : null}
             <AppModalFooter>
               <Button
                 className="warehouse-order-placement-action-button"
@@ -1273,7 +1279,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 loading={model.isPlacing}
                 onClick={() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}
               >
-                {t('Підтвердити')}
+                {model.hasZeroPriceLines ? t('Продовжити') : t('Підтвердити')}
               </Button>
             </AppModalFooter>
           </Stack>
