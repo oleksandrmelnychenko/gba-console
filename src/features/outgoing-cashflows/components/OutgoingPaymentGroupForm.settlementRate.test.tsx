@@ -189,6 +189,29 @@ describe('supplier payment «Курс у EUR»', () => {
     })
   })
 
+  it('drops a chosen rate when the payment currency changes, so an EUR payment sends none', async () => {
+    auth.canOverride = true
+    const eur = { Code: 'EUR', Id: 1, NetUid: 'currency-eur' }
+    incomeApi.searchIncomeCashflowPaymentRegisters.mockResolvedValue([{
+      ...register,
+      PaymentCurrencyRegisters: [...register.PaymentCurrencyRegisters, { Amount: 500, Currency: eur, Id: 42, NetUid: 'currency-register-2' }],
+    }])
+    await chooseManufacturer()
+    await waitFor(() => expect(within(rateLine()).getByText('Комерційний 1,08 за 18.11.2026')).toBeTruthy())
+    fireEvent.change(screen.getByLabelText('Свій курс, за 1 EUR'), { target: { value: '1,075' } })
+    expect(within(rateLine()).getByText('вручну 1,075')).toBeTruthy()
+
+    quoteApi.getSupplierSettlementRateQuote.mockResolvedValue({ ...commercialQuote, CurrencyCode: 'EUR', Rate: 1, Source: 'eur' })
+    fireEvent.click(screen.getByRole('combobox', { name: /^Валюта/ }))
+    fireEvent.click(screen.getByRole('option', { name: /^EUR/ }))
+    await waitFor(() => expect(within(rateLine()).getByText('EUR — без перерахунку')).toBeTruthy())
+    expect(screen.queryByLabelText('Свій курс, за 1 EUR')).toBeNull()
+
+    const payload = await fillAndSubmit()
+    expect(payload).not.toHaveProperty('EuroRateKind')
+    expect(payload).not.toHaveProperty('EuroExchangeRate')
+  })
+
   it('shows nothing for a payment to a service supplier', async () => {
     renderForm()
     await waitFor(() => expect(incomeApi.searchIncomeCashflowPaymentRegisters).toHaveBeenCalled())

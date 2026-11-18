@@ -241,16 +241,20 @@ export function OutgoingPaymentGroupForm({
   )
   const agreementCurrency = isSupplierSearch ? selectedSupplyAgreement?.Currency || null : selectedClientAgreement?.Agreement?.Currency || null
   // «Курс у EUR» of a payment to a supplier on a client agreement (the EUR agreement balance moves by
-  // amount / rate). The choice belongs to one agreement: another agreement starts from its default.
+  // amount / rate). The choice belongs to one agreement and one payment currency: another agreement or
+  // currency (an EUR one hides the controls) starts from the default again, so nothing hidden is sent.
   const canOverrideSettlementRate = hasPermission(PermissionKeys.OutgoingCashflows.Order.OverrideSettlementRate)
   const settlementRateAgreementNetId =
     operationType === OUTCOME_OPERATION_TYPE.PaymentToSupplier && !isSupplierSearch
       ? selectedClientAgreement?.NetUid || ''
       : ''
-  const [settlementRateChoice, setSettlementRateChoice] = useState<{ agreementNetId: string, override: SettlementRateOverride }>(
-    { agreementNetId: '', override: EMPTY_SETTLEMENT_RATE_OVERRIDE },
+  const settlementRateChoiceKey = settlementRateAgreementNetId
+    ? `${settlementRateAgreementNetId}|${selectedCurrency?.NetUid || ''}`
+    : ''
+  const [settlementRateChoice, setSettlementRateChoice] = useState<{ key: string, override: SettlementRateOverride }>(
+    { key: '', override: EMPTY_SETTLEMENT_RATE_OVERRIDE },
   )
-  const settlementRateOverride = settlementRateChoice.agreementNetId === settlementRateAgreementNetId
+  const settlementRateOverride = settlementRateChoiceKey && settlementRateChoice.key === settlementRateChoiceKey
     ? settlementRateChoice.override
     : EMPTY_SETTLEMENT_RATE_OVERRIDE
   const settlementRateParams: SupplierSettlementRateQuoteParams | null = settlementRateAgreementNetId && form.date
@@ -1123,7 +1127,7 @@ export function OutgoingPaymentGroupForm({
               override={settlementRateOverride}
               params={settlementRateParams}
               onOverrideChange={(override) => setSettlementRateChoice({
-                agreementNetId: settlementRateAgreementNetId,
+                key: settlementRateChoiceKey,
                 override,
               })}
             />
