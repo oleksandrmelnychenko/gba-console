@@ -31,6 +31,7 @@ import { organizationHasVat } from './organizationVat'
 import { filterPricingsByVat, isWholeDays, toDaysValue, toOptions, toMoneyAmount, vatAccountingPatch } from './agreementFormRules'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDateInput } from '../../../../shared/ui/AppDateInput'
+import { isSettlementRateKind, SETTLEMENT_RATE_KIND } from '../../../../shared/settlement-rate/supplierSettlementRate'
 
 export type AgreementFormProps = {
   agreement: Agreement
@@ -47,6 +48,7 @@ export type AgreementFormProps = {
 }
 
 const NAME_MAX_LENGTH = 37
+const SETTLEMENT_RATE_DEFAULT_VALUE = 'default'
 
 export function AgreementForm({
   agreement,
@@ -332,6 +334,23 @@ export function AgreementForm({
                   label={t('Постачальник сплачує доставку')}
                   onChange={(event) => onChange({ IsPayForDelivery: event.currentTarget.checked })}
                 />
+
+                {/* Only supplier agreements settle supplier receipts and payments, so only they carry it.
+                    Both save paths write the whole agreement row: the value always goes back as it is. */}
+                <Select
+                  allowDeselect={false}
+                  data={[
+                    { label: t('Як за замовчуванням'), value: SETTLEMENT_RATE_DEFAULT_VALUE },
+                    { label: t('НБУ'), value: String(SETTLEMENT_RATE_KIND.Nbu) },
+                    { label: t('Комерційний'), value: String(SETTLEMENT_RATE_KIND.Commercial) },
+                  ]}
+                  description={t('За замовчуванням прихід — за курсом НБУ, оплата — за комерційним курсом.')}
+                  label={t('Курс розрахунків')}
+                  value={isSettlementRateKind(agreement.SettlementRateKind)
+                    ? String(agreement.SettlementRateKind)
+                    : SETTLEMENT_RATE_DEFAULT_VALUE}
+                  onChange={(value) => onChange({ SettlementRateKind: toSettlementRateKind(value) })}
+                />
               </Stack>
             ) : (
               <Stack gap="xs">
@@ -489,6 +508,12 @@ export function AgreementForm({
       PromotionalPricing: findByName(promotionalPricings, PRICING_NAME_BULK_TWO),
     })
   }
+}
+
+function toSettlementRateKind(value: string | null): Agreement['SettlementRateKind'] {
+  const kind = Number(value)
+
+  return isSettlementRateKind(kind) ? kind : null
 }
 
 function findById<T extends { Id?: number }>(items: T[], value: string | null): T | undefined {

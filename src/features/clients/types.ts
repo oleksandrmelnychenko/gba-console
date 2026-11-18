@@ -223,6 +223,8 @@ export type Agreement = {
   IsSelected?: boolean
   TempId?: number
   WithAgreementLine?: boolean
+  /** «Курс розрахунків» of a supplier agreement: null = defaults (receipt at NBU, payment at the commercial rate), 1 НБУ, 2 Комерційний. */
+  SettlementRateKind?: 1 | 2 | null
   Created?: Date | string
   Updated?: Date | string
   Deleted?: boolean
