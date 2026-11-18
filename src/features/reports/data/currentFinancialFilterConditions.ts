@@ -5,7 +5,7 @@ import { usesCurrentFinancialAxes } from './currentFinancialAxes'
 
 const legacyConditions = [0, 2] as const
 const currentConditions = [0, 1, 2, 4] as const
-const fields = [0, 1, 2, 3, 4, 6, 9, 20, 21] as const
+const fields = [0, 1, 2, 3, 4, 75, 6, 9, 20, 21] as const
 export type CurrentFinancialFilterConditions = {
   version: 1; requiredProfitReadMode: 0; requiredDayOrganizationBasis: 0
   allowedFields: number[]; conditions: number[]; maximumSelections: 32; maximumValues: 100

@@ -25,7 +25,7 @@ export function requestSupplierSourceWorld(data: ReportRequestBody): unknown {
 const legacyMeasures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14]
 const measures = [0, 2, 3, 4, 6, 7, 8, 10, 12, 14, 11, 15]
 const baseFilters = [0, 1, 17]
-const knownFilters = new Set([0, 1, 2, 3, 4, 17, 20, 21])
+const knownFilters = new Set([0, 1, 2, 3, 4, 75, 17, 20, 21])
 const forbidden = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',

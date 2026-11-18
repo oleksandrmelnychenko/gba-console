@@ -306,6 +306,21 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   return result
 }
 
+export async function searchReportManufacturers(dataSource: number, params: ReportSearchParams, supplierIds: readonly number[] = [],
+  signal?: AbortSignal): Promise<ReportEntity[]> {
+  if (supplierIds.length > 100 || supplierIds.some(id => !Number.isSafeInteger(id) || id <= 0))
+    throw new Error('Оберіть до 100 точних постачальників.')
+  const result = await apiRequest<unknown>('/report/datasets/lookup', {
+    query: { dataSource, field: REPORT_MANUFACTURER_FIELD, value: params.value.trim(), offset: params.offset, limit: params.limit,
+      ...(supplierIds.length ? { supplierIds: [...new Set(supplierIds)].join(',') } : {}) }, signal,
+  })
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && exactId(item) !== null
+    && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректний список виробників.')
+  return result.map(item => ({ ...item, Id: Number(exactId(item)) }))
+}
+
+const REPORT_MANUFACTURER_FIELD = 75
+
 export async function getReportOrganizations(): Promise<ReportEntity[]> {
   return getResourceList('/organizations/all')
 }

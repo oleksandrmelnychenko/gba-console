@@ -45,6 +45,7 @@ export const REPORT_FILTER_FIELD_TYPES = {
   debtDocument: 26,
   supplierReturnMode: 27,
   documentOrganization: 28,
+  productManufacturer: 75,
 } as const
 
 const REPORT_GROUPING_TYPES = {

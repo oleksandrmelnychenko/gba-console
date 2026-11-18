@@ -51,6 +51,7 @@ import { CurrentVparivanieMovementSettings } from './CurrentVparivanieMovementSe
 import { vparivanieSelectionDataset, vparivanieSelectionRequest } from '../data/vparivanieWorkbookSelection'
 import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import { ReportPreviewPages } from './ReportPreviewPages'
+import { exactId } from '../data/exactId'
 import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
 import { reportSelectionConditions, reportSelectionEditorCardinalityError, reportSelectionListCondition } from '../data/reportSelectionPolicy'
@@ -120,6 +121,7 @@ import {
   searchReportRegionCodes,
   searchReportClients,
   searchDatasetReportValues,
+  searchReportManufacturers,
   searchReportProducts,
   searchReportUsers,
   searchSaleReturnReportDocuments,
@@ -2099,7 +2101,9 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
   const documentLookup = salesDocumentLookupPolicy(dataSource, selection.SelectedField.Type, dataset, lookupProfitUnavailable, from, to)
   const nativeSalesDocument = documentLookup.native
   const lookupUnavailable = documentLookup.unavailable
-  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period])
+  const manufacturerSuppliers = useMemo(() => selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer
+    ? chosenGoodsSuppliers(selections) : EMPTY_SUPPLIERS, [selection.SelectedField.Type, selections])
+  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period, manufacturerSuppliers])
   const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
   const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
@@ -2211,6 +2215,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
             : await loadSelectionLookupOptions(
                 dataSource, selection.SelectedField.Type, normalizedSearch, from, to,
                 controller.signal, saleDocumentFilters, lookupSourceWorld, lookupProfitReadMode, nativeSalesDocument,
+                manufacturerSuppliers,
               )
 
         if (!cancelled) {
@@ -2478,6 +2483,18 @@ function setAllMeasurements(
 
 
 
+const EMPTY_SUPPLIERS: readonly number[] = []
+
+export function chosenGoodsSuppliers(selections: readonly ReportSelection[]): readonly number[] {
+  const ids = selections.filter(selection => selection.IsChecked !== false && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.supplier
+    && [0, 2].includes(selection.FilterCondition.Type))
+    .flatMap(selection => selection.Values.flatMap(value => {
+      const id = exactId(value.Data)
+      return id !== null && Number.isSafeInteger(Number(id)) ? [Number(id)] : []
+    }))
+  return ids.length ? [...new Set(ids)].sort((a, b) => a - b) : EMPTY_SUPPLIERS
+}
+
 function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: number): boolean {
   return dataSource === 3 && fieldType === REPORT_FILTER_FIELD_TYPES.warehouse
 }
@@ -2520,6 +2537,7 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
+    case REPORT_FILTER_FIELD_TYPES.productManufacturer:
       return 'search'
     default:
       return 'manual'
@@ -2529,7 +2547,8 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 function getSelectionLookupMinLength(fieldType: number): number {
   if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit
     || fieldType === REPORT_FILTER_FIELD_TYPES.warehouse || fieldType === REPORT_FILTER_FIELD_TYPES.supplier
-    || fieldType === REPORT_FILTER_FIELD_TYPES.supplierContract || fieldType === REPORT_FILTER_FIELD_TYPES.purchaseDocument) return 0
+    || fieldType === REPORT_FILTER_FIELD_TYPES.supplierContract || fieldType === REPORT_FILTER_FIELD_TYPES.purchaseDocument
+    || fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer) return 0
   return fieldType === REPORT_FILTER_FIELD_TYPES.product || fieldType === REPORT_FILTER_FIELD_TYPES.productArticle ? 2 : 1
 }
 
@@ -2560,6 +2579,7 @@ async function loadSelectionLookupOptions(
   lookupSourceWorld?: number,
   lookupProfitReadMode?: 0 | 1,
   nativeSalesDocument = usesSalesDocumentLookup(dataSource, fieldType),
+  manufacturerSuppliers: readonly number[] = [],
 ): Promise<ReportEntity[]> {
   if (usesSharedProductTopLookup(dataSource, fieldType)) return getReportProductTop()
   if (nativeSalesDocument)
@@ -2574,6 +2594,8 @@ async function loadSelectionLookupOptions(
   }
   if (dataSource === 46 && [0,1,2,6,9,20].includes(fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+  if (fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer)
+    return searchReportManufacturers(dataSource, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, manufacturerSuppliers, signal)
   if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, fieldType)) {

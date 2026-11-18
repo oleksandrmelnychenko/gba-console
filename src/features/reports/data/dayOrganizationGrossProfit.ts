@@ -27,7 +27,7 @@ export const DAY_ORGANIZATION_OUT_OF_SCOPE_ORGANIZATION_IDS = ['88D1B8CB29DC7A69
 const legacyMeasures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15]
 const measures = [2, 3, 4, 6, 7, 8, 10, 12, 14, 15, 11]
 const baseFilters = [0, 1, 2, 6, 9]
-const knownFilters = new Set([0, 1, 2, 3, 4, 6, 9, 20, 21])
+const knownFilters = new Set([0, 1, 2, 3, 4, 75, 6, 9, 20, 21])
 const unsupported = new Set(['onec', 'comparison', 'xyz', 'revenuecomparison', 'buyersalesshare', 'returncomparison',
   'ratecomparison', 'margincomparison', 'paymentcomparison', 'pricetypesalescomparison', 'agreementpricecomparison',
   'valuationclientagreementid', 'ordering', 'topgroups', 'threshold', 'hidezero',
