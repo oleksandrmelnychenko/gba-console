@@ -164,7 +164,12 @@ describe('native warehouse stock movement', () => {
     await applyReport()
     expect(screen.getByText('1–200 із 450')).toBeTruthy()
     fireEvent.click(screen.getByLabelText('Виводити загальні підсумки'))
-    expect(screen.getByText(/Налаштування змінено/)).toBeTruthy()
+    expect(screen.getByText(/Налаштування змінено\. Натисніть «Застосувати й показати», щоб оновити звіт\. Excel буде за новими налаштуваннями після оновлення звіту\./)).toBeTruthy()
+    const excel = screen.getByRole('button', { name: 'Excel' }) as HTMLButtonElement
+    expect(excel.disabled).toBe(true)
+    expect(excel.getAttribute('aria-describedby')).toBe('stock-movement-pending-notice')
+    fireEvent.click(excel)
+    expect(exportStockMovement).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Наступні рядки' }))
     await screen.findByText('201–400 із 450')
     expect(previews()[1]).toEqual({ ...previews()[0], Offset: 200 })

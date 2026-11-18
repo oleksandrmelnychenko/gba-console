@@ -311,7 +311,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   }
 
   async function exportFile() {
-    if (!enabled || !run || busy) return
+    if (!enabled || !run || busy || pending) return
     await exportRequest(run.request)
   }
 
@@ -484,11 +484,12 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
       advanced={null} />
     {validation ? <Alert color="yellow">{validation}</Alert> : null}
     {error ? <Alert color="red">{error}</Alert> : null}
-    {pending ? <Text size="xs" c="orange.8">Налаштування змінено. Таблиця й файл залишаються за попереднім сформованим звітом до застосування.</Text> : null}
+    {pending ? <Text id="stock-movement-pending-notice" size="xs" c="orange.8">Налаштування змінено. Натисніть «Застосувати й показати», щоб оновити звіт. Excel буде за новими налаштуваннями після оновлення звіту.</Text> : null}
     <div className="workbook-actions" role="region" aria-label="Дії зі звітом">
       <div className="app-filter-bar workbook-toolbar"><div className="app-filter-actions workbook-actions__buttons published-movement__actions">
         <div className="workbook-actions__delivery">
-          <Button variant="default" leftSection={<ExcelIcon size={16} />} disabled={!run || busy} loading={status === 'exporting'}
+          <Button variant="default" leftSection={<ExcelIcon size={16} />} disabled={!run || busy || pending} loading={status === 'exporting'}
+            aria-describedby={pending ? 'stock-movement-pending-notice' : undefined}
             onClick={() => { void exportFile() }}>Excel</Button>
           <Button leftSection={<MonitorPlay size={16} />} loading={status === 'loading'} disabled={busy || !!validation}
             onClick={() => apply()}>Застосувати й показати</Button>
