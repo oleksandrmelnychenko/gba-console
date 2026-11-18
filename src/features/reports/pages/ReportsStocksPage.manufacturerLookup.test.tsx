@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { PageHeaderActionsProvider, PageSubmenuActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { getReportDatasets, getServerReportTemplates, parseReportDatasets } from '../api/reportWorkspaceApi'
 import { previewStockReport } from '../api/reportsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
+import catalog from '../data/reportCatalog.server-fixture.json'
 import { netDataset } from '../data/reportDatasets.test-fixtures'
 import { SALES_CONSTRUCTOR_WORKBOOK, salesConstructorRequest } from '../data/salesConstructorProfiles'
 import type { ReportDataset, ReportFilterNode, ReportSelection } from '../types'
@@ -148,4 +150,63 @@ it('refreshes the manufacturer picker when the sales constructor switches suppli
   expect(screen.queryByRole('option', { name: 'Попередній відбір' })).toBeNull()
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledWith(expect.objectContaining({ filterExpression: after }), dataset, expect.anything()))
+})
+
+const folder = { kind: 'counterpartyGroup', world: 'fenix', id: '8AB2005056C0000811DEFF56BB200610' }
+const folderName = 'Постачальники товару'
+const supplierName = 'ПЛА-ТАН І К ТОВ (MARS+AYFAR)'
+
+it('adds the exact supplier’s brands from the selected buyer group on the sales filter row', async () => {
+  const sales = parseReportDatasets(catalog).find(item => item.DataSource === 2)!
+  const dataset = { ...sales, Filters: [...sales.Filters, { Type: 75, Name: 'Виробник', Selectable: true }] }
+  api.mockImplementation(async (path, options) => {
+    if (path.endsWith('/hierarchy-status')) return { version: 1, kinds: ['counterpartyGroup', 'warehouseGroup', 'productGroup'].map(kind => ({ kind, available: true })) }
+    if (path.endsWith('/hierarchy')) return { kind: folder.kind, parentId: null, hasMore: false, items: [{
+      id: 'fenix:' + folder.id, name: folderName, path: folderName, hasChildren: false, data: JSON.stringify(folder) }] }
+    if (path.endsWith('/manufacturer-suppliers') && options?.query?.groupId === 'fenix:' + folder.id)
+      return [{ Id: 631635, Name: 'ПЛА-ТАН І К ТОВ' }, { Id: 635333, Name: supplierName }]
+    if (options?.query?.field === 75 && options.query.supplierIds === '635333') return manufacturers
+    return []
+  })
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+  } })
+  vi.mocked(getReportDatasets).mockResolvedValue([dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([])
+  const { container } = render(<MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
+    <PageSubmenuActionsSlot /><ReportsStocksPage />
+  </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
+  const nav = await screen.findByRole('navigation', { name: 'Розділи звітів' })
+  const salesMenu = within(nav).getByRole('button', { name: 'Продажі' })
+  await waitFor(() => expect(salesMenu).toHaveProperty('disabled', false))
+  fireEvent.click(salesMenu)
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Звіт по продажам' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Покупець' }))
+  fireEvent.click(row.getByRole('combobox', { name: 'Тип порівняння' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'В групі' }))
+  expect(screen.queryByRole('button', { name: 'Вибрати виробника' })).toBeNull()
+  fireEvent.click(await screen.findByPlaceholderText('Пошук значення'))
+  fireEvent.click(await screen.findByRole('option', { name: folderName }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Вибрати виробника' }))
+  const input = await screen.findByRole('combobox', { name: 'Постачальник' })
+  fireEvent.change(input, { target: { value: 'ПЛА-ТАН' } })
+  fireEvent.click(await screen.findByRole('option', { name: supplierName }))
+  fireEvent.click(await screen.findByRole('combobox', { name: 'Виробник' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'AYFAR' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'MARSTECH' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Додати відбір за виробником' }))
+  expect(row.getByText('Група: ' + folderName)).toBeTruthy()
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  const request = vi.mocked(previewStockReport).mock.calls[0][0]
+  expect(request).toMatchObject({ dataSource: 2, reportProfile: 'sales', selections: [
+    { SelectedField: { Type: 6 }, FilterCondition: { Type: 6 }, Values: [{ Data: folder }] },
+    { IsChecked: true, SelectedField: { Type: 75 }, FilterCondition: { Type: 2 } },
+  ] })
+  expect(request.selections[1].Values.map(value => value.Data.Id)).toEqual([4384, 4383])
 })

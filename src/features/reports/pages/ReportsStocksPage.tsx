@@ -1,5 +1,6 @@
 import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
+import { GroupManufacturerPicker, UNPLACED_BUYER_GROUP_ID } from './GroupManufacturerPicker'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
@@ -41,7 +42,7 @@ import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_LOOKUP_FAILED, REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import type { ReportFilterCondition, ReportFilterNode } from '../types'
-import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, analysisHierarchyIdentity, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, datasetHierarchyDescriptor, isDatasetGroupSelection, withDatasetGroupConditions } from '../data/reportHierarchyFilters'
 import type { AnalysisItemSearch } from './CurrentVparivanieAnalysisValuePicker'
@@ -1903,6 +1904,9 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       onChange={Values => change({ ...selection, Values })} />
   const buyerIdentityField = dataSource === 2 && (selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName
     || selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerRegionCode)
+  const manufacturerField = buyerIdentityField && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName
+    && [3, 6].includes(selection.FilterCondition.Type) && isDatasetGroupSelection(dataset, selection)
+    ? filterFieldOptions.find(option => option.field.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer)?.field : undefined
   const displayedValuePicker = buyerIdentityField ? <Stack gap={4}>
     <Group gap={4}>
       <Button size="compact-xs" variant={selection.IsChecked === false ? 'light' : 'subtle'}
@@ -1917,6 +1921,14 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     {selection.IsChecked === false
       ? null
       : valuePicker}
+    {manufacturerField && selection.IsChecked !== false && selection.Values.map(value => {
+      const group = analysisHierarchyIdentity(selection.SelectedField.Type, value.Data)
+      if (!group?.group || group.kind !== 'counterpartyGroup') return null
+      const groupId = `${group.world}:${group.id}`
+      if (groupId === UNPLACED_BUYER_GROUP_ID) return null
+      return <GroupManufacturerPicker key={groupId} groupId={groupId} groupName={value.Name} showGroupName={selection.Values.length > 1} field={manufacturerField}
+        onAdd={added => onChange({ kind: 'append', selection: added })} />
+    })}
   </Stack> : valuePicker
   if (variant === 'row' && request) {
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))

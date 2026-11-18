@@ -312,18 +312,36 @@ export async function searchReportManufacturers(dataSource: number, params: Repo
   signal?: AbortSignal): Promise<ReportEntity[]> {
   if (supplierIds.length > MAX_MANUFACTURER_LOOKUP_SUPPLIERS || supplierIds.some(id => !Number.isSafeInteger(id) || id <= 0))
     throw new Error('Оберіть до 100 точних постачальників.')
-  const all: ReportEntity[] = []
+  const all: ManufacturerLookupChoice[] = []
   for (let offset = params.offset; offset <= 10000; offset += params.limit) {
     const result = await apiRequest<unknown>('/report/datasets/lookup', {
       query: { dataSource, field: REPORT_MANUFACTURER_FIELD, value: params.value.trim(), offset, limit: params.limit,
         ...(supplierIds.length ? { supplierIds: [...new Set(supplierIds)].join(',') } : {}) }, signal,
     })
-    if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && exactId(item) !== null
-      && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректний список виробників.')
-    all.push(...result.map(item => ({ ...item, Id: Number(exactId(item)) })))
-    if (result.length < params.limit) break
+    const page = parseManufacturerLookup(result, 'Сервер повернув некоректний список виробників.')
+    all.push(...page)
+    if (page.length < params.limit) break
   }
   return all
+}
+
+export async function searchManufacturerSuppliers(groupId: string, params: ReportSearchParams, signal?: AbortSignal) {
+  const result = await apiRequest<unknown>('/report/datasets/manufacturer-suppliers', {
+    query: { groupId, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
+  })
+  return parseManufacturerLookup(result, 'Сервер повернув некоректний список постачальників.')
+}
+
+type ManufacturerLookupChoice = ReportEntity & { Id: number; Name: string }
+
+function parseManufacturerLookup(result: unknown, errorMessage: string): ManufacturerLookupChoice[] {
+  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && exactId(item) !== null
+    && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error(errorMessage)
+  return result.map(item => {
+    const id = Number(exactId(item))
+    if (!Number.isSafeInteger(id)) throw new Error(errorMessage)
+    return { ...item, Id: id }
+  })
 }
 
 const REPORT_MANUFACTURER_FIELD = 75
