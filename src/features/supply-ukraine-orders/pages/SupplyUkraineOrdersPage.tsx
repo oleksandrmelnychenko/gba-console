@@ -1784,7 +1784,7 @@ export function OfficialCostsModal({
 
         if (!cancelled) {
           dispatch({
-            organizations: addSelectedOrganization([], expense?.SupplyOrganization || null),
+            organizations: addSelectedOrganization([], getExpenseOrganization(expense)),
             products: addSelectedProduct(nextProducts, expense?.ConsumableProduct || null),
             type: 'loadSuccess',
           })
@@ -2321,6 +2321,28 @@ function createOfficialCostsForm(expense: ProductDeliveryExpense | null): Offici
     serviceOrganizationKey: getEntityKey(expense?.SupplyOrganization),
     vatPercent: expense?.VatPercent ?? '',
   }
+}
+
+/**
+ * The saved service supplier of an expense, with the saved agreement among its agreements: the
+ * agreement select reads them from the supplier, so a supplier that came without its agreements
+ * (or without this one) reopened with an empty agreement and refused to save (chaos3 N5).
+ */
+function getExpenseOrganization(expense: ProductDeliveryExpense | null): SupplyServiceOrganization | null {
+  const organization = expense?.SupplyOrganization
+
+  if (!organization) {
+    return null
+  }
+
+  const agreement = expense?.SupplyOrganizationAgreement
+  const agreements = organization.SupplyOrganizationAgreements || []
+
+  if (!agreement || agreements.some((item) => getEntityKey(item) === getEntityKey(agreement))) {
+    return organization
+  }
+
+  return { ...organization, SupplyOrganizationAgreements: [...agreements, agreement] }
 }
 
 function addSelectedOrganization(

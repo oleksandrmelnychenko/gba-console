@@ -165,4 +165,23 @@ describe('official delivery costs', () => {
       SupplyOrganizationAgreementId: 17,
     })
   })
+
+  it('reopens a saved expense with its supplier and agreement and saves it unchanged (chaos3 N5)', async () => {
+    const row = createRow()
+    const expense = row.order?.DeliveryExpenses?.[0]
+    // The order list returns the supplier without its agreement list; the agreement sits on the expense.
+    if (expense) expense.SupplyOrganization = { Id: 11, Name: 'Автосервіси Думанських, ТОВ' }
+    renderModal(row)
+
+    await screen.findByDisplayValue('Автосервіси Думанських, ТОВ')
+    expect(screen.getByDisplayValue('Основний договір')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    await waitFor(() => expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText('Заповніть постачальника послуг, договір і номер інвойса')).toBeNull()
+    expect(apiMocks.updateSupplyOrderUkraineDeliveryExpense.mock.calls[0][0]).toMatchObject({
+      SupplyOrganizationAgreementId: 17,
+      SupplyOrganizationId: 11,
+    })
+  })
 })
