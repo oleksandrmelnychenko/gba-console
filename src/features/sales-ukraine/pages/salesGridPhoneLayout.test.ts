@@ -17,5 +17,9 @@ describe('sales grid at phone width', () => {
 
   it('lets the sticky document actions reach the scroll edge, so no column peeks out beside them', () => {
     expect(phoneBlock).toMatch(/\.sales-ukraine-grid \{\s*padding-right: 0;/)
+    // full row height, so nothing shows above or below the sticky cell
+    expect(phoneBlock).toMatch(/\.sales-grid-row \.sg-doc-actions \{[^}]*align-self: stretch;[^}]*position: sticky;/)
+    // the carrier comment starts past the sticky cell's left edge instead of peeking out beside it
+    expect(phoneBlock).toMatch(/\.sales-ukraine-grid \.sg-carrier-comment \{\s*margin-left: 16px;/)
   })
 })

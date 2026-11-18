@@ -1049,6 +1049,8 @@
   }
 
   .sales-grid-row .sg-doc-actions {
+    /* full row height: a centred, shorter cell let the next column show above and below it */
+    align-self: stretch;
     position: sticky;
     right: 0;
     z-index: 1;
@@ -1065,6 +1067,12 @@
 
   .sales-ukraine-grid .sg-meta {
     flex-wrap: wrap;
+  }
+
+  /* The carrier comment follows the capped client body: start it past the left edge of the sticky
+     actions, so no sliver of it shows beside them (it is reached by scrolling, like the other columns). */
+  .sales-ukraine-grid .sg-carrier-comment {
+    margin-left: 16px;
   }
 
   /* the wrapped rows are taller than the 58px minimum: the scrolling column must not squeeze them back */
