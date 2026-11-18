@@ -24,6 +24,18 @@ function analysisValueLabel(field: number, value: ReportSelectedValue, itemKind?
   return typed?.group ? `Група: ${value.Name}` : `${ITEM_LABELS[itemKind!][0]}: ${value.Name}`
 }
 
+const ANALYSIS_MANUFACTURER_FIELD = 75
+
+function analysisSupplierIds(selections: ReportSelection[]): string[] {
+  const ids = selections.filter(s => s.IsChecked !== false && s.SelectedField.Type === 17 && [0, 2, 3].includes(s.FilterCondition.Type))
+    .flatMap(s => s.Values.flatMap(value => {
+      const data = value.Data as Record<string, unknown>
+      const id = data && typeof data === 'object' ? data.kind === undefined ? data.Id : data.kind === 'supplier' ? data.id : undefined : undefined
+      return (typeof id === 'number' && Number.isSafeInteger(id) && id > 0) || (typeof id === 'string' && /^[1-9]\d{0,18}$/.test(id)) ? [String(id)] : []
+    }))
+  return [...new Set(ids)].sort()
+}
+
 export type AnalysisItemSearch = (value: string, offset: number, signal: AbortSignal) => Promise<AnalysisLookupValue[]>
 
 function analysisLookupPeriod(sourceKind: string | null, from: string, to: string): [string, string] {
@@ -51,7 +63,8 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const buyer = selections.find(s => s.IsChecked !== false && [5, 6].includes(s.SelectedField.Type) && s.FilterCondition.Type === 0 && s.Values.length === 1)
   const buyerId = buyer?.Values[0].Data.Id
   const buyerParam = typeof buyerId === 'string' || typeof buyerId === 'number' && Number.isSafeInteger(buyerId) ? String(buyerId) : undefined
-  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, lookupFrom, lookupTo, buyerId ?? null, query, unavailable, attempt])
+  const supplierKey = lookupField === ANALYSIS_MANUFACTURER_FIELD ? analysisSupplierIds(selections).join(',') : ''
+  const scope = JSON.stringify([field, condition, choice, sourceKind, lookupField, lookupFrom, lookupTo, buyerId ?? null, query, unavailable, attempt, supplierKey])
   const [result, setResult] = useState<{ scope: string; values: AnalysisLookupValue[]; nextOffset: number; hasMore: boolean; loadingMore?: boolean; error?: string } | null>(null)
   const moreRequest = useRef<AbortController | null>(null)
   const injectedItem = choice === 'item' && !!renderItemPicker
@@ -60,9 +73,11 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     ? getAnalysisHierarchyPage(sourceKind, null, offset, 30, query, signal)
       .then(page => ({ values: page.items.map(item => ({ id: item.id, name: item.path, data: item.data, ...(item.matches ? { matches: item.matches } : {}) })), hasMore: page.hasMore }))
     : itemSearch ? itemSearch(query, offset, signal).then(values => ({ values, hasMore: false }))
-    : (offset ? searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal, offset) : searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal))
+    : (supplierKey ? searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal, offset, supplierKey.split(','))
+      : offset ? searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal, offset)
+      : searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal))
       .then(values => ({ values, hasMore: values.length === 30 })),
-  [sourceKind, itemSearch, query, lookupField, lookupFrom, lookupTo, buyerParam])
+  [sourceKind, itemSearch, query, lookupField, lookupFrom, lookupTo, buyerParam, supplierKey])
   useEffect(() => {
     if (unavailable || injectedItem) return
     const controller = new AbortController()

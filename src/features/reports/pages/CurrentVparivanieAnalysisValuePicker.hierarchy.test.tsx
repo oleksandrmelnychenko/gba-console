@@ -89,3 +89,19 @@ it('keeps exact warehouse lists on flat conditions without typing them', async (
   expect(onValues).toHaveBeenLastCalledWith([{ Data: { Id: 3 }, Name: 'Склад 3', Value: 0 }])
   expect(screen.queryByRole('radio', { name: 'Склади' })).toBeNull()
 })
+
+it('narrows the manufacturer lookup to the chosen batch suppliers', async () => {
+  vi.mocked(searchAnalysisValues).mockResolvedValue([{ id: 'id:4383', name: 'MARSTECH', data: { Id: 4383 } }])
+  const supplier: ReportSelectedValue = { Data: { kind: 'supplier', id: 635333 }, Name: 'ПЛА-ТАН', Value: 0 }
+  const onValues = vi.fn()
+  render(<MantineProvider env="test"><I18nProvider><CurrentVparivanieAnalysisValuePicker
+    selection={{ IsChecked: true, SelectedField: { Type: 75, Name: 'Виробник' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [] }}
+    selections={[{ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник партії' }, FilterCondition: { Type: 3, Name: 'В групі зі списку' },
+      Values: [supplier, { Data: { Id: 631635 }, Name: 'ПЛА-ТАН', Value: 0 }] }]}
+    from="2026-10-01" to="2026-10-23" status={ready} onChange={onValues} /></I18nProvider></MantineProvider>)
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(75, '', '2026-10-01', '2026-10-23', undefined, expect.any(AbortSignal), 0,
+    ['631635', '635333']))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Значення' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'MARSTECH' }))
+  expect(onValues).toHaveBeenLastCalledWith([{ Data: { Id: 4383 }, Name: 'MARSTECH', Value: 0 }])
+})

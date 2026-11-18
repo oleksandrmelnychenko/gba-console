@@ -3,9 +3,12 @@ import { ANALYSIS_GROUPS_ENDPOINT, ANALYSIS_HIERARCHY_ENDPOINT, ANALYSIS_HIERARC
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportEntity } from '../types'
 export type AnalysisLookupValue = { id: string; name: string; data: ReportEntity; matches?: string }
-export async function searchAnalysisValues(field: number, value: string, from: string, to: string, buyerId?: string, signal?: AbortSignal, offset = 0): Promise<AnalysisLookupValue[]> {
+export const ANALYSIS_MANUFACTURER_FIELD = 75
+export async function searchAnalysisValues(field: number, value: string, from: string, to: string, buyerId?: string, signal?: AbortSignal, offset = 0,
+  supplierIds: readonly string[] = []): Promise<AnalysisLookupValue[]> {
   const result = await apiRequest<unknown>('/report/datasets/current-vparivanie/analysis/lookup', {
-    query: { field, value, offset, limit: 30, from, to, ...(buyerId ? { buyerId } : {}) }, signal,
+    query: { field, value, offset, limit: 30, from, to, ...(buyerId ? { buyerId } : {}),
+      ...(field === ANALYSIS_MANUFACTURER_FIELD && supplierIds.length ? { supplierIds: supplierIds.join(',') } : {}) }, signal,
   })
   if (!Array.isArray(result) || result.length > 30) throw new Error('Некоректні значення відбору аналізу.')
   const seen = new Set<string>()
