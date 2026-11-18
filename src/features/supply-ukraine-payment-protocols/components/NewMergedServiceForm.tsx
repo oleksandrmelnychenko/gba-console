@@ -20,9 +20,9 @@ import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
 import './payment-service-form.css'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
-  getResponsibleUsers,
   getSupplyServiceConsumableProducts,
-  searchSupplyOrganizations,
+  getUnifiedServiceCreateResponsibleUsers,
+  searchUnifiedServiceCreateSupplyOrganizations,
 } from '../api/paymentProtocolsApi'
 import type {
   ConsumableProduct,
@@ -145,7 +145,7 @@ export function NewMergedServiceForm({
       try {
         const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
-          canCreatePaymentTask ? getResponsibleUsers() : Promise.resolve([]),
+          canCreatePaymentTask ? getUnifiedServiceCreateResponsibleUsers() : Promise.resolve([]),
         ])
 
         if (!cancelled) {
@@ -182,7 +182,7 @@ export function NewMergedServiceForm({
 
     async function loadOrganizations() {
       try {
-        const nextOrganizations = await searchSupplyOrganizations(value)
+        const nextOrganizations = await searchUnifiedServiceCreateSupplyOrganizations(value)
 
         if (!cancelled) {
           setOrganizations(nextOrganizations)

@@ -174,20 +174,31 @@ export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }
 
+export async function getUnifiedServiceCreateResponsibleUsers(): Promise<ProtocolUser[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/product-delivery-protocols/unified-service/create/responsible-users')
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
+}
+
 export async function getLogisticPaymentTaskResponsibleUsers(): Promise<ProtocolUser[]> {
   const result = await apiRequest<unknown>('/usermanagement/profiles/orders-ukraine/logistic-way/payment-task-users')
 
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }
 
-export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+/**
+ * The unified-service create form looks things up through facades gated by that form's own key
+ * (orders.delivery_protocol.unified_service.create), so a role that may create the service but not order payment
+ * protocols (e.g. logistics) can still pick the supplier and the person responsible for payment.
+ */
+export async function searchUnifiedServiceCreateSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
   const searchValue = value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/supplies/organizations/orders-ukraine/payment-tasks/search', {
+  const result = await apiRequest<unknown>('/supplies/organizations/product-delivery-protocols/unified-service/create/search', {
     query: {
       limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
       offset: 0,

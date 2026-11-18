@@ -12,7 +12,7 @@ import { searchReportClients, searchReportUsers } from './reports/api/reportsApi
 import { searchSalesClients } from './sales-charts/api/salesChartsApi'
 import { searchOffersClients } from './sales-offers/api/salesOffersApi'
 import { searchSalesReturnClients } from './sales-returns/api/salesReturnsApi'
-import { searchSupplyOrganizations as searchPaymentProtocolSupplyOrganizations } from './supply-ukraine-payment-protocols/api/paymentProtocolsApi'
+import { searchUnifiedServiceCreateSupplyOrganizations as searchPaymentProtocolSupplyOrganizations } from './supply-ukraine-payment-protocols/api/paymentProtocolsApi'
 
 vi.mock('../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),

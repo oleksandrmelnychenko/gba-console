@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 
 const mocks = vi.hoisted(() => ({
-  getResponsibleUsers: vi.fn(),
   getSupplyServiceConsumableProducts: vi.fn(),
-  searchSupplyOrganizations: vi.fn(),
+  getUnifiedServiceCreateResponsibleUsers: vi.fn(),
+  searchUnifiedServiceCreateSupplyOrganizations: vi.fn(),
 }))
 
 vi.mock('../../../shared/i18n/useI18n', () => ({
@@ -24,9 +24,9 @@ vi.mock('../../../shared/ui/AppDrawer', () => ({
 }))
 
 vi.mock('../api/paymentProtocolsApi', () => ({
-  getResponsibleUsers: mocks.getResponsibleUsers,
   getSupplyServiceConsumableProducts: mocks.getSupplyServiceConsumableProducts,
-  searchSupplyOrganizations: mocks.searchSupplyOrganizations,
+  getUnifiedServiceCreateResponsibleUsers: mocks.getUnifiedServiceCreateResponsibleUsers,
+  searchUnifiedServiceCreateSupplyOrganizations: mocks.searchUnifiedServiceCreateSupplyOrganizations,
 }))
 
 const requiredLabel = (label: string) => new RegExp(`^${label}(?: \\*)?$`)
@@ -53,9 +53,9 @@ function renderForm(onSubmit = vi.fn(), canCreatePaymentTask = true) {
 describe('supply-ukraine NewMergedServiceForm validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.getResponsibleUsers.mockReturnValue(new Promise(() => {}))
+    mocks.getUnifiedServiceCreateResponsibleUsers.mockReturnValue(new Promise(() => {}))
     mocks.getSupplyServiceConsumableProducts.mockReturnValue(new Promise(() => {}))
-    mocks.searchSupplyOrganizations.mockResolvedValue([])
+    mocks.searchUnifiedServiceCreateSupplyOrganizations.mockResolvedValue([])
   })
 
   it('marks static requirements and blocks submit with accessible field errors', () => {
@@ -125,7 +125,7 @@ describe('supply-ukraine NewMergedServiceForm validation', () => {
 
     expect(screen.queryByLabelText(requiredLabel('Сплатити до'))).toBeNull()
     expect(screen.queryByLabelText(requiredLabel('Відповідальний за оплату'))).toBeNull()
-    expect(mocks.getResponsibleUsers).not.toHaveBeenCalled()
+    expect(mocks.getUnifiedServiceCreateResponsibleUsers).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
 

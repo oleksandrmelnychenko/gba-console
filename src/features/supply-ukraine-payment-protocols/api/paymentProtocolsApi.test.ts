@@ -10,7 +10,8 @@ import {
   getResponsibleUsers,
   getSupplyOrderUkraineById,
   getSupplyOrderUkraineProtocolKeys,
-  searchSupplyOrganizations,
+  getUnifiedServiceCreateResponsibleUsers,
+  searchUnifiedServiceCreateSupplyOrganizations,
 } from './paymentProtocolsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -36,7 +37,8 @@ describe('payment protocols permission-scoped API', () => {
     await getSupplyOrderUkraineProtocolKeys()
     await getResponsibleUsers()
     await getLogisticPaymentTaskResponsibleUsers()
-    await searchSupplyOrganizations(' supplier ')
+    await searchUnifiedServiceCreateSupplyOrganizations(' supplier ')
+    await getUnifiedServiceCreateResponsibleUsers()
 
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/payment-protocols/details', {
       query: { netId: 'order-1' },
@@ -52,8 +54,12 @@ describe('payment protocols permission-scoped API', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       5,
-      '/supplies/organizations/orders-ukraine/payment-tasks/search',
+      '/supplies/organizations/product-delivery-protocols/unified-service/create/search',
       { query: { limit: 20, offset: 0, value: 'supplier' } },
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      6,
+      '/usermanagement/profiles/product-delivery-protocols/unified-service/create/responsible-users',
     )
   })
 
