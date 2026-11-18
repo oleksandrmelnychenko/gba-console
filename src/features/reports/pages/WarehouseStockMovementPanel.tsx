@@ -12,7 +12,7 @@ import { TableChip } from '../../../shared/ui/TableChip'
 import '../../../shared/ui/paginator/paginator.css'
 import {
   exportStockMovement, getStockMovementCapability, getStockMovementMeasureUnits, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
-  searchStockMovementGroups, searchStockMovementProducts,
+  searchStockMovementGroups, searchStockMovementManufacturers, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
 import {
   buildStockMovementRequest, copyStockMovementRow, stockMovementExpressionView, defaultStockMovementDraft, STOCK_MOVEMENT_FILTER_DEFINITIONS, STOCK_MOVEMENT_FILTER_FIELDS, displayDate, displayDateTime, formatStockQuantity, moveLevel,
@@ -106,9 +106,9 @@ function lookupLabel(item: StockMovementLookupItem): string {
   return item.Name
 }
 
-function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>) {
+function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>, listed: boolean) {
   const label = (value: string) => STOCK_MOVEMENT_FILTER_DEFINITIONS[value as StockMovementFilterField].label
-  return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.map(field => {
+  return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.filter(field => listed || field !== 'manufacturer').map(field => {
     const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
     return { value: field, label: definition.label, section: definition.section, disabled: used.has(field), field: { Type: definition.type } }
   })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: label(item.value) })) } : { ...entry, label: label(entry.value) })
@@ -401,6 +401,8 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
         value={row.values ?? []} onChange={values => set({ values })} />
       case 'group': return <SelectionPicker label="Значення" placeholder="Пошук групи" selected={row.items ?? []}
         lookup={searchStockMovementGroups} enabled={enabled} disabled={locked} onChange={value => set({ items: value })} />
+      case 'manufacturer': return <SelectionPicker label="Значення" placeholder="Пошук виробника" selected={row.items ?? []}
+        lookup={searchStockMovementManufacturers} enabled={enabled} disabled={locked} onChange={value => set({ items: value })} />
       case 'unit': return <ListPicker label="Значення" placeholder="Усі одиниці виміру" disabled={locked}
         data={attributes.units.map(item => ({ value: String(item.Id), label: lookupLabel(item) }))} failed={attributes.unitsFailed} onRetry={attributes.retryUnits}
         value={(row.ids ?? []).map(String)} onChange={values => set({ ids: values.map(Number) })} />
@@ -456,7 +458,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                   toggle={<Checkbox size="xs" aria-label={`Увімкнути умову ${index + 1}`} checked={row.enabled} disabled={locked}
                     onChange={event => setRow(index, { enabled: event.currentTarget.checked })} />}
                   field={<Select size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
-                    data={movementFieldOptions(used)} value={row.field}
+                    data={movementFieldOptions(used, draft.listed)} value={row.field}
                     onChange={value => changeRowField(index, value as StockMovementFilterField | null)} />}
                   condition={row.field === 'article'
                     ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={row.articleMatch ?? 'equals'}

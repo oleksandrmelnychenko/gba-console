@@ -72,7 +72,7 @@ export type StockMovementFilterExpression = { Version: 1; Root: StockMovementFil
 export type StockMovementLookupItem = { Id: number; Name: string; Detail: string | null }
 type StockMovementCondition = { Measure: StockMovementMeasure; Comparison: StockMovementComparison; Value: number }
 export type StockMovementSelection = { id: number; label: string }
-export const STOCK_MOVEMENT_FILTER_FIELDS = ['organization', 'product', 'article', 'top', 'group', 'unit', 'warehouse', 'documentKind', 'documentText'] as const
+export const STOCK_MOVEMENT_FILTER_FIELDS = ['organization', 'product', 'article', 'top', 'group', 'manufacturer', 'unit', 'warehouse', 'documentKind', 'documentText'] as const
 export type StockMovementFilterField = typeof STOCK_MOVEMENT_FILTER_FIELDS[number]
 export type StockMovementFilterRow = {
   id: number
@@ -92,6 +92,7 @@ export const STOCK_MOVEMENT_FILTER_DEFINITIONS: Record<StockMovementFilterField,
   article: { type: 2, label: 'Артикул', section: 'Товар', condition: 'В списку' },
   top: { type: 3, label: 'Топ', section: 'Товар', condition: 'В списку' },
   group: { type: 4, label: 'Товарна група', section: 'Товар', condition: 'В групі' },
+  manufacturer: { type: 75, label: 'Виробник', section: 'Товар', condition: 'В списку' },
   unit: { type: 20, label: 'Одиниця виміру', section: 'Товар', condition: 'В списку' },
   warehouse: { type: 21, label: 'Склад', section: 'Склад', condition: 'В списку' },
   documentKind: { type: 1001, label: 'Вид документа руху', section: 'Документ руху', condition: 'В списку' },
@@ -311,7 +312,7 @@ export function stockMovementRowWire(row: StockMovementFilterRow): StockMovement
       const ids = sortedIds(row.ids ?? [])
       return ids.length ? { Field: field, Ids: ids } : null
     }
-    case 'product': case 'group': {
+    case 'product': case 'group': case 'manufacturer': {
       const ids = sortedIds((row.items ?? []).map(item => item.id))
       return ids.length ? { Field: field, Ids: ids } : null
     }
@@ -452,7 +453,7 @@ export function stockMovementDraftError(draft: StockMovementDraft, capability: S
 }
 
 const STOCK_MOVEMENT_ID_LIMITS: Partial<Record<StockMovementFilterField, [number, string]>> = {
-  organization: [50, 'організацій'], product: [1000, 'товарів'], group: [100, 'груп товарів'], unit: [100, 'одиниць виміру'], warehouse: [500, 'складів'],
+  organization: [50, 'організацій'], product: [1000, 'товарів'], group: [100, 'груп товарів'], manufacturer: [100, 'виробників'], unit: [100, 'одиниць виміру'], warehouse: [500, 'складів'],
 }
 
 export function stockMovementRowLimitError(row: StockMovementFilterRow): string | null {
@@ -485,7 +486,7 @@ export function stockMovementRowValueNames(row: StockMovementFilterRow, capabili
     case 'organization': return namesOf(names.organizations, wire.Ids ?? [])
     case 'warehouse': return namesOf(names.warehouses, wire.Ids ?? [])
     case 'unit': return namesOf(names.units, wire.Ids ?? [])
-    case 'product': case 'group': return (row.items ?? []).map(item => item.label)
+    case 'product': case 'group': case 'manufacturer': return (row.items ?? []).map(item => item.label)
     case 'documentKind': return (wire.Values ?? []).map(code => capability.DocumentKinds.find(kind => kind.Code === code)?.Name ?? code)
     case 'documentText': return wire.Text ? [wire.Text] : []
     default: return wire.Values ?? []
@@ -573,6 +574,7 @@ export function summarizeStockMovementFilters(draft: StockMovementDraft, warehou
       case 'article': lines.push(`Артикул ${STOCK_MOVEMENT_ARTICLE_LABELS[wire.ArticleMatch ?? 'equals']} ${values}`); break
       case 'top': lines.push(`Топ У списку (${values})`); break
       case 'group': lines.push(`Товарна група У групі (${values})`); break
+      case 'manufacturer': lines.push(`Виробник У списку (${values})`); break
       case 'unit': lines.push(`Одиниця виміру У списку (${values})`); break
       case 'warehouse': lines.push(`Склад У списку (${values})`); break
       case 'documentKind': lines.push(`Вид документа руху У списку (${values})`); break

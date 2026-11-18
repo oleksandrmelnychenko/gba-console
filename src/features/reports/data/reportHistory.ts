@@ -334,7 +334,7 @@ export function movementDraftFromHistory(request: StockMovementRequest, capabili
     if (field === 'warehouse' || field === 'organization' || field === 'unit') {
       const ids = known(field === 'warehouse' ? lists.warehouses : field === 'organization' ? lists.organizations : lists.units, wire.Ids ?? [], field)
       row = ids.length ? { id, field, enabled: true, ids } : null
-    } else if (field === 'product' || field === 'group') {
+    } else if (field === 'product' || field === 'group' || field === 'manufacturer') {
       const source = field === 'product' ? lists.products : lists.groups
       const ids = known(source, wire.Ids ?? [], field)
       row = ids.length ? { id, field, enabled: true, items: ids.map(value => ({ id: value, label: source.find(item => item.Id === value)!.Name })) } : null

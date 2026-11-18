@@ -73,6 +73,15 @@ describe('warehouse stock movement request', () => {
     expect(copy.items).not.toBe(filterRows[0].items)
   })
 
+  it('sends the chosen manufacturers as their own rows with 1C wording', () => {
+    const filterRows = [row('manufacturer', { items: [{ id: 4384, label: 'AYFAR' }, { id: 4383, label: 'MARSTECH' }] })]
+    expect(buildStockMovementRequest({ ...draft(), filterRows })).toMatchObject({ ProductGroupIds: [],
+      Filters: [{ Field: 'manufacturer', Ids: [4383, 4384], Row: 1 }] })
+    expect(summarizeStockMovementFilters({ ...draft(), filterRows }, [], [], [])).toContain('Виробник У списку (AYFAR; MARSTECH)')
+    const many = [row('manufacturer', { items: Array.from({ length: 101 }, (_, id) => ({ id: id + 1, label: `b${id}` })) })]
+    expect(stockMovementDraftError({ ...draft(), filterRows: many }, stockMovementCapability)).toBe('Умова відбору №1: можна вибрати до 100 виробників.')
+  })
+
   it('names the chosen values in the І/АБО tree labels like the sales report', () => {
     const filterRows = [row('warehouse', { ids: [2975, 2968] }), row('organization', { ids: [1] }), row('article', { articleMatch: 'contains', text: '94' }),
       row('documentKind', { values: ['sale'] }), row('group', { items: [{ id: 7, label: 'Фільтри' }] }), row('unit', { ids: [2] }), row('top')]
