@@ -79,9 +79,25 @@ export function getActiveConsumableOrderItems(
 export function getActiveOutcomePaymentLinks(
   order: ConsumablesOrder,
 ): OutcomePaymentOrderConsumablesOrder[] {
-  return (order.OutcomePaymentOrderConsumablesOrders || []).filter(
+  const direct = (order.OutcomePaymentOrderConsumablesOrders || []).filter(
     (item) => item.Deleted !== true && item.OutcomePaymentOrder?.Deleted !== true,
   )
+  // N3-04: an invoice paid from Платежі is linked to the order through its payment task.
+  const seen = new Set(direct.map((item) => item.OutcomePaymentOrder?.NetUid).filter(Boolean))
+  const throughTask = (order.SupplyPaymentTask?.OutcomePaymentOrderSupplyPaymentTasks || [])
+    .filter((item) =>
+      item.Deleted !== true
+      && item.OutcomePaymentOrder
+      && item.OutcomePaymentOrder.Deleted !== true
+      && item.OutcomePaymentOrder.IsCanceled !== true
+      && !seen.has(item.OutcomePaymentOrder.NetUid))
+    .map((item): OutcomePaymentOrderConsumablesOrder => ({
+      Id: item.Id,
+      NetUid: item.NetUid,
+      OutcomePaymentOrder: item.OutcomePaymentOrder,
+    }))
+
+  return [...direct, ...throughTask]
 }
 
 export function getEntityName(entity?: NamedEntity | null): string | undefined {

@@ -118,6 +118,9 @@ export type OutcomePaymentOrder = EntityFields & {
   Organization?: Organization | null
   AssignedPaymentOrders?: AssignedPaymentOrder[]
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
+  OutcomePaymentOrderSupplyPaymentTasks?: Array<EntityFields & {
+    SupplyPaymentTask?: (EntityFields & { ConsumablesOrder?: ConsumablesOrder | null }) | null
+  }>
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentPurpose?: string

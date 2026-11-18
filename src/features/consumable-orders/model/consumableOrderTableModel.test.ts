@@ -124,6 +124,28 @@ describe('consumableOrderTableModel', () => {
     expect(getActiveConsumableOrderItems(order)).toEqual([activeItem])
     expect(getActiveOutcomePaymentLinks(order)).toEqual([activeLink])
   })
+
+  // N3-04: invoice 0000000006 paid from Платежі said «Оплат за документом немає».
+  it('lists payments made through the payment task, once and without cancelled ones', () => {
+    const paid = { NetUid: 'qau-27', Number: 'QAU0000000027' }
+    const order = consumableOrder({
+      OutcomePaymentOrderConsumablesOrders: [],
+      SupplyPaymentTask: {
+        Id: 10,
+        OutcomePaymentOrderSupplyPaymentTasks: [
+          { Id: 5, NetUid: 'link-5', Amount: 102, OutcomePaymentOrder: paid },
+          { Id: 6, OutcomePaymentOrder: { NetUid: 'qau-28', IsCanceled: true } },
+          { Id: 7, Deleted: true, OutcomePaymentOrder: { NetUid: 'qau-29' } },
+        ],
+      },
+    })
+
+    expect(getActiveOutcomePaymentLinks(order)).toEqual([{ Id: 5, NetUid: 'link-5', OutcomePaymentOrder: paid }])
+    expect(getActiveOutcomePaymentLinks({
+      ...order,
+      OutcomePaymentOrderConsumablesOrders: [{ NetUid: 'direct', OutcomePaymentOrder: paid }],
+    })).toEqual([{ NetUid: 'direct', OutcomePaymentOrder: paid }])
+  })
 })
 
 function consumableOrder(overrides: ConsumablesOrder): ConsumablesOrder {

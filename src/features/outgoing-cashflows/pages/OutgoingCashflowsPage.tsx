@@ -59,6 +59,7 @@ import {
   getOutgoingCashflows,
   searchOutgoingCashflowRegistryPaymentRegisters,
 } from '../api/outgoingCashflowsApi'
+import { getPaymentTaskConsumablesOrders, mayHavePaymentTaskDocuments } from '../relatedDocuments'
 import type {
   AssignedIncomePaymentOrder,
   AssignedPaymentOrder,
@@ -67,6 +68,7 @@ import type {
   NamedEntity,
   Organization,
   OutcomePaymentOrder,
+  OutcomePaymentOrderConsumablesOrder,
   OutgoingCashflowRow,
   OutgoingCashflowsResponse,
   PaymentMovement,
@@ -1086,7 +1088,34 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
 
 function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowRow | null; onClose: () => void }) {
   const { t } = useI18n()
-  const relatedOrders = getActiveRelatedConsumablesOrders(row?.order.OutcomePaymentOrderConsumablesOrders)
+  const [paymentTaskDocuments, setPaymentTaskDocuments] = useState<{ netId: string; items: OutcomePaymentOrderConsumablesOrder[] } | null>(null)
+  const rowOrder = row?.order
+  const rowNetId = rowOrder?.NetUid || ''
+  const loadPaymentTaskDocuments = mayHavePaymentTaskDocuments(rowOrder)
+
+  // N3-04: the registry row does not carry documents linked through a payment task; the details read does.
+  useEffect(() => {
+    if (!loadPaymentTaskDocuments || !rowNetId) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+
+    void getOutgoingCashflowByNetId(rowNetId, controller.signal)
+      .then((details) => {
+        if (!controller.signal.aborted) {
+          setPaymentTaskDocuments({ netId: rowNetId, items: getPaymentTaskConsumablesOrders(details) })
+        }
+      })
+      .catch(() => undefined)
+
+    return () => controller.abort()
+  }, [loadPaymentTaskDocuments, rowNetId])
+
+  const relatedOrders = [
+    ...getActiveRelatedConsumablesOrders(rowOrder?.OutcomePaymentOrderConsumablesOrders),
+    ...(paymentTaskDocuments && paymentTaskDocuments.netId === rowNetId ? paymentTaskDocuments.items : []),
+  ]
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="wide" title={t('Видатковий ордер')} onClose={onClose}>

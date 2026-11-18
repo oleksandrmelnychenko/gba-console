@@ -95,6 +95,11 @@ export type SupplyPaymentTask = EntityFields & {
   IsAccounting?: boolean
   IsAvailableForPayment?: boolean
   IsPayed?: boolean
+  // Payments made from Платежі for this task (N3-04).
+  OutcomePaymentOrderSupplyPaymentTasks?: Array<EntityFields & {
+    Amount?: number
+    OutcomePaymentOrder?: OutcomePaymentOrder | null
+  }> | null
   PayToDate?: string
   User?: User | null
 }
