@@ -16,6 +16,8 @@ import { useWizardDeliveryDetails } from './useWizardDeliveryDetails'
 import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH, useWizardSaleSubmission } from './useWizardSaleSubmission'
 import './wizard-review-checkout.css'
 import { useWizardReviewKeyboard } from './useWizardReviewKeyboard'
+import { toSameOriginDataUrl } from '../../../../shared/url/sameOriginDataUrl'
+import { COMMERCIAL_RATE_LABEL, formatCommercialRate, getSaleCommercialRate } from '../../../../shared/money/exchangeRateLabels'
 
 const LOCAL_ORDER_SOURCE = 1
 const reviewFieldClassNames = {
@@ -70,6 +72,8 @@ export function NewSaleReviewStep({
   withVatAccounting?: boolean
 }) {
   const { t } = useI18n()
+  // Owner decision: the user sees which rate the sale was priced at (commercial, EUR -> agreement currency).
+  const saleRate = getSaleCommercialRate(sale)
   const needsDocumentWarehouse = sale?.Order?.OrderSource !== LOCAL_ORDER_SOURCE
   const [discardConfirmOpened, setDiscardConfirmOpened] = useState(false)
   const {
@@ -326,6 +330,11 @@ export function NewSaleReviewStep({
                 <Box className="new-sale-review-section__head">
                   <Text className="new-sale-review-section__title">{t('Оплата і документи')}</Text>
                 </Box>
+                {saleRate ? (
+                  <Text className="new-sale-review-rate" size="sm" c="dimmed" data-testid="sale-commercial-rate">
+                    {t(COMMERCIAL_RATE_LABEL)} {saleRate.pair}: {formatCommercialRate(saleRate.rate)}
+                  </Text>
+                ) : null}
 
                 <Box className="new-sale-review-options">
                   <Box className={`new-sale-review-option-row ${value.isCashOnDelivery ? 'is-active' : 'is-idle'}`}>
@@ -389,7 +398,7 @@ export function NewSaleReviewStep({
                       <Button
                         className="new-sale-review-link-button"
                         component="a"
-                        href={sale.CustomersOwnTtn.TtnPDFPath}
+                        href={toSameOriginDataUrl(sale.CustomersOwnTtn.TtnPDFPath)}
                         rel="noopener noreferrer"
                         target="_blank"
                         variant="outline"

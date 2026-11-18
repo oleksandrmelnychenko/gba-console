@@ -1,4 +1,4 @@
-import { getCashFlowDocumentTitle, getCashFlowLocalCurrency } from '../cashFlowLocalCurrency'
+import { getCashFlowDocumentTitle, getCashFlowLocalCurrency, getClientCashFlowLocalAmount } from '../cashFlowLocalCurrency'
 import { documentaryAgreementPresentation, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
 import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
@@ -27,6 +27,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, us
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { COMMERCIAL_RATE_LABEL, NBU_RATE_LABEL } from '../../../shared/money/exchangeRateLabels'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -765,7 +766,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     if (showExchangeRateColumn) {
       columns.splice(2, 0, {
         id: 'exchangeRate',
-        header: t('Курс'),
+        header: t(COMMERCIAL_RATE_LABEL),
         width: 110,
         minWidth: 90,
         accessor: (item) => {
@@ -802,7 +803,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         align: 'right',
         accessor: (item) => (item.IsCreditValue ? undefined : item.CurrentValue),
         cell: (item) => item.IsCreditValue ? null : (
-          <AccountingCashFlowMoneyCell localCurrency={getCashFlowLocalCurrency(item, agreementCurrency)} localValue={item.CurrentValueLocal} tone="debit" value={item.CurrentValue} />
+          <AccountingCashFlowMoneyCell {...localMoneyProps(item, agreementCurrency, mode, t)} localValue={item.CurrentValueLocal} tone="debit" value={item.CurrentValue} />
         ),
       },
       {
@@ -813,7 +814,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         align: 'right',
         accessor: (item) => (item.IsCreditValue ? item.CurrentValue : undefined),
         cell: (item) => item.IsCreditValue ? (
-          <AccountingCashFlowMoneyCell localCurrency={getCashFlowLocalCurrency(item, agreementCurrency)} localValue={item.CurrentValueLocal} tone="credit" value={item.CurrentValue} />
+          <AccountingCashFlowMoneyCell {...localMoneyProps(item, agreementCurrency, mode, t)} localValue={item.CurrentValueLocal} tone="credit" value={item.CurrentValue} />
         ) : null,
       },
       {
@@ -1049,13 +1050,28 @@ function AccountingCashFlowDocumentTableCell({
   )
 }
 
+function localCashFlowAmount(item: AccountingCashFlowHeadItem, agreementCurrency: string, mode: AccountingCashFlowMode) {
+  return mode === 'client'
+    ? getClientCashFlowLocalAmount(item, agreementCurrency)
+    : { currency: getCashFlowLocalCurrency(item, agreementCurrency), atNbuRate: false }
+}
+
+function localMoneyProps(item: AccountingCashFlowHeadItem, agreementCurrency: string, mode: AccountingCashFlowMode, t: (key: string) => string) {
+  const local = localCashFlowAmount(item, agreementCurrency, mode)
+
+  return { localCurrency: local.currency, localRateNote: local.atNbuRate ? t(NBU_RATE_LABEL) : undefined }
+}
+
 function AccountingCashFlowMoneyCell({
   localCurrency,
+  localRateNote,
   localValue,
   tone,
   value,
 }: {
   localCurrency?: string
+  /** «Курс НБУ» when the second amount is the hryvnia equivalent at the NBU rate. */
+  localRateNote?: string
   localValue?: number
   tone?: 'credit' | 'debit' | 'negative' | 'positive'
   value?: number
@@ -1064,7 +1080,7 @@ function AccountingCashFlowMoneyCell({
     <span className={`accounting-cash-flow-money${tone ? ` is-${tone}` : ''}`}>
       <strong>{formatMoney(value)}</strong>
       {shouldShowLocalMoneyValue(value, localValue) ? (
-        <small>{localCurrency ? `${localCurrency} ` : ''}{formatMoney(localValue)}</small>
+        <small title={localRateNote}>{localCurrency ? `${localCurrency} ` : ''}{formatMoney(localValue)}{localRateNote ? ` · ${localRateNote}` : ''}</small>
       ) : null}
     </span>
   )
@@ -1287,7 +1303,7 @@ function AccountingCashFlowDetailDrawer({
     () => (isSaleReturn ? (toRecord(item?.SaleReturn) as AccountingCashFlowSaleReturn | null) : null),
     [isSaleReturn, item?.SaleReturn],
   )
-  const detailFields = useMemo(() => (item ? buildHeadItemFields(item, t) : []), [item, t])
+  const detailFields = useMemo(() => (item ? buildHeadItemFields(item, t, mode) : []), [item, mode, t])
   const drawerTitle = saleReturn
     ? `${t('Повернення від покупця')} · ${saleReturn.Number || item?.Number || '—'}`
     : item?.Name || t('Деталі взаєморозрахунку')
@@ -1317,7 +1333,7 @@ function AccountingCashFlowDetailDrawer({
   )
 }
 
-function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) => string): DetailField[] {
+function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) => string, mode: AccountingCashFlowMode): DetailField[] {
   const paymentStatus = getAccountingCashFlowPaymentStatus(item)
   const localAmount = getVisibleLocalAmount(item)
   const fields: DetailField[] = [
@@ -1332,8 +1348,12 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
   ]
 
   if (localAmount !== undefined) {
-    const localCurrency = getCashFlowLocalCurrency(item, '')
-    fields.splice(8, 0, { label: localCurrency ? `Сума документа, ${localCurrency}` : 'Сума документа', mono: true, value: `${localCurrency ? `${localCurrency} ` : ''}${formatMoney(localAmount)}` })
+    const local = localCashFlowAmount(item, '', mode)
+    const localCurrency = local.currency
+    const label = local.atNbuRate
+      ? `${t('Сума в UAH')} (${t(NBU_RATE_LABEL)})`
+      : localCurrency ? `Сума документа, ${localCurrency}` : 'Сума документа'
+    fields.splice(8, 0, { label, mono: true, value: `${localCurrency ? `${localCurrency} ` : ''}${formatMoney(localAmount)}` })
   }
 
   if (paymentStatus) {

@@ -15,7 +15,8 @@ describe('ServerExchangeRateField', () => {
       </MantineProvider>,
     )
 
-    const input = screen.getByLabelText('Курс') as HTMLInputElement
+    // The payment is converted at the commercial rate, and the label says which rate it is.
+    const input = screen.getByLabelText('Комерційний курс') as HTMLInputElement
     expect(input.readOnly).toBe(true)
     expect(input.value).toBe('51,2')
   })

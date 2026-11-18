@@ -246,6 +246,8 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   TotalAmountLocal?: number
   TotalAmountEurToUah?: number
   TotalVat?: number
+  /** Commercial EUR -> agreement currency rate the line was priced at. */
+  ExchangeRateAmount?: number
   AssignedSpecification?: { Id?: number; NetUid?: string; SpecificationCode?: string }
   DiscountUpdatedBy?: SalesUkraineUser
   Comment?: string

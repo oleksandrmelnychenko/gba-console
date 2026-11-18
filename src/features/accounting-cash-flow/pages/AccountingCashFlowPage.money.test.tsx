@@ -115,6 +115,8 @@ describe('cash-flow decimal money presentation', () => {
     expect(within(row).getByTestId('document').textContent).toContain('QAU0000000011')
     expect(within(row).getByTestId('debit').textContent?.replace(/\s/g, ' ')).toBe('49,78UAH 2 300,00')
     expect(within(row).getByTestId('balance').textContent?.replace(/\s/g, ' ')).toBe('-1 234,50')
-    expect(within(screen.getByTestId('money-row-1')).getByTestId('debit').textContent).toContain('EUR')
+    // A EUR payment's second amount is the server's hryvnia equivalent at the NBU rate, and says so.
+    expect(within(screen.getByTestId('money-row-1')).getByTestId('debit').textContent?.replace(/\s/g, ' '))
+      .toBe('20,00UAH 1 000,00 · Курс НБУ')
   })
 })

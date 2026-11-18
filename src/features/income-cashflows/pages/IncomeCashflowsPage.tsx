@@ -29,6 +29,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { COMMERCIAL_RATE_LABEL } from '../../../shared/money/exchangeRateLabels'
 import { useMutatedListRefresh } from '../../../shared/router/useMutatedListRefresh'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -1220,7 +1221,7 @@ export function IncomeCashflowDetailDrawer({
                 <IncomeDetailField chip="product" label={t('Організація')} value={displayValue(row.organization)} />
                 <IncomeDetailField chip="warning" label={t('Відповідальний')} value={displayValue(row.responsible)} />
                 <IncomeDetailField chip="neutral" label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
-                <IncomeDetailField label={t('Курс')} mono value={formatStoredExchangeRate(income.ExchangeRate)} />
+                <IncomeDetailField label={t(COMMERCIAL_RATE_LABEL)} mono value={formatStoredExchangeRate(income.ExchangeRate)} />
                 {hasNumber(income.AgreementExchangedAmount) && (
                   <DocumentDetailRow label={t('Сума у валюті договору')} value={
                     <IncomeDetailAmount value={formatMoney(income.AgreementExchangedAmount)} currency={income.ClientAgreement?.Agreement?.Currency?.Code || income.ClientAgreement?.Agreement?.Currency?.Name || income.OrganizationClientAgreement?.Currency?.Code || income.OrganizationClientAgreement?.Currency?.Name} />

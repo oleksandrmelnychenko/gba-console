@@ -26,6 +26,7 @@ import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { COMMERCIAL_RATE_LABEL } from '../../../shared/money/exchangeRateLabels'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1053,7 +1054,7 @@ export function OutgoingPaymentGroupForm({
                 className="cashflow-field-rate"
                 decimalScale={6}
                 disabled={isLoading || isSaving}
-                label={t('Курс')}
+                label={t(COMMERCIAL_RATE_LABEL)}
                 value={form.exchangeRate}
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />

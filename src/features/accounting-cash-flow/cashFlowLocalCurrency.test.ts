@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getCashFlowDocumentTitle, getCashFlowLocalCurrency } from './cashFlowLocalCurrency'
+import { getCashFlowDocumentTitle, getCashFlowLocalCurrency, getClientCashFlowLocalAmount } from './cashFlowLocalCurrency'
 
 describe('getCashFlowLocalCurrency', () => {
   it('labels a payment row with the payment currency', () => {
@@ -28,5 +28,21 @@ describe('getCashFlowDocumentTitle', () => {
 
   it('falls back to a dash', () => {
     expect(getCashFlowDocumentTitle({})).toBe('-')
+  })
+})
+
+describe('getClientCashFlowLocalAmount', () => {
+  it('labels the hryvnia equivalent of a EUR or USD payment as converted at the NBU rate', () => {
+    // 50 EUR payment: the server sends UAH 2 511.10 (x 50.222 NBU), not EUR.
+    expect(getClientCashFlowLocalAmount({ IncomePaymentOrder: { Currency: { Code: 'EUR' } } }, 'EUR')).toEqual({ currency: 'UAH', atNbuRate: true })
+    expect(getClientCashFlowLocalAmount({ OutcomePaymentOrder: { PaymentCurrencyRegister: { Currency: { Code: 'USD' } } } } as never, 'USD')).toEqual({ currency: 'UAH', atNbuRate: true })
+  })
+
+  it('shows a hryvnia payment as its own amount, without an NBU note', () => {
+    expect(getClientCashFlowLocalAmount({ IncomePaymentOrder: { Currency: { Code: 'UAH' } } }, 'EUR')).toEqual({ currency: 'UAH', atNbuRate: false })
+  })
+
+  it('keeps the document currency for sales', () => {
+    expect(getClientCashFlowLocalAmount({ Sale: {} } as never, 'USD')).toEqual({ currency: 'USD', atNbuRate: false })
   })
 })

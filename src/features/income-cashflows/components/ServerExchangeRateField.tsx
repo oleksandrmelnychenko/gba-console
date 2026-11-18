@@ -1,5 +1,6 @@
 import { TextInput } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { COMMERCIAL_RATE_LABEL } from '../../../shared/money/exchangeRateLabels'
 import { formatServerExchangeRate } from './serverExchangeRate'
 
 export interface ServerExchangeRateFieldProps {
@@ -21,8 +22,8 @@ export function ServerExchangeRateField({ className, value }: ServerExchangeRate
   return (
     <TextInput
       className={className}
-      description={t('Системний курс на дату оплати')}
-      label={t('Курс')}
+      description={t('На дату оплати; за ним оплата зараховується в договір')}
+      label={t(COMMERCIAL_RATE_LABEL)}
       readOnly
       value={formatServerExchangeRate(value)}
       variant="filled"

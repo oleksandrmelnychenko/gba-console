@@ -1,5 +1,6 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { toSameOriginDataUrl } from '../../../shared/url/sameOriginDataUrl'
+import { COMMERCIAL_RATE_LABEL, formatCommercialRate, getSaleCommercialRate } from '../../../shared/money/exchangeRateLabels'
 import {
   isValidOwnTtnNumber,
   isValidRecipientPhone,
@@ -731,7 +732,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
             <Row changed={changed(CARRIER_HISTORY_CHANGED_FIELD.ownTtnNumber, sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} mono value={sale.CustomersOwnTtn.Number} />
       )}
       {sale.CustomersOwnTtn?.TtnPDFPath && (
-            <Anchor className="sale-carrier-document-link" href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+            <Anchor className="sale-carrier-document-link" href={toSameOriginDataUrl(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
           <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
           {t('Завантажити ТТН')}
         </Anchor>
@@ -879,7 +880,7 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
 
                 return <Table.Td key={`doc-${col.key}`} className={[col.isCurrent ? 'is-current-col' : '', isChanged ? 'is-changed' : ''].filter(Boolean).join(' ') || undefined} data-history-column={col.key} data-history-field="ttnDocument">
                   {col.entry.TtnPDFPath ? (
-                    <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+                    <Anchor href={toSameOriginDataUrl(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
                       <Download size={14} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />
                       {t('Завантажити')}
                     </Anchor>
@@ -899,9 +900,13 @@ export function CarrierHistory({ current, entries }: { current: SalesUkraineUpda
 // Client code / name / invoice number + date — shown under the transporter in both view and edit.
 function ClientInfo({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
+  const saleRate = getSaleCommercialRate(sale)
 
   return (
     <>
+      {saleRate ? (
+        <Row label={`${t(COMMERCIAL_RATE_LABEL)} ${saleRate.pair}`} mono value={formatCommercialRate(saleRate.rate)} />
+      ) : null}
       <Row label={t('Код клієнта')} value={sale.ClientAgreement?.Client?.RegionCode?.Value}>
         <TableChip tone="document" value={sale.ClientAgreement?.Client?.RegionCode?.Value} />
       </Row>
@@ -1111,10 +1116,6 @@ function formatDateTime(value?: Date | string): string {
 
 function formatNumber(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
-}
-
-function toSecure(url: string): string {
-  return upgradeHttpToHttps(url)
 }
 
 function displayValue(value: unknown): string {

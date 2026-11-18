@@ -25,6 +25,35 @@ export function getCashFlowLocalCurrency(item: AccountingCashFlowHeadItem, agree
   return documentCurrency || agreementCurrency.trim()
 }
 
+function paymentCurrencyCode(item: AccountingCashFlowHeadItem): string {
+  const outcome = item.OutcomePaymentOrder as { PaymentCurrencyRegister?: unknown } | null | undefined
+
+  return currencyCodeOf(item.IncomePaymentOrder)
+    || currencyCodeOf(item.OutcomePaymentOrder)
+    || currencyCodeOf(outcome?.PaymentCurrencyRegister)
+}
+
+/**
+ * Second amount of a row in the CLIENT statement. For a payment the server sends the
+ * hryvnia value (GetGovExchangedToUahValue): a UAH payment is its own amount, a EUR or USD
+ * payment is converted at the NBU rate of the payment date (50 EUR -> UAH 2 511.10 at
+ * 50.222), while the agreement amount above it was converted at the commercial rate. The
+ * row says so (owner decision: the user is told which rate is used). Other rows keep
+ * getCashFlowLocalCurrency.
+ */
+export function getClientCashFlowLocalAmount(
+  item: AccountingCashFlowHeadItem,
+  agreementCurrency: string,
+): { currency: string; atNbuRate: boolean } {
+  if (!item.IncomePaymentOrder && !item.OutcomePaymentOrder) {
+    return { currency: getCashFlowLocalCurrency(item, agreementCurrency), atNbuRate: false }
+  }
+
+  const paymentCurrency = paymentCurrencyCode(item).toUpperCase()
+
+  return { currency: 'UAH', atNbuRate: paymentCurrency !== '' && paymentCurrency !== 'UAH' }
+}
+
 /** «QAUНо00000010» for a row without a Name (the server sends only Number for sales and payments). */
 export function getCashFlowDocumentTitle(item: Pick<AccountingCashFlowHeadItem, 'Name' | 'Number'>): string {
   const name = typeof item.Name === 'string' ? item.Name.trim() : ''
