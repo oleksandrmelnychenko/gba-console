@@ -112,7 +112,7 @@ const GROSS_PROFIT_MEASURE_CAPTIONS: Readonly<Record<string, MeasureCaption>> = 
   SalesQuantity: { group: 'Кількість (од. зберігання)' },
   SalesValue: { group: 'Вартість продажу (EUR)', items: { 2: 'Без ПДВ', 3: 'ПДВ', 4: 'З ПДВ' } },
   Cost: { group: 'Собівартість (EUR)', items: { 6: 'Без ПДВ', 7: 'ПДВ', 8: 'З ПДВ' } },
-  Markup: { group: 'Валовий прибуток (EUR)', items: { 10: 'Без ПДВ' } },
+  Markup: { group: 'Валовий прибуток (EUR)', items: { 10: 'Без ПДВ', 12: 'З ПДВ' } },
   Profitability: { group: 'Націнка, %' },
   MarginPercent: { group: 'Маржа, %' },
 }

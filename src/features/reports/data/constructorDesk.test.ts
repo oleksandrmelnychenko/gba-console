@@ -87,6 +87,7 @@ describe('constructor desk vocabulary', () => {
     expect(constructorMeasureGroupCaption(gross, group('Cost', [6, 7, 8]), 'x')).toBe('Собівартість (EUR)')
     expect(constructorMeasureGroupCaption(gross, group('Markup', [10]), 'x')).toBe('Валовий прибуток (EUR)')
     expect(constructorMeasureItemCaption(gross, group('Markup', [10]), { Name: 'MarkupWithoutVAT', Type: 10, IsChecked: false })).toBe('Без ПДВ')
+    expect(constructorMeasureItemCaption(gross, group('Markup', [10, 12]), { Name: 'MarkupWithVAT', Type: 12, IsChecked: false })).toBe('З ПДВ')
     expect(constructorMeasureGroupCaption(request(3), group('SalesValue', [2, 3]), 'Вартість закупівлі')).toBe('Вартість закупівлі')
     expect(constructorMeasureItemCaption(request(3), group('SalesValue', [2, 3]), { Name: 'SalesValueVAT', Type: 3, IsChecked: false })).toBeUndefined()
   })

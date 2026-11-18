@@ -84,10 +84,13 @@ it('offers both advertised profitability measures in gross profit without exposi
   const filtered = salesConstructorDataset(dataset, 'grossProfit')!
   expect(filtered.Measurements.filter(field => [14, 15].includes(field.Type)))
     .toEqual(dataset.Measurements.filter(field => [14, 15].includes(field.Type)))
-  expect(filtered.Measurements.some(field => field.Type === 11 || field.Type === 12)).toBe(false)
+  expect(filtered.Measurements.some(field => field.Type === 11)).toBe(false)
+  expect(filtered.Measurements.some(field => field.Type === 12)).toBe(true)
+  expect(filtered.Measurements.filter(field => [10, 12].includes(field.Type)))
+    .toEqual(dataset.Measurements.filter(field => [10, 12].includes(field.Type)))
   const request = { ...defaultDatasetRequest(filtered, '2026-10-01', '2026-10-31'), reportProfile: 'grossProfit',
     sorted: { Row: [{ type: 4, key: 'Organization', label: 'Організація' }], Col: [],
-      Measurements: [15, 14].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name,
+      Measurements: [15, 14, 12].map(Type => ({ Type, Name: dataset.Measurements.find(field => field.Type === Type)!.Name,
         IsChecked: true, parentName: '' })) } }
   expect(salesConstructorError(request, dataset)).toBeNull()
   expect(datasetConfigurationError(request, dataset)).toBeNull()
