@@ -32,8 +32,14 @@ export async function searchStockMovementGroups(query: string, signal?: AbortSig
 }
 
 export async function searchStockMovementManufacturers(query: string, signal?: AbortSignal): Promise<StockMovementLookupItem[]> {
-  return normalizeStockMovementLookup(await apiRequest<unknown>(`${WAREHOUSE_STOCK_MOVEMENT_ROUTE}/manufacturers`,
-    { signal, query: { query, offset: 0, limit: 50 } }))
+  const all: StockMovementLookupItem[] = []
+  for (let offset = 0; offset <= 10000; offset += 50) {
+    const page = normalizeStockMovementLookup(await apiRequest<unknown>(`${WAREHOUSE_STOCK_MOVEMENT_ROUTE}/manufacturers`,
+      { signal, query: { query, offset, limit: 50 } }))
+    all.push(...page)
+    if (page.length < 50) break
+  }
+  return all
 }
 
 export async function previewStockMovement(request: StockMovementRequest, signal?: AbortSignal): Promise<StockMovementResult> {

@@ -310,13 +310,18 @@ export async function searchReportManufacturers(dataSource: number, params: Repo
   signal?: AbortSignal): Promise<ReportEntity[]> {
   if (supplierIds.length > 100 || supplierIds.some(id => !Number.isSafeInteger(id) || id <= 0))
     throw new Error('Оберіть до 100 точних постачальників.')
-  const result = await apiRequest<unknown>('/report/datasets/lookup', {
-    query: { dataSource, field: REPORT_MANUFACTURER_FIELD, value: params.value.trim(), offset: params.offset, limit: params.limit,
-      ...(supplierIds.length ? { supplierIds: [...new Set(supplierIds)].join(',') } : {}) }, signal,
-  })
-  if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && exactId(item) !== null
-    && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректний список виробників.')
-  return result.map(item => ({ ...item, Id: Number(exactId(item)) }))
+  const all: ReportEntity[] = []
+  for (let offset = params.offset; offset <= 10000; offset += params.limit) {
+    const result = await apiRequest<unknown>('/report/datasets/lookup', {
+      query: { dataSource, field: REPORT_MANUFACTURER_FIELD, value: params.value.trim(), offset, limit: params.limit,
+        ...(supplierIds.length ? { supplierIds: [...new Set(supplierIds)].join(',') } : {}) }, signal,
+    })
+    if (!Array.isArray(result) || !result.every(item => item && typeof item === 'object' && exactId(item) !== null
+      && typeof item.Name === 'string' && item.Name.trim().length > 0)) throw new Error('Сервер повернув некоректний список виробників.')
+    all.push(...result.map(item => ({ ...item, Id: Number(exactId(item)) })))
+    if (result.length < params.limit) break
+  }
+  return all
 }
 
 const REPORT_MANUFACTURER_FIELD = 75
