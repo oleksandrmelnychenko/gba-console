@@ -34,10 +34,11 @@ const getInput = (label: string) => screen.getAllByLabelText(requiredLabel(label
   (element) => element.tagName === 'INPUT',
 ) as HTMLInputElement
 
-function renderForm(onSubmit = vi.fn()) {
+function renderForm(onSubmit = vi.fn(), canCreatePaymentTask = true) {
   render(
     <MantineProvider>
       <NewMergedServiceForm
+        canCreatePaymentTask={canCreatePaymentTask}
         isSaving={false}
         opened
         onClose={vi.fn()}
@@ -113,5 +114,22 @@ describe('supply-ukraine NewMergedServiceForm validation', () => {
 
     expect(payToDate.getAttribute('aria-required')).toBe('true')
     expect(responsible.getAttribute('aria-required')).toBe('true')
+  })
+
+  // chaos4 item 2: without the payment-task create key the server refuses embedded tasks, so the form hides
+  // «Сплатити до» / «Відповідальний за оплату», does not load the responsible users and does not require them.
+  it('hides and does not require the payment-task fields without the payment-task key', () => {
+    renderForm(vi.fn(), false)
+
+    fireEvent.change(getInput('Вартість Брутто'), { target: { value: '10' } })
+
+    expect(screen.queryByLabelText(requiredLabel('Сплатити до'))).toBeNull()
+    expect(screen.queryByLabelText(requiredLabel('Відповідальний за оплату'))).toBeNull()
+    expect(mocks.getResponsibleUsers).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+
+    expect(screen.queryByText('Вкажіть відповідального за оплату')).toBeNull()
+    expect(screen.queryByText('Вкажіть дату оплати')).toBeNull()
   })
 })

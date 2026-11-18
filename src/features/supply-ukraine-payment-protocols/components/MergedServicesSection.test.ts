@@ -26,6 +26,21 @@ describe('buildUkraineMergedServiceFromForm', () => {
     expect(service.AccountingPaymentTask).not.toHaveProperty('Id')
     expect(service.AccountingPaymentTask).not.toHaveProperty('NetUid')
   })
+
+  it('sends the payment tasks only for a caller who holds the payment-task create key', () => {
+    const values = createFormValues()
+
+    const withKey = buildUkraineMergedServiceFromForm(values, { canCreatePaymentTask: true })
+    const withoutKey = buildUkraineMergedServiceFromForm(values, { canCreatePaymentTask: false })
+
+    expect(withKey.SupplyPaymentTask).toBeDefined()
+    expect(withKey.AccountingPaymentTask).toBeDefined()
+    expect(withoutKey.SupplyPaymentTask).toBeUndefined()
+    expect(withoutKey.AccountingPaymentTask).toBeUndefined()
+    expect(withoutKey.ActProvidingService).toEqual({})
+    expect(withoutKey.AccountingActProvidingService).toEqual({})
+    expect(withoutKey.GrossPrice).toBe(100)
+  })
 })
 
 function createFormValues(): NewMergedServiceFormValues {

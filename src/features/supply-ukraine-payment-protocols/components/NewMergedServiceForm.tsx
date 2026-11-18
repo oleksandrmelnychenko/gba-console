@@ -91,11 +91,14 @@ function createInitialValues(): NewMergedServiceFormValues {
 }
 
 export function NewMergedServiceForm({
+  canCreatePaymentTask = true,
   opened,
   isSaving,
   onClose,
   onSubmit,
 }: {
+  /** Without the payment-task create key the service is saved without tasks, so their fields are hidden. */
+  canCreatePaymentTask?: boolean
   isSaving: boolean
   onClose: () => void
   onSubmit: (values: NewMergedServiceFormValues) => Promise<void>
@@ -142,7 +145,7 @@ export function NewMergedServiceForm({
       try {
         const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
-          getResponsibleUsers(),
+          canCreatePaymentTask ? getResponsibleUsers() : Promise.resolve([]),
         ])
 
         if (!cancelled) {
@@ -161,7 +164,7 @@ export function NewMergedServiceForm({
     return () => {
       cancelled = true
     }
-  }, [opened, setLoadError, setProducts, setUsers, t])
+  }, [canCreatePaymentTask, opened, setLoadError, setProducts, setUsers, t])
 
   useEffect(() => {
     if (!opened) {
@@ -218,7 +221,8 @@ export function NewMergedServiceForm({
     () => toProtocolUserOptions(users),
     [users],
   )
-  const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
+  const willCreatePaymentTask =
+    canCreatePaymentTask && (Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0)
 
   function update<K extends keyof NewMergedServiceFormValues>(key: K, value: NewMergedServiceFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -258,7 +262,7 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    const validation = validateNewMergedService(values, t)
+    const validation = validateNewMergedService(values, canCreatePaymentTask, t)
 
     if (validation.summary) {
       setValidationError(validation.summary)
@@ -419,32 +423,36 @@ export function NewMergedServiceForm({
                 onChange={(event) => update('fromDate', fromDateInput(event.currentTarget.value))}
               />
             </div>
-            <div className="payment-service-form__date">
-              <AppDateInput
-                aria-invalid={Boolean(fieldErrors.payToDate)}
-                aria-required={willCreatePaymentTask}
-                error={fieldErrors.payToDate}
-                label={t('Сплатити до')}
-                type="date"
-                value={toDateInput(values.payToDate)}
-                withAsterisk={willCreatePaymentTask}
-                onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
-              />
-            </div>
-            <div className="payment-service-form__responsible">
-              <Select
-                aria-invalid={Boolean(fieldErrors.responsibleForPayment)}
-                aria-required={willCreatePaymentTask}
-                clearable
-                data={userOptions}
-                error={fieldErrors.responsibleForPayment}
-                label={t('Відповідальний за оплату')}
-                searchable
-                value={values.responsibleForPayment?.NetUid || null}
-                withAsterisk={willCreatePaymentTask}
-                onChange={(netUid) => update('responsibleForPayment', users.find((item) => item.NetUid === netUid) || null)}
-              />
-            </div>
+            {canCreatePaymentTask && (
+              <>
+                <div className="payment-service-form__date">
+                  <AppDateInput
+                    aria-invalid={Boolean(fieldErrors.payToDate)}
+                    aria-required={willCreatePaymentTask}
+                    error={fieldErrors.payToDate}
+                    label={t('Сплатити до')}
+                    type="date"
+                    value={toDateInput(values.payToDate)}
+                    withAsterisk={willCreatePaymentTask}
+                    onChange={(event) => update('payToDate', fromDateInput(event.currentTarget.value))}
+                  />
+                </div>
+                <div className="payment-service-form__responsible">
+                  <Select
+                    aria-invalid={Boolean(fieldErrors.responsibleForPayment)}
+                    aria-required={willCreatePaymentTask}
+                    clearable
+                    data={userOptions}
+                    error={fieldErrors.responsibleForPayment}
+                    label={t('Відповідальний за оплату')}
+                    searchable
+                    value={values.responsibleForPayment?.NetUid || null}
+                    withAsterisk={willCreatePaymentTask}
+                    onChange={(netUid) => update('responsibleForPayment', users.find((item) => item.NetUid === netUid) || null)}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <Checkbox
             checked={values.isSupplyInformationTask}
@@ -493,6 +501,7 @@ export function NewMergedServiceForm({
 
 function validateNewMergedService(
   values: NewMergedServiceFormValues,
+  canCreatePaymentTask: boolean,
   t: (value: string) => string,
 ): NewMergedServiceValidation {
   const fieldErrors: NewMergedServiceFieldErrors = {}
@@ -520,7 +529,8 @@ function validateNewMergedService(
     return { fieldErrors, summary: t('Заповніть управлінські або бухгалтерські витрати') }
   }
 
-  const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
+  const willCreatePaymentTask =
+    canCreatePaymentTask && (Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0)
 
   if (willCreatePaymentTask && !values.responsibleForPayment) {
     fieldErrors.responsibleForPayment = t('Вкажіть відповідального за оплату')

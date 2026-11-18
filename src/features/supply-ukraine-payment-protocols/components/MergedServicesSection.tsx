@@ -57,7 +57,10 @@ export function MergedServicesSection({
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
     return runActionOnce('handleNewSubmit', async () => {
       try {
-        await onCreateService(buildUkraineMergedServiceFromForm(values), values.files)
+        await onCreateService(
+          buildUkraineMergedServiceFromForm(values, { canCreatePaymentTask: permissions.canCreatePaymentTask }),
+          values.files,
+        )
         setNewOpen(false)
       } catch {
         // Parent renders the action error; keep the drawer open so the user does not lose form context.
@@ -115,6 +118,7 @@ export function MergedServicesSection({
       )}
 
       <NewMergedServiceForm
+        canCreatePaymentTask={permissions.canCreatePaymentTask}
         isSaving={isSaving}
         opened={isNewOpen}
         onClose={() => setNewOpen(false)}

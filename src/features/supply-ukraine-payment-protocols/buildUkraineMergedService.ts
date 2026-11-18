@@ -4,7 +4,16 @@ import type {
   SupplyInformationTask,
 } from './types'
 
-export function buildUkraineMergedServiceFromForm(values: NewMergedServiceFormValues): MergedService {
+/**
+ * A priced service carries its new payment tasks («Сплатити до», «Відповідальний за оплату») so the server saves
+ * the service, its acts and its tasks together. The server accepts them only from a caller who also holds the
+ * payment-task create key (`orders.ukraine.logistic_way.create_payment_task`); without it the service is sent
+ * without tasks, which can be added later on the service card by someone who holds the key.
+ */
+export function buildUkraineMergedServiceFromForm(
+  values: NewMergedServiceFormValues,
+  { canCreatePaymentTask = true }: { canCreatePaymentTask?: boolean } = {},
+): MergedService {
   const service: MergedService = {
     AccountingGrossPrice: Number(values.grossPriceAccounting) || 0,
     AccountingVatPercent: Number(values.percentAccounting) || 0,
@@ -37,6 +46,9 @@ export function buildUkraineMergedServiceFromForm(values: NewMergedServiceFormVa
 
   if (Number(values.grossPrice) > 0) {
     service.ActProvidingService = {}
+  }
+
+  if (canCreatePaymentTask && Number(values.grossPrice) > 0) {
     service.SupplyPaymentTask = {
       Comment: values.comment,
       IsAccounting: false,
@@ -47,6 +59,9 @@ export function buildUkraineMergedServiceFromForm(values: NewMergedServiceFormVa
 
   if (Number(values.grossPriceAccounting) > 0) {
     service.AccountingActProvidingService = {}
+  }
+
+  if (canCreatePaymentTask && Number(values.grossPriceAccounting) > 0) {
     service.AccountingPaymentTask = {
       Comment: values.comment,
       IsAccounting: true,
