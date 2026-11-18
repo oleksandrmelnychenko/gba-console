@@ -28,6 +28,7 @@ export const ONE_C_EXPORT_TYPES = [
   'SupplyReturn',
   'CustomerOrder',
   'AdvanceOffset',
+  'CustomsDeclaration',
 ] as const
 export type OneCExportDocumentType = (typeof ONE_C_EXPORT_TYPES)[number]
 
@@ -54,6 +55,7 @@ export const ONE_C_EXPORT_TYPE_LABELS: Record<OneCExportDocumentType, string> = 
   SupplyReturn: 'Повернення постачальникам',
   CustomerOrder: 'Замовлення покупців',
   AdvanceOffset: 'Зарахування авансу',
+  CustomsDeclaration: 'ГТД по імпорту',
 }
 
 export type OneCExportRequest = {
