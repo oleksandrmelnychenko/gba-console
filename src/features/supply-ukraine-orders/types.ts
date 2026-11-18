@@ -17,6 +17,8 @@ export type Currency = NamedEntity
 export type Client = NamedEntity & {
   ClientAgreements?: ClientAgreement[]
   IsNotResident?: boolean
+  SourceAmgCode?: number | null
+  SourceFenixCode?: number | null
   USREOU?: string
 }
 
@@ -429,6 +431,7 @@ export type SupplyUkraineOrdersSearchParams = {
   offset: number
   supplierName?: string
   to: string
+  value?: string
 }
 
 export type SupplyUkraineOrdersResponse<TOrder> = {
@@ -546,6 +549,7 @@ export type SupplyOrderInvoiceTotals = {
 export type SupplyUkraineOrdersFilter = {
   currencyId: string
   from: string
+  search?: string
   supplier: string
   to: string
   type: SupplyUkraineOrderKind

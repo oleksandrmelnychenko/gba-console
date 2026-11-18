@@ -54,6 +54,7 @@ import {
 } from '../allOrdersUkraineFilter'
 import { DirectOrderProductIncomeStatus } from '../components/DirectOrderProductIncomeStatus'
 import { canOpenDirectProductIncomeFromCopy, canOpenDirectProductIncomeFromRow } from '../directOrderActions'
+import { buildSupplierDisplayNames, getSupplierBaseName, getSupplierKey } from '../supplierDisplayName'
 import { getDirectOrderStorageCopies, getDirectOrderStorages, type DirectOrderStorageCopy } from '../directOrderStorageCopies'
 import type {
   Currency,
@@ -380,6 +381,15 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ filters: { ...activeFilters, supplier: debouncedSupplier }, type: 'setActiveFilters' })
   }, [debouncedSupplier, filterDraft.supplier, activeFilters])
 
+  const [debouncedSearch] = useDebouncedValue(filterDraft.search ?? '', 400)
+  useEffect(() => {
+    if (debouncedSearch !== (filterDraft.search ?? '') || debouncedSearch === (activeFilters.search ?? '')) {
+      return
+    }
+
+    dispatchUi({ filters: { ...activeFilters, search: debouncedSearch }, type: 'setActiveFilters' })
+  }, [debouncedSearch, filterDraft.search, activeFilters])
+
   const requestIdRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters)
@@ -447,6 +457,7 @@ function useSupplyUkraineOrdersPageController() {
       offset,
       supplierName: activeFilters.supplier,
       to: activeFilters.to,
+      value: activeFilters.search ?? '',
     }
 
     dispatchOrders({ type: 'loading' })
@@ -581,7 +592,12 @@ function useSupplyUkraineOrdersPageController() {
     dispatchUi({ type: 'openDownload' })
 
     try {
-      const document = await printSupplyOrdersDocument(activeFilters.from, activeFilters.to, buildPrintColumns(t))
+      const document = await printSupplyOrdersDocument(activeFilters.from, activeFilters.to, buildPrintColumns(t), {
+        currencyId: activeFilters.currencyId,
+        supplierName: activeFilters.supplier,
+        type: activeFilters.type,
+        value: activeFilters.search ?? '',
+      })
 
       if (downloadRequestRef.current === requestId) {
         dispatchUi({ document, type: 'setDownloadDocument' })
@@ -992,7 +1008,7 @@ function SupplyUkraineOrdersRoster({
       layoutVersion="supply-ukraine-orders-table-3"
       loadingText={loadingText}
       minWidth={ORDERS_TABLE_MIN_WIDTH}
-      renderExpandedRow={(row) => row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} /> : null}
+      renderExpandedRow={(row) => row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} supplier={row.supplier} /> : null}
       rowClassName={(row) => `supply-orders-table-row is-${row.kind}`}
       showLayoutControls
       tableId="supply-ukraine-orders"
@@ -1160,12 +1176,12 @@ function OrderResponsibleGridCell({ value }: { value: string }) {
   )
 }
 
-function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
+function SupplyOrderInvoicesExpand({ order, supplier }: { order: DirectSupplyOrder, supplier?: string }) {
   const { t } = useI18n()
   const columns = useSupplyOrderInvoiceColumns()
   const rows = useMemo(
-    () => (order.SupplyInvoices || []).map((invoice, index) => mapInvoiceRow(order, invoice, index + 1)),
-    [order],
+    () => (order.SupplyInvoices || []).map((invoice, index) => ({ ...mapInvoiceRow(order, invoice, index + 1), supplier: supplier || getSupplierBaseName(order.Client) })),
+    [order, supplier],
   )
 
   return (
@@ -1356,6 +1372,20 @@ export function OrdersFilterToolbar({
           onKeyDown={(event) => {
             // Text filters apply on refresh; a search box should also run on Enter, otherwise
             // typing a supplier name does nothing until the user finds the refresh button.
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              onRefresh()
+            }
+          }}
+        />
+        <TextInput
+          className="supply-ukraine-orders-search-input"
+          leftSection={<Search size={16} />}
+          label={t('Пошук')}
+          placeholder={t('Номер, інвойс або артикул')}
+          value={filterDraft.search ?? ''}
+          onChange={(event) => onFilterDraftChange({ search: event.currentTarget.value })}
+          onKeyDown={(event) => {
             if (event.key === 'Enter') {
               event.preventDefault()
               onRefresh()
@@ -2160,9 +2190,13 @@ function buildRows(
   toUkraineOrders: SupplyOrderUkraine[],
   directOrders: DirectSupplyOrder[],
 ): SupplyUkraineOrderRow[] {
+  const supplierNames = buildSupplierDisplayNames([
+    ...toUkraineOrders.map((order) => order.Supplier),
+    ...directOrders.map((order) => order.Client),
+  ])
   const baseRows = [
-    ...toUkraineOrders.map(mapToUkraineOrderRow),
-    ...directOrders.map(mapDirectOrderRow),
+    ...toUkraineOrders.map((order) => ({ ...mapToUkraineOrderRow(order), supplier: resolveSupplierName(order.Supplier, supplierNames) })),
+    ...directOrders.map((order) => ({ ...mapDirectOrderRow(order), supplier: resolveSupplierName(order.Client, supplierNames) })),
   ].sort(compareRows)
 
   return baseRows.map((row, index) => ({ ...row, index: index + 1 }))
@@ -2249,6 +2283,15 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
     supplier: getEntityName(order.Client),
     vatAmount: amounts.vat,
   }
+}
+
+function resolveSupplierName(
+  supplier: Parameters<typeof getSupplierKey>[0],
+  names: Map<string, string>,
+): string {
+  const key = getSupplierKey(supplier)
+
+  return (key && names.get(key)) || getSupplierBaseName(supplier)
 }
 
 function compareRows(left: SupplyUkraineOrderRow, right: SupplyUkraineOrderRow): number {

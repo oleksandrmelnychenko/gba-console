@@ -12,6 +12,7 @@ const NOW = new Date(2026, 6, 10, 12)
 const STALE_FILTERS: SupplyUkraineOrdersFilter = {
   currencyId: '2',
   from: '2026-06-29',
+  search: '',
   supplier: 'Пилипенко',
   to: '2026-07-06',
   type: 'toUkraine',
@@ -38,6 +39,7 @@ describe('Ukraine order create success navigation', () => {
     expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
       currencyId: '',
       from: '2026-07-03',
+      search: '',
       supplier: '',
       to: '2026-07-10',
       type: 'all',
@@ -58,6 +60,7 @@ describe('Ukraine order create success navigation', () => {
     expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
       currencyId: '',
       from: '2026-07-03',
+      search: '',
       supplier: '',
       to: '2026-07-10',
       type: 'all',
@@ -71,6 +74,7 @@ describe('Ukraine order create success navigation', () => {
     expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
       currencyId: '',
       from: '2026-07-03',
+      search: '',
       supplier: '',
       to: '2026-07-10',
       type: 'all',
@@ -88,6 +92,7 @@ describe('Ukraine order create success navigation', () => {
     expect(readAllOrdersUkraineFilterAfterCreateState(navigation?.state)).toEqual({
       currencyId: '',
       from: '2026-07-03',
+      search: '',
       supplier: '',
       to: '2026-07-10',
       type: 'all',

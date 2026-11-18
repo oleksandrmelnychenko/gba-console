@@ -13,6 +13,7 @@ export function createDefaultAllOrdersUkraineFilter(now = new Date()): SupplyUkr
   return {
     currencyId: '',
     from: formatLocalDate(fromDate),
+    search: '',
     supplier: '',
     to: formatLocalDate(now),
     type: 'all',
@@ -38,6 +39,7 @@ export function readAllOrdersUkraineFilter(fallback: SupplyUkraineOrdersFilter):
         typeof savedValue.currencyId === 'string' ? savedValue.currencyId : fallback.currencyId,
       ),
       from: isDateInputValue(savedValue.from) ? savedValue.from : fallback.from,
+      search: typeof savedValue.search === 'string' ? savedValue.search : fallback.search ?? '',
       supplier: typeof savedValue.supplier === 'string' ? savedValue.supplier : fallback.supplier,
       to: isDateInputValue(savedValue.to) ? savedValue.to : fallback.to,
       type: isOrderKind(savedValue.type) ? savedValue.type : fallback.type,

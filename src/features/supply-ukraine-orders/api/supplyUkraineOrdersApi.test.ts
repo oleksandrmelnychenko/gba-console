@@ -105,7 +105,7 @@ describe('supplyUkraineOrdersApi', () => {
     expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/supplies/orders/ukraine/print/documents', {
       body: columns,
       method: 'POST',
-      query: { from: '2026-08-01', to: '2026-08-17' },
+      query: { currencyId: undefined, from: '2026-08-01', supplierName: '', to: '2026-08-17', type: 'all', value: '' },
     })
   })
 
@@ -307,6 +307,7 @@ describe('supplyUkraineOrdersApi', () => {
       offset: 0,
       supplierName: '',
       to: '2026-07-24T23:59:59.999',
+      value: '',
     }
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/supplies/ukraine/order/all/filtered', {
       query: expectedQuery,
@@ -326,6 +327,7 @@ describe('supplyUkraineOrdersApi', () => {
       offset: 10,
       supplierName: '  SEM  ',
       to: '2026-07-24T12:30:00',
+      value: '  11134  ',
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/orders/ukraine/all/filtered', {
@@ -336,6 +338,7 @@ describe('supplyUkraineOrdersApi', () => {
         offset: 10,
         supplierName: 'SEM',
         to: '2026-07-24T12:30:00',
+        value: '11134',
       },
     })
   })

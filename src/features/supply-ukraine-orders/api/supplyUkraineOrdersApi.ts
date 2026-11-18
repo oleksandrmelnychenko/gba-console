@@ -26,6 +26,7 @@ import type {
   SupplyOrderPrintColumn,
   SupplyOrderPrintDocument,
   SupplyOrderUkraine,
+  SupplyUkraineOrderKind,
   SupplyUkraineOrdersResponse,
   SupplyUkraineOrdersSearchParams,
   SupplyOrderUkraineSupplierCreatePayload,
@@ -883,14 +884,29 @@ export async function manageSupplyOrderUkraineDocuments({
   return normalizeSupplyUkraineOrder(result)
 }
 
+export type SupplyOrdersPrintFilters = {
+  currencyId?: string
+  supplierName?: string
+  type?: SupplyUkraineOrderKind
+  value?: string
+}
+
 export async function printSupplyOrdersDocument(
   from: string,
   to: string,
   columns: SupplyOrderPrintColumn[],
+  filters: SupplyOrdersPrintFilters = {},
 ): Promise<SupplyOrderPrintDocument> {
   const result = await apiRequest<unknown>('/supplies/orders/ukraine/print/documents', {
     method: 'POST',
-    query: { from, to },
+    query: {
+      currencyId: parseCurrencyId(filters.currencyId),
+      from,
+      supplierName: filters.supplierName?.trim() || '',
+      to,
+      type: filters.type || 'all',
+      value: filters.value?.trim() || '',
+    },
     body: columns,
   })
 
@@ -1298,6 +1314,7 @@ function buildSearchQuery(params: SupplyUkraineOrdersSearchParams) {
     offset: params.offset,
     supplierName: params.supplierName?.trim() || '',
     to: toInclusiveEndOfDay(params.to),
+    value: params.value?.trim() || '',
   }
 }
 

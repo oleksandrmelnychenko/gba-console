@@ -36,6 +36,7 @@ describe('all Ukraine orders filter persistence', () => {
     expect(filters).toEqual({
       currencyId: '',
       from: '2026-07-03',
+      search: '',
       supplier: '',
       to: '2026-07-10',
       type: 'all',
