@@ -52,3 +52,38 @@ export function describeImportColumnsProblem(
 
   return null
 }
+
+export type ParsedColumnNumber = {
+  /** Column or row number the form receives; '' when the text is empty or refused. */
+  value: ColumnValue
+  error: string | null
+}
+
+/**
+ * Reads a column or row number typed as text. The import fields used to drop every
+ * character that was not a digit, so «abc-1e99» became 199 and «-5» became 5 without
+ * a word; now anything that is not a whole number from 1 is kept as typed and refused.
+ */
+export function parseColumnNumberText(text: string, t: (key: string) => string): ParsedColumnNumber {
+  const compact = text.trim()
+
+  if (!compact) {
+    return { error: null, value: '' }
+  }
+
+  if (/^-/.test(compact)) {
+    return { error: t('Номер не може бути від’ємним'), value: '' }
+  }
+
+  if (!/^\d+$/.test(compact)) {
+    return { error: t('Введіть ціле число від 1, наприклад 3'), value: '' }
+  }
+
+  const value = Number(compact)
+
+  if (!Number.isSafeInteger(value) || value < 1) {
+    return { error: t('Введіть ціле число від 1, наприклад 3'), value: '' }
+  }
+
+  return { error: null, value }
+}

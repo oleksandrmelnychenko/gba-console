@@ -8,7 +8,6 @@ import {
   Card,
   FileInput,
   Group,
-  NumberInput,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -58,6 +57,7 @@ import type {
 } from '../types'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { describeImportColumnsProblem } from '../importColumnsValidation'
+import { ColumnNumberInput } from '../components/ColumnNumberInput'
 
 type NumberFieldValue = number | ''
 type CreateMode = SupplyUkraineOrderCreateMode
@@ -734,59 +734,41 @@ function ImportConfigurationSection({
           spacing="sm"
           verticalSpacing="sm"
         >
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving}
             label={t('Код товару')}
-            min={1}
             value={parseForm.vendorCodeColumnNumber}
-            onChange={(value) => onParseFormChange({ vendorCodeColumnNumber: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ vendorCodeColumnNumber: value })}
           />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving}
             label={t('Кількість')}
-            min={1}
             value={parseForm.qtyColumnNumber}
-            onChange={(value) => onParseFormChange({ qtyColumnNumber: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ qtyColumnNumber: value })}
           />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving}
             label={t('З рядка')}
-            min={1}
             value={parseForm.startRow}
-            onChange={(value) => onParseFormChange({ startRow: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ startRow: value })}
           />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving}
             label={t('До рядка')}
-            min={1}
             value={parseForm.endRow}
-            onChange={(value) => onParseFormChange({ endRow: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ endRow: value })}
           />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving || parseForm.withTotalAmount}
             label={t('Колонка ціни')}
-            min={1}
             value={parseForm.unitPriceColumnNumber}
-            onChange={(value) => onParseFormChange({ unitPriceColumnNumber: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ unitPriceColumnNumber: value })}
           />
-          <NumberInput
-            allowDecimal={false}
-            allowNegative={false}
+          <ColumnNumberInput
             disabled={isSaving || !parseForm.withTotalAmount}
             label={t('Колонка суми')}
-            min={1}
             value={parseForm.totalAmountColumnNumber}
-            onChange={(value) => onParseFormChange({ totalAmountColumnNumber: toPositiveNumber(value) })}
+            onChange={(value) => onParseFormChange({ totalAmountColumnNumber: value })}
           />
         </SimpleGrid>
         {isToUkraineMode && (
@@ -815,15 +797,12 @@ function ImportConfigurationSection({
                   })}
                 />
               </Group>
-              <NumberInput
-                allowDecimal={false}
-                allowNegative={false}
+              <ColumnNumberInput
                 disabled={isSaving || !parseForm.withWeight}
                 label={t('Колонка ваги нетто')}
-                min={1}
                 style={{ flex: 1 }}
                 value={parseForm.weightColumnNumber}
-                onChange={(value) => onParseFormChange({ weightColumnNumber: toPositiveNumber(value) })}
+                onChange={(value) => onParseFormChange({ weightColumnNumber: value })}
               />
             </Group>
             <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
@@ -839,15 +818,12 @@ function ImportConfigurationSection({
                   })}
                 />
               </Group>
-              <NumberInput
-                allowDecimal={false}
-                allowNegative={false}
+              <ColumnNumberInput
                 disabled={isSaving || !parseForm.withGrossWeight}
                 label={t('Колонка ваги брутто')}
-                min={1}
                 style={{ flex: 1 }}
                 value={parseForm.grossWeightColumnNumber}
-                onChange={(value) => onParseFormChange({ grossWeightColumnNumber: toPositiveNumber(value) })}
+                onChange={(value) => onParseFormChange({ grossWeightColumnNumber: value })}
               />
             </Group>
           </SimpleGrid>
@@ -888,15 +864,12 @@ function SupplierImportExtraFields({
             })}
           />
         </Group>
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
+        <ColumnNumberInput
           disabled={isSaving || !parseForm.withSpecificationCode}
           label={t('Колонка коду специфікації')}
-          min={1}
           style={{ flex: 1 }}
           value={parseForm.specificationCodeColumnNumber}
-          onChange={(value) => onParseFormChange({ specificationCodeColumnNumber: toPositiveNumber(value) })}
+          onChange={(value) => onParseFormChange({ specificationCodeColumnNumber: value })}
         />
       </Group>
       <Group className="supply-order-create-option" align="flex-end" gap="sm" wrap="nowrap">
@@ -911,15 +884,12 @@ function SupplierImportExtraFields({
             })}
           />
         </Group>
-        <NumberInput
-          allowDecimal={false}
-          allowNegative={false}
+        <ColumnNumberInput
           disabled={isSaving || !parseForm.withImportedProduct}
           label={t('Колонка ознаки імпорту')}
-          min={1}
           style={{ flex: 1 }}
           value={parseForm.isImportedProductColumnNumber}
-          onChange={(value) => onParseFormChange({ isImportedProductColumnNumber: toPositiveNumber(value) })}
+          onChange={(value) => onParseFormChange({ isImportedProductColumnNumber: value })}
         />
       </Group>
     </SimpleGrid>
@@ -1180,12 +1150,6 @@ function hasBaseParseConfiguration(configuration: {
       && configuration.StartRow
       && configuration.VendorCodeColumnNumber,
   )
-}
-
-function toPositiveNumber(value: number | string): NumberFieldValue {
-  const numberValue = typeof value === 'number' ? value : Number(value)
-
-  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : ''
 }
 
 function toClientOptions(clients: Client[]): Array<{ label: string, value: string }> {
