@@ -211,7 +211,7 @@ import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } fr
 import { deskPlural, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
 import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
 import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
-import { WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
+import { PENDING_SETTINGS_NOTICE_ID, WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
 import { WorkbookPeriodField, WorkbookSettings, type WorkbookSettingsSection } from './workbook-desk/WorkbookSettings'
 import { WorkbookResult } from './workbook-desk/WorkbookResult'
 import './workbook-desk/workbook-desk.css'
@@ -513,12 +513,14 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         : missingRowGrouping
           ? t('Додайте хоча б одне групування рядків')
           : incompleteSelectionMessage
+  const filesStale = appliedSettings.pending && Boolean(lastRun)
   const pendingSettingsNotice = (action: string) => {
     if (!appliedSettings.pending) return null
     const blockedBy = canSubmit ? '' : submitBlockedReason || generationConfigurationError
-    return <Alert color="yellow" role="status">
+    return <Alert id={PENDING_SETTINGS_NOTICE_ID} color="yellow" role="status">
       {blockedBy ? t('Налаштування змінено. Звіт поки не можна сформувати: {reason}', { reason: blockedBy })
         : workbookResolving ? t('Налаштування змінено.') : t('Налаштування змінено. Натисніть «{action}», щоб оновити звіт.', { action: t(action) })}
+      {filesStale ? ' ' + t('Excel і PDF будуть за новими налаштуваннями після оновлення звіту.') : null}
     </Alert>
   }
   const emptyRunNotice =
@@ -548,14 +550,16 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }
 
   async function runReport(showPreview: boolean, fresh = false) {
-    const exportingApplied = !showPreview && !!appliedSettings.appliedRequest && !!lastRun
+    const staleFiles = !showPreview && filesStale
+    if (staleFiles && !fresh) return
+    const exportingApplied = !showPreview && !staleFiles && !!appliedSettings.appliedRequest && !!lastRun
     if (!canGenerateReport || (!exportingApplied && !reportIsReady) || isLoading) {
       return
     }
 
     const request = exportingApplied ? resultRequest : appliedSettings.apply()
     const selectedCurrency = requestPresentationCurrency(request) != null
-    const existingPreview = !showPreview && (exportingApplied || !selectedCurrency && !preview?.Request?.presentationCurrency) ? preview : null
+    const existingPreview = !showPreview && !staleFiles && (exportingApplied || !selectedCurrency && !preview?.Request?.presentationCurrency) ? preview : null
     const updateAttempt = beginRun()
 
     try {
@@ -1174,7 +1178,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
             parameters={constructorContent.parameters} panels={constructorContent.panels} filters={constructorContent.filters} extras={constructorContent.extras}
             notices={pendingSettingsNotice('Сформувати')}
             actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
-              ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
+              ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), filesStale, excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
               pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !workbookResolving, resetDisabled: !canGenerateReport || isLoading,
               onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
               onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
@@ -1192,7 +1196,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
           {pendingSettingsNotice('Застосувати й показати')}
           <WorkbookActionBar canSubmit={canSubmit && !workbookResolving} isLoading={isLoading}
             blockedReason={workbookResolving ? null : submitBlockedReason || null}
-            ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
+            ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} filesStale={filesStale} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
             resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
             onGenerate={() => void runReport(false)} onReset={resetReport}
             pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !workbookResolving} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}

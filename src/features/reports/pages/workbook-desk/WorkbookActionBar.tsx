@@ -9,6 +9,7 @@ import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/P
 import { deskDownloadName } from '../../data/workbookDesk'
 
 export const BLOCKED_REASON_ID = 'report-constructor-blocked-reason'
+export const PENDING_SETTINGS_NOTICE_ID = 'report-pending-settings-notice'
 
 type FileFormat = 'excel' | 'pdf'
 
@@ -24,6 +25,7 @@ type Props = {
   blockedReason: string | null
   ran: boolean
   previewNeedsExport?: boolean
+  filesStale?: boolean
   excelUrl: string | null
   pdfUrl: string | null
   fileBaseName: string | null
@@ -33,7 +35,7 @@ type Props = {
   onReset: () => void
 }
 
-export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason, ran, previewNeedsExport = false, excelUrl, pdfUrl, fileBaseName, resetDisabled,
+export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason, ran, previewNeedsExport = false, filesStale = false, excelUrl, pdfUrl, fileBaseName, resetDisabled,
   onPreview, onGenerate, onReset, pending = false, canExport = canSubmit, onCancel, onSaveTemplate, applyLabel }: Props) {
   const { t } = useI18n()
   const blocked = !canSubmit && !isLoading && blockedReason ? blockedReason : null
@@ -42,6 +44,8 @@ export function WorkbookActionBar({ period, canSubmit, isLoading, blockedReason,
   const file = (format: FileFormat, url: string | null) => {
     const label = format === 'excel' ? 'Excel' : 'PDF'
     const icon = format === 'excel' ? <ExcelIcon size={16} /> : <PdfIcon size={18} />
+    if (filesStale) return <Button type="button" variant="default" className="workbook-actions__file" leftSection={icon} disabled
+      aria-describedby={PENDING_SETTINGS_NOTICE_ID} aria-label={t('Сформувати {format}', { format: label })}>{label}</Button>
     if (url) return <Button component="a" variant="default" className="workbook-actions__file is-ready" leftSection={icon}
       href={getDocumentHref(url)} target="_blank" rel="noreferrer"
       download={deskDownloadName(fileBaseName, url, format)}

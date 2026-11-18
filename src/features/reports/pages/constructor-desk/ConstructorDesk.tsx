@@ -7,7 +7,7 @@ import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { PdfIcon } from '../../../../shared/ui/PdfIcon'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { deskDownloadName } from '../../data/workbookDesk'
-import { BLOCKED_REASON_ID } from '../workbook-desk/WorkbookActionBar'
+import { BLOCKED_REASON_ID, PENDING_SETTINGS_NOTICE_ID } from '../workbook-desk/WorkbookActionBar'
 import './constructor-desk.css'
 
 type ConstructorDeskPeriod = {
@@ -27,6 +27,7 @@ export type ConstructorDeskActions = {
   blockedReason: string | null
   ran: boolean
   previewNeedsExport: boolean
+  filesStale?: boolean
   excelUrl: string | null
   pdfUrl: string | null
   fileBaseName: string | null
@@ -66,6 +67,8 @@ export function ConstructorDesk({ title, templateName, resolving, warning, perio
   const file = (format: 'excel' | 'pdf', url: string | null) => {
     const label = format === 'excel' ? 'Excel' : 'PDF'
     const icon = format === 'excel' ? <ExcelIcon size={16} /> : <PdfIcon size={18} />
+    if (actions.filesStale) return <Button type="button" variant="default" className="constructor-desk__file" leftSection={icon} disabled
+      aria-describedby={PENDING_SETTINGS_NOTICE_ID} aria-label={`Сформувати ${label}`}>{label}</Button>
     if (url) return <Button component="a" variant="default" className="constructor-desk__file is-ready" leftSection={icon}
       href={getDocumentHref(url)} target="_blank" rel="noreferrer" download={deskDownloadName(actions.fileBaseName, url, format)}
       aria-label={`Завантажити ${label}`}>{label}</Button>

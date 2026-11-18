@@ -57,7 +57,7 @@ async function apply() {
   fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
   await screen.findByLabelText('Applied preview request')
 }
-it('preserves the whole draft across dates, cancels to the applied configuration and binds preview/export to the applied request', async () => {
+it('preserves the whole draft across dates, cancels to the applied configuration and keeps files closed until the shown result matches the form', async () => {
   await open(); await apply()
   const original = displayedRequest()
   changeReportPeriod({ from: '2026-09-02' })
@@ -73,11 +73,19 @@ it('preserves the whole draft across dates, cancels to the applied configuration
   expect(displayedRequest()).toEqual(original)
   changeReportPeriod({ from: '' })
   expect(screen.getByRole('button', { name: 'Застосувати й показати' })).toHaveProperty('disabled', true)
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', true)
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
+  expect(screen.getByText(/Excel і PDF будуть за новими налаштуваннями після оновлення звіту\./)).toBeTruthy()
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  expect(exportStockReportPreview).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати зміни' }))
   expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', false)
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
   await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(session))
   expect(displayedRequest()).toEqual(original)
   changeReportPeriod({ from: '2026-09-02' })
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', true)
   await apply()
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
   const next = vi.mocked(previewStockReport).mock.calls[1][0]
