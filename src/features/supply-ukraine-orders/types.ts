@@ -521,6 +521,10 @@ export type SupplyOrderUkraineSupplierCreatePayload = {
   InvNumber?: string
   IsDirectFromSupplier: boolean
   Organization: Organization
+  /** «Курс розрахунків» override (1 НБУ, 2 Комерційний); the server honours it only with orders.ukraine.order.override_settlement_rate. */
+  SettlementRateKind?: 1 | 2 | null
+  /** Own rate, agreement-currency units per 1 EUR; same key as SettlementRateKind. */
+  SettlementExchangeRate?: number | null
   Supplier: Client
 }
 

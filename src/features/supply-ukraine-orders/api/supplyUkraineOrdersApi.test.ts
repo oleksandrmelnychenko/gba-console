@@ -401,6 +401,27 @@ describe('supplyUkraineOrdersApi', () => {
     expect(getSupplierFileRecoveryKeys()).toEqual([])
   })
 
+  it('carries the «Курс розрахунків» override in the order JSON, and leaves the keys out when none is chosen', async () => {
+    apiRequestMock.mockResolvedValue({ SupplyOrderUkraine: { NetUid: 'ukraine-order-1' } })
+
+    await uploadSupplyOrderUkraineFromSupplierFile({
+      file: new File(['xlsx'], 'order.xlsx'),
+      orderUkraine: { ...createOrderUkraine(), SettlementExchangeRate: 51.5, SettlementRateKind: 2 },
+      parseConfiguration: createParseConfiguration(),
+    })
+    await uploadSupplyOrderUkraineFromSupplierFile({
+      file: new File(['xlsx'], 'other.xlsx'),
+      orderUkraine: { ...createOrderUkraine(), SettlementExchangeRate: null, SettlementRateKind: null },
+      parseConfiguration: createParseConfiguration(),
+    })
+
+    const sent = apiRequestMock.mock.calls.map(([, request]) =>
+      JSON.parse(String((request?.body as FormData).get('orderUkraine'))))
+    expect(sent[0]).toMatchObject({ SettlementExchangeRate: 51.5, SettlementRateKind: 2 })
+    expect(sent[1]).not.toHaveProperty('SettlementRateKind')
+    expect(sent[1]).not.toHaveProperty('SettlementExchangeRate')
+  })
+
   it('rejects a supplier-file request when the authenticated owner changes before send', async () => {
     const file = new File(['xlsx'], 'order.xlsx')
     vi.spyOn(file, 'arrayBuffer').mockImplementationOnce(async () => {
