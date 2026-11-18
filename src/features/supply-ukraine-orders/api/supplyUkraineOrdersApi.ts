@@ -1162,6 +1162,9 @@ function snapshotSupplierFileOrder(
     InvNumber: order.InvNumber,
     IsDirectFromSupplier: order.IsDirectFromSupplier,
     Organization: supplierFileIdentity(order.Organization),
+    // Only an override key holder's choice is sent; otherwise the keys stay out of the JSON.
+    ...(order.SettlementRateKind ? { SettlementRateKind: order.SettlementRateKind } : {}),
+    ...(order.SettlementExchangeRate ? { SettlementExchangeRate: order.SettlementExchangeRate } : {}),
     Supplier: supplierFileIdentity(order.Supplier),
   } as SupplyOrderUkraineSupplierCreatePayload)
 }

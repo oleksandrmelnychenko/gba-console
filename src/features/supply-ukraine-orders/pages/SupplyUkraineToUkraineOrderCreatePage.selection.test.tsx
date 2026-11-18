@@ -13,6 +13,10 @@ const api = vi.hoisted(() => ({
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../api/supplyUkraineOrdersApi', () => api)
+vi.mock('../../../shared/settlement-rate/supplierSettlementRate', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../../shared/settlement-rate/supplierSettlementRate')>(),
+  getSupplierSettlementRateQuote: vi.fn().mockResolvedValue(null),
+}))
 
 const organization = { Culture: 'uk', Id: 10, Name: 'Фенікс', NetUid: 'organization-1' }
 const agreement = {

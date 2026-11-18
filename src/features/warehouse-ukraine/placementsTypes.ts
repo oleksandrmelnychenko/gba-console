@@ -90,6 +90,11 @@ export type PlacementSupplyOrder = EntityFields & {
   IsPartialPlaced?: boolean
   TotalNetWeight?: number
   Supplier?: { FullName?: string } | null
+  /** Server-owned «Курс розрахунків» fixed when the supplier file created the order (null on older orders). */
+  SettlementRateKind?: 1 | 2 | null
+  SettlementExchangeRate?: number | null
+  SettlementRateDate?: string | null
+  SettlementRateOverridden?: boolean
   SupplyOrderUkraineItems: PlacementOrderItem[]
   DynamicProductPlacementColumns: DynamicProductPlacementColumn[]
 }

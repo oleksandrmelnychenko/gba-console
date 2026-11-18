@@ -42,7 +42,10 @@ export function buildOutgoingPaymentGroupPayload({
   selectedSupplyAgreement,
   selectedSupplyOrganization,
   selectedUnpaidOrders,
+  settlementRate,
 }: {
+  /** An override key holder's EUR rate choice for a supplier payment on a client agreement. */
+  settlementRate?: { kind: 1 | 2 | null, rate: number | null }
   form: OutgoingPaymentGroupPayloadForm
   operationType: OutcomeOperationType
   selectedClient: Client | null
@@ -88,6 +91,18 @@ export function buildOutgoingPaymentGroupPayload({
     }
   } else if (selectedClient) {
     payload.ClientAgreement = selectedClientAgreement || undefined
+
+    // «Курс у EUR» of a supplier payment: sent only when chosen; the server honours it only with
+    // accounting.outgoing_cashflows.order.override_settlement_rate.
+    if (operationType === OUTCOME_OPERATION_TYPE.PaymentToSupplier && selectedClientAgreement) {
+      if (settlementRate?.kind) {
+        payload.EuroRateKind = settlementRate.kind
+      }
+
+      if (settlementRate?.rate) {
+        payload.EuroExchangeRate = settlementRate.rate
+      }
+    }
   }
 
   return payload

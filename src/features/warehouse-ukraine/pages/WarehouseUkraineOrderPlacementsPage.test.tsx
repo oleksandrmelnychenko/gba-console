@@ -305,6 +305,29 @@ describe('WarehouseUkraineOrderPlacementsPage', () => {
     expect(apiMocks.createIncome).not.toHaveBeenCalled()
   })
 
+  it('shows the stored «Курс розрахунків» read-only, marked when it was changed by hand', async () => {
+    const order = await apiMocks.getOrder()
+    apiMocks.getOrder.mockResolvedValue({
+      ...order,
+      SettlementExchangeRate: 51.2,
+      SettlementRateDate: '2026-11-17T10:00:00',
+      SettlementRateKind: 2,
+      SettlementRateOverridden: true,
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('Комерційний 51,2 за 17.11.2026 · змінено вручну')).toBeTruthy()
+    expect(screen.getByText(/^Курс розрахунків/)).toBeTruthy()
+  })
+
+  it('shows no «Курс розрахунків» for an order uploaded before it was stored', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Не оприходувано')).toBeTruthy()
+    expect(screen.queryByText(/^Курс розрахунків/)).toBeNull()
+  })
+
   it('reads «Частково оприходувано» while the order is partly received', async () => {
     const order = await apiMocks.getOrder()
     apiMocks.getOrder.mockResolvedValue({ ...order, IsPartialPlaced: true })

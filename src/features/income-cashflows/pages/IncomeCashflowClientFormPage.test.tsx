@@ -404,6 +404,19 @@ describe('IncomeCashflowClientFormPage payment dependencies', () => {
     await waitFor(() => expect(accountingCheckbox.checked).toBe(true))
   })
 
+  it('asks before Escape drops an order that has only a picked counterparty', async () => {
+    renderPage()
+    const organizationInput = await screen.findByRole<HTMLInputElement>('combobox', { name: 'Організація' })
+    await waitFor(() => expect(organizationInput.disabled).toBe(false))
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Контрагент' }), { target: { value: 'двома' } })
+    fireEvent.click(await screen.findByRole('option', { name: client.FullName }))
+    await waitFor(() => expect(getIncomeCashflowClientAgreements).toHaveBeenCalled())
+    fireEvent.keyDown(document.body, { code: 'Escape', key: 'Escape' })
+
+    expect(await screen.findByText('Якщо закрити форму, введені дані не будуть збережені.')).toBeTruthy()
+  })
+
   it('applies the AMG default on initial selection without locking the checkbox', async () => {
     vi.mocked(getIncomeCashflowOrganizations).mockResolvedValueOnce([amg, fenix])
 

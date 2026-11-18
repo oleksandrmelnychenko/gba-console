@@ -1,4 +1,5 @@
 import { formatStoredExchangeRate } from '../../../shared/money/storedExchangeRate'
+import { describeStoredSettlementRate } from '../../../shared/settlement-rate/supplierSettlementRate'
 import { normalizeGuid, sameGuid } from '../../../shared/guid/sameGuid'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
@@ -1086,6 +1087,16 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
   )
 }
 
+/** The EUR rate a supplier payment was booked with («Комерційний 51,2 за 18.11.2026 · змінено вручну»); null on other or older payments. */
+function storedEuroRateOf(order: OutcomePaymentOrder): string | null {
+  return describeStoredSettlementRate({
+    date: order.EuroRateDate,
+    kind: order.EuroRateKind,
+    overridden: order.EuroRateOverridden,
+    rate: order.EuroExchangeRate,
+  })
+}
+
 function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowRow | null; onClose: () => void }) {
   const { t } = useI18n()
   const [paymentTaskDocuments, setPaymentTaskDocuments] = useState<{ netId: string; items: OutcomePaymentOrderConsumablesOrder[] } | null>(null)
@@ -1155,6 +1166,9 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                 <DocumentDetailRow label={t('Відповідальний')} value={<TableChip tone="warning" value={displayValue(row.responsible)} />} />
                 <DocumentDetailRow mono label={t(COMMERCIAL_RATE_LABEL)} value={formatStoredExchangeRate(row.order.ExchangeRate)} />
                 <DocumentDetailRow label={t('Сума в EUR')} value={<OutgoingDetailAmount value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} currency="EUR" />} />
+                {storedEuroRateOf(row.order) && (
+                  <DocumentDetailRow label={t('Курс у EUR')} value={t(storedEuroRateOf(row.order) as string)} />
+                )}
                 <DocumentDetailRow mono label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
               </DocumentDetailSection>
             </div>
@@ -1275,6 +1289,9 @@ function OutgoingCashflowDocumentStructureDrawer({
             <DetailItem tone="source" label={t('Валюта')} mono value={displayValue(row.currency)} />
             <DetailItem label={t(COMMERCIAL_RATE_LABEL)} value={formatStoredExchangeRate(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} mono value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            {storedEuroRateOf(row.order) && (
+              <DetailItem label={t('Курс у EUR')} value={t(storedEuroRateOf(row.order) as string)} />
+            )}
             <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
             <DetailItem label={t('ПДВ')} mono value={formatMoneyOptional(row.order.VAT)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />

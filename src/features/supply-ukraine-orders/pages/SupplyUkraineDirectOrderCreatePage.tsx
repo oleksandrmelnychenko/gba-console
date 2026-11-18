@@ -18,7 +18,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { Calculator, CircleAlert, FileSpreadsheet, Plane, Ship, Tag, Truck, Upload } from 'lucide-react'
-import { useEffect, useMemo, useReducer, type FormEvent } from 'react'
+import { useEffect, useMemo, useReducer, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import './supply-order-create.css'
@@ -58,6 +58,15 @@ import type {
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { describeImportColumnsProblem } from '../importColumnsValidation'
 import { ColumnNumberInput } from '../components/ColumnNumberInput'
+import {
+  SupplierSettlementRateField,
+  type SupplierSettlementRateQuoteParams,
+} from '../../../shared/settlement-rate/SupplierSettlementRateField'
+import {
+  EMPTY_SETTLEMENT_RATE_OVERRIDE,
+  settlementRateOverridePayload,
+  type SettlementRateOverride,
+} from '../../../shared/settlement-rate/supplierSettlementRate'
 
 type NumberFieldValue = number | ''
 type CreateMode = SupplyUkraineOrderCreateMode
@@ -254,6 +263,10 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
   const [parseForm, dispatchParseForm] = useReducer(parseFormReducer, EMPTY_PARSE_FORM)
   const { error, isLoading, isSaving, organizations, supplierSearch, suppliers, uploadResponse } = pageState
   const commentValidationError = getSupplyOrderCommentValidationError(form.comment, t)
+  // «Курс розрахунків» kind / own rate: only an override key holder may choose them (the server ignores
+  // them otherwise), and a new agreement starts again from its own default.
+  const canOverrideSettlementRate = hasPermission(PermissionKeys.OrdersUkraine.Order.OverrideSettlementRate)
+  const [settlementRateOverride, setSettlementRateOverride] = useState<SettlementRateOverride>(EMPTY_SETTLEMENT_RATE_OVERRIDE)
 
   useEffect(() => {
     let cancelled = false
@@ -336,6 +349,14 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
     [availableAgreements, form.clientAgreementKey],
   )
 
+  // The upload converts at the rate of the invoice date: quote with the very InvDate string it sends.
+  const invDateValue = isToUkraineMode ? normalizeDateTimeInput(form.invDate) : ''
+  const settlementRateAgreementNetId = selectedClientAgreement?.NetUid || ''
+  const settlementRateParams: SupplierSettlementRateQuoteParams | null =
+    isToUkraineMode && settlementRateAgreementNetId && invDateValue
+      ? { clientAgreementNetId: settlementRateAgreementNetId, date: invDateValue, document: 'receipt' }
+      : null
+
   // The «choose supplier / organization / agreement» alert goes away as soon as all three are chosen.
   const shownError = error === t(REQUIRED_SELECTION_MESSAGE) && selectedSupplier && selectedOrganization && selectedClientAgreement
     ? null
@@ -363,6 +384,7 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       organizationKey: '',
       supplierKey: value || '',
     })
+    setSettlementRateOverride(EMPTY_SETTLEMENT_RATE_OVERRIDE)
     dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
   }
 
@@ -371,7 +393,13 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       clientAgreementKey: '',
       organizationKey: value || '',
     })
+    setSettlementRateOverride(EMPTY_SETTLEMENT_RATE_OVERRIDE)
     dispatchPage({ type: 'setUploadResponse', uploadResponse: null })
+  }
+
+  function changeAgreement(value: string | null) {
+    updateForm({ clientAgreementKey: value || '' })
+    setSettlementRateOverride(EMPTY_SETTLEMENT_RATE_OVERRIDE)
   }
 
   function changeFile(file: File | null) {
@@ -438,6 +466,10 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
               selectedClientAgreement,
               selectedOrganization,
               selectedSupplier,
+              settlementRate: settlementRateOverridePayload(
+                hasPermission(PermissionKeys.OrdersUkraine.Order.OverrideSettlementRate),
+                settlementRateOverride,
+              ),
             })
           : await createDirectOrderFromFile({
               dateFrom,
@@ -517,9 +549,19 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
               isToUkraineMode={isToUkraineMode}
               organizationOptions={organizationOptions}
               selectedSupplier={selectedSupplier}
+              settlementRateField={(
+                <SupplierSettlementRateField
+                  canOverride={canOverrideSettlementRate}
+                  disabled={isSaving}
+                  label="Курс розрахунків"
+                  override={settlementRateOverride}
+                  params={settlementRateParams}
+                  onOverrideChange={setSettlementRateOverride}
+                />
+              )}
               supplierOptions={supplierOptions}
               supplierSearch={supplierSearch}
-              onAgreementChange={(value) => updateForm({ clientAgreementKey: value || '' })}
+              onAgreementChange={changeAgreement}
               onFormChange={updateForm}
               onOrganizationChange={changeOrganization}
               onSupplierChange={changeSupplier}
@@ -550,6 +592,7 @@ function OrderDetailsSection({
   isToUkraineMode,
   organizationOptions,
   selectedSupplier,
+  settlementRateField,
   supplierOptions,
   supplierSearch,
   onAgreementChange,
@@ -558,6 +601,7 @@ function OrderDetailsSection({
   onSupplierChange,
   onSupplierSearchChange,
 }: {
+  settlementRateField: ReactNode
   agreementOptions: SelectOption[]
   commentValidationError: string | null
   form: DirectOrderForm
@@ -656,6 +700,7 @@ function OrderDetailsSection({
               {organizationField}
               {agreementField}
             </SimpleGrid>
+            {settlementRateField}
             {commentField}
           </>
         ) : (
@@ -995,6 +1040,7 @@ async function createToUkraineOrderFromFile({
   selectedClientAgreement,
   selectedOrganization,
   selectedSupplier,
+  settlementRate,
 }: {
   dateFrom: string
   file: File
@@ -1003,6 +1049,7 @@ async function createToUkraineOrderFromFile({
   selectedClientAgreement: ClientAgreement
   selectedOrganization: Organization
   selectedSupplier: Client
+  settlementRate: ReturnType<typeof settlementRateOverridePayload>
 }): Promise<SupplyOrderUkraineFromFileResponse> {
   const invDate = normalizeDateTimeInput(form.invDate)
 
@@ -1018,6 +1065,8 @@ async function createToUkraineOrderFromFile({
     InvNumber: form.invNumber.trim(),
     IsDirectFromSupplier: true,
     Organization: selectedOrganization,
+    SettlementExchangeRate: settlementRate.rate,
+    SettlementRateKind: settlementRate.kind,
     Supplier: selectedSupplier,
   }
 

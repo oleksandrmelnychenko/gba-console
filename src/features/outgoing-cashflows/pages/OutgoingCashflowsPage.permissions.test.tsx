@@ -193,6 +193,34 @@ describe('outgoing cashflows permissions', () => {
     expect(await screen.findByText('Недостатньо прав для цієї дії.')).toBeTruthy()
   })
 
+  it('shows the stored «Курс у EUR» of a supplier payment in its details', async () => {
+    allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
+    vi.mocked(getOutgoingCashflows).mockResolvedValue({
+      Collection: [
+        {
+          EuroAmount: 100,
+          EuroExchangeRate: 51.2,
+          EuroRateDate: '2026-11-18T10:00:00',
+          EuroRateKind: 2,
+          EuroRateOverridden: false,
+          NetUid: 'order-1',
+          Number: 'ВКО-1',
+        },
+        { EuroAmount: 50, NetUid: 'order-2', Number: 'ВКО-2' },
+      ],
+      NegativeDifferenceAmount: 0,
+      PositiveDifferenceAmount: 0,
+    })
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'outgoing-row-order-1' }))
+    expect(await screen.findByText('Комерційний 51,2 за 18.11.2026')).toBeTruthy()
+    expect(screen.getByText('Курс у EUR')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'outgoing-row-order-2' }))
+    await waitFor(() => expect(screen.queryByText('Курс у EUR')).toBeNull())
+  })
+
   it('explains the 1C import lock instead of offering cancel or report edit', async () => {
     allowedPermissions.add(PermissionKeys.SystemPages.OutgoingCashflows.View)
     allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Edit)
