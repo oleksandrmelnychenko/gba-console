@@ -48,6 +48,17 @@ it('mixes buyer folders from the captured hierarchy with exact buyers and keeps 
   expect(screen.getByRole('button', { name: 'Дерево груп контрагентів' })).toBeTruthy()
 })
 
+it('shows which counterparty matched a folder found by name or code but keeps the folder as the value', async () => {
+  vi.mocked(getAnalysisHierarchyPage).mockResolvedValue({ parentId: null, hasMore: false, items: [{ id: `fenix:${FOLDER}`, name: 'Київ',
+    path: 'Покупці / Київ', hasChildren: false, data: { kind: 'counterpartyGroup', world: 'fenix', id: FOLDER }, matches: '3140018819 — БАРВИЦЬКИЙ МИКОЛА' }] })
+  const onValues = vi.fn()
+  render(<Picker field={5} condition={6} onValues={onValues} />)
+  fireEvent.change(screen.getByRole('combobox', { name: 'Значення' }), { target: { value: '3140018819' } })
+  await waitFor(() => expect(getAnalysisHierarchyPage).toHaveBeenLastCalledWith('counterpartyGroup', null, 0, 30, '3140018819', expect.any(AbortSignal)))
+  fireEvent.click(await screen.findByRole('option', { name: 'Покупці / Київ · 3140018819 — БАРВИЦЬКИЙ МИКОЛА' }))
+  expect(onValues).toHaveBeenLastCalledWith([{ Data: { kind: 'counterpartyGroup', world: 'fenix', id: FOLDER }, Name: 'Покупці / Київ', Value: 0 }])
+})
+
 it('explains unavailable warehouse folders instead of offering lookups', () => {
   render(<Picker field={21} condition={6} status={{ ...ready, warehouseGroup: 'Папки складів ще не захоплені.' }} />)
   expect(screen.getByText('Папки складів ще не захоплені.')).toBeTruthy()

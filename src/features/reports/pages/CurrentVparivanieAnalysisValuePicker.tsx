@@ -58,7 +58,7 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
   const itemSearch = choice === 'item' ? searchItems : undefined
   const fetchPage = useCallback((offset: number, signal: AbortSignal): Promise<{ values: AnalysisLookupValue[]; hasMore: boolean }> => sourceKind
     ? getAnalysisHierarchyPage(sourceKind, null, offset, 30, query, signal)
-      .then(page => ({ values: page.items.map(item => ({ id: item.id, name: item.path, data: item.data })), hasMore: page.hasMore }))
+      .then(page => ({ values: page.items.map(item => ({ id: item.id, name: item.path, data: item.data, ...(item.matches ? { matches: item.matches } : {}) })), hasMore: page.hasMore }))
     : itemSearch ? itemSearch(query, offset, signal).then(values => ({ values, hasMore: false }))
     : (offset ? searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal, offset) : searchAnalysisValues(lookupField, query, lookupFrom, lookupTo, buyerParam, signal))
       .then(values => ({ values, hasMore: values.length === 30 })),
@@ -99,8 +99,10 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     if (choice === 'group') return field === 4 && !mixed ? data : { kind: 'productGroup', id }
     return { kind: hierarchy.itemKind, id }
   }
+  const optionMatches = new Map<string, string>()
   const optionValues = (current?.values ?? []).flatMap(item => {
     const Data = encode(item.data)
+    if (Data && item.matches) optionMatches.set(analysisValueIdentity(field, Data), item.matches)
     return Data ? [{ Data, Name: item.name, Value: 0 }] : []
   })
   const optionMap = new Map(optionValues.map(value => [analysisValueIdentity(field, value.Data), value]))
@@ -116,7 +118,8 @@ export function CurrentVparivanieAnalysisValuePicker({ selection, selections, de
     const value = optionMap.get(chosen)
     if (value) onChange([value])
   }
-  const options = [...optionMap].map(([value, selected]) => ({ value, label: selected.Name }))
+  const options = [...optionMap].map(([value, selected]) => ({ value,
+    label: optionMatches.has(value) ? `${selected.Name} · ${optionMatches.get(value)}` : selected.Name }))
   const itemKind = hierarchy && (groupCondition || field === 4) ? hierarchy.itemKind : undefined
   const label = (value: ReportSelectedValue) => analysisValueLabel(field, value, itemKind)
   return <Stack gap={8} className="report-analysis-values">

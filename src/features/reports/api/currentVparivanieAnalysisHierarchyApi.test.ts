@@ -17,7 +17,14 @@ it('reads one lazy folder level with exact typed identities and paths', async ()
     data: { kind: 'counterpartyGroup', world: 'fenix', id: FOLDER } }])
 })
 
+it('keeps the counterparties that put a folder into the search result', async () => {
+  api.mockResolvedValueOnce({ kind: 'counterpartyGroup', parentId: null, items: [{ ...node(), matches: '3140018819 — БАРВИЦЬКИЙ МИКОЛА' }], hasMore: false })
+  const page = await getAnalysisHierarchyPage('counterpartyGroup', null, 0, 50, '3140018819')
+  expect(page.items[0]).toEqual(expect.objectContaining({ path: 'Покупці / Київ', matches: '3140018819 — БАРВИЦЬКИЙ МИКОЛА' }))
+})
+
 it.each([
+  [{ kind: 'counterpartyGroup', parentId: null, items: [{ ...node(), matches: 7 }], hasMore: false }],
   [{ kind: 'warehouseGroup', parentId: null, items: [node()], hasMore: false }],
   [{ kind: 'counterpartyGroup', parentId: 'fenix:x', items: [node()], hasMore: false }],
   [{ kind: 'counterpartyGroup', parentId: null, items: [node('fenix:XYZ')], hasMore: false }],

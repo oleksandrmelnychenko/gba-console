@@ -2,7 +2,7 @@ import { ANALYSIS_GROUPS_ENDPOINT, ANALYSIS_HIERARCHY_ENDPOINT, ANALYSIS_HIERARC
   type AnalysisHierarchyKind, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportEntity } from '../types'
-export type AnalysisLookupValue = { id: string; name: string; data: ReportEntity }
+export type AnalysisLookupValue = { id: string; name: string; data: ReportEntity; matches?: string }
 export async function searchAnalysisValues(field: number, value: string, from: string, to: string, buyerId?: string, signal?: AbortSignal, offset = 0): Promise<AnalysisLookupValue[]> {
   const result = await apiRequest<unknown>('/report/datasets/current-vparivanie/analysis/lookup', {
     query: { field, value, offset, limit: 30, from, to, ...(buyerId ? { buyerId } : {}) }, signal,
@@ -36,7 +36,8 @@ export async function getAnalysisGroupPage(parentId: string | null, offset: numb
   const seen = new Set<string>()
   const items = page.items.map(item => {
     if (!item || typeof item !== 'object' || typeof item.id !== 'string' || typeof item.name !== 'string' || !item.name
-      || typeof item.data !== 'string' || typeof item.hasChildren !== 'boolean') return fail()
+      || typeof item.data !== 'string' || typeof item.hasChildren !== 'boolean'
+      || item.matches !== undefined && item.matches !== null && typeof item.matches !== 'string') return fail()
     const data: unknown = JSON.parse(item.data, (_key, value) => {
       if (typeof value === 'number' && !Number.isSafeInteger(value)) return fail()
       return value
@@ -70,14 +71,16 @@ export async function getAnalysisHierarchyPage(kind: AnalysisSourceGroupKind, pa
   const items = page.items.map(item => {
     if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !NODE_ID.test(item.id) || seen.has(item.id)
       || typeof item.name !== 'string' || !item.name || typeof item.path !== 'string' || !item.path
-      || typeof item.data !== 'string' || typeof item.hasChildren !== 'boolean') return fail()
+      || typeof item.data !== 'string' || typeof item.hasChildren !== 'boolean'
+      || item.matches !== undefined && item.matches !== null && typeof item.matches !== 'string') return fail()
     const data: unknown = JSON.parse(item.data)
     const [world, id] = item.id.split(':')
     if (!data || typeof data !== 'object' || Array.isArray(data) || Object.keys(data).length !== 3) return fail()
     const record = data as Record<string, unknown>
     if (record.kind !== kind || record.world !== world || record.id !== id) return fail()
     seen.add(item.id)
-    return { id: item.id, name: item.name, path: item.path, data: record as ReportEntity, hasChildren: item.hasChildren }
+    return { id: item.id, name: item.name, path: item.path, data: record as ReportEntity, hasChildren: item.hasChildren,
+      ...(typeof item.matches === 'string' && item.matches ? { matches: item.matches } : {}) }
   })
   return { parentId, items, hasMore: page.hasMore }
 }
