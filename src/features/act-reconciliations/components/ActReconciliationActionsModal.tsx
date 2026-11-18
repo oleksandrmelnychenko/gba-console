@@ -1,5 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { Alert, NumberInput, Table, Tabs, Text } from '@mantine/core'
+import { Alert, NumberInput, Table, Tabs, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert } from 'lucide-react'
 import { useEffect } from 'react'
@@ -13,6 +13,7 @@ import {
   validateActionQuantity,
   type ActionQuantityValidationReason,
 } from '../actReconciliationActionQuantity'
+import { getIncomeQuantityLimit, getIncomeRefusal } from '../actReconciliationIncomeAvailability'
 import {
   createDepreciatedOrderFromItem,
   createDepreciatedOrderFromItems,
@@ -101,8 +102,11 @@ export function ActReconciliationActionsModal({
   const maxAvailableQty = singleItem?.QtyDifference
   const actionItems = getActionItems(target)
   const hasWriteOffItems = actionItems.writeoff.length > 0
+  // The server refuses income where the invoice's packing lists hold nothing unplaced (F10 / w1-16).
+  const incomeRefusal = getIncomeRefusal(actionItems.all)
+  const incomeQuantityLimit = singleItem ? getIncomeQuantityLimit(singleItem) : maxAvailableQty
   const allowedTabs: ActionTab[] = [
-    ...(canCreateProductIncome ? ['placement' as const] : []),
+    ...(canCreateProductIncome && !incomeRefusal ? ['placement' as const] : []),
     ...(canCreateProductTransfer ? ['shift' as const] : []),
     ...(canCreateWriteOff && hasWriteOffItems ? ['writeoff' as const] : []),
   ]
@@ -287,6 +291,11 @@ export function ActReconciliationActionsModal({
           {submitError || storagesError}
         </Alert>
       )}
+      {incomeRefusal && canCreateProductIncome && allowedTabs.length === 0 && (
+        <Alert color="yellow" icon={<CircleAlert size={18} />} mb="sm" variant="light">
+          {t(incomeRefusal)}
+        </Alert>
+      )}
       {target?.mode === 'multi' && (
         <ActionQuantityPreview
           disabled={isSubmitting}
@@ -301,14 +310,22 @@ export function ActReconciliationActionsModal({
       )}
       <Tabs keepMounted={false} value={activeTabValue} onChange={(value) => setActiveTab((value as ActionTab) || 'placement')}>
         <Tabs.List mb="md">
-          {canCreateProductIncome && <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>}
+          {canCreateProductIncome && (incomeRefusal
+            ? (
+                <Tooltip withArrow label={t(incomeRefusal)} multiline w={320}>
+                  <span>
+                    <Tabs.Tab disabled aria-description={t(incomeRefusal)} value="placement">{t('Оприходування')}</Tabs.Tab>
+                  </span>
+                </Tooltip>
+              )
+            : <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>)}
           {canCreateProductTransfer && <Tabs.Tab value="shift">{t('Переміщення')}</Tabs.Tab>}
           {canCreateWriteOff && hasWriteOffItems && <Tabs.Tab value="writeoff">{t('Списання')}</Tabs.Tab>}
         </Tabs.List>
-        {canCreateProductIncome && <Tabs.Panel value="placement">
+        {canCreateProductIncome && !incomeRefusal && <Tabs.Panel value="placement">
           <ProductPlacementForm
             isSubmitting={isSubmitting}
-            maxAvailableQty={maxAvailableQty}
+            maxAvailableQty={incomeQuantityLimit}
             submitDisabled={previewState ? !previewState.canSubmit : false}
             storages={storages}
             storagesLoading={storagesLoading}

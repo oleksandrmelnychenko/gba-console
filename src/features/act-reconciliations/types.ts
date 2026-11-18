@@ -60,6 +60,8 @@ export type ActReconciliationItem = EntityFields & {
   Availabilities?: ActReconciliationItemAvailability[]
   Comment?: string
   HasDifference?: boolean
+  /** Invoice acts: how much «Оприходування» can still take from the packing lists (0 = refused); absent = no limit. */
+  IncomeReceivableQty?: number | null
   NegativeDifference?: boolean
   OrderedQty?: number
   Product?: ActReconciliationProduct | null
