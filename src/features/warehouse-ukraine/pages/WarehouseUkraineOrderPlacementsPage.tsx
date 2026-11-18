@@ -29,6 +29,7 @@ import {
   saveDynamicPlacementRow,
   updateSupplyOrderUkraine,
 } from '../api/orderPlacementsApi'
+import { formatOrderPlacementLine } from '../placementLine'
 import { resolvePlacementStorageId } from '../placementStorageDefault'
 import { NewDynamicColumnModal } from '../components/NewDynamicColumnModal'
 import { PlacementEditDrawer } from '../components/PlacementEditDrawer'
@@ -75,12 +76,6 @@ function columnKey(column: DynamicProductPlacementColumn): string {
 
 function sumPlacements(placements: DynamicProductPlacement[]): number {
   return placements.reduce((total, placement) => total + (placement.Qty || 0), 0)
-}
-
-function formatPlacementAddress(placement: DynamicProductPlacement): string {
-  const location = [placement.StorageNumber, placement.RowNumber, placement.CellNumber].filter(Boolean).join('-')
-
-  return `${location} - ${placement.Qty || 0}`
 }
 
 function sumAppliedPlacements(placements: DynamicProductPlacement[]): number {
@@ -981,7 +976,7 @@ function WarehouseUkraineOrderPlacementsPageContent() {
                 {placements.length > 0 ? (
                   placements.map((placement, placementIndex) => (
                     <Text key={placement.Id ?? placementIndex} className="warehouse-order-placement-placement-line" size="xs">
-                      {formatPlacementAddress(placement)}
+                      {formatOrderPlacementLine(placement)}
                     </Text>
                   ))
                 ) : (
