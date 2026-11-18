@@ -62,6 +62,7 @@ describe('1C export panel', () => {
     expect(request.types).toEqual([
       'Sale', 'SaleReturn', 'ProductIncome', 'ProductTransfer', 'WriteOff', 'Capitalization',
       'IncomePayment', 'OutgoingPayment', 'RegisterTransfer', 'CurrencyExchange', 'ReSale',
+      'ServiceIncome', 'CustomerOrder',
     ])
     expect(request.from).toBe(request.to)
     await waitFor(() => expect(save).toHaveBeenCalledWith(file))

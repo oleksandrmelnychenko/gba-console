@@ -32,10 +32,8 @@ export const ONE_C_EXPORT_TYPES = [
 export type OneCExportDocumentType = (typeof ONE_C_EXPORT_TYPES)[number]
 
 export const ONE_C_EXPORT_UNCONFIRMED_TYPES: readonly OneCExportDocumentType[] = [
-  'ServiceIncome',
   'SupplyOrder',
   'SupplyReturn',
-  'CustomerOrder',
   'AdvanceOffset',
 ]
 
