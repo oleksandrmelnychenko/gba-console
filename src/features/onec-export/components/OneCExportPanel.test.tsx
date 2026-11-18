@@ -61,7 +61,7 @@ describe('1C export panel', () => {
     expect(request.bases).toEqual(['Fenix', 'Amg'])
     expect(request.types).toEqual([
       'Sale', 'SaleReturn', 'ProductIncome', 'ProductTransfer', 'WriteOff', 'Capitalization',
-      'IncomePayment', 'OutgoingPayment', 'RegisterTransfer', 'CurrencyExchange', 'ReSale',
+      'ReSale',
       'ServiceIncome', 'CustomerOrder', 'CustomsDeclaration',
     ])
     expect(request.from).toBe(request.to)
