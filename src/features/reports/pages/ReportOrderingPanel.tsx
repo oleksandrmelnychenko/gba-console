@@ -50,7 +50,6 @@ export function ReportOrderingPanel({ data, dataset, disabled, onChange }: Props
                 onChange={value => { if (value === '1' || value === '2') set({ ...rule, Nulls: Number(value) as 1 | 2 }) }} />
               {rule.By === 3 ? <Select label={`Показник сортування — ${scope}`} data={choices} value={rule.Measure == null ? null : String(rule.Measure)}
                 placeholder="Виберіть увімкнений показник" allowDeselect={false} disabled={disabled}
-                description={activeMeasures.length ? undefined : 'Спочатку увімкніть показник у налаштуваннях звіту.'}
                 onChange={value => { const measure = activeMeasures.find(item => String(item.Type) === value); if (measure) set({ ...rule, Measure: measure.Type }) }} /> : null}
             </> : null}
           </SimpleGrid>
