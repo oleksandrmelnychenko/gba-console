@@ -47,6 +47,7 @@ import type {
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
 import { userErrorText } from '../../../shared/api/userErrorText'
 import { hasZeroPrice, ZERO_PRICE_CONFIRM_MESSAGE } from '../../../shared/pricing/zeroPriceConfirm'
+import { describeStoredSettlementRate } from '../../../shared/settlement-rate/supplierSettlementRate'
 import './warehouse-ukraine-page.css'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = PermissionKeys.OrdersUkraine.Placement.Save
@@ -745,6 +746,15 @@ function WarehouseUkraineOrderPlacementsPageContent() {
   const orderDisplayNumber = getSupplyUkraineOrderDisplayNumber(model.order) || ''
   const isOpenOrder = Boolean(model.order && !model.order.IsPlaced)
   const canEditOpenOrder = canEditPlacement && isOpenOrder
+  // The rate the order settles with on the supplier agreement balance, fixed at the upload (read-only).
+  const settlementRateText = model.order
+    ? describeStoredSettlementRate({
+        date: model.order.SettlementRateDate,
+        kind: model.order.SettlementRateKind,
+        overridden: model.order.SettlementRateOverridden,
+        rate: model.order.SettlementExchangeRate,
+      })
+    : null
 
   const columns = useMemo<DataTableColumn<PlacementGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<PlacementGridRow>[] = [
@@ -1048,6 +1058,9 @@ function WarehouseUkraineOrderPlacementsPageContent() {
             <span>{t('Від')} <strong>{formatDate(model.order?.FromDate)}</strong></span>
             {model.order?.Supplier?.FullName && (
               <span>{t('Постачальник')}: <strong>{model.order.Supplier.FullName}</strong></span>
+            )}
+            {settlementRateText && (
+              <span>{t('Курс розрахунків')}: <strong>{t(settlementRateText)}</strong></span>
             )}
           </div>
         </div>
