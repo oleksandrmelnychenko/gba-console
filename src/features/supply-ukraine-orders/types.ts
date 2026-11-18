@@ -269,6 +269,7 @@ export type SupplyOrderDeliveryDocument = EntityFields & {
   Deleted?: boolean
   DocumentUrl?: string
   FileName?: string
+  GeneratedName?: string | null
   IsProcessed?: boolean
   IsReceived?: boolean
   Name?: string
