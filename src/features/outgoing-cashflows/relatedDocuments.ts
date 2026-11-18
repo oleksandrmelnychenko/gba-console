@@ -14,6 +14,9 @@ export function getPaymentTaskConsumablesOrders(
       Id: item.Id,
       NetUid: item.NetUid,
       ConsumablesOrder: item.SupplyPaymentTask?.ConsumablesOrder,
+      // The details read carries the invoice header only (no items, supplier or totals),
+      // so the card shows what this order paid instead.
+      PaidThroughPaymentTask: item.Amount ?? 0,
     }))
 }
 

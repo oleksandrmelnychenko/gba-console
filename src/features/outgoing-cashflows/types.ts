@@ -90,6 +90,8 @@ export type ConsumablesOrder = EntityFields & {
 
 export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
   ConsumablesOrder?: ConsumablesOrder | null
+  /** Set for an invoice linked through a paid payment task: the amount this order paid (N3-04). */
+  PaidThroughPaymentTask?: number
 }
 
 export type OutcomePaymentOrder = EntityFields & {
@@ -119,6 +121,7 @@ export type OutcomePaymentOrder = EntityFields & {
   AssignedPaymentOrders?: AssignedPaymentOrder[]
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   OutcomePaymentOrderSupplyPaymentTasks?: Array<EntityFields & {
+    Amount?: number
     SupplyPaymentTask?: (EntityFields & { ConsumablesOrder?: ConsumablesOrder | null }) | null
   }>
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null

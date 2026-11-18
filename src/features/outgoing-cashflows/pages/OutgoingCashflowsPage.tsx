@@ -1185,6 +1185,12 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                         <TableChip tone="document" value={displayValue(order?.Number)} />
                         <span>{formatDateTime(order?.OrganizationFromDate)}</span>
                       </div>
+                      {item.PaidThroughPaymentTask !== undefined ? (
+                        <div className="document-detail-related-card__grid">
+                          <DocumentDetailRow mono label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                          <DocumentDetailRow mono label={t('Оплачено через платіжну задачу')} value={formatMoneyOptional(item.PaidThroughPaymentTask)} />
+                        </div>
+                      ) : (
                       <div className="document-detail-related-card__grid">
                         <DocumentDetailRow mono label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
                         <DocumentDetailRow label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
@@ -1193,6 +1199,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                         <DocumentDetailRow mono label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
                         <DocumentDetailRow mono label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
                       </div>
+                      )}
                     </article>
                   )
                 })}

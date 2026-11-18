@@ -9,11 +9,11 @@ describe('outgoing order documents linked through a payment task', () => {
     expect(getPaymentTaskConsumablesOrders({
       NetUid: 'order-27',
       OutcomePaymentOrderSupplyPaymentTasks: [
-        { Id: 5, NetUid: 'link-5', SupplyPaymentTask: { Id: 10, ConsumablesOrder: invoice } },
+        { Id: 5, NetUid: 'link-5', Amount: 102, SupplyPaymentTask: { Id: 10, ConsumablesOrder: invoice } },
         { Id: 6, Deleted: true, SupplyPaymentTask: { Id: 11, ConsumablesOrder: { Id: 7 } } },
         { Id: 7, SupplyPaymentTask: { Id: 12, ConsumablesOrder: null } },
       ],
-    })).toEqual([{ Id: 5, NetUid: 'link-5', ConsumablesOrder: invoice }])
+    })).toEqual([{ Id: 5, NetUid: 'link-5', ConsumablesOrder: invoice, PaidThroughPaymentTask: 102 }])
   })
 
   it('reads the details only for a regular order without directly linked documents', () => {
