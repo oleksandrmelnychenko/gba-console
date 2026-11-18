@@ -22,6 +22,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { ApiError } from '../../../shared/api/apiClient'
 import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
 import { DiscardChangesModal } from '../../../shared/ui/DiscardChangesModal'
+import { useFormLeaveGuard } from '../../../shared/router/useFormLeaveGuard'
 import {
   createConsumableStorage,
   getConsumableStorage,
@@ -220,15 +221,18 @@ function ConsumableStorageFormPageContent() {
     [form.responsibleUserNetUid, users],
   )
 
-  if (isEditMode && !id) {
-    return <Navigate replace to={STORAGES_PATH} />
-  }
-
   const hasUnsavedInput = !isLoading && !isNotFound && (
     form.name !== (storage.Name || '')
     || form.description !== (storage.Description || '')
     || form.responsibleUserNetUid !== getEntityValue(storage.ResponsibleUser)
   )
+
+  // WH2-23: browser Back on typed data asks the same «Закрити без збереження?» question.
+  useFormLeaveGuard(hasUnsavedInput, () => setDiscardOpened(true))
+
+  if (isEditMode && !id) {
+    return <Navigate replace to={STORAGES_PATH} />
+  }
 
   function closeForm() {
     navigate(returnPath, { replace: true })

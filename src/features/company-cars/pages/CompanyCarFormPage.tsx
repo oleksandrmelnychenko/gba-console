@@ -24,6 +24,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { ApiError } from '../../../shared/api/apiClient'
 import { isRecordGuid } from '../../../shared/guid/isRecordGuid'
 import { DiscardChangesModal } from '../../../shared/ui/DiscardChangesModal'
+import { useFormLeaveGuard } from '../../../shared/router/useFormLeaveGuard'
 import {
   COMPANY_CAR_LIMITS,
   formatCarMetric,
@@ -194,6 +195,9 @@ function CompanyCarFormPageContent() {
   const loadedForm = useMemo(() => toFormState(companyCar, companyCar.Organization || null), [companyCar])
   const hasUnsavedInput = !isLoading && !isNotFound && (Object.keys(loadedForm) as Array<keyof CompanyCarFormState>)
     .some((key) => (key !== 'organizationNetUid' || isEditMode) && form[key] !== loadedForm[key])
+
+  // WH2-23: browser Back on typed data asks the same «Закрити без збереження?» question.
+  useFormLeaveGuard(hasUnsavedInput, () => setDiscardOpened(true))
 
   function closeForm() {
     navigate(returnPath, { replace: true })

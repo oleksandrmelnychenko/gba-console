@@ -126,4 +126,16 @@ describe('ConsumableStorageFormPage', () => {
     expect(await screen.findByText('Закрити без збереження?')).toBeTruthy()
     expect(screen.getByDisplayValue('Чернетка')).toBeTruthy()
   })
+
+  it('asks the same question on browser Back with typed data and keeps the data (WH2-23)', async () => {
+    renderAt('/accounting/storages/new')
+
+    fireEvent.change(await screen.findByLabelText(/Назва/), { target: { value: 'Чернетка' } })
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: null }))
+    })
+
+    expect(await screen.findByText('Закрити без збереження?')).toBeTruthy()
+    expect(screen.getByDisplayValue('Чернетка')).toBeTruthy()
+  })
 })

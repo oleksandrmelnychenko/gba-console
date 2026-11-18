@@ -131,4 +131,16 @@ describe('CompanyCarFormPage', () => {
 
     expect(updateCompanyCar).toHaveBeenCalledTimes(1)
   })
+
+  it('asks before browser Back leaves a new car with typed data (WH2-23)', async () => {
+    renderAt('/accounting/company-cars/new')
+
+    fireEvent.change(await screen.findByLabelText(/№ Авто/), { target: { value: 'AA0001QA' } })
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: null }))
+    })
+
+    expect(await screen.findByText('Закрити без збереження?')).toBeTruthy()
+    expect(screen.getByDisplayValue('AA0001QA')).toBeTruthy()
+  })
 })
