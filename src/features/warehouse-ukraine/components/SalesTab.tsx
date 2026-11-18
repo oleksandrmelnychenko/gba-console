@@ -31,6 +31,7 @@ import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 import { hasWarehouseDocumentUrl } from './openWarehouseDocument'
+import { toSameOriginDataUrl } from '../../../shared/url/sameOriginDataUrl'
 
 const DEFAULT_LIMIT = DEFAULT_PAGINATOR_PAGE_SIZE
 
@@ -584,7 +585,7 @@ function useSalesColumns({
               <TableRowAction
                 action="download"
                 component="a"
-                href={upgradeHttpToHttps(sale.CustomersOwnTtn.TtnPDFPath)}
+                href={toSameOriginDataUrl(sale.CustomersOwnTtn.TtnPDFPath)}
                 label={t('Завантажити ТТН')}
                 rel="noopener noreferrer"
                 target="_blank"
@@ -800,10 +801,6 @@ function getResponsible(sale: Sale): string {
   }
 
   return ''
-}
-
-function upgradeHttpToHttps(url: string): string {
-  return url.replace(/^http:\/\//i, 'https://')
 }
 
 function getFilterError(from: string, to: string): string | null {

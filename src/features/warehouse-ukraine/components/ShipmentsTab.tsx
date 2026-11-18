@@ -23,7 +23,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { ApiError } from '../../../shared/api/apiClient'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { toSameOriginDataUrl } from '../../../shared/url/sameOriginDataUrl'
 import { TransporterIcon, TransporterNameWithIcon } from '../../../shared/transporter-icons/TransporterIcon'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
@@ -3072,7 +3072,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
                 <TableRowAction
                   action="download"
                   component="a"
-                  href={upgradeHttpToHttps(path)}
+                  href={toSameOriginDataUrl(path)}
                   label={t('Завантажити ТТН')}
                   rel="noreferrer"
                   target="_blank"

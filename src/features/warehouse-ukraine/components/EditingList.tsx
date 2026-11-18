@@ -21,7 +21,7 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { TableRowAction } from '../../../shared/ui/table-row-action'
 import { TransporterIcon } from '../../../shared/transporter-icons/TransporterIcon'
-import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { toSameOriginDataUrl } from '../../../shared/url/sameOriginDataUrl'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineShipmentDetails, WarehouseUkraineUpdateDataCarrier, WarehouseUkraineUser } from '../types'
 import type { EditingMutationPayload } from '../api/editingApi'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
@@ -825,7 +825,7 @@ function SummaryLine({ changed, icon, label, link, mono, value }: { changed?: bo
         {label}:
       </Text>
       {link && value ? (
-        <Anchor href={upgradeHttpToHttps(value)} target="_blank" rel="noreferrer" size="xs">
+        <Anchor href={toSameOriginDataUrl(value)} target="_blank" rel="noreferrer" size="xs">
           {translate('Завантажити')}
         </Anchor>
       ) : icon ? (
