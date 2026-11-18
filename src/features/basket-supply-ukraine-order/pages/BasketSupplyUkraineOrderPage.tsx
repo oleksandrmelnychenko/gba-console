@@ -885,6 +885,8 @@ function BasketCartWorkflow() {
 
       {!isCartEmpty && (
         <>
+          {/* Moving rows into the selection only prepares a document; read-only roles (no assembly key) do not get it. */}
+          {canAssembleDocument && (
           <Group align="center" className="basket-supply-transfer-controls" justify="center">
             <Button
               disabled={!selectedSourceCount}
@@ -903,6 +905,7 @@ function BasketCartWorkflow() {
               {t('Повернути')} ({selectedDestinationCount})
             </Button>
           </Group>
+          )}
 
           <Card className="app-section-card" withBorder padding="md" radius="md">
             <Stack gap="md">
@@ -1429,11 +1432,13 @@ function SalesWorkflowTab() {
                 />
               </Group>
             }
-            toolbarRight={
-              <Button disabled={!selectedSourceCount} leftSection={<ArrowRight size={16} />} onClick={moveSelectedSalesRight}>
-                {t('Додати до підбірки')} ({selectedSourceCount})
-              </Button>
-            }
+            toolbarRight={canAssembleDocument
+              ? (
+                  <Button disabled={!selectedSourceCount} leftSection={<ArrowRight size={16} />} onClick={moveSelectedSalesRight}>
+                    {t('Додати до підбірки')} ({selectedSourceCount})
+                  </Button>
+                )
+              : null}
             onRowClick={canOpenSale ? openSale : undefined}
           />
         </Stack>
@@ -1468,9 +1473,11 @@ function SalesWorkflowTab() {
             }
             toolbarRight={
               <Group gap={8}>
-                <Button disabled={!selectedDestinationCount} leftSection={<ArrowLeft size={16} />} variant="default" onClick={moveSelectedSalesLeft}>
-                  {t('Повернути')} ({selectedDestinationCount})
-                </Button>
+                {canAssembleDocument && (
+                  <Button disabled={!selectedDestinationCount} leftSection={<ArrowLeft size={16} />} variant="default" onClick={moveSelectedSalesLeft}>
+                    {t('Повернути')} ({selectedDestinationCount})
+                  </Button>
+                )}
               {canAssembleDocument
                 ? (
                     <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>

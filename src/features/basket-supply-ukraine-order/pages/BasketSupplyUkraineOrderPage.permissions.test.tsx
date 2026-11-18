@@ -191,6 +191,9 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
     expect(getNotSentTaxFreePackLists).not.toHaveBeenCalled()
     expect(getNotSentSads).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+    // chaos2-orders F14: no disabled «Додати (0)» / «Повернути (0)» for a read-only role.
+    expect(screen.queryByRole('button', { name: /^Додати/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Повернути/ })).toBeNull()
 
     allowedPermissions.add(PermissionKeys.SupplyCart.Document.Assemble)
     view.rerender(
@@ -208,6 +211,8 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
       expect(getNotSentSads).toHaveBeenCalledTimes(1)
     })
     expect(screen.getByRole('button', { name: 'Створити' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Додати (0)' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Повернути (0)' })).not.toBeNull()
   })
 
   it('blocks the sales tab request without its page permission', () => {
@@ -226,6 +231,8 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
     expect(getNotSentSaleTaxFreePackLists).not.toHaveBeenCalled()
     expect(getNotSentSaleSads).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Створити' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Додати до підбірки/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Повернути/ })).toBeNull()
 
     allowedPermissions.add(PermissionKeys.SupplyCart.Document.Assemble)
     view.rerender(
@@ -243,6 +250,8 @@ describe('BasketSupplyUkraineOrderPage permissions', () => {
       expect(getNotSentSaleSads).toHaveBeenCalledTimes(1)
     })
     expect(screen.getByRole('button', { name: 'Створити' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Додати до підбірки (0)' })).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Повернути (0)' })).not.toBeNull()
   })
 
   it('keeps budget-cart access independent from the supply-cart page permission', () => {
