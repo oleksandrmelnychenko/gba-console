@@ -70,6 +70,26 @@ describe('AppDrawer', () => {
     expect(closeOuter).not.toHaveBeenCalled()
   })
 
+  it('gives an Escape from the page body to the sheet the user last worked in', async () => {
+    const closeOuter = vi.fn()
+    const closeInner = vi.fn()
+    render(
+      <MantineProvider>
+        <AppDrawer opened title="Outer" onClose={closeOuter}>
+          <input aria-label="outer field" />
+          <AppDrawer opened title="Inner" onClose={closeInner}>
+            <input aria-label="inner field" />
+          </AppDrawer>
+        </AppDrawer>
+      </MantineProvider>,
+    )
+
+    fireEvent.pointerDown(await screen.findByLabelText('inner field'))
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(closeInner).toHaveBeenCalledOnce()
+    expect(closeOuter).not.toHaveBeenCalled()
+  })
+
   it('leaves an Escape from the page body to a modal open above the sheet', async () => {
     const closeDrawer = vi.fn()
     render(

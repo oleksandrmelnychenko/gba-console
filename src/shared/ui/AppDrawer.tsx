@@ -139,10 +139,12 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
    opening so the open animation can settle first. */
 const OUTSIDE_CLOSE_ARM_DELAY_MS = 350
 
-/* Open sheets in opening order. An Escape that does not come from inside a sheet (focus on the page
-   body after a click on plain text) belongs to the topmost one only: every open sheet used to close
-   on it, so one Escape closed «Обробка перепродажу» AND the «Новий перепродаж» page under it. */
+/* An Escape that does not come from inside a sheet (focus on the page body after a click on plain
+   text) belongs to one sheet only: the one the user last worked in (pointer or focus inside it), or
+   else the one opened last. Every open sheet used to close on it, so one Escape closed «Обробка
+   перепродажу» AND the «Новий перепродаж» page under it. */
 const openDrawerStack: object[] = []
+let activeDrawerToken: object | null = null
 
 export function AppDrawer({
   position = 'right',
@@ -178,6 +180,7 @@ export function AppDrawer({
     }
 
     openDrawerStack.push(stackToken)
+    activeDrawerToken = stackToken
 
     return () => {
       const index = openDrawerStack.lastIndexOf(stackToken)
@@ -185,8 +188,32 @@ export function AppDrawer({
       if (index >= 0) {
         openDrawerStack.splice(index, 1)
       }
+
+      if (activeDrawerToken === stackToken) {
+        activeDrawerToken = openDrawerStack[openDrawerStack.length - 1] ?? null
+      }
     }
   }, [opened, stackToken])
+
+  // A nested sheet is portaled outside this one in the DOM, so these native events mark only the sheet
+  // the pointer / focus is really in.
+  useEffect(() => {
+    if (!rootNode || !opened) {
+      return undefined
+    }
+
+    const markActive = () => {
+      activeDrawerToken = stackToken
+    }
+
+    rootNode.addEventListener('pointerdown', markActive, true)
+    rootNode.addEventListener('focusin', markActive, true)
+
+    return () => {
+      rootNode.removeEventListener('pointerdown', markActive, true)
+      rootNode.removeEventListener('focusin', markActive, true)
+    }
+  }, [opened, rootNode, stackToken])
 
   // Mantine closes every open modal layer on one Escape. A nested dialog (export, confirm, another
   // sheet) is portaled outside this drawer, so an Escape from inside that other dialog is not ours.
@@ -208,7 +235,7 @@ export function AppDrawer({
     }
 
     if (!(rootNode && targetDialog)) {
-      if (openDrawerStack[openDrawerStack.length - 1] !== stackToken) {
+      if (activeDrawerToken !== stackToken) {
         return
       }
 
@@ -218,6 +245,10 @@ export function AppDrawer({
       }
     }
 
+    // The Escape is consumed here. In a browser React renders between event listeners, so a «discard
+    // changes?» modal that onClose opens became open mid-dispatch and its own window Escape listener
+    // (already in this dispatch) closed it again on the same keystroke: the confirm flashed and vanished.
+    event.stopImmediatePropagation()
     onClose()
   }, { capture: true })
   const drawerClassName = ['app-drawer', 'app-form-sheet', hasFooter ? 'app-drawer--with-footer' : '', className]
