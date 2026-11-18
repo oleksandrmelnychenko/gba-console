@@ -93,17 +93,18 @@ export function formatSettlementRate(rate: unknown): string {
 }
 
 /**
- * «17.11.2026» of a server date. The server keeps these dates in UTC and returns them without a zone
- * designator, so a bare date-time is read as UTC and shown in the user's local calendar day.
+ * «17.11.2026» of a server date. The server stores these dates in UTC but writes them in the user's time
+ * zone (the X-Time-Zone header) without a designator, so a bare date-time is the user's local wall time
+ * and its calendar day is shown as is; a value with a zone is shown in the local calendar day.
  */
 export function formatSettlementRateDate(value: unknown): string {
   if (typeof value !== 'string' || !value) {
     return ''
   }
 
-  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value)
-  const date = new Date(isDateOnly ? `${value}T00:00:00` : hasZone ? value : `${value}Z`)
+  // A bare «YYYY-MM-DDTHH:mm:ss» is parsed as local time by the Date constructor.
+  const date = new Date(isDateOnly ? `${value}T00:00:00` : value)
 
   if (Number.isNaN(date.getTime())) {
     return ''

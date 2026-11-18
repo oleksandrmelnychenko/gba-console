@@ -72,10 +72,17 @@ describe('settlement rate texts', () => {
     expect(formatSettlementRate(null)).toBe('')
   })
 
-  it('reads a bare server date-time as UTC', () => {
+  it('reads a bare server date-time as the local wall time', () => {
     expect(formatSettlementRateDate('2026-11-17T10:00:00')).toBe('17.11.2026')
     expect(formatSettlementRateDate('2026-11-17T10:00:00Z')).toBe('17.11.2026')
     expect(formatSettlementRateDate('')).toBe('')
+  })
+
+  it('keeps a late-evening document on its own day', () => {
+    // The server writes dates in the user's time zone (X-Time-Zone) without a designator: a payment at
+    // 23:30 local comes back as «2026-11-18T23:30:00» and is still 18.11.
+    expect(formatSettlementRateDate('2026-11-18T23:30:00')).toBe('18.11.2026')
+    expect(formatSettlementRateDate('2026-11-18T20:16:00')).toBe('18.11.2026')
   })
 
   it('describes a quote, an EUR agreement and a missing rate', () => {
