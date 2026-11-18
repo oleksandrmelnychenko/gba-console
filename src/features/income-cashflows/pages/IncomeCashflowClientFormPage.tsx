@@ -13,7 +13,7 @@ import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { formatDebtAmount, getDebtBalanceLines } from '../../sales-debtors/model/debtorCurrency'
 import { DebtAgingInfo } from '../../sales-debtors/components/DebtAgingInfo'
 import { getKnownAgingDays } from '../../sales-debtors/model/debtorAging'
-import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { getOrganizationDisplayName, withNamedOrganizations } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -337,7 +337,11 @@ function IncomeCashflowClientFormPageContent() {
   const title = getTitle(operationType, registerType, t)
   const operationOptions = useMemo(() => getOperationOptions(registerType, t), [registerType, t])
   const searchTypeOptions = useMemo(() => getSearchTypeOptions(operationType, t), [operationType, t])
-  const organizationOptions = useMemo(() => toEntityOptions(availableOrganizations, getOrganizationDisplayName), [availableOrganizations])
+  // N3-07: nameless organizations were offered as bare GUIDs.
+  const organizationOptions = useMemo(
+    () => toEntityOptions(withNamedOrganizations(availableOrganizations, form.organizationValue), getOrganizationDisplayName),
+    [availableOrganizations, form.organizationValue],
+  )
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(
     () => buildIncomeCashflowCurrencyOptions(selectedRegister),
@@ -372,7 +376,7 @@ function IncomeCashflowClientFormPageContent() {
           return
         }
 
-        const defaultOrganization = (nextOrganizations[0] as OrganizationWithDefaults | undefined) || null
+        const defaultOrganization = (withNamedOrganizations(nextOrganizations)[0] as OrganizationWithDefaults | undefined) || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization, registerType)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
         const defaultMovement = selectDefaultIncomePaymentMovement(

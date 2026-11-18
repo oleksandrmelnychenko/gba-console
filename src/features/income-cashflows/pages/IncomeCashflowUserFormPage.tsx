@@ -3,7 +3,7 @@ import { useUnsavedChangesGuard } from '../../../shared/ui/UnsavedChangesGuard'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
-import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { getOrganizationDisplayName, withNamedOrganizations } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -169,7 +169,11 @@ function IncomeCashflowUserFormPageContent() {
     [form.selectedUserValue, users],
   )
   const activeUser = selectedUser
-  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
+  // N3-07: nameless organizations were offered as bare GUIDs.
+  const organizationOptions = useMemo(
+    () => toEntityOptions(withNamedOrganizations(organizations, form.organizationValue), getOrganizationDisplayName),
+    [organizations, form.organizationValue],
+  )
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
@@ -193,7 +197,7 @@ function IncomeCashflowUserFormPageContent() {
           return
         }
 
-        const defaultOrganization = nextOrganizations[0] || null
+        const defaultOrganization = withNamedOrganizations(nextOrganizations)[0] || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
         const defaultMovement = selectDefaultIncomePaymentMovement(

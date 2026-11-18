@@ -262,7 +262,7 @@ export function PaymentCashflowArticleFormPage() {
     <AppModal
       className="app-compact-form"
       opened
-      title={isEditMode ? t('Редагування статті руху коштів') : t('Нова стаття руху коштів')}
+      title={isEditMode ? (canSave ? t('Редагування статті руху коштів') : t('Перегляд статті руху коштів')) : t('Нова стаття руху коштів')}
       onClose={handleCancel}
     >
       <form id="payment-cashflow-article-form" noValidate onSubmit={handleSubmit}>

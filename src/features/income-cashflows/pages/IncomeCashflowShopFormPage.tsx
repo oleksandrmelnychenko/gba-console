@@ -7,7 +7,7 @@ import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { documentaryAgreementPresentation, documentaryDebtAge, indexDocumentaryDebt, type DocumentaryDebtIndex } from '../../../shared/debt/documentaryDebtAging'
 import { DocumentaryDebtNotice } from '../../../shared/debt/DocumentaryDebtNotice'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { getOrganizationDisplayName, withNamedOrganizations } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -263,7 +263,11 @@ function IncomeCashflowShopFormPageContent({ searchParams, onClose, onSaved }: I
     [form.selectedMovementValue, paymentMovements],
   )
   const activeMovement = selectedMovement
-  const organizationOptions = useMemo(() => toEntityOptions(organizations, getOrganizationDisplayName), [organizations])
+  // N3-07: nameless organizations were offered as bare GUIDs.
+  const organizationOptions = useMemo(
+    () => toEntityOptions(withNamedOrganizations(organizations, form.organizationValue), getOrganizationDisplayName),
+    [organizations, form.organizationValue],
+  )
   const registerOptions = useMemo(() => toEntityOptions(filteredPaymentRegisters), [filteredPaymentRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const agreementOptions = useMemo(() => toClientAgreementOptions(organizationAgreements), [organizationAgreements])

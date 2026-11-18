@@ -360,10 +360,8 @@ export function AdvanceReportConsumableOrderModal({
     const value = itemEditor.costMovementSearch.trim()
     const requestId = (costMovementSearchSeq.current += 1)
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
-
+      // fin-23: an empty field lists every article (as the fuel modal does), so the
+      // picker does not show «Нічого не знайдено» until something is typed.
       void searchPaymentCostMovements(value, 'advanced-report-edit')
         .then((nextMovements) => {
           if (costMovementSearchSeq.current === requestId) {
@@ -909,7 +907,7 @@ export function AdvanceReportConsumableOrderModal({
                   allowNegative={false}
                   decimalScale={3}
                   disabled={isBusy}
-                  label={t('Ціна за одиницю')}
+                  label={t('Ціна за одиницю з ПДВ')}
                   min={0}
                   value={itemEditor.item.PricePerItem || 0}
                   onChange={(value) => updateEditorItem({ PricePerItem: toNumber(value), TotalPriceWithVAT: undefined })}
@@ -935,6 +933,14 @@ export function AdvanceReportConsumableOrderModal({
                   onChange={(value) => updateEditorItem({ PricePerItem: 0, TotalPriceWithVAT: toNumber(value) })}
                 />
               </div>
+              {/* fin-06: the unit price already includes VAT; show how the total splits. */}
+              <Text c="dimmed" data-testid="advance-report-item-vat-breakdown" mt={6} size="xs">
+                {t('Сума без ПДВ')}: <span className="app-money">{formatMoney(itemEditor.item.TotalPrice || 0)}</span>
+                {' · '}
+                {t('ПДВ')}: <span className="app-money">{formatMoney(itemEditor.item.VAT || 0)}</span>
+                {' · '}
+                {t('Разом з ПДВ')}: <span className="app-money">{formatMoney(itemEditor.item.TotalPriceWithVAT || 0)}</span>
+              </Text>
             </Card>
 
             <AppModalFooter>

@@ -70,7 +70,7 @@ export function AdvanceReportProductsGrid({
       },
       {
         id: 'pricePerUnit',
-        header: t('Ціна за одиницю'),
+        header: t('Ціна за одиницю з ПДВ'),
         width: 170,
         minWidth: 130,
         align: 'right',

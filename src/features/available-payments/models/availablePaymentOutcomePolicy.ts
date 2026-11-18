@@ -10,6 +10,8 @@ import type {
 export function validateAvailablePaymentOutcomeForm({
   amount,
   date,
+  isAccounting,
+  isManagementAccounting,
   outcomeModels,
   selectedCurrencyRegister,
   selectedMovement,
@@ -20,6 +22,8 @@ export function validateAvailablePaymentOutcomeForm({
 }: {
   amount: number
   date: string
+  isAccounting: boolean
+  isManagementAccounting: boolean
   outcomeModels: AvailablePaymentTaskModel[]
   selectedCurrencyRegister: AvailablePaymentCurrencyRegister | null
   selectedMovement: AvailablePaymentMovement | null
@@ -58,6 +62,11 @@ export function validateAvailablePaymentOutcomeForm({
 
   if (!amount || amount <= 0) {
     return t('Сума')
+  }
+
+  // fin-18: an order saved with neither ledger shows «-» in both columns of Видаткові статті.
+  if (!isAccounting && !isManagementAccounting) {
+    return t('Оберіть облік: управлінський або бухгалтерський')
   }
 
   return null

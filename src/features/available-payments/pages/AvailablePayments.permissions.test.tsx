@@ -222,6 +222,19 @@ describe('Available payments canonical permission guards', () => {
     fireEvent.click(mergeButton)
     expect(mergeAvailablePaymentTasks).not.toHaveBeenCalled()
   })
+
+  // fin-18: the payment-task order form opened with neither ledger ticked and saved «-» / «-».
+  it('opens the payment-task order form with «Управлінський облік» ticked', async () => {
+    allowedPermissions.add(PermissionKeys.FinancialAdministration.AvailablePayments.OutcomeOrder.Create)
+    renderDrawer()
+    fireEvent.click(screen.getByRole('tab', { name: 'Оплата' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Створити видатковий' }))
+
+    const management = (await screen.findByRole('checkbox', { name: 'Управлінський облік' })) as HTMLInputElement
+    const accounting = screen.getByRole('checkbox', { name: 'Бухгалтерський облік' }) as HTMLInputElement
+    expect(management.checked).toBe(true)
+    expect(accounting.checked).toBe(false)
+  })
 })
 
 function createGroup(isAvailableForPayment: boolean, taskCount = 1): GroupedPaymentTask {

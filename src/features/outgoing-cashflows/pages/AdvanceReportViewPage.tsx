@@ -402,7 +402,7 @@ function useAdvanceReportViewModel() {
           consumableDocumentFilesByOrderKey: {},
           hasLocalChanges: false,
         }))
-        notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
+        notifications.show({ color: 'green', message: t('Авансовий звіт збережено') })
         navigate(returnPath, { replace: true, state: { mutated: true } })
       } catch (saveError) {
         setViewState((current) => ({
@@ -445,7 +445,7 @@ function useAdvanceReportViewModel() {
         consumableDocumentFilesByOrderKey: {},
         hasLocalChanges: false,
       }))
-      notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
+      notifications.show({ color: 'green', message: t('Авансовий звіт збережено') })
       navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setViewState((current) => ({

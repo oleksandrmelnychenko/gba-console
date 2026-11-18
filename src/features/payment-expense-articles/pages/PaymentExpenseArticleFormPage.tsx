@@ -250,7 +250,7 @@ export function PaymentExpenseArticleFormPage() {
     <AppModal
       className="app-compact-form"
       opened
-      title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
+      title={isEditMode ? (canSave ? t('Редагування статті витрат') : t('Перегляд статті витрат')) : t('Нова стаття витрат')}
       onClose={handleCancel}
     >
       <form id="payment-expense-article-form" noValidate onSubmit={handleSubmit}>

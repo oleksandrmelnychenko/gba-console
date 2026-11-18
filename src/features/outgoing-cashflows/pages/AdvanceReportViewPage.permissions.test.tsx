@@ -9,6 +9,7 @@ import {
   getAdvanceReportOrder,
   updateAdvanceReportOrder,
 } from '../api/advanceReportApi'
+import { notifications } from '@mantine/notifications'
 import { AdvanceReportViewPage } from './AdvanceReportViewPage'
 
 const allowedPermissions = new Set<string>()
@@ -114,5 +115,22 @@ describe('advance report view permissions', () => {
     allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Edit)
     await act(async () => { fireEvent.click(save) })
     await waitFor(() => expect(updateAdvanceReportOrder).toHaveBeenCalled())
+  })
+
+  // N3-06: the success toast read «Оновлення видаткового ордера», like a title or progress text.
+  it('says the advance report was saved', async () => {
+    allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Open)
+    allowedPermissions.add(PermissionKeys.AdvancedReports.Report.Edit)
+    renderPage()
+
+    const save = await screen.findByRole('button', { name: 'Зберегти' })
+    await act(async () => { fireEvent.click(save) })
+
+    await waitFor(() => expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ color: 'green', message: 'Авансовий звіт збережено' }),
+    ))
+    expect(notifications.show).not.toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Оновлення видаткового ордера' }),
+    )
   })
 })

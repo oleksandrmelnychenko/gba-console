@@ -3,7 +3,7 @@ import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
-import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
+import { getOrganizationDisplayName, withNamedOrganizations } from '../../../shared/organizations/organizationDisplayName'
 import {
   ActionIcon,
   Alert,
@@ -250,7 +250,11 @@ export function OutgoingPaymentGroupForm({
 
   const operationOptions = useMemo(() => getOperationOptions(t), [t])
   const searchTypeOptions = useMemo(() => getSearchTypeOptions(operationType, t), [operationType, t])
-  const organizationOptions = useMemo(() => toEntityOptions(availableOrganizations, getOrganizationDisplayName), [availableOrganizations])
+  // N3-07: nameless organizations were offered as bare GUIDs.
+  const organizationOptions = useMemo(
+    () => toEntityOptions(withNamedOrganizations(availableOrganizations, form.organizationValue), getOrganizationDisplayName),
+    [availableOrganizations, form.organizationValue],
+  )
   const registerOptions = useMemo(() => toEntityOptions(filteredRegisters), [filteredRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
   const agreementOptions = useMemo(
@@ -278,7 +282,7 @@ export function OutgoingPaymentGroupForm({
           return
         }
 
-        const defaultOrganization = nextOrganizations[0] || null
+        const defaultOrganization = withNamedOrganizations(nextOrganizations)[0] || null
         const defaultRegister = selectDefaultRegister(nextRegisters, defaultOrganization, initialRegisterType)
         const defaultCurrency = defaultRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
 

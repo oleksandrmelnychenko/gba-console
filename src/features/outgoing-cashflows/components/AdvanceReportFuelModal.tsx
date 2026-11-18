@@ -7,7 +7,6 @@ import {
   Card,
   Button,
   Group,
-  NumberInput,
   Select,
   Stack,
   Text,
@@ -17,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal, AppModalFooter } from '../../../shared/ui/AppModal'
+import { AmountInput } from '../../../shared/ui/AmountInput'
 import { SearchableSelect } from '../../../shared/ui/SearchableSelect'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { searchCompanyCarsForAdvanceReportEdit } from '../../company-cars/api/companyCarsApi'
@@ -205,10 +205,8 @@ export function AdvanceReportFuelModal({
     const value = form.companyCarSearch.trim()
     const requestId = (companyCarSearchSeq.current += 1)
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
-
+      // fin-23: an empty field lists every car, so opening the picker shows options
+      // instead of «Нічого не знайдено» until something is typed.
       void searchCompanyCarsForAdvanceReportEdit(value)
         .then((nextCompanyCars) => {
           if (companyCarSearchSeq.current !== requestId) {
@@ -412,9 +410,8 @@ export function AdvanceReportFuelModal({
             />
           </div>
           <div className="advance-report-entry-numbers">
-            <NumberInput
+            <AmountInput
               maw={180}
-              allowNegative={false}
               decimalScale={3}
               disabled={isLoading}
               label={t('Ціна за літр')}
@@ -422,9 +419,8 @@ export function AdvanceReportFuelModal({
               value={amountFieldValues.pricePerLiter}
               onChange={(value) => updateForm({ pricePerLiter: toNumber(value), totalPriceWithVat: 0 })}
             />
-            <NumberInput
+            <AmountInput
               maw={180}
-              allowNegative={false}
               decimalScale={3}
               disabled={isLoading}
               label={t('Кількість пального')}
@@ -432,9 +428,8 @@ export function AdvanceReportFuelModal({
               value={form.fuelAmount}
               onChange={(value) => updateForm({ fuelAmount: toNumber(value) })}
             />
-            <NumberInput
+            <AmountInput
               maw={180}
-              allowNegative={false}
               decimalScale={2}
               disabled={isLoading}
               label={t('Загальна сума з ПДВ')}
@@ -442,9 +437,8 @@ export function AdvanceReportFuelModal({
               value={amountFieldValues.totalPriceWithVat}
               onChange={(value) => updateForm({ pricePerLiter: 0, totalPriceWithVat: toNumber(value) })}
             />
-            <NumberInput
+            <AmountInput
               maw={180}
-              allowNegative={false}
               decimalScale={2}
               disabled={isLoading}
               label={`${t('ПДВ')} %`}
@@ -455,9 +449,8 @@ export function AdvanceReportFuelModal({
                 updateForm({ vatAmount: vatPercent > 0 ? form.vatAmount : 0, vatPercent })
               }}
             />
-            <NumberInput
+            <AmountInput
               maw={180}
-              allowNegative={false}
               decimalScale={2}
               disabled={isLoading}
               label={t('Сума ПДВ')}

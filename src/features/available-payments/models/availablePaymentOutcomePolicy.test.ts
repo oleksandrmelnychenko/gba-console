@@ -7,6 +7,8 @@ const t = (value: string) => value
 const validInput = {
   amount: 100,
   date: '2026-07-28',
+  isAccounting: false,
+  isManagementAccounting: true,
   outcomeModels: [{ id: 'task-1' }] as AvailablePaymentTaskModel[],
   selectedCurrencyRegister: {
     Currency: { Code: 'EUR', Id: 2 },
@@ -37,6 +39,11 @@ describe('available payment outcome form policy', () => {
       'Виберіть статтю грошових витрат',
     ],
     ['amount', { amount: 0 }, 'Сума'],
+    [
+      'ledger',
+      { isAccounting: false, isManagementAccounting: false },
+      'Оберіть облік: управлінський або бухгалтерський',
+    ],
   ])('requires the %s field', (_, override, expectedError) => {
     expect(
       validateAvailablePaymentOutcomeForm({
@@ -44,5 +51,11 @@ describe('available payment outcome form policy', () => {
         ...override,
       }),
     ).toBe(expectedError)
+  })
+
+  it('accepts the accounting ledger alone', () => {
+    expect(
+      validateAvailablePaymentOutcomeForm({ ...validInput, isAccounting: true, isManagementAccounting: false }),
+    ).toBeNull()
   })
 })

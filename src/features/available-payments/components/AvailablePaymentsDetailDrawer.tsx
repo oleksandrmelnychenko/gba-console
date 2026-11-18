@@ -883,6 +883,8 @@ function useAvailablePaymentsDetailDrawerModel({
     const validationError = validateAvailablePaymentOutcomeForm({
       amount: form.amount,
       date: form.date,
+      isAccounting: form.isAccounting,
+      isManagementAccounting: form.isManagementAccounting,
       outcomeModels,
       selectedCurrencyRegister,
       selectedMovement,
@@ -2755,7 +2757,8 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
     date: formatLocalDate(now),
     exchangeRate: 0,
     isAccounting: false,
-    isManagementAccounting: false,
+    // fin-18: the same default as Перерахування підзвітнику and Оплата постачальнику.
+    isManagementAccounting: true,
     movementSearch: '',
     movementValue: '',
     organizationValue: uniqueModels[0]?.organization ? getEntityValue(uniqueModels[0].organization) : '',

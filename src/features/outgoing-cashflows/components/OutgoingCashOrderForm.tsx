@@ -1,4 +1,5 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { getOrganizationDisplayName, withNamedOrganizations } from '../../../shared/organizations/organizationDisplayName'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { MAX_CASH_ORDER_AMOUNT } from '../../../shared/ui/amountText'
 import {
@@ -136,7 +137,11 @@ export function OutgoingCashOrderForm({ onCancel, onCreated, onDirtyChange }: Ou
     [form.selectedColleagueValue, users],
   )
 
-  const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
+  // N3-07: nameless organizations were offered as bare GUIDs.
+  const organizationOptions = useMemo(
+    () => toEntityOptions(withNamedOrganizations(organizations, form.organizationValue), getOrganizationDisplayName),
+    [organizations, form.organizationValue],
+  )
   const registerOptions = useMemo(() => toEntityOptions(organizationRegisters), [organizationRegisters])
   const currencyOptions = useMemo(
     () => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []),

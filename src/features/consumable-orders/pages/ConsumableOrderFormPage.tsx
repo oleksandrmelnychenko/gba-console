@@ -1135,7 +1135,7 @@ function ConsumableOrderFormPageContent({ canMutate }: { canMutate: boolean }) {
             <AmountInput
               decimalScale={3}
               disabled={isMutationLocked}
-              label={t('Ціна за одиницю')}
+              label={t('Ціна за одиницю з ПДВ')}
               value={itemEditor.item.PricePerItem || 0}
               onChange={(value) => updateEditorItem({ PricePerItem: toNumber(value), TotalPriceWithVAT: undefined })}
             />
