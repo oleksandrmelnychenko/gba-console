@@ -25,17 +25,8 @@
 }
 
 .supplier-organizations-search-input {
-  display: grid;
-  grid-template-rows:
-    var(--supplier-organizations-command-label-height)
-    var(--supplier-organizations-command-control-height);
-  min-height: calc(
-    var(--supplier-organizations-command-label-height) +
-    var(--supplier-organizations-command-label-gap) +
-    var(--supplier-organizations-command-control-height)
-  );
+  align-self: end;
   min-width: 0;
-  row-gap: var(--supplier-organizations-command-label-gap);
 }
 
 .supplier-organizations-search-input .mantine-InputWrapper-label {
