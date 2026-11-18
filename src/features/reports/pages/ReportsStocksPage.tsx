@@ -40,7 +40,7 @@ import type { PublishedReportTab } from './workbook-desk/publishedReportTabs'
 import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_LOOKUP_FAILED, REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
-import type { ReportFilterCondition } from '../types'
+import type { ReportFilterCondition, ReportFilterNode } from '../types'
 import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, datasetHierarchyDescriptor, isDatasetGroupSelection, withDatasetGroupConditions } from '../data/reportHierarchyFilters'
@@ -122,6 +122,7 @@ import {
   searchReportClients,
   searchDatasetReportValues,
   searchReportManufacturers,
+  MAX_MANUFACTURER_LOOKUP_SUPPLIERS,
   searchReportProducts,
   searchReportUsers,
   searchSaleReturnReportDocuments,
@@ -193,7 +194,7 @@ import { retainStoredGroupingLabels, retainStoredMeasurementLabels, retainStored
 
 import { ReportOrderingPanel } from './ReportOrderingPanel'
 import { requestOrdering } from '../data/reportOrdering'
-import { requestFilterExpression } from '../data/reportFilterExpression'
+import { createFilterExpression, readReportFilterExpression, requestFilterExpression } from '../data/reportFilterExpression'
 import { FULL_REPORT_MAX_DATE, FULL_REPORT_MIN_DATE, isFullRangeReportDate } from '../data/reportDateRange'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
 import { CurrentVparivanieRegionalPanel } from './CurrentVparivanieRegionalPanel'
@@ -2096,15 +2097,19 @@ function LegacySelectionValuePicker(props: SelectionValuePickerProps) {
       : <CommonSelectionValuePicker {...props} />
 }
 
-function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
+function CommonSelectionValuePicker({ request, dataSource, dataset, lookupProfitReadMode, lookupProfitUnavailable, lookupSourceWorld, error, from, label, selection, selections, to, width = 320, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const documentLookup = salesDocumentLookupPolicy(dataSource, selection.SelectedField.Type, dataset, lookupProfitUnavailable, from, to)
   const nativeSalesDocument = documentLookup.native
   const lookupUnavailable = documentLookup.unavailable
-  const manufacturerSuppliers = useMemo(() => selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer
-    ? chosenGoodsSuppliers(selections) : EMPTY_SUPPLIERS, [selection.SelectedField.Type, selections])
-  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period, manufacturerSuppliers === NO_GOODS_SUPPLIERS ? 'none' : manufacturerSuppliers])
+  const filterExpression = request ? requestFilterExpression(request) : undefined
+  const manufacturerSupplierIds = useMemo(() => {
+    if (selection.SelectedField.Type !== REPORT_FILTER_FIELD_TYPES.productManufacturer) return ''
+    const ids = chosenGoodsSuppliers(selections, filterExpression, dataSource === 2)
+    return ids === NO_GOODS_SUPPLIERS ? null : ids.join(',')
+  }, [dataSource, filterExpression, selection.SelectedField.Type, selections])
+  const lookupScope = JSON.stringify([dataSource, selection.SelectedField.Type, nativeSalesDocument, lookupProfitReadMode ?? null, lookupUnavailable === true, ...documentLookup.period, manufacturerSupplierIds])
   const [optionResult, setOptionResult] = useValueState<{ scope: string; items: ReportEntity[]; failed?: boolean }>({ scope: '', items: [] })
   const options = optionResult.scope === lookupScope ? optionResult.items : EMPTY_LOOKUP_OPTIONS
   const lookupFailed = optionResult.scope === lookupScope && optionResult.failed === true
@@ -2210,6 +2215,8 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
       setLoading(true)
 
       try {
+        const manufacturerSuppliers = manufacturerSupplierIds === null ? NO_GOODS_SUPPLIERS
+          : manufacturerSupplierIds ? manufacturerSupplierIds.split(',').map(Number) : EMPTY_SUPPLIERS
         const nextOptions =
           lookupMode === 'dependent'
             ? await getReportClientAgreements(dependentClientNetId)
@@ -2249,6 +2256,7 @@ function CommonSelectionValuePicker({ dataSource, dataset, lookupProfitReadMode,
     from,
     lookupAttempt,
     lookupMode,
+    manufacturerSupplierIds,
     minSearchLength,
     nativeSalesDocument,
     needsPeriod,
@@ -2497,7 +2505,15 @@ const MANUFACTURER_PAGE_SIZE = 50
 
 export const NO_GOODS_SUPPLIERS: readonly number[] = Object.freeze([])
 
-export function chosenGoodsSuppliers(selections: readonly ReportSelection[]): readonly number[] {
+export function chosenGoodsSuppliers(
+  selections: readonly ReportSelection[], expression?: unknown, suppliersMatchProduct = false,
+): readonly number[] {
+  if (expression != null || suppliersMatchProduct) {
+    const tree = expression == null ? createFilterExpression([...selections]) : readReportFilterExpression(expression)
+    if (!tree) return EMPTY_SUPPLIERS
+    const ids = supplierLookupCandidates(tree.Root, selections) ?? EMPTY_SUPPLIERS
+    return ids.length > MAX_MANUFACTURER_LOOKUP_SUPPLIERS ? EMPTY_SUPPLIERS : ids
+  }
   const rows = selections.filter(selection => selection.IsChecked !== false && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.supplier
     && selection.Values.length > 0)
   const ids = (selection: ReportSelection) => new Set(selection.Values.flatMap(value => {
@@ -2509,6 +2525,26 @@ export function chosenGoodsSuppliers(selections: readonly ReportSelection[]): re
   const excluded = new Set(rows.filter(selection => [1, 4].includes(selection.FilterCondition.Type)).flatMap(selection => [...ids(selection)]))
   const chosen = [...included[0]].filter(id => included.every(set => set.has(id)) && !excluded.has(id)).sort((a, b) => a - b)
   return chosen.length ? chosen : NO_GOODS_SUPPLIERS
+}
+
+function supplierLookupCandidates(node: ReportFilterNode, selections: readonly ReportSelection[]): readonly number[] | null {
+  if (node.Kind === 3) {
+    const selection = selections[node.SelectionIndex]
+    if (selection?.IsChecked === false) return null
+    if (!selection || selection.SelectedField.Type !== REPORT_FILTER_FIELD_TYPES.supplier
+      || ![0, 2].includes(selection.FilterCondition.Type)) return EMPTY_SUPPLIERS
+    const ids = selection.Values.map(value => Number(exactId(value.Data)))
+    return ids.every(id => Number.isSafeInteger(id) && id > 0) ? [...new Set(ids)].sort((a, b) => a - b) : EMPTY_SUPPLIERS
+  }
+
+  const children = node.Children.map(child => supplierLookupCandidates(child, selections)).filter(child => child !== null)
+  if (!children.length) return null
+  // A product may have multiple suppliers. Any mandatory positive branch bounds
+  // the catalogue, while negation alone cannot remove a supplier's entire brand.
+  if (node.Kind === 1) return children.reduce((tightest, child) =>
+    child.length && (!tightest.length || child.length < tightest.length) ? child : tightest, EMPTY_SUPPLIERS)
+  // Every OR branch needs a supplier bound before the lookup may omit brands.
+  return children.some(child => !child.length) ? EMPTY_SUPPLIERS : [...new Set(children.flat())].sort((a, b) => a - b)
 }
 
 function usesPurchaseReceiptWarehouseLookup(dataSource: number, fieldType: number): boolean {

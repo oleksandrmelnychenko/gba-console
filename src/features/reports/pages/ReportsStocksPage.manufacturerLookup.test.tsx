@@ -1,17 +1,36 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
-import type { ReportSelection } from '../types'
-import { chosenGoodsSuppliers, NO_GOODS_SUPPLIERS, SelectionValuePicker } from './ReportsStocksPage'
+import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
+import { previewStockReport } from '../api/reportsApi'
+import { defaultDatasetRequest } from '../data/reportDatasets'
+import { netDataset } from '../data/reportDatasets.test-fixtures'
+import { SALES_CONSTRUCTOR_WORKBOOK, salesConstructorRequest } from '../data/salesConstructorProfiles'
+import type { ReportDataset, ReportFilterNode, ReportSelection } from '../types'
+import { chosenGoodsSuppliers, NO_GOODS_SUPPLIERS, ReportsStocksPage, SelectionValuePicker } from './ReportsStocksPage'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
+vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
+vi.mock('../api/reportWorkspaceApi', async original => ({
+  ...await original<typeof import('../api/reportWorkspaceApi')>(), getReportDatasets: vi.fn(), getServerReportTemplates: vi.fn(),
+}))
+vi.mock('../api/reportsApi', async original => ({
+  ...await original<typeof import('../api/reportsApi')>(), previewStockReport: vi.fn(),
+}))
 const api = vi.mocked(apiRequest)
 const manufacturers = [{ Id: 4383, Name: 'MARSTECH' }, { Id: 4384, Name: 'AYFAR' }]
 const supplier: ReportSelection = { IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
   FilterCondition: { Type: 2, Name: 'У списку' }, Values: [{ Data: { Id: 635333 }, Name: 'ПЛА-ТАН', Value: 0 }, { Data: { Id: 631635 }, Name: 'ПЛА-ТАН', Value: 0 }] }
+const supplierRow = (condition: number, ...ids: number[]): ReportSelection => ({
+  ...supplier, FilterCondition: { Type: condition, Name: '' },
+  Values: ids.map(Id => ({ Data: { Id }, Name: String(Id), Value: 0 })),
+})
+const leaf = (SelectionIndex: number): ReportFilterNode => ({ Kind: 3, SelectionIndex })
+const group = (Kind: 1 | 2, ...Children: ReportFilterNode[]): ReportFilterNode => ({ Kind, Children })
+const expression = (Root: ReportFilterNode) => ({ Version: 1, Root })
 function Picker({ dataSource = 2, others = [] }: { dataSource?: number; others?: ReportSelection[] }) {
   const [selection, setSelection] = useState<ReportSelection>({ IsChecked: true,
     SelectedField: { Type: 75, Name: 'Виробник' }, FilterCondition: { Type: 2, Name: 'У списку' }, Values: [] })
@@ -62,9 +81,71 @@ it('loads every brand page instead of stopping at the first one', async () => {
 })
 
 it('narrows by every active supplier condition together', () => {
-  const rows = (type: number, ...ids: number[]): ReportSelection => ({ IsChecked: true, SelectedField: { Type: 17, Name: 'Постачальник' },
-    FilterCondition: { Type: type, Name: '' }, Values: ids.map(Id => ({ Data: { Id }, Name: String(Id), Value: 0 })) })
-  expect(chosenGoodsSuppliers([rows(2, 1, 2, 3), rows(2, 2, 3, 4), rows(4, 3)])).toEqual([2])
-  expect(chosenGoodsSuppliers([rows(2, 1), rows(2, 2)])).toBe(NO_GOODS_SUPPLIERS)
-  expect(chosenGoodsSuppliers([rows(4, 1)])).toEqual([])
+  expect(chosenGoodsSuppliers([supplierRow(2, 1, 2, 3), supplierRow(2, 2, 3, 4), supplierRow(4, 3)])).toEqual([2])
+  expect(chosenGoodsSuppliers([supplierRow(2, 1), supplierRow(2, 2)])).toBe(NO_GOODS_SUPPLIERS)
+  expect(chosenGoodsSuppliers([supplierRow(4, 1)])).toEqual([])
+})
+
+it('projects nested supplier logic with exclusions, unchecked rows and unrelated alternatives', () => {
+  const rows = [supplierRow(2, 1, 2), supplierRow(0, 3), supplierRow(1, 2),
+    { ...supplierRow(0, 4), IsChecked: false }, { ...supplierRow(0, 99), SelectedField: { Type: 0, Name: 'Організація' } }]
+  expect(chosenGoodsSuppliers(rows, expression(group(1, group(2, leaf(0), group(2, leaf(1), leaf(3))), leaf(2), leaf(4))))).toEqual([1, 2, 3])
+  expect(chosenGoodsSuppliers(rows, expression(group(2, group(1, leaf(0), leaf(2)), leaf(4))))).toEqual([])
+  expect(chosenGoodsSuppliers(rows, expression(group(1, group(2, leaf(0), leaf(4)), leaf(1))))).toEqual([3])
+  expect(chosenGoodsSuppliers(rows, expression(group(2, leaf(3))))).toEqual([])
+  expect(chosenGoodsSuppliers([rows[0], rows[1]], undefined, true)).toEqual([3])
+  expect(chosenGoodsSuppliers(rows, expression(group(2, leaf(0), leaf(2))))).toEqual([])
+})
+
+it('refreshes the manufacturer picker when the sales constructor switches supplier conditions to OR', async () => {
+  localStorage.clear()
+  sessionStorage.clear()
+  const dataset: ReportDataset = {
+    ...netDataset, reportProfiles: ['sales'],
+    Filters: [...netDataset.Filters, { Type: 17, Name: 'Постачальник товару' }, { Type: 75, Name: 'Виробник' }],
+    FilterExpression: { Version: 1, Operators: [1, 2], MaximumDepth: 8, MaximumLeaves: 64, MaximumNodes: 128 },
+  }
+  const data = salesConstructorRequest(defaultDatasetRequest(dataset, '2026-10-01', '2026-10-31'), SALES_CONSTRUCTOR_WORKBOOK, dataset)
+  const original = expression(group(1, group(1, leaf(0), leaf(1)), leaf(2)))
+  const after = expression(group(1, group(2, leaf(0), leaf(1)), leaf(2)))
+  const selectedManufacturer: ReportSelection = {
+    IsChecked: true, SelectedField: { Type: 75, Name: 'Виробник' },
+    FilterCondition: { Type: 0, Name: 'Дорівнює' },
+    Values: [{ Name: 'AYFAR', Data: { Id: 4384 }, Value: 0 }],
+  }
+  vi.mocked(getReportDatasets).mockResolvedValue([dataset])
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'Виробники двох постачальників',
+    Data: { ...data, selections: [supplierRow(0, 631635), supplierRow(0, 635333), selectedManufacturer], filterExpression: original } }])
+  vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
+    Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null,
+    Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false },
+    RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [],
+  } })
+  let completePrevious: ((value: unknown) => void) | undefined
+  let previousSignal: AbortSignal | undefined
+  api.mockImplementation(async (_path, options) => {
+    if (options?.query?.field !== 75) return []
+    if (options.query.supplierIds === '631635') {
+      previousSignal = options.signal ?? undefined
+      return new Promise(resolve => { completePrevious = resolve })
+    }
+    return manufacturers
+  })
+  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  fireEvent.click(await screen.findByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Виробники двох постачальників' }))
+  await waitFor(() => expect(previousSignal).toBeDefined())
+  fireEvent.click(screen.getByRole('combobox', { name: 'Оператор — Група 1' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'АБО — будь-яка умова' }))
+  await waitFor(() => expect(api).toHaveBeenCalledWith('/report/datasets/lookup', expect.objectContaining({
+    query: { dataSource: 2, field: 75, value: '', offset: 0, limit: 50, supplierIds: '631635,635333' },
+  })))
+  const filter = within(screen.getByRole('group', { name: 'Умова відбору 3' }))
+  fireEvent.click(filter.getByRole('combobox', { name: 'Значення' }))
+  expect(await screen.findByRole('option', { name: 'MARSTECH' })).toBeTruthy()
+  expect(previousSignal?.aborted).toBe(true)
+  await act(async () => completePrevious?.([{ Id: 5001, Name: 'Попередній відбір' }]))
+  expect(screen.queryByRole('option', { name: 'Попередній відбір' })).toBeNull()
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledWith(expect.objectContaining({ filterExpression: after }), dataset, expect.anything()))
 })
