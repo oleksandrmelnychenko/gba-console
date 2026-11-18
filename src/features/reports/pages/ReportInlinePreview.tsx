@@ -45,7 +45,7 @@ export const ReportInlinePreview = memo(function ReportInlinePreview({ preview, 
   const numberPresentation = effectiveConstructorNumberPresentation(preview.Request?.DataSource, previewReportProfile, preview.numberPresentation)
   const blanksZero = previewBlanksZero(preview.Request?.DataSource)
   const negativeRed = preview.constructorPresentation?.negativeRed ?? previewNegativeRed(preview.Request?.DataSource)
-  const valueClass = (value: NativeReportPreviewScalar | undefined) => value?.Kind === 'null' && value.Provenance === UNCONFIRMED_CURRENCY_PROVENANCE ? 'is-unknown' : isQuantityBreakdown(value)
+  const valueClass = (value: NativeReportPreviewScalar | undefined) => value?.Provenance === UNCONFIRMED_CURRENCY_PROVENANCE ? 'is-unknown' : isQuantityBreakdown(value)
     ? isSingleUnitQuantity(value!.Value!) ? (negativeRed && isNegativeSingleUnitQuantity(value!.Value!) ? 'is-negative' : undefined) : 'is-quantity-breakdown'
     : negativeRed && isNegativePreviewScalar(value) ? 'is-negative' : undefined
   const totals = preview.Totals

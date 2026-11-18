@@ -12,14 +12,15 @@ const view = (unconfirmed: boolean) => {
   wire.Request.DataSource = 'NativeSalesNet'
   if (unconfirmed) {
     wire.Cells[3].Value.Provenance = 'unconfirmedCurrency'
+    wire.Cells[0].Value.Provenance = 'unconfirmedCurrency'
     wire.Totals.Values[3].Value.Provenance = 'unconfirmedCurrency'
   }
   return render(<MantineProvider env="test"><I18nProvider><ReportInlinePreview preview={normalizeNativeReportPreview({ Preview: wire })} /></I18nProvider></MantineProvider>)
 }
-it('shades only the cells whose currency is not confirmed', () => {
+it('shades every cell left out of the totals for an unconfirmed currency, known values included', () => {
   const shaded = [...view(true).container.querySelectorAll('td.is-unknown')]
-  expect(shaded).toHaveLength(2)
-  expect(shaded.map(cell => cell.textContent)).toEqual(['—', '—'])
+  expect(shaded).toHaveLength(3)
+  expect(shaded.map(cell => cell.textContent)).toEqual(['8,125', '—', '—'])
 })
 it('leaves other undetermined cells unshaded', () => {
   expect(view(false).container.querySelector('td.is-unknown')).toBeNull()
