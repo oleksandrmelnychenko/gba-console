@@ -139,6 +139,11 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
    opening so the open animation can settle first. */
 const OUTSIDE_CLOSE_ARM_DELAY_MS = 350
 
+/* Open sheets in opening order. An Escape that does not come from inside a sheet (focus on the page
+   body after a click on plain text) belongs to the topmost one only: every open sheet used to close
+   on it, so one Escape closed «Обробка перепродажу» AND the «Новий перепродаж» page under it. */
+const openDrawerStack: object[] = []
+
 export function AppDrawer({
   position = 'right',
   size,
@@ -165,6 +170,23 @@ export function AppDrawer({
   const [rootNode, setRootNode] = useState<HTMLDivElement | null>(null)
   const closeOnEscape = props.closeOnEscape ?? true
   const { onClose, opened } = props
+  const [stackToken] = useState(() => ({}))
+
+  useEffect(() => {
+    if (!opened) {
+      return undefined
+    }
+
+    openDrawerStack.push(stackToken)
+
+    return () => {
+      const index = openDrawerStack.lastIndexOf(stackToken)
+
+      if (index >= 0) {
+        openDrawerStack.splice(index, 1)
+      }
+    }
+  }, [opened, stackToken])
 
   // Mantine closes every open modal layer on one Escape. A nested dialog (export, confirm, another
   // sheet) is portaled outside this drawer, so an Escape from inside that other dialog is not ours.
@@ -183,6 +205,17 @@ export function AppDrawer({
 
     if (rootNode && targetDialog && !rootNode.contains(targetDialog)) {
       return
+    }
+
+    if (!(rootNode && targetDialog)) {
+      if (openDrawerStack[openDrawerStack.length - 1] !== stackToken) {
+        return
+      }
+
+      // A modal open above the topmost sheet owns the Escape.
+      if (document.querySelector('.mantine-Modal-content')) {
+        return
+      }
     }
 
     onClose()

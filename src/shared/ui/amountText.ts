@@ -39,7 +39,7 @@ export function parseAmountText(text: string): ParsedAmount {
 
 export function getAmountError(
   parsed: ParsedAmount,
-  { decimalScale = 2, max, maxMessage, min = 0 }: { decimalScale?: number; max?: number; maxMessage?: string; min?: number },
+  { decimalScale = 2, max, maxMessage, min = 0, minMessage }: { decimalScale?: number; max?: number; maxMessage?: string; min?: number; minMessage?: string },
 ): string | null {
   if (parsed.isNegative) {
     return 'Від’ємне значення не допускається'
@@ -64,7 +64,7 @@ export function getAmountError(
   }
 
   if (parsed.value < min) {
-    return `Не менше ${formatAmountText(min)}`
+    return minMessage || `Не менше ${formatAmountText(min, decimalScale)}`
   }
 
   return null

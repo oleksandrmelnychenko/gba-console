@@ -1,11 +1,11 @@
 import { useBusyState } from '../../../shared/hooks/useBusyState'
+import { consignmentNoteSettingLabel } from '../../../shared/consignmentNoteSettingLabel'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { Alert, Box, Button, Group, Modal, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { CircleAlert, Truck } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -560,10 +560,10 @@ function buildConsignmentSettingOptions(settings: SaleConsignmentNoteSetting[]):
   return settings.reduce<Array<{ label: string; value: string }>>((options, setting) => {
     const value = getConsignmentSettingKey(setting)
 
-    if (value) {
-      const details = [setting.Number ? `№ ${setting.Number}` : '', setting.BrandAndNumberCar, setting.Driver, setting.LoadingPoint]
-        .filter(Boolean).join(', ')
-      options.push({ label: setting.Name || (details ? `${translate('Без назви')} (${details})` : translate('Без назви')), value })
+    const label = consignmentNoteSettingLabel(setting)
+
+    if (value && label) {
+      options.push({ label, value })
     }
 
     return options

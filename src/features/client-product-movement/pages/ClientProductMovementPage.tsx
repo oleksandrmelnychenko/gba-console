@@ -785,8 +785,8 @@ function toOrganizationSelectOptions(organizations: ClientProductMovementOrganiz
   const options: SelectOption[] = []
 
   for (const organization of organizations) {
-    if (typeof organization.Id === 'number' && organization.Name) {
-      options.push({ label: organization.Name || '', value: String(organization.Id) })
+    if (isNamedOrganization(organization)) {
+      options.push({ label: organization.Name.trim(), value: String(organization.Id) })
     }
   }
 
@@ -833,11 +833,19 @@ function toClientSelectOptions(clients: ClientProductMovementClientOption[]): Se
   return options
 }
 
+/* Only organizations the filter can show are selected by default: unnamed ones were counted in
+   «Вибрано: 13» while the list showed 5. */
+function isNamedOrganization(
+  organization: ClientProductMovementOrganizationOption,
+): organization is ClientProductMovementOrganizationOption & { Id: number; Name: string } {
+  return typeof organization.Id === 'number' && typeof organization.Name === 'string' && organization.Name.trim() !== ''
+}
+
 function getOrganizationIds(organizations: ClientProductMovementOrganizationOption[]): string[] {
   const ids: string[] = []
 
   for (const organization of organizations) {
-    if (typeof organization.Id === 'number') {
+    if (isNamedOrganization(organization)) {
       ids.push(String(organization.Id))
     }
   }

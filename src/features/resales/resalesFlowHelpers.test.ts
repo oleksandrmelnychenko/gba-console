@@ -5,6 +5,7 @@ import {
   canProcessAvailabilityRows,
   getDateRangeError,
   getProcessFromStorageId,
+  isAvailabilityFormInRange,
   mapAvailabilityToItemModel,
   rowsShareSingleStorage,
 } from './resalesFlowHelpers'
@@ -78,5 +79,17 @@ describe('resales flow helpers', () => {
     expect(getDateRangeError('2026-02-31', '2026-03-01')).toBe('Оберіть коректний діапазон дат')
     expect(getDateRangeError('2026-06-02T10:00', '2026-06-02T09:59')).toBe('Дата “Від” не може бути більшою за дату “До”')
     expect(getDateRangeError('2026-06-02T09:00', '2026-06-02T09:59')).toBeNull()
+  })
+})
+
+describe('resale availability settings range', () => {
+  it('does not let an out-of-range amount, error margin or markup reach the server', () => {
+    expect(isAvailabilityFormInRange({ amount: 0, extraChargePercent: 0, infelicity: 0 })).toBe(true)
+    expect(isAvailabilityFormInRange({ amount: 1_000_000_000, extraChargePercent: 1000, infelicity: 1_000_000_000 })).toBe(true)
+    expect(isAvailabilityFormInRange({ amount: 99_999_999_999, extraChargePercent: 0, infelicity: 0 })).toBe(false)
+    expect(isAvailabilityFormInRange({ amount: 10, extraChargePercent: 1001, infelicity: 0 })).toBe(false)
+    expect(isAvailabilityFormInRange({ amount: 10, extraChargePercent: 0, infelicity: 1_000_000_001 })).toBe(false)
+    expect(isAvailabilityFormInRange({ amount: Number.NaN, extraChargePercent: 0, infelicity: 0 })).toBe(false)
+    expect(isAvailabilityFormInRange({ amount: -1, extraChargePercent: 0, infelicity: 0 })).toBe(false)
   })
 })

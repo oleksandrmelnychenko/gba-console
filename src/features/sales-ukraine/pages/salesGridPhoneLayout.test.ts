@@ -14,4 +14,8 @@ describe('sales grid at phone width', () => {
   it('lets wrapped rows grow instead of being squeezed to the minimum height', () => {
     expect(phoneBlock).toMatch(/\.sales-ukraine-grid > \.sales-grid-row \{\s*flex-shrink: 0;/)
   })
+
+  it('lets the sticky document actions reach the scroll edge, so no column peeks out beside them', () => {
+    expect(phoneBlock).toMatch(/\.sales-ukraine-grid \{\s*padding-right: 0;/)
+  })
 })

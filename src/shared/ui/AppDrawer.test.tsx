@@ -49,6 +49,45 @@ describe('AppDrawer', () => {
     expect(closeDrawer).toHaveBeenCalledOnce()
   })
 
+  it('closes only the topmost sheet on an Escape from the page body', async () => {
+    const closeOuter = vi.fn()
+    const closeInner = vi.fn()
+    render(
+      <MantineProvider>
+        <AppDrawer opened title="Новий перепродаж" onClose={closeOuter}>
+          <div>Outer content</div>
+        </AppDrawer>
+        <AppDrawer opened title="Обробка перепродажу" onClose={closeInner}>
+          <div>Inner content</div>
+        </AppDrawer>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Inner content')
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+
+    expect(closeInner).toHaveBeenCalledOnce()
+    expect(closeOuter).not.toHaveBeenCalled()
+  })
+
+  it('leaves an Escape from the page body to a modal open above the sheet', async () => {
+    const closeDrawer = vi.fn()
+    render(
+      <MantineProvider>
+        <AppDrawer opened title="Обробка перепродажу" onClose={closeDrawer}>
+          <Modal opened title="Закрити без перерахунку?" onClose={vi.fn()}>
+            <div>Confirm body</div>
+          </Modal>
+        </AppDrawer>
+      </MantineProvider>,
+    )
+
+    await screen.findByText('Confirm body')
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+
+    expect(closeDrawer).not.toHaveBeenCalled()
+  })
+
   it('renders the shared header and pinned footer', async () => {
     render(
       <MantineProvider>

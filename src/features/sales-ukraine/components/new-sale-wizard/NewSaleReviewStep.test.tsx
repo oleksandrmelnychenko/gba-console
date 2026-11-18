@@ -299,6 +299,19 @@ describe('NewSaleReviewStep persistent file reconciliation', () => {
     expect(within(totals).getByText('30,00')).toBeTruthy()
   })
 
+  it('names the current commercial rate of a draft «Рахунок», whose lines carry rate 0', async () => {
+    const draftSale = {
+      ...sale,
+      ClientAgreement: { ...sale.ClientAgreement, Agreement: { Currency: { Code: 'UAH' } } },
+      Order: { OrderItems: [{ NetUid: 'line', ExchangeRateAmount: 0, Qty: 1, TotalAmount: 15.63, TotalAmountLocal: 799.9434,
+        Product: { NetUid: 'product', VendorCode: 'QA-FLT-001', Name: 'Фільтр', CurrentPrice: 15.63 } as WizardSaleProduct }] },
+    } as SalesUkraineSale
+    renderStep({ saleValue: draftSale })
+
+    expect((await screen.findByTestId('sale-commercial-rate')).textContent)
+      .toBe('Комерційний курс EUR → UAH: 51,18 (поточний, буде зафіксовано при переведенні в накладну)')
+  })
+
   it('blocks the final submit when the current wizard flow lacks permission', () => {
     renderStep({ canSubmit: false })
 

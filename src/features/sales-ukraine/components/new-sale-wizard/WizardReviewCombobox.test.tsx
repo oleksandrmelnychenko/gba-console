@@ -45,6 +45,22 @@ describe('WizardReviewCombobox', () => {
     expect((screen.getByRole('textbox', { name: 'Адреса' }) as HTMLInputElement).value).toBe('Київ, 1')
   })
 
+  it('shows an address stored as a single space as an empty field', () => {
+    render(
+      <MantineProvider>
+        <WizardReviewCombobox
+          draftValue=""
+          label="Адреса"
+          options={[{ entity: { id: 7 }, key: '7', label: ' ' }]}
+          selectedKey="7"
+          onSelect={() => undefined}
+        />
+      </MantineProvider>,
+    )
+
+    expect((screen.getByRole('textbox', { name: 'Адреса' }) as HTMLInputElement).value).toBe('')
+  })
+
   it('keeps a controlled free-text draft visible after blur', () => {
     const onFreeText = vi.fn()
 

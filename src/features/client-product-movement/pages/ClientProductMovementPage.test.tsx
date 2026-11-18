@@ -147,6 +147,28 @@ describe('ClientProductMovementPage', () => {
     expect(within(items).getByTestId('client-product-movement-items-2080189:euroAmount').textContent).toBe('Сума EUR18,65EUR')
   })
 
+  it('selects by default only the organizations the filter shows (unnamed ones are not counted)', async () => {
+    mocks.getClientProductMovementOrganizations.mockResolvedValue([
+      { Id: 1, Name: 'QA ТОВ Тест Україна' },
+      { Id: 2, Name: '' },
+      { Id: 3, Name: '  ' },
+      { Id: 4 },
+      { Id: 5, Name: 'Фенікс' },
+    ])
+
+    render(
+      <MantineProvider>
+        <ClientProductMovementPage />
+      </MantineProvider>,
+    )
+
+    expect(await screen.findByText('Вибрано: 2')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Клієнт'), { target: { value: 'client-1' } })
+
+    expect(await screen.findByText('КНо00001249')).toBeTruthy()
+    expect(mocks.getClientProductMovements).toHaveBeenLastCalledWith(expect.objectContaining({ organizationId: ['1', '5'] }))
+  })
+
   it('leaves the document-currency cells empty when the server has no rate for them', async () => {
     mocks.getClientProductMovements.mockResolvedValueOnce([
       {

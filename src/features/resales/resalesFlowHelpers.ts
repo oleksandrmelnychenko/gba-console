@@ -1,5 +1,6 @@
 import { toDateTimeQuery } from '../../shared/date/dateTime'
 import { translate } from '../../shared/i18n/translate'
+import { RESALE_MAX_EXTRA_CHARGE_PERCENT, RESALE_MAX_INVOICE_AMOUNT } from './resaleInputLimits'
 import type {
   CreatedResaleAvailabilityWithTotals,
   GroupingResaleAvailability,
@@ -19,6 +20,16 @@ export type ResaleAvailabilityForm = {
   specificationCodes: string[]
   storageIds: string[]
   to: string
+}
+
+/** True when the selection settings are within the server limits; the availability list is not requested
+    otherwise (99999999999 in «Сума для рахунку» used to be posted while the field showed its limit). */
+export function isAvailabilityFormInRange(form: Pick<ResaleAvailabilityForm, 'amount' | 'extraChargePercent' | 'infelicity'>): boolean {
+  const inRange = (value: number, max: number) => Number.isFinite(value) && value >= 0 && value <= max
+
+  return inRange(form.amount, RESALE_MAX_INVOICE_AMOUNT)
+    && inRange(form.infelicity, RESALE_MAX_INVOICE_AMOUNT)
+    && inRange(form.extraChargePercent, RESALE_MAX_EXTRA_CHARGE_PERCENT)
 }
 
 export function buildResalesDateQuery(from: string, to: string): { from: string; to: string } {

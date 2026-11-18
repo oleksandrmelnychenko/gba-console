@@ -248,7 +248,7 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
     (item, index) => ({
       entity: item,
       key: item.Id != null ? String(item.Id) : `address-${index}`,
-      label: item.Value ?? '',
+      label: (item.Value ?? '').trim(),
     }),
   ), [recipientAddresses])
   const addressKey = value.address?.Id != null ? String(value.address.Id) : null
@@ -283,7 +283,7 @@ export function useWizardDeliveryDetails({ clientNetId, sale, value, onChange, s
   }
 
   function clearAddress() {
-    const empty = recipientAddresses.find((item) => item.Value === '')
+    const empty = recipientAddresses.find((item) => (item.Value ?? '').trim() === '')
     const patch: Partial<NewSaleReviewValue> = {}
     applyAddressSelection(patch, empty ?? null)
     onChange(patch)

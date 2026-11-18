@@ -21,7 +21,8 @@ export function useWizardReviewCombobox<T>(props: WizardReviewComboboxOptions<T>
   const search = draft.scope === scope ? draft.search : null
   if (draft.scope !== scope) setDraft({ scope, search: null })
   const searchRef = useRef<string | null>(null)
-  const selectedLabel = useMemo(() => options.find((option) => option.key === selectedKey)?.label ?? '', [options, selectedKey])
+  // A whitespace-only stored value (an address saved as " ") shows as an empty field, not a pre-filled space.
+  const selectedLabel = useMemo(() => options.find((option) => option.key === selectedKey)?.label.trim() ?? '', [options, selectedKey])
   const latestRef = useRef({ ...props, scope, selectedLabel, combobox })
   useLayoutEffect(() => { latestRef.current = { ...props, scope, selectedLabel, combobox } })
   useLayoutEffect(() => {

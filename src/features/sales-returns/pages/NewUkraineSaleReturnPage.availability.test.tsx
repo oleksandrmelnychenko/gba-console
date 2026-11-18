@@ -25,11 +25,13 @@ vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
 const apiMock = vi.mocked(apiRequest)
 let childReady: boolean | undefined
 let childSale: { IsAcceptedToPacking?: boolean; IsImported?: boolean; IsVatSale?: boolean }
+let childAgreementActive: boolean | undefined
 
 beforeEach(() => {
   vi.clearAllMocks()
   childReady = false
   childSale = {}
+  childAgreementActive = undefined
   apiMock.mockImplementation(async (path) => {
     if (path === '/sales/all/returns/search') return [
       ['1176741e-9e17-45fb-9ac9-7ac61c1111d5', 'КНо00002560', 'aa43cf38-f8c1-4b9d-807e-cfe8cff78b3e', true],
@@ -40,7 +42,11 @@ beforeEach(() => {
       SaleNumber: { Value: number },
       ClientAgreement: {
         Client: { NetUid: 'b14c6692-be12-445b-8964-b554b8a808a8', FullName: 'МЕЛЬНИК ЮРІЙ ВІТАЛІЙОВИЧ' },
-        Agreement: { Organization: { NetUid: 'adaef157-991d-418a-a205-786d2358c830' }, Currency: { Code: 'UAH' } },
+        Agreement: {
+          Organization: { NetUid: 'adaef157-991d-418a-a205-786d2358c830' },
+          Currency: { Code: 'UAH' },
+          ...(number === 'КНо00002561' && childAgreementActive !== undefined ? { IsActive: childAgreementActive } : {}),
+        },
       },
       Order: { OrderItems: [{
         NetUid: itemNetUid,
@@ -124,6 +130,20 @@ it.each([
   fireEvent.mouseEnter(status)
   expect(await screen.findByText(hint)).toBeTruthy()
   expect((results.getAllByText('Додати', { exact: true }).map((item) => item.closest('button')!)[1] as HTMLButtonElement).disabled).toBe(true)
+})
+
+it('does not offer a posted sale on an inactive agreement for a new return', async () => {
+  childReady = true
+  childAgreementActive = false
+  const results = await search()
+  const status = results.getByText('Договір неактивний')
+  const buttons = results.getAllByText('Додати', { exact: true }).map((label) => label.closest('button')!)
+  expect(buttons.map((button) => (button as HTMLButtonElement).disabled)).toEqual([false, true])
+  expect(results.getAllByRole('checkbox', { hidden: true }).map((box) => (box as HTMLInputElement).disabled)).toEqual([false, true])
+  fireEvent.click(buttons[1])
+  expect(screen.queryByText('Позиція повернення')).toBeNull()
+  fireEvent.mouseEnter(status)
+  expect(await screen.findByText(/Договір неактивний — операції за ним заборонені./)).toBeTruthy()
 })
 
 it('hides «Створити» without sales.ukraine.sale_return.create_any', () => {

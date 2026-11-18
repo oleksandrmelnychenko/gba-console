@@ -98,6 +98,8 @@ export type OffersProduct = OfferEntity & {
 }
 
 export type OffersNewLine = {
+  /** Stock for the agreement when the line was added; above it the form warns (the server may still allow it). */
+  availableQty?: number
   comment: string
   key: string
   product: OffersProduct

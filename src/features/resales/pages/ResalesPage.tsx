@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { consignmentNoteSettingLabel } from '../../../shared/consignmentNoteSettingLabel'
 import { useDebouncedValue } from '@mantine/hooks'
 import { AmountInput } from '../../../shared/ui/AmountInput'
 import { RESALE_MAX_EXTRA_CHARGE_PERCENT, RESALE_MAX_INVOICE_AMOUNT, RESALE_MIN_SALE_PRICE, resaleQtyLimits } from '../resaleInputLimits'
@@ -99,6 +100,7 @@ import {
   canProcessAvailabilityRows,
   getDateRangeError,
   getProcessFromStorageId,
+  isAvailabilityFormInRange,
   mapAvailabilityToItemModel,
   readAvailabilityStorageId,
   rowsShareSingleStorage,
@@ -209,6 +211,9 @@ type ProcessDrawerState = {
   client: ResaleClient | null
   clientAgreement: ResaleClientAgreement | null
   comment: string
+  /** Lines changed since the drawer opened. Unlike isDirty, a recalculation does not clear it: the
+      changes are still not saved until the resale is created. */
+  hasEdits: boolean
   isDirty: boolean
   rows: ResaleAvailabilityItemModel[]
   warning: ResaleBackendWarning | null
@@ -625,6 +630,7 @@ function NewResalePageContent({
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [processConfirmOpened, setProcessConfirmOpened] = useValueState(false)
+  const [leaveConfirmOpened, setLeaveConfirmOpened] = useValueState(false)
   const [processState, setProcessState] = useValueState<ProcessState>({
     data: null,
     fromStorageId: undefined,
@@ -639,8 +645,15 @@ function NewResalePageContent({
   const generateStorageOptions = useMemo(() => buildGenerateStorageOptions(filterOptions?.Storages || []), [filterOptions?.Storages])
   const dateRangeError = useMemo(() => getDateRangeError(form.from, form.to), [form.from, form.to])
   const payload = useMemo(
-    () => (dateRangeError ? null : buildAvailabilityPayload(form)),
+    () => (dateRangeError || !isAvailabilityFormInRange(form) ? null : buildAvailabilityPayload(form)),
     [dateRangeError, form],
+  )
+  // The list is reloaded once typing pauses, not on every keystroke of «Сума для рахунку» / «Пошук товару».
+  const payloadKey = payload ? JSON.stringify(payload) : null
+  const [debouncedPayloadKey] = useDebouncedValue(payloadKey, RESALE_AVAILABILITY_RELOAD_DEBOUNCE_MS)
+  const debouncedPayload = useMemo<ResaleAvailabilityFilterPayload | null>(
+    () => (debouncedPayloadKey ? JSON.parse(debouncedPayloadKey) as ResaleAvailabilityFilterPayload : null),
+    [debouncedPayloadKey],
   )
   const selectedRows = useMemo(
     () => availabilities.filter((availability) => selectedKeys.includes(getAvailabilityKey(availability))),
@@ -752,20 +765,20 @@ function NewResalePageContent({
       return
     }
 
-    if (!payload) {
+    if (!debouncedPayload) {
       setAvailabilities([])
       setTotals(getEmptyAvailabilityTotals())
       setSelectedKeys([])
       return
     }
 
-    void loadAvailabilities(payload)
-  }, [filterOptions, loadAvailabilities, payload, setAvailabilities, setSelectedKeys, setTotals])
+    void loadAvailabilities(debouncedPayload)
+  }, [debouncedPayload, filterOptions, loadAvailabilities, setAvailabilities, setSelectedKeys, setTotals])
   const handleRealtimeAvailabilityUpdate = useCallback(() => {
-    if (filterOptions && payload) {
-      void loadAvailabilities(payload)
+    if (filterOptions && debouncedPayload) {
+      void loadAvailabilities(debouncedPayload)
     }
-  }, [filterOptions, loadAvailabilities, payload])
+  }, [debouncedPayload, filterOptions, loadAvailabilities])
 
   useRealtimeEvent(realtimeEvents.resaleAvailabilitiesUpdated, handleRealtimeAvailabilityUpdate)
 
@@ -981,9 +994,25 @@ function NewResalePageContent({
       return
     }
 
+    setLeaveConfirmOpened(false)
     navigate(returnPath, { replace: true })
   }
 
+  // The picked rows exist only on this page: closing it with a selection asks first.
+  function requestCloseSheet() {
+    if (isProcessing) {
+      return
+    }
+
+    if (selectedKeys.length > 0) {
+      setLeaveConfirmOpened(true)
+      return
+    }
+
+    closeSheet()
+  }
+
+  // A whole page: Escape never closes it (one Escape used to drop the selection and the edited prices).
   return (
     <AppDrawer
       className="resales-new-drawer"
@@ -991,6 +1020,7 @@ function NewResalePageContent({
       position="right"
       size="min(1440px, 100vw)"
       title={t('Новий перепродаж')}
+      closeOnEscape={false}
       footer={
         <div className="resales-new-summary">
           <div className="resales-new-summary-selection">
@@ -1005,8 +1035,20 @@ function NewResalePageContent({
           </div>
         </div>
       }
-      onClose={closeSheet}
+      onClose={requestCloseSheet}
     >
+      <AppModal
+        centered
+        opened={leaveConfirmOpened}
+        title={t('Закрити без збереження?')}
+        onClose={() => setLeaveConfirmOpened(false)}
+      >
+        <Text size="sm">{t('Вибрані товари і налаштування підбору не збережено. Закрити сторінку?')}</Text>
+        <AppModalFooter>
+          <Button color="gray" variant="default" onClick={() => setLeaveConfirmOpened(false)}>{t('Повернутися')}</Button>
+          <Button color="red" onClick={closeSheet}>{t('Закрити')}</Button>
+        </AppModalFooter>
+      </AppModal>
       <Stack className="resales-new-sheet" gap={10}>
         <Card className="resales-new-filter-card" withBorder radius="md" padding={10}>
           <Stack gap={8}>
@@ -1016,6 +1058,7 @@ function NewResalePageContent({
                 className="resales-new-control is-number"
                 label={t('Сума для рахунку')}
                 max={RESALE_MAX_INVOICE_AMOUNT}
+                rejectNonNumeric
                 value={form.amount}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, amount: value }))}
               />
@@ -1023,6 +1066,7 @@ function NewResalePageContent({
                 className="resales-new-control is-number"
                 label={`${t('Похибка')} +/-`}
                 max={RESALE_MAX_INVOICE_AMOUNT}
+                rejectNonNumeric
                 value={form.infelicity}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, infelicity: value }))}
               />
@@ -1030,6 +1074,7 @@ function NewResalePageContent({
                 className="resales-new-control is-number"
                 label={t('Націнка, %')}
                 max={RESALE_MAX_EXTRA_CHARGE_PERCENT}
+                rejectNonNumeric
                 value={form.extraChargePercent}
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, extraChargePercent: value }))}
               />
@@ -3007,6 +3052,7 @@ export function ResaleProcessDrawer({
 
     setProcessForm((currentForm) => ({
       ...currentForm,
+      hasEdits: true,
       isDirty: true,
       rows: currentForm.rows.map((row, rowIndex) =>
         rowIndex === index ? applyResaleItemPatch(row, patch) : row,
@@ -3114,8 +3160,9 @@ export function ResaleProcessDrawer({
   }
 
   function requestCloseProcessDrawer() {
-    // Edited quantities/prices are not saved anywhere else: ask before dropping them.
-    if (processForm.isDirty) {
+    // Edited quantities/prices, the chosen client and the comment are not saved anywhere else until the
+    // resale is created: ask before dropping them (also after a recalculation cleared isDirty).
+    if (processDrawerHasUnsavedInput(processForm)) {
       setDiscardConfirmOpened(true)
       return
     }
@@ -3151,10 +3198,14 @@ export function ResaleProcessDrawer({
       <AppModal
         centered
         opened={discardConfirmOpened}
-        title={t('Закрити без перерахунку?')}
+        title={processForm.isDirty ? t('Закрити без перерахунку?') : t('Закрити без збереження?')}
         onClose={() => setDiscardConfirmOpened(false)}
       >
-        <Text size="sm">{t('Змінені кількості та ціни не перераховано і не збережено. Закрити й відкинути зміни?')}</Text>
+        <Text size="sm">
+          {processForm.isDirty
+            ? t('Змінені кількості та ціни не перераховано і не збережено. Закрити й відкинути зміни?')
+            : t('Перепродаж ще не створено: змінені кількості, ціни, клієнт і коментар не збережені. Закрити й відкинути зміни?')}
+        </Text>
         <AppModalFooter>
           <Button color="gray" variant="default" onClick={() => setDiscardConfirmOpened(false)}>{t('Повернутися')}</Button>
           <Button color="red" onClick={closeProcessDrawer}>{t('Закрити без змін')}</Button>
@@ -3924,12 +3975,17 @@ function getAvailabilityProductNetId(row: GroupingResaleAvailability): string | 
   return row.ConsignmentItems?.find((item) => item.Product?.NetUid)?.Product?.NetUid || null
 }
 
+function processDrawerHasUnsavedInput(form: ProcessDrawerState): boolean {
+  return form.isDirty || form.hasEdits || Boolean(form.client) || form.comment.trim() !== ''
+}
+
 function createProcessDrawerState(processData: CreatedResaleAvailabilityWithTotals | null): ProcessDrawerState {
   return {
     activeProcessData: processData,
     client: null,
     clientAgreement: null,
     comment: '',
+    hasEdits: false,
     isDirty: false,
     rows: processData?.ReSaleAvailabilityItemModels || [],
     warning: null,
@@ -4274,12 +4330,10 @@ function restoreTemplateField(
 function buildConsignmentSettingOptions(settings: ResaleConsignmentNoteSetting[]): { label: string; value: string }[] {
   return settings.reduce<Array<{ label: string; value: string }>>((options, setting) => {
     const value = getConsignmentSettingKey(setting)
+    const label = consignmentNoteSettingLabel(setting)
 
-    if (value) {
-      options.push({
-        label: setting.Name || translate('Без назви'),
-        value,
-      })
+    if (value && label) {
+      options.push({ label, value })
     }
 
     return options
@@ -4481,6 +4535,7 @@ function displayValue(value?: string | number | null): string {
 }
 
 const RESALE_CLIENT_SEARCH_DEBOUNCE_MS = 300
+const RESALE_AVAILABILITY_RELOAD_DEBOUNCE_MS = 400
 
 function toNumber(value: number | string): number {
   const parsedValue = typeof value === 'number' ? value : Number(value)

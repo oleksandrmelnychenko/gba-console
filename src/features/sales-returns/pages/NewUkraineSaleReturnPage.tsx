@@ -1,4 +1,5 @@
 import { useSingleFlight } from '../../../shared/hooks/useSingleFlight'
+import { INACTIVE_AGREEMENT_MESSAGE, isAgreementOpenForNewOperations } from '../../../shared/agreementOperationPolicy'
 import { useBusyState } from '../../../shared/hooks/useBusyState'
 import { getOrganizationDisplayName } from '../../../shared/organizations/organizationDisplayName'
 import { TableChip } from '../../../shared/ui/TableChip'
@@ -562,7 +563,7 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function openEditor(row: SaleItemRow) {
-    if (row.item.HasCompleteReturnMovement !== true) return
+    if (!isSaleItemRowReturnable(row)) return
 
     editorRequestIdRef.current += 1
     storageRequestIdRef.current += 1
@@ -1439,7 +1440,20 @@ function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
   return user?.FullName?.trim() || [user?.LastName, user?.Name].filter(Boolean).join(' ').trim()
 }
 
+/* Owner decision: no new return on an inactive agreement (the server refuses it with
+   «Договір неактивний — операції за ним заборонені.» only after the whole form is filled). */
+function isSaleItemRowReturnable(row: SaleItemRow): boolean {
+  return row.item.HasCompleteReturnMovement === true && isAgreementOpenForNewOperations(row.sale.ClientAgreement)
+}
+
 function getReturnUnavailableReason(row: SaleItemRow): { label: string; hint: string } {
+  if (!isAgreementOpenForNewOperations(row.sale.ClientAgreement)) {
+    return {
+      label: 'Договір неактивний',
+      hint: `${INACTIVE_AGREEMENT_MESSAGE} Повернення за цією накладною недоступне, поки договір не активують.`,
+    }
+  }
+
   if (row.item.HasCompleteReturnMovement !== false) {
     return {
       label: 'Складську готовність не підтверджено',
@@ -1495,7 +1509,7 @@ function useSaleItemColumns({
           return (
             <Checkbox
               aria-label={t('Обрати позицію')}
-              disabled={row.item.HasCompleteReturnMovement !== true}
+              disabled={!isSaleItemRowReturnable(row)}
               checked={Boolean(draft)}
               onChange={() => (draft ? onRemove(row) : onEdit(row))}
             />
@@ -1620,7 +1634,7 @@ function useSaleItemColumns({
         cell: (row) => {
           const draft = drafts.find((item) => getOrderItemKey(item.orderItem) === getOrderItemKey(row.item))
 
-          if (row.item.HasCompleteReturnMovement !== true) {
+          if (!isSaleItemRowReturnable(row)) {
             const reason = getReturnUnavailableReason(row)
             const remainingQty = (row.item.Qty || 0) - (row.item.ReturnedQty || 0)
 
@@ -1652,7 +1666,7 @@ function useSaleItemColumns({
           const isAdded = drafts.some((draft) => getOrderItemKey(draft.orderItem) === getOrderItemKey(row.item))
 
           return (
-            <Button disabled={row.item.HasCompleteReturnMovement !== true} color="brand" size="xs" variant={isAdded ? 'default' : 'filled'} onClick={() => onEdit(row)}>
+            <Button disabled={!isSaleItemRowReturnable(row)} color="brand" size="xs" variant={isAdded ? 'default' : 'filled'} onClick={() => onEdit(row)}>
               {isAdded ? t('Змінити') : t('Додати')}
             </Button>
           )

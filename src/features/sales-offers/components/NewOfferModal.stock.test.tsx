@@ -195,6 +195,32 @@ describe('BUG-1485 offer product addition', () => {
     expect(apiMock).not.toHaveBeenCalledWith('/sales/offers/new', expect.anything())
   })
 
+  it('warns when the quantity is above the agreement stock but still creates the offer (owner rule)', async () => {
+    const [option] = await searchProducts('02235030FSS')
+    fireEvent.click(option)
+    const table = await screen.findByRole('table')
+    fireEvent.change(within(table).getByRole('textbox', { name: /^Кількість/ }), { target: { value: '500' } })
+
+    expect(within(table).getByText(/Більше, ніж є на складі/).textContent).toBe('Більше, ніж є на складі: 2')
+    fireEvent.click(screen.getByRole('button', { name: 'Створити' }))
+
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/sales/offers/new', expect.anything()))
+    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({
+      color: 'orange', message: 'Кількість більша за наявність на складі: 02235030FSS',
+    }))
+  })
+
+  it('explains a zero quantity as «Більше 0», not «Не менше 0»', async () => {
+    const [option] = await searchProducts('02235030FSS')
+    fireEvent.click(option)
+    const table = await screen.findByRole('table')
+    fireEvent.change(within(table).getByRole('textbox', { name: /^Кількість/ }), { target: { value: '0' } })
+
+    expect(within(table).getByText('Більше 0')).toBeTruthy()
+    expect(within(table).queryByText(/Не менше/)).toBeNull()
+    expect(within(table).queryByText(/Більше, ніж є на складі/)).toBeNull()
+  })
+
   it('adds eligible resale stock for a non-VAT agreement and does not duplicate the line', async () => {
     withVatAccounting = false
     availability = { AvailableQtyUk: 0, AvailableQtyUkVAT: 0, AvailableQtyUkReSale: 2 }

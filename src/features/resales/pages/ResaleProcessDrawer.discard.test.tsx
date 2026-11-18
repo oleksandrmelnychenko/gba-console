@@ -39,3 +39,36 @@ describe('Обробка перепродажу', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce())
   })
 })
+
+describe('Обробка перепродажу after the automatic recalculation', () => {
+  beforeAll(() => {
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { addEventListener: vi.fn(), removeEventListener: vi.fn() } })
+  })
+
+  it('still asks before Escape drops edited prices once the recalculation has succeeded', async () => {
+    const onClose = vi.fn()
+    const recalculated = {
+      ReSaleAvailabilityItemModels: [{ ...processData.ReSaleAvailabilityItemModels[0], SalePrice: 700, Amount: 700 }],
+    } as unknown as CreatedResaleAvailabilityWithTotals
+    const onRecalculate = vi.fn(async () => ({ data: recalculated }))
+    render(
+      <MantineProvider env="test"><I18nProvider>
+        <ResaleProcessDrawer canOpenProductDetails={false} isSaving={false} opened processData={processData}
+          productNetIdByProductId={new Map()} onClose={onClose} onCreate={vi.fn()} onRecalculate={onRecalculate} />
+      </I18nProvider></MantineProvider>,
+    )
+
+    const price = await screen.findByLabelText('Ціна продажу · QA-BRK-003')
+    fireEvent.change(price, { target: { value: '700' } })
+    await waitFor(() => expect(onRecalculate).toHaveBeenCalledOnce(), { timeout: 2000 })
+    await waitFor(() => expect(screen.queryByText('Перерахуйте позиції перед створенням')).toBeNull())
+
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(await screen.findByText('Закрити без збереження?')).toBeTruthy()
+    expect(onClose).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Повернутися' }))
+    await waitFor(() => expect(screen.queryByText('Закрити без збереження?')).toBeNull())
+    expect(onClose).not.toHaveBeenCalled()
+  })
+})

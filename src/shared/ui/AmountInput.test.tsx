@@ -145,3 +145,65 @@ describe('parseAmountText', () => {
     expect(parseAmountText('1.234,56').isInvalid).toBe(true)
   })
 })
+
+describe('AmountInput rejectNonNumeric / minMessage', () => {
+  function Field({ onChange }: { onChange: (value: number) => void }) {
+    const [amount, setAmount] = useState(0)
+
+    return (
+      <AmountInput
+        label="Сума для рахунку"
+        max={1_000_000_000}
+        rejectNonNumeric
+        value={amount}
+        onChange={(value) => {
+          setAmount(value)
+          onChange(value)
+        }}
+      />
+    )
+  }
+
+  it('keeps letters, a minus and a second separator out of the field', async () => {
+    const user = userEvent.setup()
+    const changes: number[] = []
+    render(<MantineProvider><Field onChange={(value) => changes.push(value)} /></MantineProvider>)
+    const input = screen.getByRole('textbox', { name: 'Сума для рахунку' }) as HTMLInputElement
+
+    await user.type(input, 'abc')
+    expect(input.value).toBe('')
+    expect(changes).toEqual([])
+
+    await user.type(input, '-12,5,0x')
+    expect(input.value).toBe('12,50')
+    expect(changes.at(-1)).toBe(12.5)
+
+    fireEvent.change(input, { target: { value: 'abc' } })
+    expect(input.value).toBe('12,50')
+  })
+
+  it('shows the over-limit value with its message and emits it, so the page can refuse to send it', async () => {
+    const user = userEvent.setup()
+    const changes: number[] = []
+    render(<MantineProvider><Field onChange={(value) => changes.push(value)} /></MantineProvider>)
+    const input = screen.getByRole('textbox', { name: 'Сума для рахунку' }) as HTMLInputElement
+
+    await user.type(input, '99999999999')
+    expect(screen.getByText('Не більше 1000000000')).toBeTruthy()
+    expect(changes.at(-1)).toBe(99999999999)
+  })
+
+  it('uses minMessage, and the field precision in the default lower-bound message', () => {
+    render(
+      <MantineProvider>
+        <AmountInput label="Кількість" decimalScale={3} min={0.001} minMessage="Більше 0" value={0} onChange={() => {}} />
+        <AmountInput label="Кількість 2" decimalScale={3} min={0.001} value={0} onChange={() => {}} />
+      </MantineProvider>,
+    )
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Кількість' }), { target: { value: '0' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Кількість 2' }), { target: { value: '0' } })
+    expect(screen.getByText('Більше 0')).toBeTruthy()
+    expect(screen.getByText('Не менше 0,001')).toBeTruthy()
+  })
+})

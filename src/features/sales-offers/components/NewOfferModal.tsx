@@ -338,7 +338,7 @@ function NewOfferForm({
         return current
       }
 
-      return [...current, { comment: '', key: netUid, product, qty: 1 }]
+      return [...current, { availableQty: availableQtyUk, comment: '', key: netUid, product, qty: 1 }]
     })
     setProductQuery('')
   }
@@ -375,6 +375,16 @@ function NewOfferForm({
 
     if (!tryStartCreating()) {
       return
+    }
+
+    // Owner rule: a quantity above stock is allowed, but the user is told before the offer goes out.
+    const aboveStock = lines.filter(isAboveOfferStock)
+
+    if (aboveStock.length > 0) {
+      notifications.show({
+        color: 'orange',
+        message: `${t('Кількість більша за наявність на складі')}: ${aboveStock.map((line) => line.product.VendorCode || line.product.Name || '').join(', ')}`,
+      })
     }
 
     const offer: ClientShoppingCart = {
@@ -523,9 +533,15 @@ function NewOfferForm({
                     max={OFFER_MAX_QTY}
                     maxMessage={t('Не більше 10 000')}
                     min={OFFER_MIN_QTY}
+                    minMessage={t('Більше 0')}
                     value={line.qty}
                     onChange={(value) => updateLineQty(line.key, value)}
                   />
+                  {isAboveOfferStock(line) && (
+                    <Text c="orange.8" className="offers-modal-stock-warning" size="xs">
+                      {t('Більше, ніж є на складі')}: {formatOfferQty(line.availableQty as number)}
+                    </Text>
+                  )}
                 </Table.Td>
                 <Table.Td>
                   <TextInput
@@ -616,4 +632,12 @@ function getProductLabel(product: OffersProduct): string {
     || product.NetUid
     || ''
   )
+}
+
+function isAboveOfferStock(line: OffersNewLine): boolean {
+  return typeof line.availableQty === 'number' && Number.isFinite(line.availableQty) && line.qty > line.availableQty
+}
+
+function formatOfferQty(value: number): string {
+  return value.toLocaleString('uk-UA', { maximumFractionDigits: 3 })
 }

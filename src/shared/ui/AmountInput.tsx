@@ -19,8 +19,17 @@ export interface AmountInputProps extends Omit<TextInputProps, 'value' | 'defaul
   min?: number
   /** Overrides the built-in bound message. */
   maxMessage?: string
+  /** Overrides the built-in lower-bound message (e.g. «Більше 0» for a quantity that must be positive). */
+  minMessage?: string
+  /**
+   * Ignore keystrokes / pastes that would make the text something other than a non-negative number
+   * (letters, a minus, a second separator). For fields that trigger a request on every change.
+   */
+  rejectNonNumeric?: boolean
   error?: string | null
 }
+
+const NON_NEGATIVE_NUMBER_TEXT = /^[\d\s]*[.,]?\d*$/
 
 /**
  * Money / percent field for the cash-order forms.
@@ -36,6 +45,8 @@ export function AmountInput({
   max,
   maxMessage,
   min = 0,
+  minMessage,
+  rejectNonNumeric = false,
   value,
   onBlur,
   onChange,
@@ -56,7 +67,7 @@ export function AmountInput({
   }
 
   const parsed = parseAmountText(text)
-  const validationError = getAmountError(parsed, { decimalScale, max, maxMessage, min })
+  const validationError = getAmountError(parsed, { decimalScale, max, maxMessage, min, minMessage })
   const shownError = validationError || error || null
 
   useEffect(() => {
@@ -65,6 +76,11 @@ export function AmountInput({
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const nextText = event.currentTarget.value
+
+    if (rejectNonNumeric && !NON_NEGATIVE_NUMBER_TEXT.test(nextText)) {
+      return
+    }
+
     const next = parseAmountText(nextText)
 
     setText(nextText)
@@ -82,7 +98,7 @@ export function AmountInput({
       onBlur={(event) => {
         const next = parseAmountText(text)
 
-        if (next.value !== null && !getAmountError(next, { decimalScale, max, maxMessage, min })) {
+        if (next.value !== null && !getAmountError(next, { decimalScale, max, maxMessage, min, minMessage })) {
           setText(formatAmountText(next.value, decimalScale))
         }
 

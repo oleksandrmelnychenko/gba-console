@@ -17,7 +17,13 @@ import { SALE_COMMENT_MAX_LENGTH, SALE_OWN_TTN_MAX_LENGTH, useWizardSaleSubmissi
 import './wizard-review-checkout.css'
 import { useWizardReviewKeyboard } from './useWizardReviewKeyboard'
 import { toSameOriginDataUrl } from '../../../../shared/url/sameOriginDataUrl'
-import { COMMERCIAL_RATE_LABEL, formatCommercialRate, getSaleCommercialRate } from '../../../../shared/money/exchangeRateLabels'
+import {
+  COMMERCIAL_RATE_LABEL,
+  DRAFT_RATE_NOTE,
+  formatCommercialRate,
+  getSaleCommercialRate,
+  getSaleDraftCommercialRate,
+} from '../../../../shared/money/exchangeRateLabels'
 
 const LOCAL_ORDER_SOURCE = 1
 const reviewFieldClassNames = {
@@ -74,6 +80,8 @@ export function NewSaleReviewStep({
   const { t } = useI18n()
   // Owner decision: the user sees which rate the sale was priced at (commercial, EUR -> agreement currency).
   const saleRate = getSaleCommercialRate(sale)
+  // A draft «Рахунок» has no frozen rate yet: show the current one it is priced at, marked as such.
+  const draftRate = saleRate ? null : getSaleDraftCommercialRate(sale)
   const needsDocumentWarehouse = sale?.Order?.OrderSource !== LOCAL_ORDER_SOURCE
   const [discardConfirmOpened, setDiscardConfirmOpened] = useState(false)
   const {
@@ -333,6 +341,10 @@ export function NewSaleReviewStep({
                 {saleRate ? (
                   <Text className="new-sale-review-rate" size="sm" c="dimmed" data-testid="sale-commercial-rate">
                     {t(COMMERCIAL_RATE_LABEL)} {saleRate.pair}: {formatCommercialRate(saleRate.rate)}
+                  </Text>
+                ) : draftRate ? (
+                  <Text className="new-sale-review-rate" size="sm" c="dimmed" data-testid="sale-commercial-rate">
+                    {t(COMMERCIAL_RATE_LABEL)} {draftRate.pair}: {formatCommercialRate(draftRate.rate)} ({t(DRAFT_RATE_NOTE)})
                   </Text>
                 ) : null}
 

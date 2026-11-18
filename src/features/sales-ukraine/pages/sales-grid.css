@@ -1042,6 +1042,12 @@
     min-width: max-content;
   }
 
+  /* The sticky cell stops at the scroll container's padding edge: with the 10px right padding the next
+     column (Сума) scrolled through that strip, a cut-off sliver beside the actions on every row. */
+  .sales-ukraine-grid {
+    padding-right: 0;
+  }
+
   .sales-grid-row .sg-doc-actions {
     position: sticky;
     right: 0;
