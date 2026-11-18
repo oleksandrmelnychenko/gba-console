@@ -42,8 +42,8 @@ describe('actReconciliationsApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/orders/depreciated/reconciliation-acts/create', {
       method: 'POST',
+      body: { Comment: 'broken' },
       query: {
-        comment: 'broken',
         fromDate: '2026-06-02T10:00',
         itemNetId: 'item-1',
         organizationNetId: 'org-1',
@@ -227,5 +227,10 @@ describe('actReconciliationsApi', () => {
       query: { fromDate: '2026-08-18', storageNetId: 'storage-1' },
     })
     expect(apiRequestMock.mock.calls[3]?.[1]?.query).not.toHaveProperty('comment')
+    // chaos2-orders F1: the single-item actions too.
+    expect(apiRequestMock.mock.calls[2]?.[1]).toMatchObject({ body: { Comment: 'income' }, query: { cellNumber: '3', itemNetId: 'item-1' } })
+    expect(apiRequestMock.mock.calls[2]?.[1]?.query).not.toHaveProperty('comment')
+    expect(apiRequestMock.mock.calls[4]?.[1]).toMatchObject({ body: { Comment: 'transfer' } })
+    expect(apiRequestMock.mock.calls[4]?.[1]?.query).not.toHaveProperty('comment')
   })
 })

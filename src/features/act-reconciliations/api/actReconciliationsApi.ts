@@ -103,9 +103,12 @@ export async function getReconciliationStorages(
 export async function createProductIncomeFromItem(
   queryParams: ProductIncomeFromItemQueryParams,
 ): Promise<void> {
+  // The comment (up to 500 characters) travels in the body, never in the URL (chaos2-orders F1).
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/products/incomes/reconciliation-acts/create', {
     method: 'POST',
-    query: { ...queryParams },
+    query,
+    body: { Comment: comment },
   })
 }
 
@@ -125,9 +128,12 @@ export async function createProductIncomeFromItems(
 export async function createProductTransferFromItem(
   queryParams: ProductTransferFromItemQueryParams,
 ): Promise<void> {
+  // The comment (up to 500 characters) travels in the body, never in the URL (chaos2-orders F1).
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/products/transfers/reconciliation-acts/create', {
     method: 'POST',
-    query: { ...queryParams },
+    query,
+    body: { Comment: comment },
   })
 }
 
@@ -147,9 +153,12 @@ export async function createProductTransferFromItems(
 export async function createDepreciatedOrderFromItem(
   queryParams: DepreciatedOrderFromItemQueryParams,
 ): Promise<void> {
+  // The comment (up to 500 characters) travels in the body, never in the URL (chaos2-orders F1).
+  const { comment, ...query } = queryParams
   await apiRequest<unknown>('/orders/depreciated/reconciliation-acts/create', {
     method: 'POST',
-    query: { ...queryParams },
+    query,
+    body: { Comment: comment },
   })
 }
 
