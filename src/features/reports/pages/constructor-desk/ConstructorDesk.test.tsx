@@ -189,3 +189,18 @@ it('blocks generation with the server reason and offers downloads once files exi
   expect(screen.getByText('Шаблон «Мій»')).toBeTruthy()
   expect(screen.getByText('Поточний стан')).toBeTruthy()
 })
+
+it('keeps the file actions closed while the form differs from the shown result', () => {
+  const desk = actions({ ran: true, pending: true, filesStale: true, excelUrl: '/files/old.xlsx', pdfUrl: '/files/old.pdf', fileBaseName: 'Валовий' })
+  wrap(<ConstructorDesk title="Валовий прибуток" templateName="" resolving={false} warning={null} disabled={false} period={null}
+    parameters={null} panels={null} filters={null} extras={null}
+    notices={<p id="report-pending-settings-notice">Налаштування змінено.</p>} actions={desk} />)
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  for (const name of ['Сформувати Excel', 'Сформувати PDF']) {
+    const button = screen.getByRole('button', { name })
+    expect(button).toHaveProperty('disabled', true)
+    expect(button.getAttribute('aria-describedby')).toBe('report-pending-settings-notice')
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  expect(desk.onGenerate).not.toHaveBeenCalled()
+})

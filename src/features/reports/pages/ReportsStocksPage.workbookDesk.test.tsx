@@ -155,8 +155,10 @@ it('shows the table with its row count and turns Excel and PDF into direct downl
   earlier.setUTCDate(earlier.getUTCDate() - 1)
   changeReportPeriod({ from: earlier.toISOString().slice(0, 10) })
   expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
-  expect(screen.getByText(/Налаштування змінено\. Натисніть «Застосувати й показати», щоб оновити звіт\./)).toBeTruthy()
-  expect(screen.getByRole('link', { name: 'Завантажити Excel' })).toBeTruthy()
+  expect(screen.getByText(/Налаштування змінено\. Натисніть «Застосувати й показати», щоб оновити звіт\. Excel і PDF будуть за новими налаштуваннями після оновлення звіту\./)).toBeTruthy()
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', true)
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
 })
 
 it('forms a file with the request of the former «Сформувати» and opens the export dialog', async () => {
@@ -305,7 +307,7 @@ it('uses server editable supplier rows, preserves warehouse basis when hidden, a
   expect(request.sorted.Col).toEqual([])
   fireEvent.click(within(rows).getAllByRole('button', { name: /^Перемістити .* нижче$/ })[0])
   expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
-  expect(screen.getByRole('link', { name: 'Завантажити Excel' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', true)
 })
 
 const resultSession = { ResultId: '11111111-2222-3333-4444-555555555555', RequestSha256: 'b'.repeat(64), ResultSha256: 'a'.repeat(64), ExpiresAtUtc: '2030-01-01T00:00:00Z' }
@@ -488,14 +490,15 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
   await waitFor(() => expect(exportStockReportPreview).toHaveBeenCalledExactlyOnceWith(resultSession, 'table'))
   await screen.findByRole('link', { name: 'Завантажити Excel' })
-  // Unapplied date edits must not replace the snapshot exported with a new layout.
   changeReportPeriod({ from: '2026-10-02' })
+  expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Сформувати Excel' })).toHaveProperty('disabled', true)
+  fireEvent.click(screen.getByRole('button', { name: 'Скасувати зміни' }))
   fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
   expect(screen.getByText('У файлі кожен договір у колонках буде окремим аркушем.')).toBeTruthy()
   expect(screen.queryByRole('link', { name: 'Завантажити Excel' })).toBeNull()
   expect(screen.queryByRole('link', { name: 'Завантажити PDF' })).toBeNull()
   expect(screen.getByRole('region', { name: 'Таблиця попереднього перегляду' })).toBeTruthy()
-  expect(dateInput('Від').value).toBe('2026-10-02')
   expect(screen.queryByText(/Показаний результат та його експорт відповідають попередньому/)).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
   await waitFor(() => expect(vi.mocked(exportStockReportPreview).mock.calls).toEqual([[resultSession, 'table'], [resultSession, 'sheets']]))
