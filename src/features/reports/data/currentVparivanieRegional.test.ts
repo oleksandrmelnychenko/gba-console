@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import { currentVparivanieDataset } from './currentVparivanie.test-fixtures'
-import { currentVparivanieRegionalAvailable, normalizeCurrentVparivanieRegional } from './currentVparivanieRegional'
+import { CURRENT_REGIONAL_FILTERS_ERROR, currentVparivanieRegionalAvailable, currentVparivanieRegionalRequest, normalizeCurrentVparivanieRegional } from './currentVparivanieRegional'
+import { analysisRequest } from './currentVparivanieAnalysis.test-fixtures'
 import { regionalDataset, regionalRequest, regionalResult } from './currentVparivanieRegional.test-fixtures'
 
 it('accepts the normal month and dynamic cohort while preserving exact quantities and parent/region distinction', () => {
@@ -50,4 +51,13 @@ it('retains complete-empty core zeros without invented facts and allows a comple
 it('accepts the previous current-stock anchor and refuses an unknown one', () => {
   expect(normalizeCurrentVparivanieRegional({ ...regionalResult(), StockAnchor: 'CurrentRecordedFree' }, regionalRequest()).StockAnchor).toBe('CurrentRecordedFree')
   expect(() => normalizeCurrentVparivanieRegional({ ...regionalResult(), StockAnchor: 'Historical' } as never, regionalRequest())).toThrow()
+})
+
+it('passes one chosen manufacturer to the regional form and refuses several', () => {
+  const pick = (condition: number, ...ids: number[]) => ({ ...analysisRequest(), selections: [{ IsChecked: true, SelectedField: { Type: 75, Name: 'Виробник' },
+    FilterCondition: { Type: condition, Name: String(condition) }, Values: ids.map(Id => ({ Data: { Id: String(Id) }, Name: 'BOSCH', Value: 0 })) }] })
+  const one = currentVparivanieRegionalRequest(pick(0, 5501))
+  expect(one.error).toBeNull()
+  expect(one.request.selections).toMatchObject([{ SelectedField: { Type: 75 }, FilterCondition: { Type: 0 }, Values: [{ Data: { Id: '5501' } }] }])
+  expect(currentVparivanieRegionalRequest(pick(2, 5501, 5502)).error).toBe(CURRENT_REGIONAL_FILTERS_ERROR)
 })

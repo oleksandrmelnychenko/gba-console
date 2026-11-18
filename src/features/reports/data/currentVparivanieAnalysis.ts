@@ -273,7 +273,7 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
   let anchor = false
   for (const selection of active) {
     const field = selection.SelectedField.Type, condition = selection.FilterCondition.Type
-    if (selection.Values.length > 0 && [1, 4].includes(field) && [0, 2, 3, 6].includes(condition)) anchor = true
+    if (selection.Values.length > 0 && ([1, 4].includes(field) && [0, 2, 3, 6].includes(condition) || field === 75 && [0, 2].includes(condition))) anchor = true
     const f = descriptors.get(field)
     if (f?.available === false) return f.unavailabilityReason ?? 'Цей відбір поки недоступний.'
     if (cap && (!f || !f.conditions.includes(selection.FilterCondition.Type))) return 'Сервер не підтримує вибраний відбір або умову для цього поля.'
@@ -285,7 +285,7 @@ export function currentVparivanieAnalysisLayoutError(data: ReportRequestBody, da
     if (field === 21 && selection.Values.length > 32) return 'Оберіть до 32 складів.'
     if (selection.Values.length > 4096 || !isMultiValueReportCondition(condition) && selection.Values.length > 1) return 'Кількість значень не відповідає умові відбору.'
   }
-  return !draft && !anchor ? 'Оберіть товари або групи товарів для аналізу.' : null
+  return !draft && !anchor ? 'Оберіть товари, групи товарів або виробника для аналізу.' : null
 }
 export const ANALYSIS_REPEATED_FIELD = 'Повторити поле можна через «АБО» з умовою «В списку» чи «В групі зі списку» або через «І» з умовою «Не в списку» чи «Не в групі зі списку».'
 type MergeTerm = { kind: 1 | 2; children: MergeTerm[] } | { kind: 3; leaf: ReportSelection }

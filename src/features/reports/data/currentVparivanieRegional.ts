@@ -39,7 +39,7 @@ function scaledQuantity(value: unknown): bigint | null {
   return (negative ? -1n : 1n) * BigInt(whole + fraction.padEnd(28, '0'))
 }
 
-export const CURRENT_REGIONAL_FILTERS_ERROR = 'Для регіональної форми залиште відбори: товари або одна група товарів, покупець, основний менеджер покупця, склади.'
+export const CURRENT_REGIONAL_FILTERS_ERROR = 'Для регіональної форми залиште відбори: товари, одна група товарів або один виробник, покупець, основний менеджер покупця, склади.'
 
 function regionalValue(field: number, value: ReportSelectedValue, kind: 'item' | 'group'): ReportSelectedValue | null {
   const typed = value.Data && typeof value.Data === 'object' ? analysisHierarchyIdentity(field, value.Data) : null
@@ -60,6 +60,10 @@ function regionalSelection(selection: ReportSelection): ReportSelection | null {
   if ((field === 1 || field === 4) && [3, 6].includes(condition) && selection.Values.length === 1) {
     const group = values('group', 4)
     return group ? { ...selection, SelectedField: { Type: 4, Name: 'ProductGroup' }, FilterCondition: { Type: 6, Name: 'У групі' }, Values: group } : null
+  }
+  if (field === 75 && condition === 0 && selection.Values.length === 1) {
+    const items = values('item')
+    return items ? { ...selection, Values: items } : null
   }
   if ((field === 1 || field === 5 || field === 21) && [0, 2].includes(condition)) {
     const items = values('item')

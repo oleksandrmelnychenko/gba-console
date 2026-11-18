@@ -4,6 +4,7 @@ import { analysisGroupIdentity, currentVparivanieAnalysisCapability } from './cu
 const fields = [
   { type: 21, name: 'Склад' },
   { type: 1, name: 'Номенклатура' },
+  { type: 75, name: 'Виробник' },
   { type: 5, name: 'Контрагент' },
   { type: 60, name: 'Основний менеджер покупця' },
 ]

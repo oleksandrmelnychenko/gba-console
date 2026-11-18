@@ -60,7 +60,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   for (const name of ["Показники", "Групування"]) expect(screen.queryByRole("group", { name })).toBeNull()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
-  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець", "Відповідальний менеджер покупця", "Склад"])
+  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Виробник", "Покупець", "Відповідальний менеджер покупця", "Склад"])
 })
 it("submits all four selected identities through the existing inline sales-style controls", async () => {
   await open()
@@ -82,6 +82,24 @@ it("submits all four selected identities through the existing inline sales-style
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 39, from: "2026-10-01", to: "2026-10-27",
     selections: choices.map(choice => ({ SelectedField: { Type: choice.field }, FilterCondition: { Type: 0 }, Values: [{ Data: choice.data }] })) })
+})
+it("filters the workbook by manufacturer chosen from the brand list", async () => {
+  const brand = { field: 75, label: "Виробник", id: "id:5501", name: "BOSCH", data: { Id: 5501 } }
+  vi.mocked(searchAnalysisValues).mockImplementation(async field => field === 75 ? [brand] : [])
+  await open()
+  changeReportPeriod({ from: "2026-10-01", to: "2026-10-27" })
+  fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
+  const row = within(screen.getByRole("group", { name: "Умова відбору 1" }))
+  fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
+  fireEvent.click(await screen.findByRole("option", { name: "Виробник" }))
+  await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(75, "", "2026-10-01", "2026-10-27", undefined, expect.any(AbortSignal)))
+  fireEvent.click(row.getByRole("combobox", { name: "Значення" }))
+  fireEvent.click(await row.findByRole("option", { name: "BOSCH" }))
+  await waitFor(() => expect(row.getByRole("button", { name: "Вибрано: 1" })).toBeTruthy())
+  fireEvent.click(screen.getByRole("button", { name: "Застосувати й показати" }))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 39,
+    selections: [{ SelectedField: { Type: 75 }, FilterCondition: { Type: 0 }, Values: [{ Data: { Id: 5501 } }] }] })
 })
 it("preserves the preset product group under nomenclature and accepts several exact warehouses", async () => {
   vi.mocked(searchDatasetReportValues).mockImplementation(async (source, field) => source === 39 && field === 4

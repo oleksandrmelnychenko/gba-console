@@ -106,9 +106,15 @@ describe('analysis layout', () => {
   it('anchors on product groups chosen through the Товар field and keeps one product hierarchy rule', () => {
     expect(currentVparivanieAnalysisLayoutError(request(selection(1, 6, { kind: 'productGroup', id: 4 })), dataset)).toBeNull()
     expect(currentVparivanieAnalysisLayoutError(request(selection(1, 7, { kind: 'productGroup', id: 4 })), dataset))
-      .toBe('Оберіть товари або групи товарів для аналізу.')
+      .toBe('Оберіть товари, групи товарів або виробника для аналізу.')
     expect(currentVparivanieAnalysisLayoutError(request(selection(1, 6, { kind: 'productGroup', id: 4 }), selection(4, 6, { Id: 4 })), dataset))
       .toBe('Задайте відбір за групами товарів одним правилом: «Товар» або «Товарна група».')
+  })
+  it('anchors on a chosen manufacturer', () => {
+    expect(currentVparivanieAnalysisLayoutError(request(selection(75, 0, { Id: 5501 })), dataset)).toBeNull()
+    expect(currentVparivanieAnalysisLayoutError(request(selection(75, 2, { Id: 5501 }, { Id: 5502 })), dataset)).toBeNull()
+    expect(currentVparivanieAnalysisLayoutError(request(selection(75, 1, { Id: 5501 })), dataset))
+      .toBe('Оберіть товари, групи товарів або виробника для аналізу.')
   })
   it('blocks a group condition whose hierarchy is unavailable but does not wait for a pending status', () => {
     const data = request(selection(4, 6, { Id: 4 }), selection(21, 7, group('warehouseGroup')))

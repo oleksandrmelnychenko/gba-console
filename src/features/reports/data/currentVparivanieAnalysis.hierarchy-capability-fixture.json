@@ -644,6 +644,31 @@
       "unavailabilityReason": null
     },
     {
+      "type": 75,
+      "name": "Виробник",
+      "path": [
+        "Товар"
+      ],
+      "valueKind": "nativeId",
+      "branches": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "conditions": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "lookupKind": "nativeId",
+      "coverage": "currentMasterData",
+      "available": true,
+      "unavailabilityReason": null
+    },
+    {
       "type": 5,
       "name": "Покупець",
       "path": [
