@@ -109,6 +109,15 @@ import {
   getSelectedConsumableOrders,
 } from './supplierUnpaidConsumableOrders'
 import { AppDateInput } from '../../../shared/ui/AppDateInput'
+import {
+  SupplierSettlementRateField,
+  type SupplierSettlementRateQuoteParams,
+} from '../../../shared/settlement-rate/SupplierSettlementRateField'
+import {
+  EMPTY_SETTLEMENT_RATE_OVERRIDE,
+  settlementRateOverridePayload,
+  type SettlementRateOverride,
+} from '../../../shared/settlement-rate/supplierSettlementRate'
 
 type OutgoingPaymentGroupFormProps = {
   onCancel: () => void
@@ -231,6 +240,28 @@ export function OutgoingPaymentGroupForm({
     [form.selectedAgreementValue, supplyAgreements],
   )
   const agreementCurrency = isSupplierSearch ? selectedSupplyAgreement?.Currency || null : selectedClientAgreement?.Agreement?.Currency || null
+  // «Курс у EUR» of a payment to a supplier on a client agreement (the EUR agreement balance moves by
+  // amount / rate). The choice belongs to one agreement: another agreement starts from its default.
+  const canOverrideSettlementRate = hasPermission(PermissionKeys.OutgoingCashflows.Order.OverrideSettlementRate)
+  const settlementRateAgreementNetId =
+    operationType === OUTCOME_OPERATION_TYPE.PaymentToSupplier && !isSupplierSearch
+      ? selectedClientAgreement?.NetUid || ''
+      : ''
+  const [settlementRateChoice, setSettlementRateChoice] = useState<{ agreementNetId: string, override: SettlementRateOverride }>(
+    { agreementNetId: '', override: EMPTY_SETTLEMENT_RATE_OVERRIDE },
+  )
+  const settlementRateOverride = settlementRateChoice.agreementNetId === settlementRateAgreementNetId
+    ? settlementRateChoice.override
+    : EMPTY_SETTLEMENT_RATE_OVERRIDE
+  const settlementRateParams: SupplierSettlementRateQuoteParams | null = settlementRateAgreementNetId && form.date
+    ? {
+        clientAgreementNetId: settlementRateAgreementNetId,
+        currencyNetId: selectedCurrency?.NetUid || null,
+        // The FromDate string the payment is sent with.
+        date: toIsoDateTime(form.date, form.time),
+        document: 'payment',
+      }
+    : null
   const selectedMovement = useMemo(
     () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
     [form.selectedMovementValue, paymentMovements],
@@ -886,6 +917,10 @@ export function OutgoingPaymentGroupForm({
       selectedSupplyAgreement,
       selectedSupplyOrganization,
       selectedUnpaidOrders: isSupplierSearch ? selectedUnpaidOrders : [],
+      settlementRate: settlementRateOverridePayload(
+        hasPermission(PermissionKeys.OutgoingCashflows.Order.OverrideSettlementRate) && Boolean(settlementRateAgreementNetId),
+        settlementRateOverride,
+      ),
     })
 
     if (!tryStartSaving()) {
@@ -1081,6 +1116,17 @@ export function OutgoingPaymentGroupForm({
                 onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
               />
             </SimpleGrid>
+            <SupplierSettlementRateField
+              canOverride={canOverrideSettlementRate}
+              disabled={isLoading || isSaving}
+              label="Курс у EUR"
+              override={settlementRateOverride}
+              params={settlementRateParams}
+              onOverrideChange={(override) => setSettlementRateChoice({
+                agreementNetId: settlementRateAgreementNetId,
+                override,
+              })}
+            />
             <SimpleGrid className="cashflow-fields-row" cols={{ base: 1, md: 3 }} style={{ alignItems: 'end' }}>
               <Group className="cashflow-field-article" align="flex-end" gap="xs" wrap="nowrap">
                 <SearchableSelect

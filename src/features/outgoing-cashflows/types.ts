@@ -107,6 +107,15 @@ export type OutcomePaymentOrder = EntityFields & {
   CustomNumber?: string
   DifferenceAmount?: number
   EuroAmount?: number
+  /** Payment-currency units per 1 EUR that produced EuroAmount (supplier payments on a client agreement); a sent value is an override request. */
+  EuroExchangeRate?: number | null
+  /** Kind of that rate (1 НБУ, 2 Комерційний); a sent value is an override request. */
+  EuroRateKind?: 1 | 2 | null
+  /** Server-owned: the date the EUR rate was taken for. */
+  EuroRateDate?: string | null
+  /** Server-owned: the kind or rate was chosen by hand instead of the agreement default. */
+  EuroRateOverridden?: boolean
+  /** «Комерційний курс» into the agreement currency (for 1С); not the EUR rate above. */
   ExchangeRate?: number
   FromDate?: string
   IsAccounting?: boolean

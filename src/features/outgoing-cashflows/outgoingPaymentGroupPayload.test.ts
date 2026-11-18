@@ -146,6 +146,37 @@ describe('buildOutgoingPaymentGroupPayload', () => {
     expect(payload.SupplyOrganizationAgreement).toBeUndefined()
   })
 
+  it('sends the chosen EUR rate only on a supplier payment to a client agreement', () => {
+    const base = {
+      form: baseForm,
+      selectedClient: client,
+      selectedClientAgreement: clientAgreement,
+      selectedCurrencyRegister: { Currency: { Code: 'UAH', Id: 10038 }, Id: 41 },
+      selectedMovement: { Id: 51 },
+      selectedOrganization: { Id: 61 },
+      selectedRegister: { Id: 71, Type: PaymentRegisterType.Bank },
+      selectedSupplyAgreement: null,
+      selectedSupplyOrganization: null,
+      selectedUnpaidOrders: [],
+      settlementRate: { kind: 1 as const, rate: 49.75 },
+    }
+
+    expect(buildOutgoingPaymentGroupPayload({ ...base, operationType: OUTCOME_OPERATION_TYPE.PaymentToSupplier }))
+      .toMatchObject({ ClientAgreement: clientAgreement, EuroExchangeRate: 49.75, EuroRateKind: 1, ExchangeRate: 44.35 })
+
+    const noChoice = buildOutgoingPaymentGroupPayload({
+      ...base,
+      operationType: OUTCOME_OPERATION_TYPE.PaymentToSupplier,
+      settlementRate: { kind: null, rate: null },
+    })
+    expect(noChoice).not.toHaveProperty('EuroRateKind')
+    expect(noChoice).not.toHaveProperty('EuroExchangeRate')
+
+    const buyerReturn = buildOutgoingPaymentGroupPayload({ ...base, operationType: OUTCOME_OPERATION_TYPE.BuyerReturn })
+    expect(buyerReturn).not.toHaveProperty('EuroRateKind')
+    expect(buyerReturn).not.toHaveProperty('EuroExchangeRate')
+  })
+
   it('keeps an other-expense payment partnerless', () => {
     const payload = buildPayload(
       OUTCOME_OPERATION_TYPE.OtherOutcome,
