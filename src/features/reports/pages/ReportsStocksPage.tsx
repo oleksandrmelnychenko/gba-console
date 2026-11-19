@@ -53,7 +53,6 @@ import { vparivanieSelectionDataset, vparivanieSelectionRequest } from '../data/
 import { EMPTY_MOVEMENT_SELECTION, movementSelection, type CurrentVparivanieMovementSelection } from '../data/currentVparivanieMovements'
 import { ReportPreviewPages } from './ReportPreviewPages'
 import { exactId } from '../data/exactId'
-import { exportStockReportPreview } from '../api/reportsApi'
 import { ReportNumberPresentationPanel } from './ReportNumberPresentationPanel'
 import { reportSelectionConditions, reportSelectionEditorCardinalityError, reportSelectionListCondition } from '../data/reportSelectionPolicy'
 import { requestNumberPresentation, readNumberPresentation, readValueSemantics, reportValueUnit } from '../data/reportNumberPresentation'
@@ -103,13 +102,16 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import '../../../shared/ui/selection-surface.css'
 import { AppModalFooter } from '../../../shared/ui/AppModal'
 import { ReportModal } from './ReportModal'
-import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
+import { DocumentExportModal, type DocumentExportClick, type DocumentExportFormat } from '../../../shared/ui/document-export-modal/DocumentExportModal'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { CREATE_ACTION_COLOR, PageSubmenuActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { useAuth } from '../../auth/useAuth'
 import {
   createStockReport,
+  exportStockReportPreview,
   previewStockReport,
+  ReportResultUnavailableError,
   REPORT_JOB_DETACHED,
   type ReportJobProgress,
   getReportClientAgreements,
@@ -212,7 +214,7 @@ import { requestTopGroups } from '../data/reportTopGroups'
 import { useReportGroupingOrdering } from '../hooks/useReportGroupingOrdering'
 import type { ReportGroupingLayout } from '../data/reportGroupingLayout'
 import { DayProfitControls, SupplierProfitControls, type ProfitControlsPart } from './ProfitWorkbookControls'
-import { deskPlural, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
+import { deskDownloadName, deskPlural, workbookDeskTitle, workbookRequestSummary } from '../data/workbookDesk'
 import { WorkbookSwitcher } from './workbook-desk/WorkbookSwitcher'
 import { WorkbookHeader } from './workbook-desk/WorkbookHeader'
 import { PENDING_SETTINGS_NOTICE_ID, WorkbookActionBar } from './workbook-desk/WorkbookActionBar'
@@ -537,7 +539,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         })
       : null
 
-  const runHistoryAction = useEffectEvent((action: ReportHistoryAction) => { void runReport(action === 'open', true) })
+  const runHistoryAction = useEffectEvent((action: ReportHistoryAction) => { void runReport(action === 'open', { fresh: true }) })
   useEffect(() => {
     const action = historyAction.current
     if (!action || workbookResolving || isLoading) return
@@ -554,11 +556,25 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     await runReport(true)
   }
 
-  async function runReport(showPreview: boolean, fresh = false) {
-    const staleFiles = !showPreview && filesStale
+  const onReportDownload: DocumentExportClick = (event, format) => {
+    const query = new URLSearchParams(event.currentTarget.search)
+    const expires = query.get('exp')
+    if (!expires || !query.get('sig') || !query.get('uid')
+      || !/^\d+$/.test(expires) || Number(expires) * 1000 > Date.now()) return
+
+    event.preventDefault()
+    void runReport(false, { downloadFormat: format })
+  }
+
+  async function runReport(showPreview: boolean, { fresh = false, downloadFormat }: {
+    fresh?: boolean
+    downloadFormat?: DocumentExportFormat
+  } = {}) {
+    const renewingFile = downloadFormat !== undefined
+    const staleFiles = !showPreview && filesStale && !renewingFile
     if (staleFiles && !fresh) return
     const exportingApplied = !showPreview && !staleFiles && !!appliedSettings.appliedRequest && !!lastRun
-    if (!canGenerateReport || (!exportingApplied && !reportIsReady) || isLoading) {
+    if (!canGenerateReport || (!exportingApplied && (!reportIsReady || renewingFile)) || isLoading || jobAbort.current) {
       return
     }
 
@@ -572,14 +588,39 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       const retainedPreviewRequired = selectedCurrency || layout !== undefined
       const controller = new AbortController()
       jobAbort.current = controller
-      const previewResult = showPreview || retainedPreviewRequired && !existingPreview?.ResultSession
-        ? await previewStockReport(request, dataset, { onProgress: setJobProgress, signal: controller.signal, ...(showPreview ? {} : { excelIntent: true }), ...(fresh ? { fresh: true } : {}) }) : null
-      setJobProgress(null)
-      if (retainedPreviewRequired && previewResult && !previewResult.preview.ResultSession) throw new Error(selectedCurrency
-        ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
-        : 'Сервер не підтвердив збережений результат для вибраного вигляду файла. Файл не сформовано.')
-      const exportPreview = (session: NonNullable<NativeReportPreview['ResultSession']>) => layout ? exportStockReportPreview(session, layout) : exportStockReportPreview(session)
-      const nextResult = !showPreview && previewResult?.preview.ResultSession ? await exportPreview(previewResult.preview.ResultSession) : previewResult?.result ?? (existingPreview?.ResultSession ? await exportPreview(existingPreview.ResultSession) : await createStockReport(request, dataset))
+      const calculatePreview = async (forceFresh: boolean) => {
+        const calculated = await previewStockReport(request, dataset, {
+          onProgress: setJobProgress,
+          signal: controller.signal,
+          ...(showPreview ? {} : { excelIntent: true }),
+          ...(forceFresh ? { fresh: true } : {}),
+        })
+        setJobProgress(null)
+        if (retainedPreviewRequired && !calculated.preview.ResultSession) throw new Error(selectedCurrency
+          ? 'Сервер не підтвердив збережений результат для вибраної валюти. Файл не сформовано.'
+          : 'Сервер не підтвердив збережений результат для вибраного вигляду файла. Файл не сформовано.')
+        return calculated
+      }
+      const exportPreview = (session: NonNullable<NativeReportPreview['ResultSession']>) =>
+        layout ? exportStockReportPreview(session, layout) : exportStockReportPreview(session)
+
+      const needsPreview = showPreview || !existingPreview?.ResultSession && (retainedPreviewRequired || (renewingFile && existingPreview))
+      let previewResult = needsPreview ? await calculatePreview(fresh || renewingFile) : null
+      const session = previewResult?.preview.ResultSession ?? existingPreview?.ResultSession
+      let nextResult = previewResult?.result
+      if (!showPreview && session) {
+        try {
+          nextResult = await exportPreview(session)
+        } catch (exportError) {
+          if (previewResult || !(exportError instanceof ReportResultUnavailableError)) throw exportError
+          previewResult = await calculatePreview(true)
+          const renewedSession = previewResult.preview.ResultSession
+          if (!renewedSession) throw exportError
+          nextResult = await exportPreview(renewedSession)
+        }
+      }
+      nextResult ??= await createStockReport(request, dataset)
+      controller.signal.throwIfAborted()
       const outcome: ReportRunOutcome = exportingApplied ? { ...lastRun!,
         hasDocument: Boolean(nextResult.document.DocumentURL || nextResult.document.PdfDocumentURL), previewNeedsExport: false } : {
         periodSupported,
@@ -597,12 +638,27 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         to,
       }
 
+      const downloadUrl = downloadFormat === 'excel' ? nextResult.document.DocumentURL : nextResult.document.PdfDocumentURL
+      if (downloadFormat && !downloadUrl) throw new Error(t('Сервер не повернув файл {format} для цього звіту.', {
+        format: downloadFormat === 'excel' ? 'Excel' : 'PDF',
+      }))
+      const downloadHref = downloadFormat && downloadUrl ? new URL(getDocumentHref(downloadUrl), window.location.href) : null
+      const directDownload = downloadHref?.origin === window.location.origin
       updateAttempt({ result: nextResult, preview: previewResult?.preview ?? existingPreview ?? null, lastRun: outcome,
-        downloadModalOpened: !showPreview && outcome.hasDocument })
+        downloadModalOpened: !showPreview && outcome.hasDocument && !directDownload })
       if (previewResult) setShownReport(`${activeWorkbook ?? ''}|${dataSource}`)
+      if (directDownload && downloadFormat && downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadHref.href
+        link.download = deskDownloadName(outcome.fileName, downloadUrl, downloadFormat) ?? ''
+        document.body.append(link)
+        link.click()
+        link.remove()
+      }
     } catch (submitError) {
-      updateAttempt({ result: existingPreview?.ResultSession ? result : null,
-        ...(existingPreview?.ResultSession ? { preview: existingPreview, lastRun } : {}),
+      const keepPrevious = existingPreview?.ResultSession || renewingFile
+      updateAttempt({ result: keepPrevious ? result : null,
+        ...(keepPrevious ? { preview: existingPreview, lastRun } : {}),
         error: describeReportError(submitError, t) })
     } finally {
       jobAbort.current = null
@@ -1016,6 +1072,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       fileBaseName={lastRun?.fileName}
       title={lastRun?.name || lastRun?.title || dataset?.Name || t('Звіт')}
       onClose={() => updateRun({ downloadModalOpened: false })}
+      onDownload={onReportDownload}
     />
   )
 
@@ -1186,7 +1243,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
             actions={{ canSubmit: canSubmit && !workbookResolving, isLoading, blockedReason: workbookResolving ? null : submitBlockedReason || null,
               ran: Boolean(result), previewNeedsExport: Boolean(lastRun?.previewNeedsExport), filesStale, excelUrl, pdfUrl, fileBaseName: lastRun?.fileName ?? null,
               pending: appliedSettings.pending, canExport: Boolean(lastRun) || canSubmit && !workbookResolving, resetDisabled: !canGenerateReport || isLoading,
-              onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onReset: resetReport,
+              onPreview: () => void runReport(true), onGenerate: () => void runReport(false), onDownload: onReportDownload, onReset: resetReport,
               onCancel: () => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) },
               onSaveTemplate: () => openDeskTemplates(true), onLoadTemplate: () => openDeskTemplates(false) }} /> : <>
           <WorkbookHeader title={deskTitle} showTitle={!activeWorkbook} templateName={activeTemplate?.Name ?? ''}
@@ -1204,7 +1261,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
             blockedReason={workbookResolving ? null : submitBlockedReason || null}
             ran={Boolean(result)} previewNeedsExport={Boolean(lastRun?.previewNeedsExport)} filesStale={filesStale} excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null}
             resetDisabled={!canGenerateReport || isLoading} onPreview={() => void runReport(true)}
-            onGenerate={() => void runReport(false)} onReset={resetReport}
+            onGenerate={() => void runReport(false)} onDownload={onReportDownload} onReset={resetReport}
             pending={appliedSettings.pending} canExport={Boolean(lastRun) || canSubmit && !workbookResolving} onCancel={() => { restoreWorkspace(appliedSettings.cancelSnapshot(activeTemplate), true) }}
             onSaveTemplate={() => openDeskTemplates(true)}
             applyLabel="Застосувати й показати" /></>}
@@ -1213,7 +1270,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
             error={error} emptyRun={emptyRunNotice} generated={Boolean(lastRun?.hasDocument && !preview)}
             stale={!preview && !lastRun && !isLoading && !error && shownReport === deskReportKey}
             table={preview ? <ReportPreviewPages key={preview.ResultSession?.ResultId ?? preview.ResultSha256} initial={preview} request={resultRequest} embedded /> : null}
-            excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} />
+            excelUrl={excelUrl} pdfUrl={pdfUrl} fileBaseName={lastRun?.fileName ?? null} onDownload={onReportDownload} />
         </form>}
       </div>
       <ReportModal centered classNames={{ body: 'reports-stocks-template-modal__body', title: 'reports-stocks-modal-title' }}

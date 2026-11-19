@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { apiRequest } from '../../../shared/api/apiClient'
-import { exportStockReportPreview, getStockReportPreviewPage, previewStockReport } from './reportsApi'
+import { ApiError, apiRequest } from '../../../shared/api/apiClient'
+import { exportStockReportPreview, getStockReportPreviewPage, previewStockReport, ReportResultUnavailableError } from './reportsApi'
 import { documentDataset, documentPreviewPayload, documentRequest } from '../data/currentFinancialDocumentAxes.test-fixtures'
 vi.mock('../../../shared/api/apiClient', async original => ({ ...await original<typeof import('../../../shared/api/apiClient')>(), apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
@@ -55,6 +55,14 @@ describe('preview column paging transport', () => {
       .rejects.toThrow('Сервер повернув інше вікно колонок звіту.')
     await expect(getStockReportPreviewPage(session, documentRequest(), 0, undefined, { offset: 0, limit: 257 }))
       .rejects.toThrow('Некоректне вікно колонок звіту.')
+  })
+
+  it('identifies an unavailable snapshot separately from an unrelated HTTP 404', async () => {
+    api.mockRejectedValueOnce(new ApiError('Недоступно', 404, { ErrorCode: 'native_report_result_unavailable' }))
+      .mockRejectedValueOnce(new ApiError('Not Found', 404, null))
+
+    await expect(exportStockReportPreview(session)).rejects.toBeInstanceOf(ReportResultUnavailableError)
+    await expect(exportStockReportPreview(session)).rejects.not.toBeInstanceOf(ReportResultUnavailableError)
   })
 
   it('sends the export layout only when one was chosen', async () => {

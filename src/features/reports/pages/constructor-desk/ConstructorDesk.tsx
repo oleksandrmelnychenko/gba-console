@@ -5,6 +5,7 @@ import { ToolbarDateRangeFilter } from '../../../../shared/ui/ToolbarDateRangeFi
 import { getDocumentHref } from '../../../../shared/url/getDocumentHref'
 import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { PdfIcon } from '../../../../shared/ui/PdfIcon'
+import type { DocumentExportClick, DocumentExportFormat } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { deskDownloadName } from '../../data/workbookDesk'
 import { BLOCKED_REASON_ID, PENDING_SETTINGS_NOTICE_ID } from '../workbook-desk/WorkbookActionBar'
@@ -35,6 +36,7 @@ export type ConstructorDeskActions = {
   resetDisabled: boolean
   onPreview: () => void
   onGenerate: () => void
+  onDownload?: DocumentExportClick
   onReset: () => void
   onCancel: () => void
   onSaveTemplate: () => void
@@ -64,14 +66,14 @@ export function ConstructorDesk({ title, templateName, resolving, warning, perio
   const describedBy = blocked ? BLOCKED_REASON_ID : undefined
   const generate = <Button type="button" color={CREATE_ACTION_COLOR} leftSection={<Play size={15} aria-hidden="true" />}
     disabled={!actions.canSubmit || actions.isLoading} aria-describedby={describedBy} onClick={actions.onPreview}>Сформувати</Button>
-  const file = (format: 'excel' | 'pdf', url: string | null) => {
+  const file = (format: DocumentExportFormat, url: string | null) => {
     const label = format === 'excel' ? 'Excel' : 'PDF'
     const icon = format === 'excel' ? <ExcelIcon size={16} /> : <PdfIcon size={18} />
     if (actions.filesStale) return <Button type="button" variant="default" className="constructor-desk__file" leftSection={icon} disabled
       aria-describedby={PENDING_SETTINGS_NOTICE_ID} aria-label={`Сформувати ${label}`}>{label}</Button>
     if (url) return <Button component="a" variant="default" className="constructor-desk__file is-ready" leftSection={icon}
       href={getDocumentHref(url)} target="_blank" rel="noreferrer" download={deskDownloadName(actions.fileBaseName, url, format)}
-      aria-label={`Завантажити ${label}`}>{label}</Button>
+      onClick={event => actions.onDownload?.(event, format)} aria-label={`Завантажити ${label}`}>{label}</Button>
     const missing = actions.ran && !actions.isLoading && !actions.previewNeedsExport
     return <Button type="button" variant="default" className="constructor-desk__file" leftSection={icon}
       disabled={!actions.canExport || actions.isLoading || missing} aria-describedby={describedBy}

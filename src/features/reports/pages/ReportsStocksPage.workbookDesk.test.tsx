@@ -10,12 +10,12 @@ import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
 import { changeReportPeriod, openReportPeriod, readReportDateInput } from '../testing/reportPeriod'
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { ApiError } from '../../../shared/api/apiClient'
 import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { DocumentExportModal } from '../../../shared/ui/document-export-modal/DocumentExportModal'
-import { createStockReport, exportStockReportPreview, previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
+import { createStockReport, exportStockReportPreview, previewStockReport, ReportResultUnavailableError, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
@@ -59,6 +59,12 @@ beforeEach(() => {
   vi.mocked(getSettlementCounterpartyGroups).mockResolvedValue([])
   vi.mocked(previewStockReport).mockResolvedValue({ result: { document: files, raw: {} }, preview })
   vi.mocked(createStockReport).mockResolvedValue({ document: files, raw: {} })
+})
+
+afterEach(() => {
+  vi.mocked(previewStockReport).mockReset()
+  vi.mocked(exportStockReportPreview).mockReset()
+  vi.restoreAllMocks()
 })
 
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
@@ -510,6 +516,77 @@ it('exports agreement columns in the explicitly chosen workbook layout and leave
   expect(createStockReport).not.toHaveBeenCalled()
   expect(vi.mocked(previewStockReport).mock.calls[0][0].sorted.Col.map(field => field.type)).toEqual([15])
   expect(previewStockReport).toHaveBeenCalledOnce()
+})
+
+function signedReportFiles(stem: string, expires: number) {
+  const query = `?exp=${expires}&uid=report-owner&sig=test-signature`
+  return {
+    DocumentURL: `/Data/Reports/${stem}.xlsx${query}`,
+    PdfDocumentURL: `/Data/Reports/${stem}.pdf${query}`,
+  }
+}
+
+it('renews an expired Excel link on the same preview and leaves fresh links on the native download path', async () => {
+  const expired = signedReportFiles('expired', 1)
+  const renewed = signedReportFiles('renewed', 4_102_444_800)
+  await openAgreementColumnWorkbook()
+  vi.mocked(exportStockReportPreview).mockResolvedValueOnce({ document: expired, raw: {} })
+    .mockResolvedValueOnce({ document: renewed, raw: {} })
+  fireEvent.click(screen.getByRole('radio', { name: 'Одна таблиця' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати Excel' }))
+  const originalLink = await screen.findByRole('link', { name: 'Завантажити Excel' })
+  const clickDownload = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  expect(fireEvent.click(originalLink)).toBe(false)
+
+  await waitFor(() => expect(clickDownload).toHaveBeenCalledOnce())
+  expect((clickDownload.mock.contexts[0] as HTMLAnchorElement).getAttribute('href')).toBe(new URL(renewed.DocumentURL, window.location.href).href)
+  expect((clickDownload.mock.contexts[0] as HTMLAnchorElement).getAttribute('download')).toBe(originalLink.getAttribute('download'))
+  expect(exportStockReportPreview).toHaveBeenNthCalledWith(2, resultSession, 'table')
+  expect(previewStockReport).toHaveBeenCalledOnce()
+  expect(createStockReport).not.toHaveBeenCalled()
+
+  const ready = await screen.findByRole('link', { name: 'Завантажити Excel' })
+  expect(ready.getAttribute('href')).toBe(renewed.DocumentURL)
+  expect(fireEvent.click(ready)).toBe(true)
+  expect(exportStockReportPreview).toHaveBeenCalledTimes(2)
+})
+
+it('downloads a renewed result PDF after the preview session disappears, preserving the applied request and pending edits', async () => {
+  const expired = signedReportFiles('expired', 1)
+  const renewed = signedReportFiles('renewed', 4_102_444_800)
+  const renewedSession = { ...resultSession, ResultId: '77777777-8888-9999-aaaa-bbbbbbbbbbbb' }
+  await openAgreementColumnWorkbook()
+  vi.mocked(exportStockReportPreview).mockResolvedValueOnce({ document: expired, raw: {} })
+    .mockRejectedValueOnce(new ReportResultUnavailableError())
+    .mockResolvedValueOnce({ document: renewed, raw: {} })
+  fireEvent.click(screen.getByRole('radio', { name: 'Окремі аркуші' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Застосувати й показати' }))
+  await screen.findByRole('region', { name: 'Таблиця попереднього перегляду' })
+  const applied = vi.mocked(previewStockReport).mock.calls[0][0]
+  vi.mocked(previewStockReport).mockResolvedValueOnce({ result: { document: {}, raw: {} },
+    preview: { ...preview, ResultSession: renewedSession } })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати PDF' }))
+  const result = screen.getByRole('region', { name: 'Результат' })
+  const pdf = await within(result).findByRole('link', { name: 'PDF' })
+  changeReportPeriod({ from: '2026-10-02' })
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
+  const clickDownload = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+
+  expect(fireEvent.click(pdf)).toBe(false)
+
+  await waitFor(() => expect(clickDownload).toHaveBeenCalledOnce())
+  expect((clickDownload.mock.contexts[0] as HTMLAnchorElement).getAttribute('href')).toBe(new URL(renewed.PdfDocumentURL, window.location.href).href)
+  expect(previewStockReport).toHaveBeenCalledTimes(2)
+  expect(previewStockReport).toHaveBeenNthCalledWith(2, applied, currentFinancialDataset,
+    expect.objectContaining({ excelIntent: true, fresh: true }))
+  expect(exportStockReportPreview).toHaveBeenNthCalledWith(2, resultSession, 'sheets')
+  expect(exportStockReportPreview).toHaveBeenNthCalledWith(3, renewedSession, 'sheets')
+  expect(createStockReport).not.toHaveBeenCalled()
+  expect(dateInput('Від').value).toBe('2026-10-02')
+  expect(screen.getByText(/Період показаного результату.*01\.10\.2026/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Сформувати PDF' })).toHaveProperty('disabled', true)
 })
 
 it('retains a snapshot for the first direct file action with an explicit layout', async () => {

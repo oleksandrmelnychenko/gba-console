@@ -5,6 +5,7 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../../shared/url/getDocumentHref'
 import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { PdfIcon } from '../../../../shared/ui/PdfIcon'
+import type { DocumentExportClick } from '../../../../shared/ui/document-export-modal/DocumentExportModal'
 import { deskDownloadName, typicalRunSeconds } from '../../data/workbookDesk'
 
 type Tone = 'idle' | 'info' | 'success' | 'warning' | 'error'
@@ -22,10 +23,11 @@ type Props = {
   excelUrl: string | null
   pdfUrl: string | null
   fileBaseName: string | null
+  onDownload?: DocumentExportClick
 }
 
 export function WorkbookResult({ dataSource, title, period, isLoading, error, emptyRun, stale, generated, table,
-  excelUrl, pdfUrl, fileBaseName }: Props) {
+  excelUrl, pdfUrl, fileBaseName, onDownload }: Props) {
   const { t } = useI18n()
   const section = useRef<HTMLElement>(null)
   const hasTable = Boolean(table)
@@ -36,9 +38,9 @@ export function WorkbookResult({ dataSource, title, period, isLoading, error, em
   }, [hasTable])
   const files = table && (excelUrl || pdfUrl) ? <div className="workbook-result__files">
     {excelUrl ? <a className="workbook-result__file" href={getDocumentHref(excelUrl)} target="_blank" rel="noreferrer"
-      download={deskDownloadName(fileBaseName, excelUrl, 'excel')}><ExcelIcon size={15} />Excel</a> : null}
+      download={deskDownloadName(fileBaseName, excelUrl, 'excel')} onClick={event => onDownload?.(event, 'excel')}><ExcelIcon size={15} />Excel</a> : null}
     {pdfUrl ? <a className="workbook-result__file" href={getDocumentHref(pdfUrl)} target="_blank" rel="noreferrer"
-      download={deskDownloadName(fileBaseName, pdfUrl, 'pdf')}><PdfIcon size={18} />PDF</a> : null}
+      download={deskDownloadName(fileBaseName, pdfUrl, 'pdf')} onClick={event => onDownload?.(event, 'pdf')}><PdfIcon size={18} />PDF</a> : null}
   </div> : null
   return <section ref={section} className="workbook-result" aria-labelledby="workbook-result-title" aria-busy={isLoading}>
     <div className="workbook-result__head">

@@ -1,6 +1,6 @@
 import { Alert, Anchor, Loader, ThemeIcon } from '@mantine/core'
 import { CircleAlert } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { ExportDocument } from '../../documents/exportDocument'
 import { useI18n } from '../../i18n/useI18n'
 import { getDocumentHref } from '../../url/getDocumentHref'
@@ -11,6 +11,7 @@ import { WordIcon } from '../WordIcon'
 import './document-export-modal.css'
 
 export type DocumentExportFormat = 'excel' | 'pdf'
+export type DocumentExportClick = (event: MouseEvent<HTMLAnchorElement>, format: DocumentExportFormat) => void
 type DocumentCardFormat = DocumentExportFormat | 'word'
 
 export type DocumentExportItem = {
@@ -35,6 +36,7 @@ type DocumentExportModalProps = {
   pdfUrl?: string | null
   title: string
   onClose: () => void
+  onDownload?: DocumentExportClick
   onSelectFormat?: (format: DocumentExportFormat) => void
 }
 
@@ -53,6 +55,7 @@ export function DocumentExportModal({
   pdfUrl,
   title,
   onClose,
+  onDownload,
   onSelectFormat,
 }: DocumentExportModalProps) {
   const { t } = useI18n()
@@ -154,6 +157,7 @@ export function DocumentExportModal({
                 download={fileBaseName ? `${fileBaseName}.${documentExtension(item)}` : undefined}
                 rel="noreferrer"
                 target="_blank"
+                onClick={event => { if (item.format !== 'word') onDownload?.(event, item.format) }}
               >
                 <DocumentCardContent
                   action={t('Відкрити')}

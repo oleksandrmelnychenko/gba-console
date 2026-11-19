@@ -189,8 +189,21 @@ function assertSameResult(expected: ReportResultSession, actual: ReportResultSes
   if (expected.ResultId !== actual.ResultId || expected.RequestSha256 !== actual.RequestSha256 || expected.ResultSha256 !== actual.ResultSha256)
     throw new Error('Сервер повернув інший розрахунок. Повторно сформуйте звіт.')
 }
+const unavailableResultMessage = 'Строк зберігання результату завершився або він недоступний. Сформуйте звіт повторно; автоматичний перерахунок не виконувався.'
+
+export class ReportResultUnavailableError extends Error {
+  constructor(cause?: unknown) {
+    super(unavailableResultMessage, { cause })
+    this.name = 'ReportResultUnavailableError'
+  }
+}
+
 function cachedResultError(error: unknown): never {
-  if (error instanceof ApiError && error.status === 404) throw new Error('Строк зберігання результату завершився або він недоступний. Сформуйте звіт повторно; автоматичний перерахунок не виконувався.')
+  if (error instanceof ApiError && error.status === 404) {
+    const payload = error.payload as { ErrorCode?: string } | null
+    if (payload?.ErrorCode === 'native_report_result_unavailable') throw new ReportResultUnavailableError(error)
+    throw new Error(unavailableResultMessage, { cause: error })
+  }
   throw error
 }
 export type ReportPreviewColumnRequest = { offset: number; limit: number }
