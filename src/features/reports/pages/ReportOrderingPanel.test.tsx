@@ -8,11 +8,17 @@ it('shows one correction message when ordering has no enabled measure', () => {
   const request = orderedAccountRequest()
   request.sorted.Measurements = request.sorted.Measurements.map(measure => ({ ...measure, IsChecked: false }))
 
-  render(<MantineProvider env="test">
+  const view = render(<MantineProvider env="test">
     <ReportOrderingPanel data={request} dataset={orderedAccountDataset} disabled={false} onChange={vi.fn()} />
   </MantineProvider>)
 
   const panel = within(screen.getByRole('region', { name: 'Сортування значень груп' }))
   expect(panel.getByText(/виберіть один увімкнений показник/)).toBeTruthy()
   expect(panel.queryByText('Спочатку увімкніть показник у налаштуваннях звіту.')).toBeNull()
+
+  view.rerender(<MantineProvider env="test">
+    <ReportOrderingPanel data={request} dataset={orderedAccountDataset} disabled={false} showError={false} onChange={vi.fn()} />
+  </MantineProvider>)
+  expect(panel.queryByText(/виберіть один увімкнений показник/)).toBeNull()
+  expect(panel.getByRole('button', { name: 'Очистити збережене сортування' })).toBeTruthy()
 })

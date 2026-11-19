@@ -5,11 +5,11 @@ import { readOrderingCapabilities, readReportOrdering, reportOrderingError, requ
 const byOptions = [{ value: '1', label: 'За значенням поля' }, { value: '2', label: 'За точним підписом' }, { value: '3', label: 'За підсумком показника' }]
 const directions = [{ value: '1', label: 'За зростанням' }, { value: '2', label: 'За спаданням' }]
 const nullPositions = [{ value: '1', label: 'Порожні на початку' }, { value: '2', label: 'Порожні в кінці' }]
-type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; onChange: (value: unknown) => void }
+type Props = { data: ReportRequestBody; dataset?: ReportDataset; disabled: boolean; showError?: boolean; onChange: (value: unknown) => void }
 
-export function ReportOrderingPanel({ data, dataset, disabled, onChange }: Props) {
+export function ReportOrderingPanel({ data, dataset, disabled, showError = true, onChange }: Props) {
   const raw = requestOrdering(data), ordering = readReportOrdering(raw), capability = readOrderingCapabilities(dataset)
-  const error = reportOrderingError(data, dataset), invalidShape = raw != null && !ordering
+  const error = showError ? reportOrderingError(data, dataset) : null, invalidShape = raw != null && !ordering
   const activeMeasures = data.sorted.Measurements.filter(item => item.IsChecked)
   return <Stack component="section" aria-label="Сортування значень груп" className="reports-constructor-rule-panel" gap="xs" p="sm">
     <Group className="reports-constructor-rule-header" justify="space-between" align="start" gap="xs">

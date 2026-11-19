@@ -194,7 +194,7 @@ import { ReportTemplatesPanel } from './ReportTemplatesPanel'
 import { retainStoredGroupingLabels, retainStoredMeasurementLabels, retainStoredTemplateFields } from '../data/reportTemplateDraft'
 
 import { ReportOrderingPanel } from './ReportOrderingPanel'
-import { requestOrdering } from '../data/reportOrdering'
+import { reportOrderingError, requestOrdering } from '../data/reportOrdering'
 import { createFilterExpression, readReportFilterExpression, requestFilterExpression } from '../data/reportFilterExpression'
 import { FULL_REPORT_MAX_DATE, FULL_REPORT_MIN_DATE, isFullRangeReportDate } from '../data/reportDateRange'
 import { buildReportBuilderRequest } from '../data/reportBuilderRequest'
@@ -999,6 +999,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
     filterExpression: !analysisRules.filterExpression ? null : <ReportFilterExpressionPanel data={templateBody} dataset={settlementDataset} disabled={comparisonSettingsDisabled}
       notice={filterLogic.notice} onChange={filterLogic.change} />,
     ordering: !analysisRules.ordering ? null : <ReportOrderingPanel data={templateBody} dataset={dataset} disabled={comparisonSettingsDisabled}
+      showError={!appliedSettings.pending || reportOrderingError(templateBody, dataset) !== submitBlockedReason}
       onChange={groupingOrdering.changeOrdering} />,
   }
   const exportModal = (
