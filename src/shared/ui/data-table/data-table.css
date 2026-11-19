@@ -48,6 +48,11 @@
   scrollbar-width: thin;
 }
 
+.data-table-scroll[tabindex]:focus-visible {
+  outline: 2px solid var(--app-focus-border);
+  outline-offset: -2px;
+}
+
 .data-table-empty {
   align-items: center;
   display: flex;

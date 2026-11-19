@@ -1,4 +1,4 @@
-import { Accordion, ActionIcon, Alert, Button, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core'
+import { ActionIcon, Alert, Button, Group, SegmentedControl, Select, Stack } from '@mantine/core'
 import type { DatePickerPreset } from '@mantine/dates'
 import { CircleAlert, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -8,28 +8,22 @@ import { formatKyivBusinessDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { PageSubmenuActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { TableRowAction } from '../../../shared/ui/table-row-action/TableRowAction'
 import { ToolbarDateRangeFilter } from '../../../shared/ui/ToolbarDateRangeFilter'
 import { useAuth } from '../../auth/useAuth'
 import { getReportHistory, getReportHistoryUsers, type ReportHistoryItem, type ReportHistoryUser } from '../api/reportHistoryApi'
 import { availableBug1274WorkbookLaunches, type WorkbookLaunch } from '../data/bug1274WorkbookLaunch'
 import { BUG_1274_ACTIVE_DATA_SOURCES } from '../data/reportMigration'
 import {
-  defaultHistoryPeriod, distinctLabels, historyDayTitle, historyPeriodPresets, historyReportKeyName, historyReportOptions, historySummary, historyTime,
-  movementHistorySummary, rememberHistoryRun, rememberWorkbookOpen, type ReportHistoryAction,
+  defaultHistoryPeriod, distinctLabels, historyDayTitle, historyPeriodPresets, historyReportKeyName, historyReportOptions,
+  rememberHistoryRun, rememberWorkbookOpen, type ReportHistoryAction,
 } from '../data/reportHistory'
 import { useReportDatasets } from '../hooks/useReportDatasets'
-import type { ReportDataset } from '../types'
+import { ReportHistoryTable, type HistoryGroup, type HistoryGrouping, type HistoryGroupState } from './ReportHistoryTable'
 import { ReportsNavigation } from './workbook-desk/ReportsNavigation'
 import '../../../shared/ui/console-table-page.css'
 import './report-history-page.css'
 
 const DAY_PAGE = 50
-type DayState = { items: ReportHistoryItem[]; loading: boolean; error: string | null; done: boolean }
-type Grouping = 'day' | 'report'
-type HistoryGroup = { key: string; title: string; count: number; from: string; to: string; reports: string[] }
-
-const KYIV_DAY = new Intl.DateTimeFormat('uk-UA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit' })
 
 export function ReportHistoryPage() {
   const { t } = useI18n()
@@ -42,7 +36,7 @@ export function ReportHistoryPage() {
   const [to, setTo] = useState(initial.to)
   const [reports, setReports] = useState<string[]>([])
   const [user, setUser] = useState<string | null>(null)
-  const [grouping, setGrouping] = useState<Grouping>('day')
+  const [grouping, setGrouping] = useState<HistoryGrouping>('day')
   const [days, setDays] = useState<{ day: string; count: number }[] | null>(null)
   const [reportCounts, setReportCounts] = useState<{ report: string; count: number }[]>([])
   const [isHead, setIsHead] = useState(false)
@@ -50,7 +44,7 @@ export function ReportHistoryPage() {
   const [error, setError] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
   const [opened, setOpened] = useState<string[]>([])
-  const [dayStates, setDayStates] = useState<Record<string, DayState>>({})
+  const [dayStates, setDayStates] = useState<Record<string, HistoryGroupState>>({})
   const generation = useRef(0)
   const datasetStorage = useReportDatasets(allowed)
   const datasets = datasetStorage.datasets
@@ -121,10 +115,10 @@ export function ReportHistoryPage() {
     }
   }, [opened, dayStates, loadDay, groups])
 
-  function run(item: ReportHistoryItem, action: ReportHistoryAction) {
+  const run = useCallback((item: ReportHistoryItem, action: ReportHistoryAction) => {
     rememberHistoryRun(item.id, action, sessionStorage, Date.now(), item.report)
     navigate('/reports/stocks')
-  }
+  }, [navigate])
 
   function openWorkbook(launch: WorkbookLaunch) {
     rememberWorkbookOpen(launch.fileName)
@@ -138,42 +132,8 @@ export function ReportHistoryPage() {
     setUser(null)
   }
 
-  const datasetOf = (source: number): ReportDataset | undefined => datasets.find(item => item.DataSource === source)
-
-  function entry(item: ReportHistoryItem) {
-    const dataset = datasetOf(item.dataSource)
-    const name = t(historyReportKeyName(item.report, datasets, launches))
-    const summary = item.movement ? movementHistorySummary(item.movement, item.names) : item.data ? historySummary(item.data, item.kind === 'regional' ? datasetOf(39) : dataset) : null
-    const usable = item.kind === 'movement' ? Boolean(item.movement)
-      : Boolean(item.data && datasetOf(item.data.dataSource ?? -1) && BUG_1274_ACTIVE_DATA_SOURCES.has(item.data.dataSource ?? -1))
-    const detailsId = `history-entry-${item.id}`
-    const unavailable = usable ? undefined : t('Цей звіт більше не можна відкрити.')
-    return <li key={item.id} className="report-history__entry" data-testid="report-history-entry">
-      <div className="report-history__entry-main">
-        <div className="report-history__entry-heading" id={detailsId}>
-          <time dateTime={item.formedAtUtc} className="report-history__time">
-            {grouping === 'report' ? `${KYIV_DAY.format(new Date(item.formedAtUtc))} · ` : ''}{historyTime(item.formedAtUtc)}
-          </time>
-          {grouping === 'day' ? <span className="report-history__entry-title">{name}</span> : null}
-        </div>
-        {summary?.filters ? <Text className="report-history__entry-detail" lineClamp={2} title={summary.filters}>{summary.filters}</Text> : null}
-        {unavailable ? <Text className="report-history__entry-detail">{unavailable}</Text> : null}
-      </div>
-      <div className="report-history__entry-period">
-        {summary ? <><span>{t('Період звіту')}</span> <span className="report-history__period-value">{summary.period}</span></> : null}
-      </div>
-      <div className="report-history__entry-meta">
-        <span>{item.output === 'excel' ? 'Excel' : t('На екрані')}</span>
-        <span>{t('Рядків')}: {item.rowCount.toLocaleString('uk-UA')}
-          {isHead ? ` · ${userLabels.get(item.userNetId) ?? (item.userName || t('Без імені'))}` : ''}</span>
-      </div>
-      <div className="report-history__entry-actions">
-        <TableRowAction action="open" label={t('Відкрити')} aria-describedby={detailsId} disabled={!usable} hint={unavailable}
-          onClick={() => run(item, 'open')} />
-        <TableRowAction action="download" label={t('Завантажити Excel')} aria-describedby={detailsId} disabled={!usable} hint={unavailable}
-          onClick={() => run(item, 'excel')} />
-      </div>
-    </li>
+  function toggleGroup(key: string) {
+    setOpened(current => current.includes(key) ? current.filter(item => item !== key) : [...current, key])
   }
 
   return <Stack className="console-table-page reports-history-page" gap={8}>
@@ -182,7 +142,6 @@ export function ReportHistoryPage() {
         disabled={!datasetStorage.loaded} onOpen={openWorkbook} onStocks={() => navigate('/reports/stocks')} />
     </PageSubmenuActions>
     <div className="console-table-shell report-history__shell">
-      <h1 className="report-history__title">{t('Історія звітів')}</h1>
       {!allowed ? <Alert className="console-table-alert" color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
       {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
     </Alert> : <>
@@ -199,43 +158,21 @@ export function ReportHistoryPage() {
             value={user} onChange={setUser} data={users.map(item => ({ value: item.userNetId, label: userLabels.get(item.userNetId)! }))} /> : null}
           <div className="app-filter-field report-history__grouping">
             <span className="mantine-InputWrapper-label">{t('Групувати')}</span>
-            <SegmentedControl size="xs" aria-label={t('Групувати')} value={grouping} onChange={value => setGrouping(value as Grouping)}
+            <SegmentedControl size="xs" aria-label={t('Групувати')} value={grouping} onChange={value => setGrouping(value as HistoryGrouping)}
             data={[{ value: 'day', label: t('за днями') }, { value: 'report', label: t('за звітами') }]} />
           </div>
           <ActionIcon size={32} color="gray" variant="light" disabled={!filtered} aria-label={t('Скинути фільтри')} title={t('Скинути фільтри')}
             onClick={resetFilters}><RotateCcw size={16} aria-hidden="true" /></ActionIcon>
         </div>
       </div>
-      <div className="console-table-body report-history__results" role="region" aria-label={t('Історія звітів')} tabIndex={0}>
+      <div className="console-table-body">
       {periodError ? <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />}>{periodError}</Alert>
         : error ? <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />}>
           <Group gap={8}>{error}<Button size="xs" variant="default" onClick={() => setReload(value => value + 1)}>{t('Спробувати ще раз')}</Button></Group>
         </Alert>
-        : days === null ? <Group className="report-history__state" role="status" gap={8}><Loader size="sm" /><Text size="sm">{t('Завантаження…')}</Text></Group>
-        : groups.length === 0 ? <Text className="report-history__state" size="sm" c="dimmed">{t('За вибраний період звітів не формували.')}</Text>
-        : <Accordion className="report-history__groups" multiple value={opened} onChange={setOpened} variant="unstyled" order={2} chevronPosition="left">
-          {groups.map(group => {
-            const state = dayStates[group.key]
-            return <Accordion.Item key={group.key} value={group.key}>
-              <Accordion.Control className="report-history__group-control">
-                <span className="report-history__group-title">{group.title}</span>
-                <span className="report-history__group-count" title={t('Записів')}>{group.count.toLocaleString('uk-UA')}</span>
-              </Accordion.Control>
-              <Accordion.Panel>
-                {state?.items.length ? <ul className="report-history__entries">{state.items.map(entry)}</ul> : null}
-                {state?.error ? <Alert className="console-table-alert" color="red" icon={<CircleAlert size={18} />}>
-                  <Group gap={8}>{state.error}
-                    <Button size="xs" variant="default" onClick={() => void loadDay(group, state.items.length)}>{t('Спробувати ще раз')}</Button>
-                  </Group>
-                </Alert> : null}
-                {state?.loading ? <Group className="report-history__state" role="status" gap={8}><Loader size="sm" /><Text size="sm">{t('Завантаження…')}</Text></Group> : null}
-                {state && !state.loading && !state.error && !state.done ? <div className="report-history__state">
-                  <Button size="xs" variant="default" onClick={() => void loadDay(group, state.items.length)}>{t('Показати ще')}</Button>
-                </div> : null}
-              </Accordion.Panel>
-            </Accordion.Item>
-          })}
-        </Accordion>}
+        : <ReportHistoryTable groups={groups} grouping={grouping} opened={opened} groupStates={dayStates} datasets={datasets}
+          launches={launches} userLabels={isHead ? userLabels : undefined} loading={days === null}
+          onToggleGroup={toggleGroup} onLoadGroup={loadDay} onRun={run} />}
       </div>
     </>}
     </div>

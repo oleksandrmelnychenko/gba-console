@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import type {
   ColumnOrderState,
   ColumnPinningState,
@@ -76,6 +76,8 @@ export type DataTableProps<TData> = {
   layoutVersion?: number | string
   getRowId?: (row: TData, index: number) => string
   isLoading?: boolean
+  /** Names the keyboard-focusable scrolling region when supplied. */
+  scrollRegionLabel?: string
   minWidth?: number
   /** When true, one content column stretches to fill the viewport. Defaults to true; pass false for an intentional fixed-width table. */
   fillAvailableWidth?: boolean
@@ -107,6 +109,8 @@ export type DataTableProps<TData> = {
   stickyHorizontalScrollbar?: boolean
   onRowClick?: (row: TData) => void
   rowClassName?: (row: TData) => string | undefined
+  /** Groups and inline states may span the visible columns. Return null for a regular row. */
+  renderFullWidthRow?: (row: TData) => ReactElement | null
   manualSorting?: boolean
   sorting?: DataTableSortingState
   onSortingChange?: (sorting: DataTableSortingState) => void

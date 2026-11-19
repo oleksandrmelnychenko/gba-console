@@ -83,6 +83,7 @@ export function DataTable<TData>({
   layoutVersion,
   getRowId,
   isLoading = false,
+  scrollRegionLabel,
   minWidth = 960,
   fillAvailableWidth = true,
   distributeAvailableWidth = false,
@@ -104,6 +105,7 @@ export function DataTable<TData>({
   stickyHorizontalScrollbar = false,
   onRowClick,
   rowClassName,
+  renderFullWidthRow,
   manualSorting = false,
   sorting: controlledSorting,
   onSortingChange,
@@ -609,7 +611,8 @@ export function DataTable<TData>({
         ? createPortal(toolbarNode, toolbarPortalTarget)
         : null}
 
-      <div ref={setScrollNode} className="data-table-scroll" style={scrollStyle}>
+      <div ref={setScrollNode} className="data-table-scroll" style={scrollStyle}
+        role={scrollRegionLabel ? 'region' : undefined} aria-label={scrollRegionLabel} tabIndex={scrollRegionLabel ? 0 : undefined}>
         <DndContext
           collisionDetection={collisionDetection}
           modifiers={[restrictToHorizontalAxis]}
@@ -684,6 +687,7 @@ export function DataTable<TData>({
               visibleColumnCount={visibleColumnCount}
               onRowClick={onRowClick}
               rowClassName={rowClassName}
+              renderFullWidthRow={renderFullWidthRow}
             />
             {summaryCells && !isLoading && (
               <Table.Tfoot>

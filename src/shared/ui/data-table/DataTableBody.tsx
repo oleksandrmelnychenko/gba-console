@@ -1,4 +1,4 @@
-import { Fragment, memo, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, memo, type CSSProperties, type ReactElement, type ReactNode } from 'react'
 import { ActionIcon, Table } from '@mantine/core'
 import { ChevronRight } from 'lucide-react'
 import { flexRender, type Cell, type Column, type Row, type Table as TableInstance } from '@tanstack/react-table'
@@ -30,6 +30,7 @@ type DataTableBodyProps<TData> = {
   visibleColumnCount: number
   onRowClick?: (row: TData) => void
   rowClassName?: (row: TData) => string | undefined
+  renderFullWidthRow?: (row: TData) => ReactElement | null
 }
 
 type DataTableBodyRowProps<TData> = {
@@ -177,6 +178,7 @@ export function DataTableBody<TData>({
   visibleColumnCount,
   onRowClick,
   rowClassName,
+  renderFullWidthRow,
 }: DataTableBodyProps<TData>) {
   const hasFillerColumn = fillerColumnWidth > 0
   const totalColumnCount = visibleColumnCount + (expand ? 1 : 0) + (hasFillerColumn ? 1 : 0)
@@ -268,8 +270,14 @@ export function DataTableBody<TData>({
 
   return (
     <Table.Tbody>
-      {table.getRowModel().rows.map((row) => (
-        <DataTableBodyRow
+      {table.getRowModel().rows.map((row) => {
+        const content = renderFullWidthRow?.(row.original)
+        const className = rowClassName?.(row.original)
+        return content ? (
+          <Table.Tr key={row.id} className={`data-table-row ${className ?? ''}`}>
+            <Table.Td className="data-table-cell" colSpan={totalColumnCount}>{content}</Table.Td>
+          </Table.Tr>
+        ) : <DataTableBodyRow
           key={row.id}
           columnWidths={columnWidths}
           expand={expand}
@@ -280,9 +288,9 @@ export function DataTableBody<TData>({
           row={row}
           totalColumnCount={totalColumnCount}
           onRowClick={onRowClick}
-          className={rowClassName?.(row.original)}
+          className={className}
         />
-      ))}
+      })}
     </Table.Tbody>
   )
 }
