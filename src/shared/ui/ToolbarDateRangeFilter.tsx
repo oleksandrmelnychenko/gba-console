@@ -1,7 +1,7 @@
-import { ActionIcon, Button, Group, Popover, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Group, Popover, TextInput, Tooltip, VisuallyHidden } from '@mantine/core'
 import { DatePicker, type DatePickerPreset } from '@mantine/dates'
 import { CalendarDays, Ellipsis } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useI18n } from '../i18n/useI18n'
 import { formatKyivBusinessDate } from '../date/dateTime'
 import './toolbar-date-range-filter.css'
@@ -15,7 +15,9 @@ type Props = {
   required?: boolean
   fromLabel?: string
   toLabel?: string
-  trigger?: 'calendar' | 'more'
+  label?: string
+  trigger?: 'calendar' | 'more' | 'range'
+  presets?: DatePickerPreset<'range'>[]
   onChange: (range: { from: string; to: string }) => void
 }
 
@@ -55,16 +57,20 @@ function buildPresets(t: (key: string) => string, today: string): DatePickerPres
   ]
 }
 
-export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, trigger = 'calendar', onChange }: Props) {
+export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required = false, fromLabel, toLabel, label = 'Період',
+  trigger = 'calendar', presets: customPresets, onChange }: Props) {
   const { t } = useI18n()
+  const dialogLabelId = useId()
   const [opened, setOpened] = useState(false)
   const [draft, setDraft] = useState({ from, to })
   const [presetDay, setPresetDay] = useState(() => formatKyivBusinessDate())
-  const presets = useMemo(() => buildPresets(t, presetDay), [t, presetDay])
+  const presets = useMemo(() => customPresets ?? buildPresets(t, presetDay), [customPresets, t, presetDay])
   const error = validateRange(draft, required, min, max)
   const rangeError = error ? t(error) : null
   const invalidRange = Boolean(rangeError)
   const summary = from || to ? `${displayDate(from)} — ${displayDate(to)}` : t('Увесь період')
+  const rangeLabel = t(label)
+  const triggerLabel = `${rangeLabel}: ${summary}`
   const fromMax = [draft.to, max].filter(Boolean).sort()[0]
   const toMin = [draft.from, min].filter(Boolean).sort().at(-1)
 
@@ -77,25 +83,30 @@ export function ToolbarDateRangeFilter({ from, to, min, max, disabled, required 
   }
 
   return (
-    <div className="app-date-range-icon-wrap">
+    <div className={trigger === 'range' ? 'app-date-range-text-wrap' : 'app-date-range-icon-wrap'}>
       <Popover opened={opened} onChange={changeOpened} position="bottom-start" withinPortal trapFocus returnFocus shadow="md">
         <Popover.Target>
-          <Tooltip label={`${t('Період')}: ${summary}`} disabled={opened}>
+          {trigger === 'range' ? <Button type="button" className="app-date-range-trigger" variant="default" disabled={disabled}
+            leftSection={<CalendarDays size={16} aria-hidden="true" />} aria-label={triggerLabel}
+            aria-haspopup="dialog" aria-expanded={opened} onClick={() => changeOpened(!opened)}>
+            {summary}
+          </Button> : <Tooltip label={triggerLabel} disabled={opened}>
             <ActionIcon
               variant="default"
               disabled={disabled}
-              aria-label={`${t('Період')}: ${summary}`}
+              aria-label={triggerLabel}
               aria-haspopup="dialog"
               aria-expanded={opened}
               onClick={() => changeOpened(!opened)}
             >
               {trigger === 'more' ? <Ellipsis size={18} /> : <CalendarDays size={18} />}
             </ActionIcon>
-          </Tooltip>
+          </Tooltip>}
         </Popover.Target>
         {/* Mantine Drawer checks this marker on the key target during window capture. */}
-        <Popover.Dropdown className="app-date-range-menu" role="dialog" aria-label={t('Період')} data-mantine-stop-propagation
+        <Popover.Dropdown className="app-date-range-menu" aria-labelledby={dialogLabelId} data-mantine-stop-propagation
           onFocusCapture={(event) => event.target.setAttribute('data-mantine-stop-propagation', 'true')}>
+          <VisuallyHidden id={dialogLabelId}>{rangeLabel}</VisuallyHidden>
           <form
             className="app-date-range-panel"
             onSubmit={(event) => {

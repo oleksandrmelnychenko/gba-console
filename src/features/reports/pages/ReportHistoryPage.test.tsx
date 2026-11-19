@@ -62,7 +62,7 @@ it('groups the last 30 days by day with counts and opens the newest day', async 
 it('rebuilds an entry on the reports page with its settings', async () => {
   render(page())
   const entries = await screen.findAllByTestId('report-history-entry')
-  fireEvent.click(within(entries[0]).getByRole('button', { name: 'Excel' }))
+  fireEvent.click(within(entries[0]).getByRole('button', { name: 'Завантажити Excel' }))
   await screen.findByText('reports page')
   expect(JSON.parse(sessionStorage.getItem(REPORT_HISTORY_RUN_KEY)!)).toMatchObject({ id: '11111111-1111-1111-1111-111111111111', action: 'excel' })
 })
@@ -81,23 +81,53 @@ it('switches to grouping by report and loads a report group for the whole period
   await screen.findByText('17 листопада 2026')
   fireEvent.click(screen.getByText('за звітами'))
   expect(await screen.findByText('Рух товару')).toBeTruthy()
-  expect(screen.getAllByText('Продажі з поверненнями').length).toBeGreaterThan(0)
+  const history = screen.getByRole('region', { name: 'Історія звітів' })
+  const entries = await within(history).findAllByTestId('report-history-entry')
+  expect(within(history).getAllByText('Продажі з поверненнями')).toHaveLength(1)
+  expect(within(entries[0]).queryByText('Продажі з поверненнями')).toBeNull()
   await waitFor(() => expect(vi.mocked(getReportHistory).mock.calls.some(([query]) =>
     query.reports?.length === 1 && query.reports[0] === '2' && query.from !== query.to && query.limit === 50)).toBe(true))
 })
 
-it('owns vertical scrolling inside the bounded console frame and supports keyboard focus', async () => {
-  const view = render(page())
+it('makes the result region separately focusable from the filters', async () => {
+  render(page())
   await screen.findAllByTestId('report-history-entry')
-  const history = view.container.querySelector('.reports-history-page') as HTMLElement
-  const style = getComputedStyle(history)
-  expect(style.overflowY).toBe('auto')
-  expect(parseFloat(style.minHeight)).toBe(0)
-  expect(style.flex).toBe('1 1 auto')
-  expect(screen.getByRole('region', { name: 'Історія звітів' })).toBe(history)
+  const history = screen.getByRole('region', { name: 'Історія звітів' })
+  expect(within(history).queryByRole('button', { name: /^Дата формування:/ })).toBeNull()
   expect(history.tabIndex).toBe(0)
   history.focus()
   expect(document.activeElement).toBe(history)
+})
+
+it('applies and resets the formation date separately from the report data period', async () => {
+  render(page())
+  const entries = await screen.findAllByTestId('report-history-entry')
+  expect(within(entries[0]).getByText('Період звіту')).toBeTruthy()
+  const range = screen.getByRole('button', { name: /^Дата формування:/ })
+  const originalRange = range.textContent
+  fireEvent.click(range)
+  const calendar = await screen.findByRole('dialog', { name: 'Дата формування' })
+  fireEvent.click(within(calendar).getByRole('button', { name: 'Сьогодні' }))
+  fireEvent.click(within(calendar).getByRole('button', { name: 'Застосувати' }))
+  await waitFor(() => {
+    const lastSummary = vi.mocked(getReportHistory).mock.calls.findLast(([query]) => query.limit === 1)?.[0]
+    expect(lastSummary?.from).toBe(lastSummary?.to)
+    expect(range.textContent).not.toBe(originalRange)
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Скинути фільтри' }))
+  expect(range.textContent).toBe(originalRange)
+})
+
+it('shows all saved history when clearing a report selection', async () => {
+  render(page())
+  await screen.findAllByTestId('report-history-entry')
+  fireEvent.click(screen.getByRole('button', { name: 'Звіт' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Продажі з поверненнями' }))
+  const summary = () => vi.mocked(getReportHistory).mock.calls.findLast(([query]) => query.limit === 1)?.[0]
+  await waitFor(() => expect(summary()?.reports).toEqual(['2']))
+  const filtered = summary()
+  fireEvent.click(screen.getByRole('option', { name: 'Усі звіти' }))
+  await waitFor(() => expect(summary()).toMatchObject({ from: filtered?.from, to: filtered?.to, reports: [] }))
 })
 
 it.each(['day', 'report'] as const)('loads all 238 reports without losing entries when grouped by %s', async grouping => {
@@ -131,7 +161,7 @@ it.each(['day', 'report'] as const)('loads all 238 reports without losing entrie
     expect(within(item).getByText(new RegExp(`Рядків: ${index + 1} ·`))).toBeTruthy()
   }
   expect(within(entries[237]).getByRole('button', { name: 'Відкрити' })).toHaveProperty('disabled', false)
-  expect(within(entries[237]).getByRole('button', { name: 'Excel' })).toHaveProperty('disabled', false)
+  expect(within(entries[237]).getByRole('button', { name: 'Завантажити Excel' })).toHaveProperty('disabled', false)
 })
 
 it('shows an explicit empty state without pagination when no history is visible', async () => {

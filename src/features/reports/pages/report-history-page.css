@@ -1,0 +1,187 @@
+.report-history__title {
+  margin: 0;
+  padding: var(--app-space-3) var(--app-space-2);
+  color: var(--mantine-color-gray-8);
+  font: 650 19px/24px var(--font-sans);
+}
+
+.report-history__shell .app-filter-fields > .report-history__date {
+  flex: 0 1 232px;
+}
+
+.report-history__shell .app-filter-fields > .report-history__user-filter {
+  flex: 0 1 220px;
+}
+
+.report-history__shell .app-filter-fields > .report-history__grouping {
+  flex: 0 1 184px;
+}
+
+.report-history__results {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.report-history__results:focus-visible,
+.report-history__group-control:focus-visible {
+  outline: 2px solid var(--app-focus-border);
+  outline-offset: -2px;
+}
+
+.report-history__groups .mantine-Accordion-item {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.report-history__group-control.mantine-Accordion-control {
+  min-height: 40px;
+  padding: var(--app-space-2);
+  gap: var(--app-space-2);
+  background: var(--mantine-color-gray-0);
+}
+
+.report-history__group-control .mantine-Accordion-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--app-space-1) var(--app-space-2);
+  padding: 0;
+}
+
+.report-history__group-control .mantine-Accordion-chevron {
+  margin-inline-end: 0;
+  color: var(--mantine-color-gray-6);
+}
+
+.report-history__group-control:hover .mantine-Accordion-chevron,
+.report-history__group-control[aria-expanded='true'] .mantine-Accordion-chevron {
+  color: var(--brand-orange);
+}
+
+.report-history__group-title {
+  min-width: 0;
+  color: var(--mantine-color-gray-8);
+  font-size: 14px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.report-history__group-count {
+  color: var(--mantine-color-gray-7);
+  font: 600 11px/16px var(--font-mono);
+}
+
+.report-history__groups .mantine-Accordion-content {
+  padding: 0;
+}
+
+.report-history__entries {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-history__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(176px, 1fr) minmax(128px, .75fr) auto;
+  grid-template-areas: 'main period meta actions';
+  align-items: start;
+  gap: var(--app-space-1) var(--app-space-3);
+  padding: var(--app-space-2);
+  border-top: 1px solid var(--mantine-color-gray-1);
+}
+
+.report-history__entry:hover,
+.report-history__entry:focus-within {
+  background: var(--mantine-color-gray-0);
+}
+
+.report-history__entry-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.report-history__entry-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--app-space-1) var(--app-space-2);
+}
+
+.report-history__time,
+.report-history__period-value {
+  color: var(--mantine-color-gray-7);
+  font: 600 12px/20px var(--font-mono);
+}
+
+.report-history__time {
+  white-space: nowrap;
+}
+
+.report-history__entry-title {
+  min-width: 0;
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.report-history__entry-detail.mantine-Text-root,
+.report-history__entry-period,
+.report-history__entry-meta {
+  min-width: 0;
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.report-history__entry-period {
+  grid-area: period;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--app-space-1);
+}
+
+.report-history__entry-meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--app-space-2);
+}
+
+.report-history__entry-actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-space-1);
+}
+
+.report-history__state {
+  padding: var(--app-space-3) var(--app-space-2);
+}
+
+@container registry (max-width: 700px) {
+  .report-history__entry {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'main actions' 'period actions' 'meta actions';
+  }
+}
+
+@container registry (max-width: 520px) {
+  .report-history__shell .app-filter-fields > .report-history__date,
+  .report-history__shell .app-filter-fields > .report-history__user-filter {
+    flex: 1 1 100%;
+  }
+
+  .report-history__shell .app-filter-fields > .report-history__grouping {
+    flex: 1 1 144px;
+  }
+
+  .report-history__shell .report-history__report-filter {
+    flex: 1 1 128px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}

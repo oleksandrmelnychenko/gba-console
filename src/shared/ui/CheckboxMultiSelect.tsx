@@ -21,6 +21,7 @@ export function CheckboxMultiSelect({
   onChange,
   label,
   placeholder,
+  clearOptionLabel,
   className,
   dropdownClassName,
   limit,
@@ -35,6 +36,8 @@ export function CheckboxMultiSelect({
   onChange: (value: string[]) => void
   label?: string
   placeholder?: string
+  /** Offer an unfiltered choice instead of selecting all catalogue options. */
+  clearOptionLabel?: string
   className?: string
   dropdownClassName?: string
   limit?: number
@@ -53,7 +56,9 @@ export function CheckboxMultiSelect({
 
   const allValues = useMemo(() => data.map((item) => item.value), [data])
   const selectedValues = useMemo(() => new Set(value), [value])
-  const allSelected = allValues.length > 0 && allValues.every((optionValue) => selectedValues.has(optionValue))
+  const allSelected = clearOptionLabel
+    ? value.length === 0
+    : allValues.length > 0 && allValues.every((optionValue) => selectedValues.has(optionValue))
   const singleSelectedLabel = value.length === 1 ? data.find((item) => item.value === value[0])?.label : undefined
   const summary = value.length === 1
     ? singleSelectedLabel || `${t('Вибрано')}: 1`
@@ -76,7 +81,7 @@ export function CheckboxMultiSelect({
       withinPortal={withinPortal}
       onOptionSubmit={(optionValue) => {
         if (optionValue === '__all__') {
-          onChange(allSelected ? [] : allValues)
+          onChange(clearOptionLabel || allSelected ? [] : allValues)
         } else {
           toggle(optionValue)
         }
@@ -117,11 +122,11 @@ export function CheckboxMultiSelect({
         )}
         <Combobox.Options>
           <ScrollArea.Autosize mah={maxDropdownHeight} type="scroll">
-            {!remoteSearch && !search.trim() && allValues.length > 1 && (
+            {!remoteSearch && !search.trim() && (clearOptionLabel || allValues.length > 1) && (
               <Combobox.Option value="__all__" active={allSelected}>
                 <Group gap="sm" wrap="nowrap">
                   <Checkbox checked={allSelected} readOnly size="xs" tabIndex={-1} aria-hidden />
-                  <span>{t('Всі')}</span>
+                  <span>{clearOptionLabel ?? t('Всі')}</span>
                 </Group>
               </Combobox.Option>
             )}
