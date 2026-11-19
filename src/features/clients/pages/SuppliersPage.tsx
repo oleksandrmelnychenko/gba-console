@@ -412,7 +412,7 @@ function useSuppliersPageModel(permissions: SupplierPermissions) {
           ...searchParams,
           limit: totalCount && totalCount > 0 ? totalCount : pageSize,
           offset: 0,
-        })
+        }, 'manufacturers')
 
         setDownloadDocument(document)
         setDownloadModalOpened(true)
@@ -499,7 +499,7 @@ function useSupplierListLoader({
       setError(null)
 
       try {
-        const nextSuppliers = await getSuppliers(searchParams, controller.signal)
+        const nextSuppliers = await getSuppliers(searchParams, controller.signal, 'manufacturers')
 
         if (!cancelled) {
           setSuppliers(nextSuppliers)
@@ -548,7 +548,7 @@ function useSupplierMetaLoader({
     async function loadSupplierMeta() {
       try {
         const [nextTotalCount, nextFilterItems] = await Promise.all([
-          getSupplierCount(),
+          getSupplierCount('manufacturers'),
           getSupplierFilterItems(),
         ])
 

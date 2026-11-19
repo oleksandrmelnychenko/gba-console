@@ -116,6 +116,8 @@ describe('SuppliersPage canonical permission guards', () => {
     renderPage()
 
     const row = await screen.findByRole('button', { name: 'Test supplier' })
+    expect(getSuppliers).toHaveBeenCalledWith(expect.objectContaining({ offset: 0, value: '' }), expect.any(AbortSignal), 'manufacturers')
+    expect(getSupplierCount).toHaveBeenCalledWith('manufacturers')
     expect((row as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByRole('button', { name: 'Добавити' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Експорт в Excel' })).toBeNull()
@@ -157,6 +159,7 @@ describe('SuppliersPage canonical permission guards', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Експорт в Excel' }))
     await waitFor(() => expect(exportSuppliersDocument).toHaveBeenCalledTimes(1))
+    expect(exportSuppliersDocument).toHaveBeenCalledWith(expect.objectContaining({ offset: 0, value: '' }), 'manufacturers')
     expect(switchClientActiveStateForRegistry).not.toHaveBeenCalled()
   })
 })

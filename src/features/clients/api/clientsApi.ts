@@ -25,6 +25,8 @@ const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_FILTER_ENTITY_TYPE_SUPPLIER = 7
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
+const MANUFACTURER_REGISTRY_PATH = '/clients/suppliers/registry/manufacturers'
+type SupplierRegistryScope = 'suppliers' | 'manufacturers'
 const CYRILLIC_CLIENT_CODE_HOMOGLYPHS: Readonly<Record<string, string>> = {
   А: 'A',
   В: 'B',
@@ -88,8 +90,12 @@ async function getClientsFromRoute(
 export async function getSuppliers(
   params: ClientSearchParams,
   signal?: AbortSignal,
+  scope: SupplierRegistryScope = 'suppliers',
 ): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/suppliers/registry/all/filtered', {
+  const path = scope === 'manufacturers'
+    ? `${MANUFACTURER_REGISTRY_PATH}/filtered`
+    : '/clients/suppliers/registry/all/filtered'
+  const result = await apiRequest<unknown>(path, {
     query: {
       active: params.active,
       filterSql: params.filterSql || SUPPLIER_SEARCH_SQL,
@@ -114,7 +120,10 @@ export async function getClientCount(type = CLIENT_TYPE_BUYER): Promise<number> 
   return normalizeCount(result)
 }
 
-export async function getSupplierCount(): Promise<number> {
+export async function getSupplierCount(scope: SupplierRegistryScope = 'suppliers'): Promise<number> {
+  if (scope === 'manufacturers') {
+    return normalizeCount(await apiRequest<unknown>(`${MANUFACTURER_REGISTRY_PATH}/total`))
+  }
   const result = await apiRequest<unknown>('/clients/suppliers/registry/total', {
     query: { type: CLIENT_TYPE_PROVIDER },
   })
@@ -334,8 +343,14 @@ export async function exportClientsDocumentForRegistry(
   return normalizeDocument(result)
 }
 
-export async function exportSuppliersDocument(params: ClientSearchParams): Promise<ClientPrintDocument | null> {
-  const result = await apiRequest<unknown>('/clients/suppliers/document/export', {
+export async function exportSuppliersDocument(
+  params: ClientSearchParams,
+  scope: SupplierRegistryScope = 'suppliers',
+): Promise<ClientPrintDocument | null> {
+  const path = scope === 'manufacturers'
+    ? `${MANUFACTURER_REGISTRY_PATH}/document`
+    : '/clients/suppliers/document/export'
+  const result = await apiRequest<unknown>(path, {
     query: {
       filter: buildClientsSearchFilter({
         ...params,

@@ -355,6 +355,35 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('uses the same search and export filters in the dedicated manufacturer registry', async () => {
+    const params: ClientSearchParams = {
+      active: true,
+      filterEntityType: 7,
+      filterSql: 'Client.FullName',
+      limit: 20,
+      offset: 40,
+      value: 'ПЛА-ТАН',
+    }
+    const supplier: Client = { NetUid: 'manufacturer-1', FullName: 'ПЛА-ТАН' }
+    const document = { DocumentURL: '/exports/manufacturers.xlsx' }
+    const controller = new AbortController()
+    apiRequestMock.mockResolvedValueOnce([supplier]).mockResolvedValueOnce({ Count: '81' }).mockResolvedValueOnce(document)
+
+    await expect(getSuppliers(params, controller.signal, 'manufacturers')).resolves.toEqual([supplier])
+    expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/clients/suppliers/registry/manufacturers/filtered', {
+      query: { active: true, filterSql: 'Client.FullName', limit: 20, offset: 40, typeRoleFilter: undefined, value: 'ПЛА-ТАН' },
+      signal: controller.signal,
+    })
+    await expect(getSupplierCount('manufacturers')).resolves.toBe(81)
+    expect(apiRequestMock).toHaveBeenNthCalledWith(2, '/clients/suppliers/registry/manufacturers/total')
+
+    const exportParams = { ...params, offset: 0, limit: 81 }
+    await expect(exportSuppliersDocument(exportParams, 'manufacturers')).resolves.toEqual(document)
+    expect(apiRequestMock).toHaveBeenNthCalledWith(3, '/clients/suppliers/registry/manufacturers/document', {
+      query: { filter: buildClientsSearchFilter(exportParams) },
+    })
+  })
+
   it('requests the clients export document with the search filter query', async () => {
     const params: ClientSearchParams = {
       offset: 40,
