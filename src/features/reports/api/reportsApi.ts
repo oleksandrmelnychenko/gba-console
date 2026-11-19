@@ -309,7 +309,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
 export const MAX_MANUFACTURER_LOOKUP_SUPPLIERS = 100
 
 export async function searchReportManufacturers(dataSource: number, params: ReportSearchParams, supplierIds: readonly number[] = [],
-  signal?: AbortSignal): Promise<ReportEntity[]> {
+  signal?: AbortSignal): Promise<ManufacturerLookupChoice[]> {
   if (supplierIds.length > MAX_MANUFACTURER_LOOKUP_SUPPLIERS || supplierIds.some(id => !Number.isSafeInteger(id) || id <= 0))
     throw new Error('Оберіть до 100 точних постачальників.')
   const all: ManufacturerLookupChoice[] = []
