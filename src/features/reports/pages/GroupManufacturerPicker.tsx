@@ -45,7 +45,8 @@ function ManufacturerDraft({ groupId, groupName, onApply }: Pick<Props, 'groupId
           onClick={() => { setSupplier(undefined); setBrands([]) }}>Змінити постачальника</Button>
       </Group>
       <DirectoryPicker key={supplier.Id} groupId={groupId} supplierId={supplier.Id} selected={brands} onChange={setBrands} />
-      <Button type="button" disabled={!brands.length} onClick={() => onApply(brands)}>Додати відбір за виробником</Button>
+      <Button type="button" disabled={!brands.length} onMouseDown={event => event.preventDefault()}
+        onClick={() => onApply(brands)}>Додати відбір за виробником</Button>
     </> : <DirectoryPicker key={groupId} groupId={groupId} selected={[]} onChange={choices => setSupplier(choices[0])} />}
   </Stack>
 }
@@ -77,7 +78,7 @@ function DirectoryPicker({ groupId, supplierId, selected, onChange }: {
   const option = (item: Choice) => ({ value: String(item.Id), label: item.Name })
   return <>
     <ReportValuePicker mode={supplierId === undefined ? 'single' : 'multi'} label={supplierId === undefined ? 'Постачальник' : 'Виробник'}
-      data={options.map(option)} selected={selected.map(option)} search={search}
+      data={options.map(option)} selected={selected.map(option)} search={search} inlineOptions={supplierId !== undefined}
       onSearchChange={text => { setSearch(text); setOffset(0) }} loading={!current} lookupError={current?.error}
       onRetry={() => setAttempt(value => value + 1)} onChange={keys => {
         const byId = new Map([...selected, ...options].map(item => [String(item.Id), item]))

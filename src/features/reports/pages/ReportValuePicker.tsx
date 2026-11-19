@@ -1,5 +1,5 @@
 import { previewCaptionText, previewSharedNames } from '../data/nativeReportPreview'
-import { Button, Checkbox, CloseButton, Combobox, Group, InputBase, Loader, ScrollArea, Stack, Text, useCombobox } from '@mantine/core'
+import { Button, Checkbox, CloseButton, Combobox, Group, InputBase, Loader, Paper, ScrollArea, Stack, Text, useCombobox } from '@mantine/core'
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -24,6 +24,7 @@ export type ReportValuePickerProps = {
   disabled?: boolean
   readOnly?: boolean
   remote?: boolean
+  inlineOptions?: boolean
   emptyMessage?: string
   error?: string
   lookupError?: string
@@ -36,7 +37,7 @@ export type ReportValuePickerProps = {
 
 export function ReportValuePicker({
   mode, data, selected, ownSelectedLabels, search, onSearchChange, onChange, label, placeholder, loading, disabled, readOnly,
-  remote = true, emptyMessage, error, lookupError, onRetry, hasMore, loadingMore, onLoadMore, onAddText,
+  remote = true, inlineOptions, emptyMessage, error, lookupError, onRetry, hasMore, loadingMore, onLoadMore, onAddText,
 }: ReportValuePickerProps) {
   const { t } = useI18n()
   const input = useRef<HTMLInputElement>(null)
@@ -108,6 +109,23 @@ export function ReportValuePicker({
       if (!freeText) { combobox.openDropdown(); combobox.updateSelectedOptionIndex() }
     }} />
 
+  const optionList = <Combobox.Options>
+    <ScrollArea.Autosize mah={260} type="auto" viewportProps={{ tabIndex: -1 }}>
+      {visible.map(item => <Combobox.Option key={item.value} value={item.value} active={keys.has(item.value)} disabled={locked}>
+        <Group gap="xs" wrap="nowrap">
+          {mode === 'multi' || selectedOnly ? <Checkbox checked={keys.has(item.value)} readOnly size="xs" tabIndex={-1} aria-hidden /> : null}
+          <span>{shown(item)}</span>
+        </Group>
+      </Combobox.Option>)}
+      {failed ? combobox.dropdownOpened ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty> : null
+        : !visible.length ? <Combobox.Empty>{busy ? t('Завантаження…') : emptyMessage ?? t('Нічого не знайдено')}</Combobox.Empty> : null}
+      {paging ? <Combobox.Option value={MORE_OPTION} disabled={loadingMore} className="report-value-picker__action">
+        <Group gap="xs" wrap="nowrap">{loadingMore ? <Loader size="xs" /> : null}<span>{t('Ще значення')}</span></Group>
+      </Combobox.Option> : null}
+      {retrying ? <Combobox.Option value={RETRY_OPTION} className="report-value-picker__action">{t('Спробувати ще раз')}</Combobox.Option> : null}
+    </ScrollArea.Autosize>
+  </Combobox.Options>
+
   return <Stack gap={4} className="report-value-picker" data-mode={freeText ? 'text' : mode}>
     {freeText
       ? <Group align="end" gap={8} wrap="nowrap">
@@ -117,24 +135,9 @@ export function ReportValuePicker({
         </Group>
       : <Combobox store={combobox} withinPortal readOnly={locked} onOptionSubmit={submit}>
           <Combobox.Target withExpandedAttribute>{field}</Combobox.Target>
-          <Combobox.Dropdown>
-            <Combobox.Options>
-              <ScrollArea.Autosize mah={260} type="auto" viewportProps={{ tabIndex: -1 }}>
-                {visible.map(item => <Combobox.Option key={item.value} value={item.value} active={keys.has(item.value)} disabled={locked}>
-                  <Group gap="xs" wrap="nowrap">
-                    {mode === 'multi' || selectedOnly ? <Checkbox checked={keys.has(item.value)} readOnly size="xs" tabIndex={-1} aria-hidden /> : null}
-                    <span>{shown(item)}</span>
-                  </Group>
-                </Combobox.Option>)}
-                {failed ? combobox.dropdownOpened ? <Combobox.Empty role="alert" c="red">{lookupError}</Combobox.Empty> : null
-                  : !visible.length ? <Combobox.Empty>{busy ? t('Завантаження…') : emptyMessage ?? t('Нічого не знайдено')}</Combobox.Empty> : null}
-                {paging ? <Combobox.Option value={MORE_OPTION} disabled={loadingMore} className="report-value-picker__action">
-                  <Group gap="xs" wrap="nowrap">{loadingMore ? <Loader size="xs" /> : null}<span>{t('Ще значення')}</span></Group>
-                </Combobox.Option> : null}
-                {retrying ? <Combobox.Option value={RETRY_OPTION} className="report-value-picker__action">{t('Спробувати ще раз')}</Combobox.Option> : null}
-              </ScrollArea.Autosize>
-            </Combobox.Options>
-          </Combobox.Dropdown>
+          {inlineOptions
+            ? combobox.dropdownOpened && <Paper withBorder p={4}>{optionList}</Paper>
+            : <Combobox.Dropdown>{optionList}</Combobox.Dropdown>}
         </Combobox>}
     {lookupError && !(failed && combobox.dropdownOpened)
       ? <Text size="xs" c="red" role="alert" className="report-value-picker__lookup-error">{lookupError}</Text> : null}
