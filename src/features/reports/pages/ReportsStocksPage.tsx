@@ -115,6 +115,7 @@ import {
   REPORT_JOB_DETACHED,
   type ReportJobProgress,
   getReportClientAgreements,
+  getReportBuyerManagers,
   getReportClientTypes,
   getReportOrganizations,
   getReportPricings,
@@ -2670,7 +2671,7 @@ function getSelectionLookupMinLength(fieldType: number): number {
   if (fieldType === REPORT_FILTER_FIELD_TYPES.productGroup || fieldType === REPORT_FILTER_FIELD_TYPES.productMeasureUnit
     || fieldType === REPORT_FILTER_FIELD_TYPES.warehouse || fieldType === REPORT_FILTER_FIELD_TYPES.supplier
     || fieldType === REPORT_FILTER_FIELD_TYPES.supplierContract || fieldType === REPORT_FILTER_FIELD_TYPES.purchaseDocument
-    || fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer) return 0
+    || fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer || fieldType === REPORT_FILTER_FIELD_TYPES.customerManager) return 0
   return fieldType === REPORT_FILTER_FIELD_TYPES.product || fieldType === REPORT_FILTER_FIELD_TYPES.productArticle ? 2 : 1
 }
 
@@ -2755,7 +2756,9 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
-      return searchReportUsers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
+      return fieldType === REPORT_FILTER_FIELD_TYPES.customerManager && !value
+        ? getReportBuyerManagers()
+        : searchReportUsers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     // The report filters on the return document a sale line is ATTRIBUTED to, and captions the grouping from the
     // same column, so «Повернення від клієнта» as a filter and as a dimension answer the same question — and the
     // document can be of any date, which is why the catalogue is asked for whole rather than for the period.

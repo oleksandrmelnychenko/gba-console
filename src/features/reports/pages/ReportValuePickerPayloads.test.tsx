@@ -25,6 +25,7 @@ function lookup(path: string, query: Query): unknown {
   if (path === '/report/datasets/lookup' && [35, 38, 40, 41, 43].includes(Number(query?.dataSource)))
     return [{ Id: '101', Name: 'ALFA', NetUid: 'net-101' }, { Id: '102', Name: 'BETA', NetUid: 'net-102' }]
   if (path === '/report/datasets/lookup') return named
+  if (path === '/usermanagement/profiles/managers/sales') return [{ Id: 101, LastName: 'ALFA' }, { Id: 102, LastName: 'BETA' }]
   if (path === '/usermanagement/profiles/search/lookup') return [{ Id: 101, LastName: 'ALFA' }, { Id: 102, LastName: 'BETA' }]
   if (path === '/organizations/all') return named
   if (path === '/regions/all/codes') return [
@@ -96,6 +97,18 @@ beforeEach(() => {
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
 })
 afterEach(cleanup)
+
+it('lists buyer managers without a query and keeps both selected identities', async () => {
+  render(<Form item={common(2, 10)} condition={2} />)
+
+  const input = screen.getByRole('combobox', { name: 'Значення' })
+  act(() => input.focus())
+  fireEvent.click(await screen.findByRole('option', { name: 'ALFA' }))
+  fireEvent.click(screen.getByRole('option', { name: 'BETA' }))
+
+  expect(api).toHaveBeenCalledWith('/usermanagement/profiles/managers/sales')
+  expect(JSON.parse(request()!).selections[0].Values.map((value: ReportSelectedValue) => value.Data.Id)).toEqual([101, 102])
+})
 
 it.each(cases.flatMap(item => (item.conditions ?? [2, 0]).map(condition => ({ item, condition, title: `${item.name} c${condition}` }))))(
   'sends the same selection for $title', async ({ item, condition }) => {

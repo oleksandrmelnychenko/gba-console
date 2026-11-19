@@ -16,6 +16,7 @@ import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
 import { exactId } from '../data/exactId'
 import { apiRequest, ApiError } from '../../../shared/api/apiClient'
+import { getSaleManagers } from '../../clients/api/clientLookupsApi'
 import type {
   ReportDataset,
   ReportEntity,
@@ -471,6 +472,12 @@ export async function getReportClientAgreements(netId: string): Promise<ReportEn
     ...clientAgreement,
     Name: getClientAgreementName(clientAgreement),
   }))
+}
+
+export async function getReportBuyerManagers(): Promise<ReportEntity[]> {
+  const managers = await getSaleManagers()
+  return managers.map(manager => ({ ...manager, Name: getUserName(manager) }))
+    .sort((left, right) => left.Name.localeCompare(right.Name, 'uk'))
 }
 
 export async function searchReportUsers(
