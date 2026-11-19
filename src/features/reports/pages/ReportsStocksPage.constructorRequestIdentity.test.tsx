@@ -37,6 +37,9 @@ function templateData(file: string): ReportRequestBody {
       Values: [{ Data: { Id: 2, Name: 'A' }, Name: 'A', Value: 2 }] }]
   }
   if (file === GROSS_PROFIT_CONSTRUCTOR_WORKBOOK) {
+    const savedAxes = golden.find(template => template.reportProfile === 'grossProfit')!.sorted
+    data.sorted.Row = structuredClone(savedAxes.Row)
+    data.sorted.Col = structuredClone(savedAxes.Col)
     data.sorted.Measurements = data.sorted.Measurements.filter(item => [2, 6, 10].includes(item.Type))
     data.constructorPresentation = { version: 1, negativeRed: true, grandTotals: false }
     data.numberPresentation = { version: 1, moneyScale: 1000 }

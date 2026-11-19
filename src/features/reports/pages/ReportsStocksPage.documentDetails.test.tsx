@@ -31,6 +31,10 @@ async function open(profile: 'sales' | 'grossProfit' = 'sales') {
 it.each(['sales', 'grossProfit'] as const)('adds a locked deepest detail row in %s, retains current fields and dates, and removes only detail', async profile => {
   const view = await open(profile)
   if (profile === 'sales') applyOrganizationProductSalesLayout()
+  else {
+    fireEvent.click(within(screen.getByRole('region', { name: 'Групування рядків' })).getByRole('button', { name: 'По місяцях' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Перенести По місяцях до колонок' }))
+  }
   removeGrouping('Організація')
   removeGrouping('Товарна група')
   fireEvent.click(screen.getByRole('checkbox', { name: 'Виводити детальні записи' }))
@@ -51,6 +55,7 @@ it.each(['sales', 'grossProfit'] as const)('adds a locked deepest detail row in 
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ reportProfile: profile, from: '2026-10-18', to: '2026-10-27', workbookPresentation: { version: 2, additionalFields: [66, 2], ordering: null } })
   expect(request.sorted.Row.map(row => row.type)).toEqual([7, 21, 84])
+  if (profile === 'grossProfit') expect(request.sorted.Col.map(column => column.type)).toEqual([2])
   fireEvent.click(screen.getByRole('checkbox', { name: 'Виводити детальні записи' }))
   await act(async () => fireEvent.submit(view.container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))

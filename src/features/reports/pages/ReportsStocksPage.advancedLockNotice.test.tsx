@@ -53,8 +53,8 @@ it('removes repeated notices while gross profit is generating and restores edita
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit' })
-  expect(request.sorted.Row.map(field => field.type)).toEqual([4, 10, 7])
-  expect(request.sorted.Col.map(field => field.type)).toEqual([2])
+  expect(request.sorted.Row.map(field => field.type)).toEqual([4, 2, 10, 7])
+  expect(request.sorted.Col).toEqual([])
   expectLockedWithoutNotice()
   await act(async () => complete({ result: { document: {}, raw: {} }, preview: { Version: 1, ResultSha256: 'a'.repeat(64), PresentationOnly: true, Request: null, Page: { Offset: 0, Limit: 50, TotalVisibleRows: 0, ReturnedRows: 0, HasMore: false }, RowSchema: [], ColumnSchema: [], Rows: [], Columns: [], Cells: [] } }))
   const top = screen.getByRole('button', { name: 'Увімкнути TOP цілих груп' })

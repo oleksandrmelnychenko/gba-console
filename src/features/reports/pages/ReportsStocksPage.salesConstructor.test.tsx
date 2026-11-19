@@ -2,6 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
+import { PageHeaderActionsProvider, PageSubmenuActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates } from '../api/reportWorkspaceApi'
 import { grossDataset, netDataset } from '../data/reportDatasets.test-fixtures'
@@ -23,7 +24,9 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 it('opens sales and gross-profit profiles, submits one GBA request and preserves the chosen structure when dates change', async () => {
-  const { container } = render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  const { container } = render(<MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
+    <PageSubmenuActionsSlot /><ReportsStocksPage />
+  </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
   const tabs = await screen.findByRole('navigation', { name: 'Звіти' })
   await waitFor(() => expect(within(tabs).getByRole('button', { name: 'Відкрити Звіт по продажам' })).toHaveProperty('ariaCurrent', 'true'))
   changeReportPeriod({ from: '2026-10-01', to: '2026-10-27' })
@@ -36,7 +39,13 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
     .toEqual(['ОрганізаціяЕлементи', 'Відповідальний менеджер що перевів в статус накладноїЕлементи'])
   expect(within(screen.getByRole('region', { name: 'Групування колонок' })).getAllByRole('listitem').map(item => item.textContent))
     .toEqual(['Відповідальний менеджер що забив товарЕлементи'])
-  fireEvent.click(within(tabs).getByRole('button', { name: 'Відкрити Валовий прибуток' }))
+  const navigation = screen.getByRole('navigation', { name: 'Розділи звітів' })
+  fireEvent.click(within(navigation).getByRole('button', { name: 'Продажі' }))
+  fireEvent.click(await screen.findByRole('menuitem', { name: 'Валовий прибуток' }))
+  const rows = within(screen.getByRole('region', { name: 'Групування рядків' }))
+  expect(rows.getByRole('button', { name: 'Організація' })).toBeTruthy()
+  expect(rows.getByRole('button', { name: 'По місяцях' })).toBeTruthy()
+  expect(within(screen.getByRole('region', { name: 'Групування колонок' })).queryByRole('button', { name: 'По місяцях' })).toBeNull()
   const measurements = screen.getByRole('region', { name: 'Показники' })
   const ratioNames = ['Рентабельність без ПДВ, %', 'Рентабельність з ПДВ, %']
   expect(within(measurements).getAllByRole('checkbox', { name: /^Рентабельність (?:без|з) ПДВ, %$/ })).toHaveLength(2)
@@ -56,10 +65,27 @@ it('opens sales and gross-profit profiles, submits one GBA request and preserves
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
   expect(vi.mocked(previewStockReport).mock.calls[1][0]).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit', constructorPresentation: { version: 1, negativeRed: false, grandTotals: false }, from: '2026-09-01', to: '2026-09-30' })
-  expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Row.map(item => item.type)).toEqual([4, 10, 7])
-  expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Col.map(item => item.type)).toEqual([2])
+  expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Row.map(item => item.type)).toEqual([4, 2, 10, 7])
+  expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Col).toEqual([])
   expect(vi.mocked(previewStockReport).mock.calls[1][0].sorted.Measurements.map(item => item.Type))
     .toEqual(expect.arrayContaining([14, 15]))
+})
+
+it('opens a saved gross-profit layout with organization in rows and month in columns', async () => {
+  const data = defaultDatasetRequest(netDataset, '2026-11-01', '2026-11-19')
+  data.reportProfile = 'grossProfit'
+  data.sorted.Row = [{ type: 4, key: 'Organization', label: 'Організація' }]
+  data.sorted.Col = [{ type: 2, key: 'Month', label: 'По місяцях' }]
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: crypto.randomUUID(), Revision: 1, Name: 'По місяцях у колонках', Data: data }])
+  render(<MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>)
+  await screen.findByRole('button', { name: 'Відкрити Валовий прибуток' })
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: По місяцях у колонках' }))
+  const rows = within(screen.getByRole('region', { name: 'Групування рядків' }))
+  expect(rows.getByRole('button', { name: 'Організація' })).toBeTruthy()
+  expect(rows.queryByRole('button', { name: 'По місяцях' })).toBeNull()
+  const columns = within(screen.getByRole('region', { name: 'Групування колонок' }))
+  expect(columns.getByRole('button', { name: 'По місяцях' })).toBeTruthy()
 })
 
 it('keeps a saved customer-return template filters-only after the workbook marker is cleared', async () => {
