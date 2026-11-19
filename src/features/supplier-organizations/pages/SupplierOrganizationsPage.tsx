@@ -47,7 +47,6 @@ import type { SupplyOrganization, SupplyOrganizationDocumentExport } from '../ty
 import './supplier-organizations-page.css'
 import '../../../shared/ui/console-table-page.css'
 
-const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
 const SUPPLIER_ORGANIZATIONS_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -111,7 +110,7 @@ function SupplierOrganizationsPageContent() {
   }
 
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
-  const [searchValue, setSearchValue] = useValueState(() => readStoredSearch())
+  const [searchValue, setSearchValue] = useValueState('')
   const [dateFrom, setDateFrom] = useValueState('')
   const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
@@ -227,12 +226,6 @@ function SupplierOrganizationsPageContent() {
     setPage(1)
     setOrganizations([])
     setHasMore(false)
-
-    if (value) {
-      window.localStorage.setItem(SEARCH_STORAGE_KEY, value)
-    } else {
-      window.localStorage.removeItem(SEARCH_STORAGE_KEY)
-    }
   }
 
   function resetFilters() {
@@ -241,7 +234,6 @@ function SupplierOrganizationsPageContent() {
     setDateTo('')
     setPage(1)
     setHasMore(false)
-    window.localStorage.removeItem(SEARCH_STORAGE_KEY)
   }
 
   function updateDateFrom(value: string) {
@@ -659,14 +651,6 @@ function getDateFilterError(dateFrom: string, dateTo: string): string | null {
 
 function compactStrings(values: Array<string | null | undefined>): string[] {
   return values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))
-}
-
-function readStoredSearch(): string {
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  return window.localStorage.getItem(SEARCH_STORAGE_KEY) || ''
 }
 
 function formatDateTime(value?: string): string {

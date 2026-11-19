@@ -1,7 +1,7 @@
 import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { Link, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PermissionKeys } from '../../../shared/auth/permissionKeys'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -19,6 +19,7 @@ import {
   getSupplierOrganizationSettlementsDetails,
   getSupplierOrganizationsOwners,
   getSupplierOrganizationsRegistry,
+  searchSupplierOrganizationsRegistry,
 } from '../api/supplierOrganizationsApi'
 import { SupplierOrganizationCashFlowPage } from './SupplierOrganizationCashFlowPage'
 import { SupplierOrganizationEditPage } from './SupplierOrganizationEditPage'
@@ -104,7 +105,11 @@ function renderRoute(path: string) {
       <MantineProvider>
         <I18nProvider>
           <Routes>
-            <Route path="/accounting/supplier-organizations" element={<SupplierOrganizationsPage />} />
+            <Route
+              path="/accounting/supplier-organizations"
+              element={<><Link to="/other">Інший екран</Link><SupplierOrganizationsPage /></>}
+            />
+            <Route path="/other" element={<Link to="/accounting/supplier-organizations">Постачальники послуг</Link>} />
             <Route path="/accounting/supplier-organizations/new" element={<SupplierOrganizationEditPage />} />
             <Route path="/accounting/supplier-organizations/edit/:id" element={<SupplierOrganizationEditPage />} />
             <Route path="/accounting/supplier-organizations/cash-flow/:id" element={<SupplierOrganizationCashFlowPage />} />
@@ -153,6 +158,40 @@ describe('Supplier Organizations canonical permission guards', () => {
 
     const organization = await screen.findByText('Фенікс')
     expect(organization.closest('.app-table-chip.is-product')).toBeTruthy()
+  })
+
+  it('clears the supplier search when returning from another screen', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    vi.mocked(searchSupplierOrganizationsRegistry).mockResolvedValue([])
+    renderRoute('/accounting/supplier-organizations')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Пошук' }), {
+      target: { value: 'ПЛА' },
+    })
+    await waitFor(() => expect(searchSupplierOrganizationsRegistry).toHaveBeenCalledWith(
+      'ПЛА', '', expect.objectContaining({ offset: 0 }),
+    ))
+
+    fireEvent.click(screen.getByRole('link', { name: 'Інший екран' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Постачальники послуг' }))
+
+    expect((screen.getByRole('textbox', { name: 'Пошук' }) as HTMLInputElement).value).toBe('')
+    expect(await screen.findByRole('button', { name: 'Постачальник QA' })).toBeTruthy()
+  })
+
+  it('opens the supplier registry unfiltered with a search left by an older session', async () => {
+    allowedPermissions.add(PermissionKeys.SupplierOrganizations.Page.View)
+    localStorage.setItem('searchSupplyOrganization', 'ПЛА')
+
+    try {
+      renderRoute('/accounting/supplier-organizations')
+
+      expect((screen.getByRole('textbox', { name: 'Пошук' }) as HTMLInputElement).value).toBe('')
+      expect(await screen.findByRole('button', { name: 'Постачальник QA' })).toBeTruthy()
+      expect(searchSupplierOrganizationsRegistry).not.toHaveBeenCalled()
+    } finally {
+      localStorage.removeItem('searchSupplyOrganization')
+    }
   })
 
   it('keeps settlements, overview and create controls independently guarded', async () => {
