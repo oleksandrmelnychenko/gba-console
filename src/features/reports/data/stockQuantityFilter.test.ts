@@ -1,6 +1,6 @@
 import { expect,it } from 'vitest'
 import { cloneStockQuantityFilter,positiveClosingQuantity,readStockQuantityFilter,requestStockQuantityFilter,stockQuantityFilterError,stockQuantityFilterSupported } from './stockQuantityFilter'
-import { stockQuantityCapability,stockQuantityDataset,stockQuantityRequest } from './stockQuantityFilter.test-fixtures'
+import { stockQuantityCapability,stockQuantityDataset,stockQuantityLotDataset,stockQuantityRequest } from './stockQuantityFilter.test-fixtures'
 import { normalizeSavedTemplate } from '../api/reportWorkspaceApi'
 
 it('omits absent/null legacy settings and admits only exact after-grouping source45 capability',()=>{
@@ -49,4 +49,18 @@ it.each(['Row','Col'] as const)('explains the lot incompatibility in %s without 
  expect(active.sorted).toEqual(before.sorted);expect(active.stockQuantityFilter).toEqual(before.stockQuantityFilter)
  active.sorted[axis]=active.sorted[axis].filter(group=>group.type!==33)
  expect(stockQuantityFilterError(active,stockQuantityDataset)).toBeNull()
+})
+
+it('admits a lot row when advertised and preserves the date and column protections', () => {
+  const lot = { type: 33, key: 'StockConsignmentItem', label: 'Партія' }
+  const request = { ...stockQuantityRequest(), stockQuantityFilter: positiveClosingQuantity }
+  request.sorted.Row.push(lot)
+  expect(stockQuantityFilterSupported(stockQuantityLotDataset)).toBe(true)
+  expect(stockQuantityFilterError(request, stockQuantityLotDataset)).toBeNull()
+  expect(stockQuantityFilterError(request)).toBeNull()
+  request.sorted.Col.push(lot)
+  expect(stockQuantityFilterError(request, stockQuantityLotDataset)).toMatch(/без групування колонок/)
+  request.sorted.Col = []
+  request.sorted.Row.push({ type: 2, key: 'Month', label: 'Місяць' })
+  expect(stockQuantityFilterError(request, stockQuantityLotDataset)).toMatch(/групування за роком/)
 })

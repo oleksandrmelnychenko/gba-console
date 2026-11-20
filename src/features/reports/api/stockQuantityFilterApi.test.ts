@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { createStockReport } from './reportsApi'
 import { getServerReportTemplates, saveServerReportTemplate } from './reportWorkspaceApi'
-import { stockQuantityDataset, stockQuantityRequest } from '../data/stockQuantityFilter.test-fixtures'
+import { stockQuantityDataset, stockQuantityLotDataset, stockQuantityRequest } from '../data/stockQuantityFilter.test-fixtures'
 import { positiveClosingQuantity } from '../data/stockQuantityFilter'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const api = vi.mocked(apiRequest)
@@ -32,7 +32,7 @@ it('refuses run and save for wrong measure or column grouping before any dispatc
   expect(api).not.toHaveBeenCalled()
 })
 
-it('restores a lot draft intact and blocks both generation and template save with the lot reason until explicit repair', async () => {
+it('restores a lot draft and preserves it on old metadata until the server advertises the combination', async () => {
   const request = { ...stockQuantityRequest(), stockQuantityFilter: positiveClosingQuantity }
   request.sorted.Row.push({ type: 33, key: 'StockConsignmentItem', label: 'Партія' })
   const dataset = { ...stockQuantityDataset, Groupings: [...stockQuantityDataset.Groupings, { Type: 33, Name: 'Партія' }] }
@@ -43,11 +43,13 @@ it('restores a lot draft intact and blocks both generation and template save wit
   saved.Data.from = '2026-08-01'; saved.Data.to = '2026-10-27'
   const before = structuredClone(saved.Data); api.mockClear()
   const reason = 'Відбір кінцевої кількості більше 0 поки не підтримує групування за партіями GBA. Приберіть цей відбір або групування за партією.'
-  await expect(createStockReport(saved.Data)).rejects.toThrow(reason)
+  await expect(createStockReport(saved.Data, dataset)).rejects.toThrow(reason)
   await expect(saveServerReportTemplate(saved, undefined, dataset)).rejects.toThrow(reason)
   expect(api).not.toHaveBeenCalled(); expect(saved.Data).toEqual(before)
-  saved.Data.sorted.Row = saved.Data.sorted.Row.filter(group => group.type !== 33)
+  api.mockResolvedValue({ document: {} })
+  await createStockReport(saved.Data, stockQuantityLotDataset)
+  expect(api).toHaveBeenLastCalledWith('/report/stocks/generate', expect.objectContaining({ body: saved.Data }))
   api.mockResolvedValue({ ...wire, Revision: 2, Data: { ...wire.Data, From: saved.Data.from, To: saved.Data.to, Sorted: saved.Data.sorted } })
-  await saveServerReportTemplate(saved, undefined, dataset)
+  await saveServerReportTemplate(saved, undefined, stockQuantityLotDataset)
   expect(api).toHaveBeenLastCalledWith('/report/templates/save', expect.objectContaining({ body: expect.objectContaining({ Data: saved.Data }) }))
 })

@@ -9,7 +9,7 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
 import { getReportDatasets,getServerReportTemplates,parseReportDatasets } from '../api/reportWorkspaceApi'
 import { netDataset } from '../data/reportDatasets.test-fixtures'
-import { stockQuantityDataset,stockQuantityRequest } from '../data/stockQuantityFilter.test-fixtures'
+import { stockQuantityDataset,stockQuantityLotDataset,stockQuantityRequest } from '../data/stockQuantityFilter.test-fixtures'
 import { positiveClosingQuantity } from '../data/stockQuantityFilter'
 import { changeReportPeriod } from '../testing/reportPeriod'
 import { ReportsStocksPage } from './ReportsStocksPage'
@@ -53,6 +53,23 @@ it('keeps a saved date axis and threshold visible until the user explicitly repa
  fireEvent.click(screen.getByRole('button',{name:'Видалити Рік'}))
  await act(async()=>fireEvent.submit(view.container.querySelector('form')!));await waitFor(()=>expect(previewStockReport).toHaveBeenCalledOnce())
  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({from:'2026-10-01',to:'2026-10-27',stockQuantityFilter:positiveClosingQuantity,sorted:{Row:[{type:29}]}})
+})
+
+it('runs a saved positive closing report grouped by lot when the server supports it', async () => {
+ const request = stockQuantityRequest()
+ request.sorted.Row.push({ type: 33, key: 'StockConsignmentItem', label: 'Партія' })
+ vi.mocked(getReportDatasets).mockResolvedValue([netDataset, stockQuantityLotDataset])
+ vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'stock-lots', Revision: 1, Name: 'Додатні партії',
+  Data: { ...request, stockQuantityFilter: positiveClosingQuantity } }])
+ const view = await ready()
+ fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+ fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Додатні партії' }))
+ expect(screen.getByRole('checkbox', { name: 'Кінцевий залишок: кількість > 0' })).toHaveProperty('checked', true)
+ await act(async () => fireEvent.submit(view.container.querySelector('form')!))
+ await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+ expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({
+  stockQuantityFilter: positiveClosingQuantity, from: request.from, to: request.to, sorted: { Row: [{ type: 29 }, { type: 33 }] },
+ })
 })
 
 it('keeps the applied actual filtered table when draft checkbox and dates change without another Generate',async()=>{

@@ -253,7 +253,7 @@ function prepareStockReportRequest(body: ReportRequestBody, dataset?: ReportData
   const presentationError = salesConstructorError(body, dataset) ?? numberPresentationError(body, dataset) ?? reportConfigurationError(body, dataset)
   if (presentationError) throw new Error(presentationError)
   const request = (body.dataSource === 2 || body.dataSource === 35 || body.dataSource === 38 || body.dataSource === 39 || body.dataSource === 40 || body.dataSource === 41) ? structuredClone(body) : body
-  const stockError = stockQuantityFilterError(request)
+  const stockError = stockQuantityFilterError(request, dataset)
   if (stockError) throw new Error(stockError)
   const workbookError = workbookConfigurationError(request)
   if (workbookError) throw new Error(workbookError)
