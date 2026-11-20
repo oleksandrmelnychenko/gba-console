@@ -87,7 +87,7 @@ export function MainClientEditor({
     const controller = new AbortController()
     const params = { value: debouncedSearch, limit: MAIN_CLIENT_SEARCH_LIMIT, offset: 0 }
     const request = isProvider
-      ? getSuppliers(params, controller.signal)
+      ? getSuppliers({ ...params, includeGeneralSuppliers: true }, controller.signal)
       : getClientsForRegistry(params, controller.signal)
 
     request

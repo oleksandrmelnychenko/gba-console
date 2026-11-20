@@ -27,6 +27,7 @@ const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
 const MANUFACTURER_REGISTRY_PATH = '/clients/suppliers/registry/manufacturers'
 type SupplierRegistryScope = 'suppliers' | 'manufacturers'
+type SupplierSearchParams = ClientSearchParams & { includeGeneralSuppliers?: boolean }
 const CYRILLIC_CLIENT_CODE_HOMOGLYPHS: Readonly<Record<string, string>> = {
   А: 'A',
   В: 'B',
@@ -88,7 +89,7 @@ async function getClientsFromRoute(
 }
 
 export async function getSuppliers(
-  params: ClientSearchParams,
+  params: SupplierSearchParams,
   signal?: AbortSignal,
   scope: SupplierRegistryScope = 'suppliers',
 ): Promise<Client[]> {
@@ -99,6 +100,7 @@ export async function getSuppliers(
     query: {
       active: params.active,
       filterSql: params.filterSql || SUPPLIER_SEARCH_SQL,
+      ...(scope === 'suppliers' && params.includeGeneralSuppliers ? { includeGeneralSuppliers: true } : {}),
       limit: params.limit,
       offset: params.offset,
       typeRoleFilter: params.typeRoleFilter,

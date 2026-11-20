@@ -355,6 +355,24 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('includes general suppliers only when explicitly requested', async () => {
+    const supplier: Client = { NetUid: 'supplier-1', FullName: 'General supplier' }
+    apiRequestMock.mockResolvedValueOnce([supplier])
+
+    await expect(getSuppliers({ limit: 20, offset: 0, value: 'General', includeGeneralSuppliers: true })).resolves.toEqual([supplier])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/registry/all/filtered', {
+      query: {
+        active: undefined,
+        filterSql: 'RegionCode.Value/Client.FullName',
+        includeGeneralSuppliers: true,
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: undefined,
+        value: 'General',
+      },
+    })
+  })
+
   it('uses the same search and export filters in the dedicated manufacturer registry', async () => {
     const params: ClientSearchParams = {
       active: true,
@@ -369,7 +387,7 @@ describe('clients API query contracts', () => {
     const controller = new AbortController()
     apiRequestMock.mockResolvedValueOnce([supplier]).mockResolvedValueOnce({ Count: '81' }).mockResolvedValueOnce(document)
 
-    await expect(getSuppliers(params, controller.signal, 'manufacturers')).resolves.toEqual([supplier])
+    await expect(getSuppliers({ ...params, includeGeneralSuppliers: true }, controller.signal, 'manufacturers')).resolves.toEqual([supplier])
     expect(apiRequestMock).toHaveBeenNthCalledWith(1, '/clients/suppliers/registry/manufacturers/filtered', {
       query: { active: true, filterSql: 'Client.FullName', limit: 20, offset: 40, typeRoleFilter: undefined, value: 'ПЛА-ТАН' },
       signal: controller.signal,

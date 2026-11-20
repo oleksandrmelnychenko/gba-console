@@ -85,7 +85,7 @@ describe('main client editor on the client card', () => {
     await waitFor(() => expect(onSetMainClient).toHaveBeenCalledWith('other-root'))
   })
 
-  it('searches suppliers for a provider and shows the server refusal', async () => {
+  it('searches general suppliers for a provider and shows the server refusal', async () => {
     vi.mocked(getSuppliers).mockResolvedValue([{ NetUid: 'supplier-root', FullName: 'Постачальник' }])
     const onSetMainClient = vi.fn().mockRejectedValue(
       new Error('Головним клієнтом постачальника може бути лише постачальник.'),
@@ -96,6 +96,10 @@ describe('main client editor on the client card', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Зробити головним' }, { timeout: 3000 }))
 
     expect(await screen.findByText('Головним клієнтом постачальника може бути лише постачальник.')).toBeTruthy()
+    expect(getSuppliers).toHaveBeenCalledExactlyOnceWith(
+      { value: 'пост', limit: 20, offset: 0, includeGeneralSuppliers: true },
+      expect.any(AbortSignal),
+    )
     expect(getClientsForRegistry).not.toHaveBeenCalled()
   })
 
