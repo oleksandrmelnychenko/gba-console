@@ -13,6 +13,8 @@ type DirectoryResult = { key: string } & (
   | { failed: true }
 )
 
+type DirectoryPage = Awaited<ReturnType<typeof searchReportCounterpartyDirectory>>
+
 export function ReportCounterpartyDirectory({ role, onClose }: { role: ReportCounterpartyRole | null; onClose: () => void }) {
   if (role === null) return null
   return <ReportModal opened onClose={onClose} title={REPORT_COUNTERPARTY_ROLES.find(item => item.key === role)?.label} size="md">
@@ -61,18 +63,24 @@ function DirectoryContents({ role }: { role: ReportCounterpartyRole }) {
         <Button variant="subtle" size="compact-xs" onClick={() => setAttempt(value => value + 1)}>Повторити</Button>
       </Group>
     </Alert>}
-    {page && (page.entries.length ? <Table className="app-static-table" aria-label="Контрагенти">
+    {page && <DirectoryEntries page={page} offset={offset} onPage={setOffset} />}
+  </Stack>
+}
+
+function DirectoryEntries({ page, offset, onPage }: { page: DirectoryPage; offset: number; onPage: (offset: number) => void }) {
+  return <>
+    {page.entries.length ? <Table className="app-static-table" aria-label="Контрагенти">
       <Table.Thead><Table.Tr><Table.Th scope="col">Код і назва</Table.Th></Table.Tr></Table.Thead>
       <Table.Tbody>
         {page.entries.map(item => <Table.Tr key={item.id}><Table.Td>{item.label}</Table.Td></Table.Tr>)}
       </Table.Tbody>
-    </Table> : <Text size="sm" role="status">Контрагентів не знайдено.</Text>)}
-    {page && (offset > 0 || page.hasMore) && <Group justify="space-between" wrap="nowrap">
+    </Table> : <Text size="sm" role="status">Контрагентів не знайдено.</Text>}
+    {(offset > 0 || page.hasMore) && <Group justify="space-between" wrap="nowrap">
       <Button variant="default" size="compact-xs" disabled={offset === 0}
-        onClick={() => setOffset(value => value - REPORT_COUNTERPARTY_PAGE_SIZE)}>Назад</Button>
+        onClick={() => onPage(offset - REPORT_COUNTERPARTY_PAGE_SIZE)}>Назад</Button>
       <Text size="sm" aria-live="polite">Сторінка {offset / REPORT_COUNTERPARTY_PAGE_SIZE + 1}</Text>
       <Button variant="default" size="compact-xs" disabled={!page.hasMore}
-        onClick={() => setOffset(value => value + REPORT_COUNTERPARTY_PAGE_SIZE)}>Далі</Button>
+        onClick={() => onPage(offset + REPORT_COUNTERPARTY_PAGE_SIZE)}>Далі</Button>
     </Group>}
-  </Stack>
+  </>
 }
