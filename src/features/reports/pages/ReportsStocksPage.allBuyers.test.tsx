@@ -7,6 +7,7 @@ import { PageHeaderActionsProvider, PageSubmenuActionsSlot } from '../../../shar
 import { previewStockReport } from '../api/reportsApi'
 import { getReportDatasets, getServerReportTemplates, parseReportDatasets } from '../api/reportWorkspaceApi'
 import catalog from '../data/constructorDatasets.dev-fixture.json'
+import serverCatalog from '../data/reportCatalog.server-fixture.json'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { createFilterExpression } from '../data/reportFilterExpression'
 import type { ReportSelection } from '../types'
@@ -69,15 +70,16 @@ beforeEach(() => {
 })
 afterEach(cleanup)
 
-async function open(profile: 'sales' | 'grossProfit') {
+async function open(profile: 'sales' | 'grossProfit' | 'settlements') {
   const view = render(<MantineProvider env="test"><I18nProvider><PageHeaderActionsProvider>
     <PageSubmenuActionsSlot /><ReportsStocksPage />
   </PageHeaderActionsProvider></I18nProvider></MantineProvider>)
   const nav = await screen.findByRole('navigation', { name: 'Розділи звітів' })
-  const sales = within(nav).getByRole('button', { name: 'Продажі' })
-  await waitFor(() => expect(sales).toHaveProperty('disabled', false))
-  fireEvent.click(sales)
-  fireEvent.click(await screen.findByRole('menuitem', { name: profile === 'sales' ? 'Звіт по продажам' : 'Валовий прибуток' }))
+  const section = within(nav).getByRole('button', { name: profile === 'settlements' ? 'Грошові кошти' : 'Продажі' })
+  await waitFor(() => expect(section).toHaveProperty('disabled', false))
+  fireEvent.click(section)
+  const names = { sales: 'Звіт по продажам', grossProfit: 'Валовий прибуток', settlements: 'Взаєморозрахунки всі' }
+  fireEvent.click(await screen.findByRole('menuitem', { name: names[profile] }))
   return view
 }
 
@@ -157,4 +159,48 @@ it('asks to choose a field for a new row without empty brackets', async () => {
   fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
   expect(await screen.findByText('Умова відбору 1: оберіть поле або зніміть галочку')).toBeTruthy()
   expect(screen.queryByText(/Умова відбору 1 \(\)/)).toBeNull()
+})
+
+it('selects the buyer and goods supplier from Контрагент in the sales report and submits their distinct identities', async () => {
+  const datasets = parseReportDatasets(catalog)
+  const sales = datasets.find(dataset => dataset.DataSource === 2)!
+  sales.Filters.push({ Type: 17, Name: 'Постачальник товару', Selectable: true })
+  vi.mocked(getReportDatasets).mockResolvedValue(datasets)
+  const parties = [
+    { field: 6, label: 'Покупець', item: { Id: 632374, Name: 'BKI64901 — ТК С.В.С.-2006 ТОВ' } },
+    { field: 17, label: 'Постачальник товару', item: { Id: 635333, Name: 'Fenix 8095 — ПЛА-ТАН І К ТОВ (MARS+AYFAR)' } },
+  ]
+  vi.mocked(apiRequest).mockImplementation(async (path, options) =>
+    path === '/report/datasets/lookup' ? parties.filter(party => party.field === options?.query?.field).map(party => party.item) : [])
+  const { container } = await open('sales')
+  for (const [index, party] of parties.entries()) {
+    fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
+    const row = within(screen.getByRole('group', { name: `Умова відбору ${index + 1}` }))
+    fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+    const group = await screen.findByRole('group', { name: 'Контрагент' })
+    expect(within(group).getByRole('option', { name: 'Постачальник послуг (недоступно для цього звіту)' }).getAttribute('aria-disabled')).toBe('true')
+    const option = within(group).getByRole('option', { name: party.label })
+    fireEvent.click(option)
+    fireEvent.click(row.getByPlaceholderText('Пошук значення'))
+    fireEvent.click(await screen.findByRole('option', { name: party.item.Name }))
+  }
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, reportProfile: 'sales',
+    selections: parties.map(party => ({ SelectedField: { Type: party.field }, Values: [{ Data: { Id: party.item.Id }, Name: party.item.Name }] })) })
+})
+
+it('keeps the service-organization role visible in current-document settlements without submitting a foreign ID', async () => {
+  vi.mocked(getReportDatasets).mockResolvedValue(parseReportDatasets(serverCatalog))
+  await open('settlements')
+  fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  const group = await screen.findByRole('group', { name: 'Контрагент' })
+  expect(within(group).getByRole('option', { name: 'Покупець' }).getAttribute('aria-disabled')).not.toBe('true')
+  const service = within(group).getByRole('option', { name: 'Постачальник послуг (недоступно для цього звіту)' })
+  expect(service.getAttribute('aria-disabled')).toBe('true')
+  fireEvent.click(service)
+  expect(row.getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', '')
+  expect(previewStockReport).not.toHaveBeenCalled()
 })

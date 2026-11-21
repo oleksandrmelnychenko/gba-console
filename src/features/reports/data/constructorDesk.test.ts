@@ -55,9 +55,15 @@ describe('constructor desk vocabulary', () => {
   it('groups filter fields by category without changing the wire field', () => {
     const sales = request(2, { reportProfile: 'grossProfit' })
     const options = [0, 4, 7, 12, 15].map(type => ({ value: String(type), label: `Поле ${type}`, field: { Type: type } }))
+    const unavailableParties = { group: 'Контрагент', items: [
+      { value: 'unavailable:buyer', label: 'Покупець (недоступно для цього звіту)', disabled: true },
+      { value: 'unavailable:goods-supplier', label: 'Постачальник товару (недоступно для цього звіту)', disabled: true },
+      { value: 'unavailable:service-supplier', label: 'Постачальник послуг (недоступно для цього звіту)', disabled: true },
+    ] }
     expect(constructorFilterGroups(sales, options)).toEqual([
       { value: '0', label: 'Організація' },
       { group: 'Товари', items: [{ value: '4', label: 'Товарна група' }] },
+      unavailableParties,
       { group: 'Покупці', items: [{ value: '7', label: 'Регіон' }] },
       { group: 'Документи продажу', items: [{ value: '12', label: 'Документ продажу' }, { value: '15', label: 'Відповідальний менеджер що забив товар' }] },
     ])
@@ -67,6 +73,7 @@ describe('constructor desk vocabulary', () => {
     expect(constructorFilterGroups(request(45), [21, 20, 3, 0, 19, 2, 1, 4, 23].map(type => ({ value: String(type), label: `Поле ${type}`, field: { Type: type } })))).toEqual([
       { value: '0', label: 'Організація' },
       { group: 'Товари', items: ['Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру'].map((label, index) => ({ value: String([1, 2, 3, 4, 20][index]), label })) },
+      unavailableParties,
       { group: 'Постачальники', items: [{ value: '19', label: 'Поле 19' }] },
       { group: 'Склади', items: [{ value: '21', label: 'Склад' }, { value: '23', label: 'Поле 23' }] },
     ])

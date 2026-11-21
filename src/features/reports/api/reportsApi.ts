@@ -382,6 +382,7 @@ export async function getReportRegions(): Promise<ReportEntity[]> {
 }
 
 export async function searchReportRegionCodes(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+  if (!params.value.trim()) return []
   const clients = await searchReportClients(params, signal)
 
   return clients.flatMap((client) => {
@@ -434,27 +435,31 @@ export async function searchReportProducts(params: ReportSearchParams): Promise<
   }))
 }
 
-export async function searchReportClients(
+async function searchReportClients(
   params: ReportSearchParams,
   signal?: AbortSignal,
 ): Promise<ReportEntity[]> {
-  const searchValue = params.value.trim()
-
-  if (!searchValue) {
-    return []
-  }
-
   const result = await apiRequest<unknown>('/clients/reports/stocks/search', {
     query: {
       filterSql: CLIENT_FILTER_SQL,
       limit: params.limit,
       offset: params.offset,
-      value: searchValue,
+      typeRoleFilter: '1',
+      value: params.value.trim(),
     },
     signal,
   })
 
   return normalizeCollection(result, ['Items', 'Clients', 'Data'])
+}
+
+export async function searchReportBuyers(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+  const clients = await searchReportClients(params, signal)
+  return clients.map(client => {
+    const regionCode = client.RegionCode
+    const code = isReportEntity(regionCode) ? String(regionCode.Value ?? '').trim() : ''
+    return code ? { ...client, Name: `${code} — ${getName(client)}` } : client
+  })
 }
 
 export async function getReportClientAgreements(netId: string): Promise<ReportEntity[]> {

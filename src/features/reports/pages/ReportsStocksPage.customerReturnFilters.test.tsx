@@ -55,7 +55,7 @@ async function openReturns(dataset: ReportDataset) {
 
 function fieldOptions(row: ReturnType<typeof within>) {
   fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
-  return screen.getAllByRole('option').map(option => option.textContent)
+  return screen.getAllByRole('option').filter(option => option.getAttribute('aria-disabled') !== 'true').map(option => option.textContent)
 }
 
 it('lists the common return-line fields with shared labels and offers І/АБО groups', async () => {

@@ -100,8 +100,9 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
     const listbox = await screen.findByRole('listbox')
     expect([...listbox.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(
-      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Виробник', 'Одиниця виміру', 'Склад', 'Вид документа руху', 'Документ руху'])
-    expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товари', 'Склади', 'Документи руху'])
+      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Виробник', 'Одиниця виміру',
+        'Покупець (недоступно для цього звіту)', 'Постачальник товару (недоступно для цього звіту)', 'Постачальник послуг (недоступно для цього звіту)', 'Склад', 'Вид документа руху', 'Документ руху'])
+    expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товари', 'Контрагент', 'Склади', 'Документи руху'])
     fireEvent.click(within(filters).getByRole('button', { name: 'Видалити умову 1' }))
     for (const name of ['Склади', 'Номенклатура', 'Фільтри']) {
       expect(screen.queryByRole('group', { name })).toBeNull()

@@ -24,7 +24,7 @@ function Form({ mode = 'row', source = 2, condition = 0, field = 0, dataset: sup
     PeriodSupported: true, Groupings: [], Measurements: [], Filters: [selection.SelectedField], Limitations: [] }
   const request = { dataSource: source, from: '2026-10-01', to: '2026-10-31', selections: [selection], sorted: { Row: [], Col: [], Measurements: [] } }
   const props = { dataset, request, dataSource: source, from: request.from, to: request.to, selections: [selection],
-    filterFieldOptions: [{ value: String(field), label: selection.SelectedField.Name, field: selection.SelectedField }],
+    filterFieldOptions: dataset.Filters.map(option => ({ value: String(option.Type), label: option.Name, field: option })),
     onChange: (action: { kind: string; selection?: ReportSelection }) => { if (action.selection) setSelection(action.selection) } }
   return <MantineProvider env="test"><I18nProvider>{mode === 'modal'
     ? <ReportSelectionsCard {...props} selectionKeys={['organization']} />
@@ -71,6 +71,63 @@ it('uses the native price picker with exact Int64 IDs and promotes its negative 
   fireEvent.click(await screen.findByRole('option', { name: 'Група B' }))
   expect(selected()).toMatchObject({ FilterCondition: { Type: 4 }, Values: rows.map(row => ({ Data: { Id: row.Id }, Name: row.Name })) })
   expect(vi.mocked(apiRequest).mock.calls.every(call => call[0] === '/report/datasets/price-comparison/filters/lookup')).toBe(true)
+})
+
+it('edits a settlement filter using the exact service-supplier ID and the directory caption', async () => {
+  const serviceSupplier = { Id: '32750', Name: 'Fenix 5918 — % банку' }
+  const fields = [{ Type: 0, Name: 'Організація' }, { Type: 17, Name: 'Постачальник послуг' }]
+  const dataset: ReportDataset = { DataSource: 41, Name: 'Взаєморозрахунки всі', Description: '',
+    PeriodRequired: true, PeriodSupported: true, Groupings: [], Measurements: [], Filters: fields, Limitations: [] }
+  vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+    if (path === '/report/datasets/lookup' && options?.query?.field === 17 && options.query.value === '5918') {
+      return [serviceSupplier]
+    }
+    return []
+  })
+  render(<Form mode="modal" source={41} dataset={dataset} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
+  const field = screen.getByRole('combobox', { name: 'Поле' })
+  fireEvent.click(field)
+  expect(screen.getByRole('group', { name: 'Контрагент' })).toBeTruthy()
+  const unavailable = screen.getByRole('option', { name: 'Постачальник товару (недоступно для цього звіту)' })
+  expect(unavailable.getAttribute('aria-disabled')).toBe('true')
+  fireEvent.click(unavailable)
+  expect(field).toHaveProperty('value', 'Організація')
+  fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг' }))
+  const search = screen.getByRole('combobox', { name: 'Значення' })
+  fireEvent.click(search)
+  fireEvent.change(search, { target: { value: '5918' } })
+  fireEvent.click(await screen.findByRole('option', { name: serviceSupplier.Name }))
+  fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+  expect(selected()).toMatchObject({ SelectedField: fields[1],
+    Values: [{ Data: { Id: serviceSupplier.Id }, Name: serviceSupplier.Name }] })
+  expect(vi.mocked(apiRequest).mock.calls).toContainEqual([
+    '/report/datasets/lookup', expect.objectContaining({ query: expect.objectContaining({ dataSource: 41, field: 17, value: '5918' }) }),
+  ])
+})
+
+it('loads the buyer role in a legacy workbook and searches by the directory code', async () => {
+  const fields = [{ Type: 0, Name: 'Організація' }, { Type: 6, Name: 'Клієнт' }]
+  const dataset: ReportDataset = { DataSource: 0, Name: 'Залишки та продажі', Description: '',
+    PeriodRequired: true, PeriodSupported: true, Groupings: [], Measurements: [], Filters: fields, Limitations: [] }
+  const buyer = { Id: 632374, Name: 'ТК С.В.С.-2006 ТОВ', RegionCode: { Value: 'BKI64901' } }
+  vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+    if (path !== '/clients/reports/stocks/search' || options?.query?.typeRoleFilter !== '1') return []
+    return options.query.value === 'BKI64901' ? [buyer] : [{ Id: 633122, Name: 'ОК-АВТО ТОВ', RegionCode: { Value: 'BCK02805' } }]
+  })
+  render(<Form mode="card" source={0} dataset={dataset} />)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Покупець' }))
+  const search = screen.getByRole('combobox', { name: 'Значення' })
+  fireEvent.click(search)
+  expect(await screen.findByRole('option', { name: 'BCK02805 — ОК-АВТО ТОВ' })).toBeTruthy()
+  fireEvent.change(search, { target: { value: 'BKI64901' } })
+  const caption = 'BKI64901 — ТК С.В.С.-2006 ТОВ'
+  fireEvent.click(await screen.findByRole('option', { name: caption }))
+  expect(selected()).toMatchObject({ SelectedField: fields[1], Values: [{ Data: { Id: buyer.Id }, Name: caption }] })
+  expect(vi.mocked(apiRequest).mock.calls).toContainEqual([
+    '/clients/reports/stocks/search', expect.objectContaining({ query: expect.objectContaining({ typeRoleFilter: '1', value: 'BKI64901' }) }),
+  ])
 })
 
 it.each([0, 3, 35, 38, 41, 43, 44, 45, 46])('retains multiple organization IDs through source %i picker', async source => {

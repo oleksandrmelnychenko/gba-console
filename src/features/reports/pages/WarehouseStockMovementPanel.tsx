@@ -107,11 +107,11 @@ function lookupLabel(item: StockMovementLookupItem): string {
 }
 
 function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>, listed: boolean) {
-  const label = (value: string) => STOCK_MOVEMENT_FILTER_DEFINITIONS[value as StockMovementFilterField].label
+  const movementLabel = (item: { value: string; label: string }) => STOCK_MOVEMENT_FILTER_DEFINITIONS[item.value as StockMovementFilterField]?.label ?? item.label
   return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.filter(field => listed || field !== 'manufacturer').map(field => {
     const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
     return { value: field, label: definition.label, section: definition.section, disabled: used.has(field), field: { Type: definition.type } }
-  })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: label(item.value) })) } : { ...entry, label: label(entry.value) })
+  })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: movementLabel(item) })) } : { ...entry, label: movementLabel(entry) })
 }
 
 function useMovementList<T>(enabled: boolean, load: (signal: AbortSignal) => Promise<T[]>) {
@@ -377,8 +377,10 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
     if (!row || !draft.listed) return
     update({ filterRows: [...draft.filterRows, copyStockMovementRow(row, nextRowId(draft.filterRows))] })
   }
-  const changeRowField = (index: number, field: StockMovementFilterField | null) => {
+  const changeRowField = (index: number, value: string | null) => {
     const row = draft.filterRows[index]
+    const field = value === null ? null : STOCK_MOVEMENT_FILTER_FIELDS.find(option => option === value)
+    if (field === undefined) return
     if (!row || row.field === field) return
     update({ filterRows: draft.filterRows.map((item, position) => position === index ? { id: item.id, enabled: item.enabled, field } : item) })
   }
@@ -459,7 +461,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                     onChange={event => setRow(index, { enabled: event.currentTarget.checked })} />}
                   field={<Select size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
                     data={movementFieldOptions(used, draft.listed)} value={row.field}
-                    onChange={value => changeRowField(index, value as StockMovementFilterField | null)} />}
+                    onChange={value => changeRowField(index, value)} />}
                   condition={row.field === 'article'
                     ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={row.articleMatch ?? 'equals'}
                       data={STOCK_MOVEMENT_ARTICLE_MATCHES.map(match => ({ value: match, label: STOCK_MOVEMENT_ARTICLE_CONDITIONS[match] }))}

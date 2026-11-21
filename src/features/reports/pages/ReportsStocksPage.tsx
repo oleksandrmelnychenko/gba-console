@@ -123,7 +123,7 @@ import {
   getReportProductTop,
   getReportRegions,
   searchReportRegionCodes,
-  searchReportClients,
+  searchReportBuyers,
   searchDatasetReportValues,
   searchReportManufacturers,
   MAX_MANUFACTURER_LOOKUP_SUPPLIERS,
@@ -188,7 +188,7 @@ import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
-import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
+import { COUNTERPARTY_FILTER_SECTION, canonicalFilterField, counterpartyOptions, groupCanonicalFilterOptions } from '../data/reportFilterFields'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -1747,6 +1747,20 @@ export function ReportSelectionsCard({
     closeEditor()
   }
 
+  const analysisFieldOptions = analysis?.filters.map(field => {
+    const canonical = canonicalFilterField(dataSource, field.type, field.name)
+    const isCounterparty = canonical.section === COUNTERPARTY_FILTER_SECTION
+    return {
+      value: String(field.type),
+      label: isCounterparty ? canonical.label : field.name,
+      path: isCounterparty ? [COUNTERPARTY_FILTER_SECTION] : field.path,
+      disabled: field.available === false,
+      reason: field.unavailabilityReason,
+    }
+  }) ?? []
+  const isCounterpartyOption = (option: (typeof analysisFieldOptions)[number]) => option.path[0] === COUNTERPARTY_FILTER_SECTION
+  const selectedAnalysisField = draftSelection?.SelectedField.Name
+    ? analysisFieldOptions.find(option => option.value === String(draftField)) : undefined
   return (
     <>
       <Card className="app-section-card reports-stocks-selection-card" withBorder radius="md" padding="md">
@@ -1831,21 +1845,26 @@ export function ReportSelectionsCard({
         {draftSelection ? (
           <Stack gap={8}>
             {analysis ? <><Text size="sm">Поле</Text><Button variant="default" onClick={() => setFieldPickerOpen(true)}>
-              {analysis.filters.find(f => f.type === draftSelection.SelectedField.Type && draftSelection.SelectedField.Name)?.name ?? 'Оберіть поле'}</Button>
-              <ReportFieldPicker opened={fieldPickerOpen} title="Поле відбору" options={analysis.filters.map(f => ({ value: String(f.type), label: f.name, path: f.path, disabled: f.available === false, reason: f.unavailabilityReason }))}
+              {selectedAnalysisField?.label ?? 'Оберіть поле'}</Button>
+              <ReportFieldPicker opened={fieldPickerOpen} title="Поле відбору" options={[
+                ...analysisFieldOptions.filter(option => !isCounterpartyOption(option)),
+                ...counterpartyOptions(analysisFieldOptions.filter(isCounterpartyOption)).map(option => ({ ...option, path: [COUNTERPARTY_FILTER_SECTION] })),
+              ]}
                 onClose={() => setFieldPickerOpen(false)} onSelect={value => {
-                  const field = analysis.filters.find(f => String(f.type) === value)!
+                  const field = analysis.filters.find(f => String(f.type) === value)
+                  if (!field || field.available === false) return
                   setDraftSelection(current => current ? { ...current, SelectedField: { Type: field.type, Name: field.name },
                     FilterCondition: analysisFilterConditions(dataset, field.type)[0], Values: [] } : current)
                   setFieldPickerOpen(false)
                 }} /></> : <Select
-              data={filterFieldOptions}
+              data={groupCanonicalFilterOptions(dataSource, filterFieldOptions)}
               label={t('Поле')}
               placeholder={t('Оберіть поле')}
               searchable
               value={draftSelection.SelectedField.Name ? String(draftSelection.SelectedField.Type) : null}
               onChange={(value) => {
                 const option = filterFieldOptions.find((item) => item.value === value)
+                if (value !== null && !option) return
                 setDraftSelection((current) => current ? {
                   ...current,
                   SelectedField: option?.field || { Name: '', Type: 0 },
@@ -1941,6 +1960,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
   const changeField = (value: string | null) => {
     const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
     const option = filterFieldOptions.find(item => item.value === value)
+    if (value !== null && (analysis ? !field || field.available === false : !option)) return
     change({ ...selection, SelectedField: field ? { Type: field.type, Name: field.name } : option?.field ?? { Type: 0, Name: '' },
       FilterCondition: field ? analysisFilterConditions(dataset, field.type)[0]
         : dataSource === 39 ? currentVparivanieFilterConditions(option?.field.Type ?? 0)[0] : conditions[0], Values: [] })
@@ -2217,7 +2237,7 @@ function CommonSelectionValuePicker({ request, dataSource, dataset, lookupProfit
     [organizationOptions],
   )
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
-  const minSearchLength = nativeLookup || nativeSalesDocument ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
+  const minSearchLength = nativeLookup || nativeSalesDocument || selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName ? 0 : getSelectionLookupMinLength(selection.SelectedField.Type)
   const needsPeriod = nativeSalesDocument || isSaleDocumentFilter || dataSource === 35 && selection.SelectedField.Type === 12
   const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
 
@@ -2342,14 +2362,19 @@ function CommonSelectionValuePicker({ request, dataSource, dataset, lookupProfit
 
   const multiple = isMultiValueReportCondition(selection.FilterCondition.Type)
   const lookupPending = isLoading || lookupMode === 'search' && search.trim() !== normalizedSearch
-  const entityKey = (entity: ReportEntity) => getReportEntityKey(entity, getEntityDisplayName(entity))
+  const partyField = selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.supplier || selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName
+    || dataSource === 39 && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customer
+  function entityKey(entity: ReportEntity, fallback = getEntityDisplayName(entity)) {
+    const id = partyField ? exactId(entity) : null
+    return id === null ? getReportEntityKey(entity, fallback) : `party:${dataSource}:${selection.SelectedField.Type}:${id}`
+  }
 
   function selectedValueKey(value: ReportSelectedValue) {
-    return getReportEntityKey(financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument), value.Name)
+    return entityKey(financialSelectionEntity(value, dataSource, selection.SelectedField.Type, nativeSalesDocument), value.Name)
   }
 
   function addEntity(entity: ReportEntity) {
-    const key = getReportEntityKey(entity, getEntityDisplayName(entity))
+    const key = entityKey(entity)
 
     if (!isMultiValueReportCondition(selection.FilterCondition.Type)) {
       onChange([createSelectedValue(entity, dataSource, selection.SelectedField.Type, nativeSalesDocument)])
@@ -2752,7 +2777,7 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.productArticle:
       return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
     case REPORT_FILTER_FIELD_TYPES.customerName:
-      return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
+      return searchReportBuyers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:

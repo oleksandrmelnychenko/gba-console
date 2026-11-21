@@ -1,6 +1,7 @@
 export type CanonicalFilterField = { label: string; section?: string; order: number }
 
-export const REPORT_FILTER_SECTIONS = ['Товар', 'Покупець', 'Документ продажу', 'Постачальник', 'Склад', 'Документ руху', 'Рахунок', 'Інше'] as const
+export const COUNTERPARTY_FILTER_SECTION = 'Контрагент'
+export const REPORT_FILTER_SECTIONS = ['Товар', COUNTERPARTY_FILTER_SECTION, 'Покупець', 'Документ продажу', 'Постачальник', 'Склад', 'Документ руху', 'Рахунок', 'Інше'] as const
 
 const SECTION_TITLES: Readonly<Record<string, string>> = {
   'Товар': 'Товари', 'Покупець': 'Покупці', 'Документ продажу': 'Документи продажу', 'Постачальник': 'Постачальники',
@@ -16,8 +17,9 @@ const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string | null, string?]>
   [4, 'Товарна група', 'Товар'],
   [75, null, 'Товар'],
   [20, 'Одиниця виміру', 'Товар'],
-  [5, 'Покупець', 'Покупець'],
-  [6, 'Покупець', 'Покупець'],
+  [5, null, 'Покупець'],
+  [6, 'Покупець', COUNTERPARTY_FILTER_SECTION],
+  [17, 'Постачальник товару', COUNTERPARTY_FILTER_SECTION],
   [7, 'Регіон', 'Покупець'],
   [8, 'Код по регіону', 'Покупець'],
   [61, 'Код по регіону', 'Покупець'],
@@ -33,7 +35,6 @@ const CANONICAL_FIELDS: ReadonlyArray<readonly [number, string | null, string?]>
   [62, null, 'Документ продажу'],
   [63, null, 'Документ продажу'],
   [64, 'Причина повернення', 'Документ продажу'],
-  [17, null, 'Постачальник'],
   [18, null, 'Постачальник'],
   [19, null, 'Постачальник'],
   [24, null, 'Постачальник'],
@@ -57,9 +58,13 @@ function fallbackSection(type: number): string | undefined {
 
 export function canonicalFilterField(dataSource: number | undefined, type: number, name: string): CanonicalFilterField {
   const known = BY_TYPE.get(type)
-  const own = dataSource === 39 && type === 6
-  if (known && !own) return { label: known.label ?? name, section: dataSource === 41 && type === 30 ? undefined : known.section, order: known.order }
-  return { label: name, section: own ? 'Покупець' : fallbackSection(type), order: known?.order ?? CANONICAL_FIELDS.length }
+  if (known) {
+    if (dataSource === 39 && type === 5) return { label: 'Покупець', section: COUNTERPARTY_FILTER_SECTION, order: known.order }
+    if (dataSource === 39 && type === 6) return { label: name, section: 'Покупець', order: known.order }
+    if (dataSource === 41 && type === 17) return { label: 'Постачальник послуг', section: COUNTERPARTY_FILTER_SECTION, order: known.order }
+    return { label: known.label ?? name, section: dataSource === 41 && type === 30 ? undefined : known.section, order: known.order }
+  }
+  return { label: name, section: fallbackSection(type), order: CANONICAL_FIELDS.length }
 }
 
 export function canonicalFilterLabel(dataSource: number | undefined, type: number, name: string): string {
@@ -68,6 +73,18 @@ export function canonicalFilterLabel(dataSource: number | undefined, type: numbe
 
 type GroupableOption = { value: string; label: string; disabled?: boolean; section?: string; field: { Type: number } }
 type GroupedItem = { value: string; label: string; disabled?: boolean }
+
+const COUNTERPARTY_ROLES = [
+  { key: 'buyer', label: 'Покупець' },
+  { key: 'goods-supplier', label: 'Постачальник товару' },
+  { key: 'service-supplier', label: 'Постачальник послуг' },
+]
+
+export function counterpartyOptions<T extends GroupedItem>(items: ReadonlyArray<T>) {
+  return COUNTERPARTY_ROLES.map(({ key, label }) => items.find(item => item.label === label) ?? {
+    value: `unavailable:${key}`, label: `${label} (недоступно для цього звіту)`, disabled: true,
+  })
+}
 
 export function groupCanonicalFilterOptions(dataSource: number | undefined, options: ReadonlyArray<GroupableOption>): Array<GroupedItem | { group: string; items: GroupedItem[] }> {
   const described = options.map((option, index) => {
@@ -81,6 +98,7 @@ export function groupCanonicalFilterOptions(dataSource: number | undefined, opti
   const sections = [...REPORT_FILTER_SECTIONS, ...new Set(described.flatMap(entry => entry.field.section && !(REPORT_FILTER_SECTIONS as readonly string[]).includes(entry.field.section) ? [entry.field.section] : []))]
   return [...plain, ...sections.flatMap(group => {
     const items = described.filter(entry => entry.field.section === group).map(item)
+    if (group === COUNTERPARTY_FILTER_SECTION) return [{ group, items: counterpartyOptions(items) }]
     return items.length ? [{ group: SECTION_TITLES[group] ?? group, items }] : []
   })]
 }
