@@ -2,17 +2,18 @@ import { describe, expect, it } from 'vitest'
 import fixture from './constructorDatasets.dev-fixture.json'
 import { parseReportDatasets } from '../api/reportWorkspaceApi'
 import { datasetFilters } from './reportDatasets'
-import { canonicalFilterLabel, groupCanonicalFilterOptions } from './reportFilterFields'
+import { canonicalFilterLabel, groupCanonicalFilterOptions, reportFilterDirectoryRole } from './reportFilterFields'
 
 type Entry = { value: string; label: string }
 const flatten = (groups: ReturnType<typeof groupCanonicalFilterOptions>) =>
   groups.flatMap(entry => 'group' in entry ? entry.items.map(item => ({ ...item, group: entry.group })) : [{ ...entry, group: '' }])
+const isActiveFilter = (item: Entry & { disabled?: boolean }) => !item.disabled && !reportFilterDirectoryRole(item.value)
 
 describe('one filter field list for every report', () => {
   const datasets = parseReportDatasets(fixture)
   const listed = new Map(datasets.map(dataset => [dataset.DataSource,
     flatten(groupCanonicalFilterOptions(dataset.DataSource, datasetFilters(dataset)))]))
-  const sales = listed.get(2)!.filter(item => !item.disabled)
+  const sales = listed.get(2)!.filter(isActiveFilter)
 
   it('shows the sales report list in its screenshot order', () => {
     expect(sales.map(item => [item.group, item.label])).toEqual([
@@ -28,7 +29,7 @@ describe('one filter field list for every report', () => {
   })
 
   it.each([3, 44, 45, 46])('gives source %i the same names, sections and order wherever it shares a field with sales', source => {
-    const items = listed.get(source)!.filter(item => !item.disabled)
+    const items = listed.get(source)!.filter(isActiveFilter)
     const shared = items.filter(item => sales.some(other => other.value === item.value))
     const salesOrder = sales.filter(item => shared.some(other => other.value === item.value))
     expect(shared.map(item => [item.value, item.group, item.label])).toEqual(salesOrder.map(item => [item.value, item.group, item.label]))
@@ -37,24 +38,33 @@ describe('one filter field list for every report', () => {
   it('groups the supplier by its registry and omits the manufacturer from field choices', () => {
     const options = [6, 17, 75].map(Type => ({ value: String(Type), label: Type === 75 ? 'Виробник' : 'Поле', field: { Type } }))
     const parties = (source: number) => flatten(groupCanonicalFilterOptions(source, options)).filter(item => item.group === 'Контрагент')
-    expect(parties(2).filter(item => !item.disabled).map(item => item.label)).toEqual(['Покупець', 'Постачальник товару'])
-    expect(parties(41).filter(item => !item.disabled).map(item => item.label)).toEqual(['Покупець', 'Постачальник послуг'])
+    expect(parties(2).filter(isActiveFilter).map(item => item.label)).toEqual(['Покупець', 'Постачальник товару'])
+    expect(parties(41).filter(isActiveFilter).map(item => item.label)).toEqual(['Покупець', 'Постачальник послуг'])
     expect(flatten(groupCanonicalFilterOptions(2, options)).some(item => item.value === '75')).toBe(false)
     expect(canonicalFilterLabel(2, 75, 'Виробник')).toBe('Виробник')
   })
 
-  it('shows the three counterparty roles in each report and disables roles without a wire field', () => {
-    for (const items of listed.values()) {
+  it('offers the three counterparty roles as report filters or directory actions', () => {
+    for (const [source, items] of listed) {
       const roles = items.filter(item => item.group === 'Контрагент')
       expect(roles.map(item => item.label.split(' (')[0])).toEqual(['Покупець', 'Постачальник товару', 'Постачальник послуг'])
-      for (const role of roles.filter(item => item.value.startsWith('unavailable:'))) expect(role.disabled).toBe(true)
+      const wireFields = datasetFilters(datasets.find(dataset => dataset.DataSource === source)).map(field => field.value)
+      for (const role of roles) {
+        expect(role.disabled).toBeFalsy()
+        if (role.label.endsWith('(довідник)')) expect(reportFilterDirectoryRole(role.value)).toBeTruthy()
+        else expect(wireFields).toContain(role.value)
+      }
     }
+    const disabledBuyer = groupCanonicalFilterOptions(2, [{ value: '6', label: 'Покупець', disabled: true, field: { Type: 6 } }])
+    expect(flatten(disabledBuyer)).toContainEqual({ value: 'directory:buyer', label: 'Покупець (довідник)', group: 'Контрагент' })
+    expect(reportFilterDirectoryRole('directory:unknown')).toBeUndefined()
+    expect(reportFilterDirectoryRole('17')).toBeUndefined()
   })
 
   it('keeps source-only fields in their own sections after the shared ones', () => {
-    expect(listed.get(3)!.filter(item => !item.disabled).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
+    expect(listed.get(3)!.filter(isActiveFilter).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
       'Постачальник товару', 'Договір постачальника', 'Документ надходження', 'Склад'])
-    expect(listed.get(45)!.filter(item => !item.disabled).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
+    expect(listed.get(45)!.filter(isActiveFilter).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
       'Документ надходження', 'Склад', 'Поточна організація складу'])
   })
 

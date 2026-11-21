@@ -140,6 +140,10 @@ it.each(fields)('preserves exact identities and other AND/OR filters when switch
   fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Покупці' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 2' }))
   expect(within(screen.getByRole('group', { name: 'Умова відбору 1' })).queryByRole('button', { name: 'Усі покупці' })).toBeNull()
+  fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг (довідник)' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Постачальник послуг' }))
+  fireEvent.click(directory.getByRole('button', { name: 'Закрити' }))
   fireEvent.click(row.getByRole('button', { name: 'Усі покупці' }))
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
@@ -161,7 +165,7 @@ it('asks to choose a field for a new row without empty brackets', async () => {
   expect(screen.queryByText(/Умова відбору 1 \(\)/)).toBeNull()
 })
 
-it('selects the buyer and goods supplier from Контрагент in the sales report and submits their distinct identities', async () => {
+it('preserves both sales filter IDs when opening the service directory on a selected row', async () => {
   const datasets = parseReportDatasets(catalog)
   const sales = datasets.find(dataset => dataset.DataSource === 2)!
   sales.Filters.push({ Type: 17, Name: 'Постачальник товару', Selectable: true })
@@ -178,19 +182,26 @@ it('selects the buyer and goods supplier from Контрагент in the sales 
     const row = within(screen.getByRole('group', { name: `Умова відбору ${index + 1}` }))
     fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
     const group = await screen.findByRole('group', { name: 'Контрагент' })
-    expect(within(group).getByRole('option', { name: 'Постачальник послуг (недоступно для цього звіту)' }).getAttribute('aria-disabled')).toBe('true')
     const option = within(group).getByRole('option', { name: party.label })
     fireEvent.click(option)
     fireEvent.click(row.getByPlaceholderText('Пошук значення'))
     fireEvent.click(await screen.findByRole('option', { name: party.item.Name }))
   }
+  const buyerRow = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  const field = buyerRow.getByRole('combobox', { name: 'Поле' })
+  fireEvent.click(field)
+  fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг (довідник)' }))
+  const directory = await screen.findByRole('dialog', { name: 'Постачальник послуг' })
+  expect(buyerRow.getByRole('checkbox', { name: 'Увімкнути умову 1' })).toHaveProperty('checked', true)
+  expect(field).toHaveProperty('value', 'Покупець')
+  fireEvent.click(within(directory).getByRole('button', { name: 'Закрити' }))
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ dataSource: 2, reportProfile: 'sales',
     selections: parties.map(party => ({ SelectedField: { Type: party.field }, Values: [{ Data: { Id: party.item.Id }, Name: party.item.Name }] })) })
 })
 
-it('keeps the service-organization role visible in current-document settlements without submitting a foreign ID', async () => {
+it('opens the service directory in current-document settlements and leaves the new row empty', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue(parseReportDatasets(serverCatalog))
   await open('settlements')
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
@@ -198,9 +209,9 @@ it('keeps the service-organization role visible in current-document settlements 
   fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
   const group = await screen.findByRole('group', { name: 'Контрагент' })
   expect(within(group).getByRole('option', { name: 'Покупець' }).getAttribute('aria-disabled')).not.toBe('true')
-  const service = within(group).getByRole('option', { name: 'Постачальник послуг (недоступно для цього звіту)' })
-  expect(service.getAttribute('aria-disabled')).toBe('true')
+  const service = within(group).getByRole('option', { name: 'Постачальник послуг (довідник)' })
   fireEvent.click(service)
+  expect(await screen.findByRole('dialog', { name: 'Постачальник послуг' })).toBeTruthy()
   expect(row.getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', '')
   expect(previewStockReport).not.toHaveBeenCalled()
 })

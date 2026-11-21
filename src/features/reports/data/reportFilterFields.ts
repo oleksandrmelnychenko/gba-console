@@ -1,4 +1,5 @@
 import { REPORT_FILTER_FIELD_TYPES } from './reportOptions'
+import { REPORT_COUNTERPARTY_ROLES, type ReportCounterpartyRole } from './reportCounterpartyDirectories'
 
 export type CanonicalFilterField = { label: string; section?: string; order: number }
 
@@ -81,15 +82,13 @@ export function canSelectReportFilterField(type: number): boolean {
   return type !== REPORT_FILTER_FIELD_TYPES.productManufacturer
 }
 
-const COUNTERPARTY_ROLES = [
-  { key: 'buyer', label: 'Покупець' },
-  { key: 'goods-supplier', label: 'Постачальник товару' },
-  { key: 'service-supplier', label: 'Постачальник послуг' },
-]
+export function reportFilterDirectoryRole(value: string | null): ReportCounterpartyRole | undefined {
+  return REPORT_COUNTERPARTY_ROLES.find(role => `directory:${role.key}` === value)?.key
+}
 
 export function counterpartyOptions<T extends GroupedItem>(items: ReadonlyArray<T>) {
-  return COUNTERPARTY_ROLES.map(({ key, label }) => items.find(item => item.label === label) ?? {
-    value: `unavailable:${key}`, label: `${label} (недоступно для цього звіту)`, disabled: true,
+  return REPORT_COUNTERPARTY_ROLES.map(({ key, label }) => items.find(item => item.label === label && !item.disabled) ?? {
+    value: `directory:${key}`, label: `${label} (довідник)`,
   })
 }
 

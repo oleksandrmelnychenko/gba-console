@@ -61,7 +61,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
   expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець",
-    "Постачальник товару (недоступно для цього звіту)", "Постачальник послуг (недоступно для цього звіту)", "Відповідальний менеджер покупця", "Склад"])
+    "Постачальник товару (довідник)", "Постачальник послуг (довідник)", "Відповідальний менеджер покупця", "Склад"])
 })
 it("submits all four selected identities through the existing inline sales-style controls", async () => {
   await open()

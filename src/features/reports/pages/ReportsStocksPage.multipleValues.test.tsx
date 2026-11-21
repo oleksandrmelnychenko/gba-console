@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
@@ -7,6 +7,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type { ReportDataset, ReportSelection } from '../types'
 import { InlineReportSelection, ReportSelectionsCard } from './ReportsStocksPage'
 import { priceDatasetFixture } from '../data/nativePriceFilterLookup.test-fixtures'
+import { analysisDataset } from '../data/currentVparivanieAnalysis.test-fixtures'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 const organizations = [
@@ -89,10 +90,11 @@ it('edits a settlement filter using the exact service-supplier ID and the direct
   const field = screen.getByRole('combobox', { name: 'Поле' })
   fireEvent.click(field)
   expect(screen.getByRole('group', { name: 'Контрагент' })).toBeTruthy()
-  const unavailable = screen.getByRole('option', { name: 'Постачальник товару (недоступно для цього звіту)' })
-  expect(unavailable.getAttribute('aria-disabled')).toBe('true')
-  fireEvent.click(unavailable)
+  fireEvent.click(screen.getByRole('option', { name: 'Постачальник товару (довідник)' }))
+  const directory = await screen.findByRole('dialog', { name: 'Постачальник товару' })
+  fireEvent.click(within(directory).getByRole('button', { name: 'Закрити' }))
   expect(field).toHaveProperty('value', 'Організація')
+  fireEvent.click(field)
   fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг' }))
   const search = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(search)
@@ -104,6 +106,20 @@ it('edits a settlement filter using the exact service-supplier ID and the direct
   expect(vi.mocked(apiRequest).mock.calls).toContainEqual([
     '/report/datasets/lookup', expect.objectContaining({ query: expect.objectContaining({ dataSource: 41, field: 17, value: '5918' }) }),
   ])
+})
+
+it('opens a supplier directory from the analysis field tree without replacing the buyer field', async () => {
+  vi.mocked(apiRequest).mockResolvedValue([])
+  render(<Form mode="modal" source={39} field={5} dataset={analysisDataset} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
+  const editor = within(screen.getByRole('dialog', { name: 'Редагувати умову відбору' }))
+  fireEvent.click(editor.getByRole('button', { name: 'Покупець' }))
+  const fieldPicker = within(await screen.findByRole('dialog', { name: 'Поле відбору' }))
+  fireEvent.click(fieldPicker.getByRole('button', { name: 'Постачальник послуг (довідник)' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Постачальник послуг' }))
+  fireEvent.click(directory.getByRole('button', { name: 'Закрити' }))
+  expect(editor.getByRole('button', { name: 'Покупець' })).toBeTruthy()
+  expect(selected().SelectedField.Type).toBe(5)
 })
 
 it('loads the buyer role in a legacy workbook and searches by the directory code', async () => {

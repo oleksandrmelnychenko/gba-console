@@ -1,6 +1,8 @@
 import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
+import { ReportCounterpartyDirectory } from './ReportCounterpartyDirectory'
+import type { ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
@@ -188,7 +190,7 @@ import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
-import { COUNTERPARTY_FILTER_SECTION, canSelectReportFilterField, canonicalFilterField, counterpartyOptions, groupCanonicalFilterOptions } from '../data/reportFilterFields'
+import { COUNTERPARTY_FILTER_SECTION, canSelectReportFilterField, canonicalFilterField, counterpartyOptions, groupCanonicalFilterOptions, reportFilterDirectoryRole } from '../data/reportFilterFields'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -1701,6 +1703,7 @@ export function ReportSelectionsCard({
   const [editorIndex, setEditorIndex] = useState<number | null>(null)
   const [draftSelection, setDraftSelection] = useState<ReportSelection | null>(null)
   const [fieldPickerOpen, setFieldPickerOpen] = useState(false)
+  const [directoryRole, setDirectoryRole] = useState<ReportCounterpartyRole>()
   const analysis = currentVparivanieAnalysisCapability(dataset)
   const managerLookup = financialBuyerManagerLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, lookupProfitReadMode, lookupProfitUnavailable)
   const documentLookup = financialDocumentLookupPolicy(dataset, request, draftSelection?.SelectedField.Type, managerLookup.mode, managerLookup.unavailable)
@@ -1731,6 +1734,8 @@ export function ReportSelectionsCard({
   function closeEditor() {
     setDraftSelection(null)
     setEditorIndex(null)
+    setFieldPickerOpen(false)
+    setDirectoryRole(undefined)
   }
 
   function openEditor(index: number, selection: ReportSelection) {
@@ -1854,6 +1859,12 @@ export function ReportSelectionsCard({
                 ...counterpartyOptions(selectableAnalysisFields.filter(isCounterpartyOption)).map(option => ({ ...option, path: [COUNTERPARTY_FILTER_SECTION] })),
               ]}
                 onClose={() => setFieldPickerOpen(false)} onSelect={value => {
+                  const role = reportFilterDirectoryRole(value)
+                  if (role) {
+                    setFieldPickerOpen(false)
+                    setDirectoryRole(role)
+                    return
+                  }
                   const field = analysis.filters.find(f => String(f.type) === value)
                   if (!field || field.available === false || !canSelectReportFilterField(field.type)) return
                   setDraftSelection(current => current ? { ...current, SelectedField: { Type: field.type, Name: field.name },
@@ -1932,6 +1943,7 @@ export function ReportSelectionsCard({
           </Stack>
         ) : null}
       </ReportModal>
+      {directoryRole && <ReportCounterpartyDirectory role={directoryRole} onClose={() => setDirectoryRole(undefined)} />}
     </>
   )
 }
