@@ -55,16 +55,26 @@ async function openReturns(dataset: ReportDataset) {
 
 function fieldOptions(row: ReturnType<typeof within>) {
   fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
-  return screen.getAllByRole('option').filter(option => option.getAttribute('aria-disabled') !== 'true').map(option => option.textContent)
+  const enabled = screen.getAllByRole('option').filter(option => option.getAttribute('aria-disabled') !== 'true')
+    .map(option => option.textContent ?? '')
+  return {
+    filters: enabled.filter(label => !label.endsWith(' (довідник)')),
+    directories: enabled.filter(label => label.endsWith(' (довідник)')),
+  }
 }
+
+const RETURN_DIRECTORIES = ['Постачальник товару (довідник)', 'Постачальник послуг (довідник)']
 
 it('lists the common return-line fields with shared labels and offers І/АБО groups', async () => {
   await openReturns(serverDataset(RETURN_FILTERS))
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
-  expect(fieldOptions(row)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Покупець',
-    'Регіон', 'Код по регіону', 'Договір', 'Відповідальний менеджер покупця',
-    'Повернення від клієнта', 'Причина повернення', 'Склад'])
+  expect(fieldOptions(row)).toEqual({
+    filters: ['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Покупець',
+      'Регіон', 'Код по регіону', 'Договір', 'Відповідальний менеджер покупця',
+      'Повернення від клієнта', 'Причина повернення', 'Склад'],
+    directories: RETURN_DIRECTORIES,
+  })
   fireEvent.click(screen.getByRole('option', { name: 'Договір' }))
   const search = row.getByPlaceholderText('Пошук значення')
   act(() => search.focus())
@@ -80,7 +90,10 @@ it('keeps the original five fields and no І/АБО panel on a server that has n
   await openReturns(serverDataset(CUSTOMER_RETURN_FILTERS))
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
-  expect(fieldOptions(row)).toEqual(['Товар', 'Артикул', 'Покупець', 'Причина повернення', 'Склад'])
+  expect(fieldOptions(row)).toEqual({
+    filters: ['Товар', 'Артикул', 'Покупець', 'Причина повернення', 'Склад'],
+    directories: RETURN_DIRECTORIES,
+  })
   expect(screen.queryByRole('region', { name: 'Логіка умов відбору' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'Налаштувати групи І/АБО' })).toBeNull()
 })
