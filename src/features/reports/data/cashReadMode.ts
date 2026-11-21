@@ -2,6 +2,7 @@ import type { ReportDataset, ReportRequestBody } from '../types'
 
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'cashreadmode')
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value)
+const serviceSupplierFilterKey = 'currentdocumentsservicesupplierfilter'
 
 export function requestCashReadMode(value: object): unknown {
   const key = aliases(value)[0]
@@ -14,16 +15,27 @@ export function cloneCashReadModeAliases(value: object): Record<string, unknown>
 
 export function isCashReadModeCapability(value: unknown): boolean {
   const expected = ['Version', 'SupportedModes', 'CurrentDocumentsMaximumMonths', 'LegacyInferencePreserved']
-  if (!record(value) || Object.keys(value).length !== expected.length) return false
+  if (!record(value)) return false
+  const names = Object.keys(value)
+  const serviceSupplierKeys = names.filter(key => key.toLowerCase() === serviceSupplierFilterKey)
+  if (names.length !== expected.length + serviceSupplierKeys.length || serviceSupplierKeys.length > 1
+    || (serviceSupplierKeys.length === 1 && typeof value[serviceSupplierKeys[0]] !== 'boolean')) return false
   const fields: Record<string, unknown> = {}
   for (const name of expected) {
-    const keys = Object.keys(value).filter(key => key.toLowerCase() === name.toLowerCase())
+    const keys = names.filter(key => key.toLowerCase() === name.toLowerCase())
     if (keys.length !== 1) return false
     fields[name] = value[keys[0]]
   }
   return fields.Version === 1 && Array.isArray(fields.SupportedModes)
     && fields.SupportedModes.length === 2 && fields.SupportedModes[0] === 0 && fields.SupportedModes[1] === 1
     && fields.CurrentDocumentsMaximumMonths === 120 && typeof fields.LegacyInferencePreserved === 'boolean'
+}
+
+export function supportsCurrentCashServiceSupplierFilter(dataset?: ReportDataset): boolean {
+  const capability = dataset?.cashReadMode
+  if (dataset?.DataSource !== 40 || !record(capability) || !isCashReadModeCapability(capability)) return false
+  const key = Object.keys(capability).find(name => name.toLowerCase() === serviceSupplierFilterKey)
+  return key !== undefined && capability[key] === true
 }
 
 export function normalizeCashReadModeDataset(value: Record<string, unknown>): Record<string, unknown> {

@@ -32,6 +32,7 @@ import { isNativePricingId } from '../data/nativePriceComparison'
 import { requestProfitReadMode } from '../data/profitReadMode'
 import { requestSettlementReadMode } from '../data/settlementReadMode'
 import { requestCashReadMode } from '../data/cashReadMode'
+import { CASH_SERVICE_SUPPLIER_FILTER_TYPE, GROUPED_CASH_FILTERS } from '../data/groupedCashPeriod'
 import { normalizeNativeReportPreview, type NativeReportPreview } from '../data/nativeReportPreview'
 import { readPreviewColumnPaging, type ReportPreviewColumnPaging } from '../data/reportWideColumns'
 
@@ -284,7 +285,8 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
     throw new Error('Некоректна основа довідника продажів.')
   if (dataSource === 41 && ![0, 6, 9, 17, 18, 30, 60, 61].includes(field))
     throw new Error('Цей відбір групових взаєморозрахунків недоступний.')
-  if (dataSource === 40 && ![29, 30, 32, 33].includes(field)) throw new Error('Цей відбір рахунків недоступний.')
+  if (dataSource === 40 && field !== CASH_SERVICE_SUPPLIER_FILTER_TYPE
+    && !(GROUPED_CASH_FILTERS as readonly number[]).includes(field)) throw new Error('Цей відбір рахунків недоступний.')
   if (dataSource === 39 && ![1, 4, 5, 21, 60].includes(field))
     throw new Error('Цей відбір поточної матриці «Аналіз залишків і продажів» недоступний.')
   if ([23, 24, 25, 28].includes(dataSource) && !(sourceWorld === 1 || (sourceWorld === 2)))
@@ -382,7 +384,6 @@ export async function getReportRegions(): Promise<ReportEntity[]> {
 }
 
 export async function searchReportRegionCodes(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
-  if (!params.value.trim()) return []
   const clients = await searchReportClients(params, signal)
 
   return clients.flatMap((client) => {
@@ -435,7 +436,11 @@ export async function searchReportProducts(params: ReportSearchParams): Promise<
   }))
 }
 
-async function searchReportClients(
+export async function searchReportClients(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
+  return params.value.trim() ? fetchReportBuyerClients(params, signal) : []
+}
+
+async function fetchReportBuyerClients(
   params: ReportSearchParams,
   signal?: AbortSignal,
 ): Promise<ReportEntity[]> {
@@ -454,7 +459,7 @@ async function searchReportClients(
 }
 
 export async function searchReportBuyers(params: ReportSearchParams, signal?: AbortSignal): Promise<ReportEntity[]> {
-  const clients = await searchReportClients(params, signal)
+  const clients = await fetchReportBuyerClients(params, signal)
   return clients.map(client => {
     const regionCode = client.RegionCode
     const code = isReportEntity(regionCode) ? String(regionCode.Value ?? '').trim() : ''

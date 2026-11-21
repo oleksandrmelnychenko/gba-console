@@ -1,10 +1,11 @@
 import { workbookConfigurationError } from './workbookPresentation'
 import type { ReportDataset, ReportRequestBody } from '../types'
 import { exactId } from './exactId'
-import { cashReadModeConfigurationError, isCashReadModeCapability, requestCashReadMode } from './cashReadMode'
+import { cashReadModeConfigurationError, isCashReadModeCapability, requestCashReadMode, supportsCurrentCashServiceSupplierFilter } from './cashReadMode'
 
 export const CASH_WORKBOOK_ROWS = [40, 44, 43] as const
 export const GROUPED_CASH_FILTERS = [29, 30, 32, 33] as const
+export const CASH_SERVICE_SUPPLIER_FILTER_TYPE = 17
 type GroupedCashPeriod = { Version: 1; CurrencyBasis: 'AccountAndManagementCurrency' }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const aliases = (value: object) => Object.keys(value).filter(key => key.toLowerCase() === 'groupedcashperiod')
@@ -38,6 +39,11 @@ function isGroupedCashCapability(value: unknown): boolean {
 }
 export const groupedCashSupported = (dataset?: ReportDataset) => dataset?.DataSource === 40
   && isGroupedCashCapability(dataset.groupedCashPeriod)
+export function cashServiceSupplierFilterAvailable(dataset: ReportDataset | undefined, data: object | undefined): boolean {
+  return !!data && requestCashReadMode(data) === 0 && groupedCashPeriod(requestGroupedCashPeriod(data)) !== null
+    && groupedCashSupported(dataset) && supportsCurrentCashServiceSupplierFilter(dataset)
+}
+
 export function groupedCashWorkbookSupported(dataset?: ReportDataset): boolean {
   const capability = dataset?.groupedCashPeriod
   return groupedCashSupported(dataset) && record(capability) && Array.isArray(capability.RowLayouts)
@@ -71,11 +77,17 @@ export function groupedCashConfigurationError(data: ReportRequestBody, dataset?:
   const allowed = new Set(['numberpresentation', 'datasource', 'from', 'to', 'sorted', 'selections', 'groupedcashperiod', 'cashreadmode', 'workbookpresentation', 'filterexpression'])
   if (Object.entries(data).some(([key, value]) => !allowed.has(key.toLowerCase()) && value != null))
     return 'Рахунки не поєднуються з точним записом або іншими перетвореннями.'
+  const allowedFilters = new Set<number>(GROUPED_CASH_FILTERS)
+  const serviceSupplierAvailable = dataset ? cashServiceSupplierFilterAvailable(dataset, data) : requestCashReadMode(data) === 0
+  if (serviceSupplierAvailable)
+    allowedFilters.add(CASH_SERVICE_SUPPLIER_FILTER_TYPE)
   if (!Array.isArray(data.selections) || data.selections.some(selection => selection?.IsChecked !== false
-    && (!(GROUPED_CASH_FILTERS as readonly number[]).includes(selection?.SelectedField?.Type)
+    && (!allowedFilters.has(selection?.SelectedField?.Type)
       || ![0, 1, 2, 4].includes(selection?.FilterCondition?.Type) || !Array.isArray(selection.Values)
       || !selection.Values.length || selection.Values.some(value => exactId(value?.Data) === null
         || selection.SelectedField.Type === 33 && !['1', '2'].includes(exactId(value.Data) ?? '')))))
-    return 'Оберіть точні рахунки, організації, валюти або вид «Банк / Каса» з поточних списків.'
+    return serviceSupplierAvailable
+      ? 'Оберіть точні рахунки, організації, валюти, постачальників послуг або вид «Банк / Каса» з поточних списків.'
+      : 'Оберіть точні рахунки, організації, валюти або вид «Банк / Каса» з поточних списків.'
   return null
 }

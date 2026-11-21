@@ -5,7 +5,7 @@ import { defaultDatasetRequest } from '../data/reportDatasets'
 import { normalizeNativeReportPreview } from '../data/nativeReportPreview'
 import { cashModeDataset as dataset } from '../data/cashReadMode.test-fixtures'
 import { cashPeriodManagementRequest } from '../data/cashPeriod.test-fixtures'
-import { createStockReport, previewStockReport, validateStockReportRequest } from './reportsApi'
+import { createStockReport, previewStockReport, searchDatasetReportValues, validateStockReportRequest } from './reportsApi'
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 beforeEach(() => vi.clearAllMocks())
 function response(mode?: unknown, source = 'NativeCashPeriod') {
@@ -40,6 +40,14 @@ it('submits the new default grouped request with current documents', async () =>
   vi.mocked(apiRequest).mockResolvedValue(response(0))
   await expect(previewStockReport(body, dataset)).resolves.toMatchObject({ preview: { Request: { CashReadMode: 0 } } })
   expect(vi.mocked(apiRequest).mock.calls[0][1]?.body).toMatchObject({ cashReadMode: 0 })
+})
+
+it('looks up a cash service supplier by code with the exact string identity', async () => {
+  const query = { value: '5918', offset: 0, limit: 30 }
+  const supplier = { Id: '32750', Name: 'Fenix 5918 — % банку' }
+  vi.mocked(apiRequest).mockResolvedValue([supplier])
+  await expect(searchDatasetReportValues(40, 17, query)).resolves.toEqual([supplier])
+  expect(apiRequest).toHaveBeenCalledWith('/report/datasets/lookup', { query: { dataSource: 40, field: 17, ...query }, signal: undefined })
 })
 
 it('keeps legacy requests legacy and refuses a server that claims an explicit mode for them', async () => {

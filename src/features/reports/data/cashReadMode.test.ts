@@ -9,7 +9,7 @@ import { cashModeDataset as dataset, cashReadModeCapability as capability } from
 import { groupedCashDataset, groupedCashWorkbookDataset } from './groupedCashPeriod.test-fixtures'
 import { settlementMaximumDate } from './groupedSettlementPeriod'
 import { buildReportBuilderRequest } from './reportBuilderRequest'
-import { datasetConfigurationError, datasetMeasurements, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
+import { datasetConfigurationError, datasetFilters, datasetMeasurements, defaultDatasetRequest, withDefaultReadModes } from './reportDatasets'
 import { reportDatasets } from './reportDatasets.test-fixtures'
 import { retainStoredTemplateFields } from './reportTemplateDraft'
 import { reportWorkspaceDraftCompatibility } from './reportWorkspaceDraftCompatibility'
@@ -29,8 +29,10 @@ const unmarked = (capable: ReportDataset, from: string, to: string) => {
 const cashLaunch = (datasets: ReportDataset[]) => availableBug1274WorkbookLaunches(datasets)
   .find(launch => launch.fileName === 'Ведомость по денежным средствам.xls')!
 
-it('accepts only the exact four-field capability with case-insensitive names', () => {
+it('accepts the current cash capability and its optional supplier support with case-insensitive names', () => {
   expect(isCashReadModeCapability({ ...capability, LegacyInferencePreserved: false })).toBe(true)
+  expect(isCashReadModeCapability({ ...capability, CurrentDocumentsServiceSupplierFilter: true })).toBe(true)
+  expect(isCashReadModeCapability({ ...capability, currentDocumentsServiceSupplierFilter: false })).toBe(true)
   expect(isCashReadModeCapability(capability)).toBe(true)
   expect(isCashReadModeCapability(Object.fromEntries(Object.entries(capability).map(([key, value]) => [key.toLowerCase(), value])))).toBe(true)
   const { LegacyInferencePreserved: _legacy, ...missing } = capability
@@ -39,8 +41,27 @@ it('accepts only the exact four-field capability with case-insensitive names', (
     { ...missing, CurrentDocumentsMaximumDays: 120 }, { ...capability, Version: 2 }, { ...capability, SupportedModes: [1, 0] },
     { ...capability, SupportedModes: ['0', '1'] }, { ...capability, SupportedModes: [0] }, { ...capability, SupportedModes: [0, 1, 2] },
     { ...capability, CurrentDocumentsMaximumMonths: 121 }, { ...capability, CurrentDocumentsMaximumMonths: '120' },
-    { ...capability, LegacyInferencePreserved: 'false' }])
+    { ...capability, LegacyInferencePreserved: 'false' }, { ...capability, CurrentDocumentsServiceSupplierFilter: 'true' },
+    { ...capability, CurrentDocumentsServiceSupplierFilter: true, currentDocumentsServiceSupplierFilter: true }])
     expect(isCashReadModeCapability(value)).toBe(false)
+})
+
+it('admits a service supplier only for grouped current cash when the server supports its document field', () => {
+  const [supported] = parseReportDatasets([{ ...dataset, cashReadMode: { ...capability, currentDocumentsServiceSupplierFilter: true } }])
+  const current = request(0)
+  const service = { Type: 17, Name: 'Supplier' }
+  const selected = { ...current, selections: [{
+    IsChecked: true, SelectedField: service, FilterCondition: { Type: 0, Name: 'Рівне' },
+    Values: [{ Name: 'Fenix 5918 — % банку', Value: 0, Data: { Id: '32750' } }],
+  }] }
+  expect(datasetFilters(supported, current)).toContainEqual({ value: '17', label: 'Постачальник послуг', field: service })
+  expect(datasetConfigurationError(selected, supported)).toBeNull()
+  expect(datasetFilters(dataset, current).some(option => option.field.Type === 17)).toBe(false)
+  expect(datasetConfigurationError(selected, dataset)).toContain('Банк / Каса')
+  for (const inactive of [request(1), request(undefined), { ...current, groupedCashPeriod: undefined }]) {
+    expect(datasetFilters(supported, inactive).some(option => option.field.Type === 17)).toBe(false)
+    expect(datasetConfigurationError({ ...inactive, selections: selected.selections }, supported)).not.toBeNull()
+  }
 })
 
 it('normalizes the dataset capability and hides unknown or misplaced ones without refusing the dataset list', () => {

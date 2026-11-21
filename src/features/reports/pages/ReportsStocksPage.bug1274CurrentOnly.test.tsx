@@ -1,5 +1,5 @@
 import { MantineProvider } from '@mantine/core'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { previewStockReport, searchDatasetReportValues } from '../api/reportsApi'
@@ -8,7 +8,7 @@ import { getSettlementCounterpartyGroups } from '../api/counterpartyGroupsApi'
 import { defaultDatasetRequest } from '../data/reportDatasets'
 import { reportDatasets } from '../data/reportDatasets.test-fixtures'
 import { profitDayDataset, profitSupplierDataset } from '../data/profitReadMode.test-fixtures'
-import { cashModeDataset } from '../data/cashReadMode.test-fixtures'
+import { cashModeDataset, cashReadModeCapability } from '../data/cashReadMode.test-fixtures'
 import { settlementModeDataset } from '../data/settlementReadMode.test-fixtures'
 import { groupCapability } from '../data/sourceCounterpartyGroups.test-fixtures'
 import { SAVED_VARIANT_WITHOUT_READ_MODE_ERROR, TEMPLATE_WITHOUT_READ_MODE_ERROR } from '../data/currentReadModePolicy'
@@ -18,7 +18,7 @@ import { chooseTemplateAction } from '../testing/templateActions'
 import { ReportsStocksPage } from './ReportsStocksPage'
 import { WORKBOOK_FILES } from '../testing/workbookFiles'
 import { workbookDisplayFileName } from '../data/bug1274WorkbookGuide'
-import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced } from '../testing/workbookDesk'
+import { expandWorkbookSettings, findWorkbookLanding, openWorkbookAdvanced, openWorkbookSettingsSection } from '../testing/workbookDesk'
 
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ hasPermission: () => true }) }))
 vi.mock('../../../shared/ui/document-export-modal/DocumentExportModal', () => ({ DocumentExportModal: () => null }))
@@ -84,6 +84,29 @@ it('hides the single currency record of the cash form', async () => {
   const view = await openWorkbook('Рух коштів за період')
   expect(screen.queryByText('Один валютний запис')).toBeNull()
   expect((await submitted(view)).cashReadMode).toBe(0)
+})
+
+it('applies the exact service-supplier selection in the current cash workbook', async () => {
+  const cash = { ...cashModeDataset, cashReadMode: { ...cashReadModeCapability, CurrentDocumentsServiceSupplierFilter: true } }
+  vi.mocked(getReportDatasets).mockResolvedValue([...reportDatasets.filter(dataset => dataset.DataSource !== 40), cash])
+  const supplier = { Id: '32750', Name: 'Fenix 5918 — % банку' }
+  vi.mocked(searchDatasetReportValues).mockImplementation(async (source, field, query) =>
+    source === 40 && field === 17 && query.value === '5918' ? [supplier] : [])
+  const view = await openWorkbook('Рух коштів за період')
+  openWorkbookSettingsSection('Фільтри')
+  fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  const parties = within(screen.getByRole('group', { name: 'Контрагент' }))
+  expect(parties.getByRole('option', { name: 'Покупець (недоступно для цього звіту)' }).getAttribute('aria-disabled')).toBe('true')
+  fireEvent.click(parties.getByRole('option', { name: 'Постачальник послуг' }))
+  const search = row.getByPlaceholderText('Пошук значення')
+  fireEvent.click(search)
+  fireEvent.change(search, { target: { value: '5918' } })
+  fireEvent.click(await screen.findByRole('option', { name: supplier.Name }))
+  expect(await submitted(view)).toMatchObject({ dataSource: 40, cashReadMode: 0, selections: [{
+    IsChecked: true, SelectedField: { Type: 17, Name: 'Supplier' }, Values: [{ Name: supplier.Name, Data: { Id: supplier.Id } }],
+  }] })
 })
 
 it('keeps the day form on current documents after a reset', async () => {

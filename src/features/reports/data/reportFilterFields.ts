@@ -61,7 +61,8 @@ export function canonicalFilterField(dataSource: number | undefined, type: numbe
   if (known) {
     if (dataSource === 39 && type === 5) return { label: 'Покупець', section: COUNTERPARTY_FILTER_SECTION, order: known.order }
     if (dataSource === 39 && type === 6) return { label: name, section: 'Покупець', order: known.order }
-    if (dataSource === 41 && type === 17) return { label: 'Постачальник послуг', section: COUNTERPARTY_FILTER_SECTION, order: known.order }
+    if ((dataSource === 40 || dataSource === 41) && type === 17)
+      return { label: 'Постачальник послуг', section: COUNTERPARTY_FILTER_SECTION, order: known.order }
     return { label: known.label ?? name, section: dataSource === 41 && type === 30 ? undefined : known.section, order: known.order }
   }
   return { label: name, section: fallbackSection(type), order: CANONICAL_FIELDS.length }
