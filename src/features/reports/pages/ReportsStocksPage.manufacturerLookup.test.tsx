@@ -143,29 +143,36 @@ it('refreshes the manufacturer picker when the sales constructor switches suppli
     query: { dataSource: 2, field: 75, value: '', offset: 0, limit: 50, supplierIds: '631635,635333' },
   })))
   const filter = within(screen.getByRole('group', { name: 'Умова відбору 3' }))
+  const field = filter.getByRole('combobox', { name: 'Поле' })
+  expect(field).toHaveProperty('value', 'Виробник')
+  fireEvent.mouseDown(field)
+  fireEvent.click(field)
+  expect(screen.getByRole('listbox')).toBeTruthy()
+  expect(screen.queryByRole('option', { name: 'Виробник' })).toBeNull()
+  fireEvent.blur(field)
+  expect(screen.getByRole('button', { name: 'Копіювати вибраний відбір' })).toHaveProperty('disabled', true)
   fireEvent.click(filter.getByRole('combobox', { name: 'Значення' }))
   expect(await screen.findByRole('option', { name: 'MARSTECH' })).toBeTruthy()
   expect(previousSignal?.aborted).toBe(true)
   await act(async () => completePrevious?.([{ Id: 5001, Name: 'Попередній відбір' }]))
   expect(screen.queryByRole('option', { name: 'Попередній відбір' })).toBeNull()
   await act(async () => fireEvent.submit(container.querySelector('form')!))
-  await waitFor(() => expect(previewStockReport).toHaveBeenCalledWith(expect.objectContaining({ filterExpression: after }), dataset, expect.anything()))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledWith(expect.objectContaining({
+    filterExpression: after, selections: expect.arrayContaining([selectedManufacturer]),
+  }), dataset, expect.anything()))
+  fireEvent.click(filter.getByRole('button', { name: 'Видалити умову 3' }))
+  expect(screen.queryByRole('group', { name: 'Умова відбору 3' })).toBeNull()
 })
 
 const folder = { kind: 'counterpartyGroup', world: 'fenix', id: '8AB2005056C0000811DEFF56BB200610' }
 const folderName = 'Постачальники товару'
-const supplierName = 'ПЛА-ТАН І К ТОВ (MARS+AYFAR)'
-
-it('adds the exact supplier’s brands from the selected buyer group on the sales filter row', async () => {
+it('applies the buyer group without offering a new manufacturer filter', async () => {
   const sales = parseReportDatasets(catalog).find(item => item.DataSource === 2)!
   const dataset = { ...sales, Filters: [...sales.Filters, { Type: 75, Name: 'Виробник', Selectable: true }] }
-  api.mockImplementation(async (path, options) => {
+  api.mockImplementation(async path => {
     if (path.endsWith('/hierarchy-status')) return { version: 1, kinds: ['counterpartyGroup', 'warehouseGroup', 'productGroup'].map(kind => ({ kind, available: true })) }
     if (path.endsWith('/hierarchy')) return { kind: folder.kind, parentId: null, hasMore: false, items: [{
       id: 'fenix:' + folder.id, name: folderName, path: folderName, hasChildren: false, data: JSON.stringify(folder) }] }
-    if (path.endsWith('/manufacturer-suppliers') && options?.query?.groupId === 'fenix:' + folder.id)
-      return [{ Id: 631635, Name: 'ПЛА-ТАН І К ТОВ' }, { Id: 635333, Name: supplierName }]
-    if (options?.query?.field === 75 && options.query.supplierIds === '635333') return manufacturers
     return []
   })
   vi.mocked(previewStockReport).mockResolvedValue({ result: { document: {}, raw: {} }, preview: {
@@ -186,33 +193,19 @@ it('adds the exact supplier’s brands from the selected buyer group on the sale
   fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
   fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  expect(screen.queryByRole('option', { name: 'Виробник' })).toBeNull()
   fireEvent.click(await screen.findByRole('option', { name: 'Покупець' }))
   fireEvent.click(row.getByRole('combobox', { name: 'Тип порівняння' }))
   fireEvent.click(await screen.findByRole('option', { name: 'В групі' }))
   expect(screen.queryByRole('button', { name: 'Вибрати виробника' })).toBeNull()
   fireEvent.click(await screen.findByPlaceholderText('Пошук значення'))
   fireEvent.click(await screen.findByRole('option', { name: folderName }))
-  fireEvent.click(await screen.findByRole('button', { name: 'Вибрати виробника' }))
-  const input = await screen.findByRole('combobox', { name: 'Постачальник' })
-  fireEvent.change(input, { target: { value: 'ПЛА-ТАН' } })
-  fireEvent.click(await screen.findByRole('option', { name: supplierName }))
-  const dialog = within(screen.getByRole('dialog', { name: 'Виробники постачальника' }))
-  const brandPicker = dialog.getByRole('combobox', { name: 'Виробник' })
-  fireEvent.click(brandPicker)
-  const options = await dialog.findByRole('listbox')
-  expect(brandPicker.getAttribute('aria-controls')).toBe(options.id)
-  fireEvent.click(await within(options).findByRole('option', { name: 'AYFAR' }))
-  fireEvent.click(await within(options).findByRole('option', { name: 'MARSTECH' }))
-  const apply = dialog.getByRole('button', { name: 'Додати відбір за виробником' })
-  expect(options.compareDocumentPosition(apply) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  fireEvent.click(apply)
+  expect(screen.queryByRole('button', { name: 'Вибрати виробника' })).toBeNull()
   expect(row.getByText('Група: ' + folderName)).toBeTruthy()
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   const request = vi.mocked(previewStockReport).mock.calls[0][0]
   expect(request).toMatchObject({ dataSource: 2, reportProfile: 'sales', selections: [
     { SelectedField: { Type: 6 }, FilterCondition: { Type: 6 }, Values: [{ Data: folder }] },
-    { IsChecked: true, SelectedField: { Type: 75 }, FilterCondition: { Type: 2 } },
   ] })
-  expect(request.selections[1].Values.map(value => value.Data.Id)).toEqual([4384, 4383])
 })

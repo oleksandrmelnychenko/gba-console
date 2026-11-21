@@ -8,10 +8,10 @@ import { I18nProvider } from '../../../shared/i18n/I18nProvider'
 import { partialPhysicalCoverage } from '../../../shared/ui/product-movement-history/physicalCoverage.test-fixtures'
 import {
   exportStockMovement, getStockMovementCapability, getStockMovementMeasureUnits, getStockMovementOrganizations, getStockMovementWarehouses, previewStockMovement,
-  searchStockMovementGroups, searchStockMovementProducts,
+  searchStockMovementGroups, searchStockMovementManufacturers, searchStockMovementProducts,
 } from '../api/warehouseStockMovementApi'
 import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
-import type { StockMovementRequest } from '../data/warehouseStockMovement'
+import { buildStockMovementRequest, defaultStockMovementDraft, type StockMovementRequest } from '../data/warehouseStockMovement'
 import {
   stockMovementCapability, stockMovementExport, stockMovementGroups, stockMovementOrganizations, stockMovementProducts, stockMovementResult,
   stockMovementRows, stockMovementWarehouses,
@@ -20,7 +20,8 @@ import { WarehouseStockMovementPanel } from './WarehouseStockMovementPanel'
 
 vi.mock('../api/warehouseStockMovementApi', () => ({
   getStockMovementCapability: vi.fn(), getStockMovementWarehouses: vi.fn(), getStockMovementOrganizations: vi.fn(), getStockMovementMeasureUnits: vi.fn(),
-  searchStockMovementProducts: vi.fn(), searchStockMovementGroups: vi.fn(), previewStockMovement: vi.fn(), exportStockMovement: vi.fn(),
+  searchStockMovementProducts: vi.fn(), searchStockMovementGroups: vi.fn(), searchStockMovementManufacturers: vi.fn(),
+  previewStockMovement: vi.fn(), exportStockMovement: vi.fn(),
 }))
 
 const panel = (allowed = true, onBusyChange?: (busy: boolean) => void) => <MantineProvider env="test"><I18nProvider>
@@ -100,7 +101,7 @@ describe('native warehouse stock movement', () => {
     fireEvent.click(within(filters).getByRole('combobox', { name: 'Поле' }))
     const listbox = await screen.findByRole('listbox')
     expect([...listbox.querySelectorAll('[role="option"]')].map(option => option.textContent)).toEqual(
-      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Виробник', 'Одиниця виміру',
+      ['Організація складу', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
         'Покупець (недоступно для цього звіту)', 'Постачальник товару (недоступно для цього звіту)', 'Постачальник послуг (недоступно для цього звіту)', 'Склад', 'Вид документа руху', 'Документ руху'])
     expect([...listbox.querySelectorAll('[class*="groupLabel"]')].map(label => label.textContent)).toEqual(['Товари', 'Контрагент', 'Склади', 'Документи руху'])
     fireEvent.click(within(filters).getByRole('button', { name: 'Видалити умову 1' }))
@@ -144,6 +145,26 @@ describe('native warehouse stock movement', () => {
     fireEvent.change(within(document).getByRole('textbox', { name: 'Значення' }), { target: { value: 'ВН-7' } })
     await waitFor(() => expect(previewStockMovement).toHaveBeenCalledTimes(3))
     expect(previews()[2]).toMatchObject({ Filters: [{ Field: 'article', Values: ['94000'] }, { Field: 'documentText', Text: 'ВН-7' }] })
+  })
+
+  it('runs a saved manufacturer filter from movement history and lets the user remove it', async () => {
+    const brand = { Id: 5501, Name: 'BOSCH', Detail: null }
+    const request = { ...buildStockMovementRequest(defaultStockMovementDraft(stockMovementCapability)),
+      Filters: [{ Field: 'manufacturer' as const, Ids: [brand.Id] }] }
+    vi.mocked(searchStockMovementManufacturers).mockResolvedValue([brand])
+    render(<MantineProvider env="test"><I18nProvider>
+      <WarehouseStockMovementPanel callerKey="owner" canGenerate history={{ token: 1, action: 'open', request, products: [], groups: [brand] }} />
+    </I18nProvider></MantineProvider>)
+    await waitFor(() => expect(previews()[0]).toMatchObject({ Filters: request.Filters }))
+    const region = within(screen.getByRole('region', { name: 'Відбори' }))
+    const field = region.getByRole('combobox', { name: 'Поле' })
+    expect(field).toHaveProperty('value', 'Виробник')
+    fireEvent.mouseDown(field)
+    fireEvent.click(field)
+    expect(screen.queryByRole('option', { name: 'Виробник' })).toBeNull()
+    expect(region.getByRole('button', { name: 'Копіювати вибраний відбір' })).toHaveProperty('disabled', true)
+    fireEvent.click(region.getByRole('button', { name: 'Видалити умову 1' }))
+    expect(region.queryByRole('group', { name: 'Умова відбору 1' })).toBeNull()
   })
 
   it('does not query before the first apply and does not repeat an unchanged search', async () => {

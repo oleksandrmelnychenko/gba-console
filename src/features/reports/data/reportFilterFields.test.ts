@@ -34,12 +34,13 @@ describe('one filter field list for every report', () => {
     expect(shared.map(item => [item.value, item.group, item.label])).toEqual(salesOrder.map(item => [item.value, item.group, item.label]))
   })
 
-  it('groups the same numeric supplier field by its registry in sales and settlements and leaves brands under products', () => {
+  it('groups the supplier by its registry and omits the manufacturer from field choices', () => {
     const options = [6, 17, 75].map(Type => ({ value: String(Type), label: Type === 75 ? 'Виробник' : 'Поле', field: { Type } }))
     const parties = (source: number) => flatten(groupCanonicalFilterOptions(source, options)).filter(item => item.group === 'Контрагент')
     expect(parties(2).filter(item => !item.disabled).map(item => item.label)).toEqual(['Покупець', 'Постачальник товару'])
     expect(parties(41).filter(item => !item.disabled).map(item => item.label)).toEqual(['Покупець', 'Постачальник послуг'])
-    expect(flatten(groupCanonicalFilterOptions(2, options))).toContainEqual({ value: '75', label: 'Виробник', group: 'Товари' })
+    expect(flatten(groupCanonicalFilterOptions(2, options)).some(item => item.value === '75')).toBe(false)
+    expect(canonicalFilterLabel(2, 75, 'Виробник')).toBe('Виробник')
   })
 
   it('shows the three counterparty roles in each report and disables roles without a wire field', () => {

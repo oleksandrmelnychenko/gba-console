@@ -14,12 +14,14 @@ type Props = {
   onDelete: (index: number) => void
   onCopy: (index: number) => void
   copyDisabled?: boolean
+  canCopy?: (index: number) => boolean
 }
 
-export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow, footer, onAdd, onDelete, onCopy, copyDisabled = false }: Props) {
+export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow, footer, onAdd, onDelete, onCopy, copyDisabled = false, canCopy }: Props) {
   const [expanded, setExpanded] = useState(true)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const selected = selectedKey === null ? -1 : rowKeys.indexOf(selectedKey)
+  const cannotCopy = selected < 0 || copyDisabled || canCopy?.(selected) === false
   function edit() {
     if (selected < 0) return
     document.querySelector<HTMLElement>(`[data-constructor-filter="${selected}"] .constructor-selection-row__field input`)?.focus()
@@ -27,7 +29,7 @@ export function ConstructorFilters({ count, rowKeys, disabled = false, renderRow
   const tools = [
     { label: 'Змінити вибраний відбір', icon: <Pencil size={15} />, disabled: selected < 0, onClick: edit },
     { label: 'Видалити вибраний відбір', icon: <Trash2 size={15} />, disabled: selected < 0, onClick: () => { if (selected >= 0) { onDelete(selected); setSelectedKey(null) } } },
-    { label: 'Копіювати вибраний відбір', icon: <Copy size={15} />, disabled: selected < 0 || copyDisabled, onClick: () => { if (selected >= 0 && !copyDisabled) onCopy(selected) } },
+    { label: 'Копіювати вибраний відбір', icon: <Copy size={15} />, disabled: cannotCopy, onClick: () => { if (!cannotCopy) onCopy(selected) } },
   ]
   return <section className="constructor-panel constructor-filters" aria-label="Відбори">
     <div className="constructor-section-head">

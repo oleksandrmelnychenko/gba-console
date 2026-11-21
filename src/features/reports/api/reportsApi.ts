@@ -341,13 +341,6 @@ export async function searchReportManufacturers(dataSource: number, params: Repo
   return all
 }
 
-export async function searchManufacturerSuppliers(groupId: string, params: ReportSearchParams, signal?: AbortSignal) {
-  const result = await apiRequest<unknown>('/report/datasets/manufacturer-suppliers', {
-    query: { groupId, value: params.value.trim(), offset: params.offset, limit: params.limit }, signal,
-  })
-  return parseManufacturerLookup(result, 'Сервер повернув некоректний список постачальників.')
-}
-
 type ManufacturerLookupChoice = ReportEntity & { Id: number; Name: string }
 
 function parseManufacturerLookup(result: unknown, errorMessage: string): ManufacturerLookupChoice[] {

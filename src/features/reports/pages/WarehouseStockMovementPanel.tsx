@@ -26,6 +26,7 @@ import {
 import { searchCustomerGroupTop } from '../api/customerGroupTopApi'
 import { droppedSettingsLine, movementDraftFromHistory, type ReportHistoryAction } from '../data/reportHistory'
 import { groupCanonicalFilterOptions } from '../data/reportFilterFields'
+import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
 import { ReportFilterExpressionPanel } from './ReportFilterExpressionPanel'
 import { removeFilterSelection } from '../data/reportFilterExpression'
@@ -106,9 +107,9 @@ function lookupLabel(item: StockMovementLookupItem): string {
   return item.Name
 }
 
-function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>, listed: boolean) {
+function movementFieldOptions(used: ReadonlySet<StockMovementFilterField | null>) {
   const movementLabel = (item: { value: string; label: string }) => STOCK_MOVEMENT_FILTER_DEFINITIONS[item.value as StockMovementFilterField]?.label ?? item.label
-  return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.filter(field => listed || field !== 'manufacturer').map(field => {
+  return groupCanonicalFilterOptions(undefined, STOCK_MOVEMENT_FILTER_FIELDS.map(field => {
     const definition = STOCK_MOVEMENT_FILTER_DEFINITIONS[field]
     return { value: field, label: definition.label, section: definition.section, disabled: used.has(field), field: { Type: definition.type } }
   })).map(entry => 'group' in entry ? { ...entry, items: entry.items.map(item => ({ ...item, label: movementLabel(item) })) } : { ...entry, label: movementLabel(entry) })
@@ -380,7 +381,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
   const changeRowField = (index: number, value: string | null) => {
     const row = draft.filterRows[index]
     const field = value === null ? null : STOCK_MOVEMENT_FILTER_FIELDS.find(option => option === value)
-    if (field === undefined) return
+    if (field === undefined || field === 'manufacturer') return
     if (!row || row.field === field) return
     update({ filterRows: draft.filterRows.map((item, position) => position === index ? { id: item.id, enabled: item.enabled, field } : item) })
   }
@@ -446,6 +447,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
           content: <Stack gap={8}>
             <ConstructorFilters count={draft.filterRows.length} rowKeys={draft.filterRows.map(row => String(row.id))} disabled={locked}
               copyDisabled={!draft.listed}
+              canCopy={index => draft.filterRows[index].field !== 'manufacturer'}
               footer={capability.FilterExpression || draft.filterExpression ? (view => <ReportFilterExpressionPanel data={view.data} dataset={view.dataset}
                 disabled={locked} notice={null} onChange={value => update({ filterExpression: value == null ? null : value as StockMovementDraft['filterExpression'] })} />)(
                 stockMovementExpressionView(draft, capability, { warehouses, organizations, units: attributes.units })) : null}
@@ -459,8 +461,9 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                 return <ReportFilterRow label={`Умова відбору ${index + 1}`} selected={selected} onSelect={onSelect}
                   toggle={<Checkbox size="xs" aria-label={`Увімкнути умову ${index + 1}`} checked={row.enabled} disabled={locked}
                     onChange={event => setRow(index, { enabled: event.currentTarget.checked })} />}
-                  field={<Select size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
-                    data={movementFieldOptions(used, draft.listed)} value={row.field}
+                  field={<ReportFilterFieldSelect size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
+                    data={movementFieldOptions(used)} value={row.field}
+                    savedManufacturerValue={row.field === 'manufacturer' ? row.field : undefined}
                     onChange={value => changeRowField(index, value)} />}
                   condition={row.field === 'article'
                     ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={row.articleMatch ?? 'equals'}

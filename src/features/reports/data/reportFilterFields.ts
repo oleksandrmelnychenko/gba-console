@@ -1,3 +1,5 @@
+import { REPORT_FILTER_FIELD_TYPES } from './reportOptions'
+
 export type CanonicalFilterField = { label: string; section?: string; order: number }
 
 export const COUNTERPARTY_FILTER_SECTION = 'Контрагент'
@@ -75,6 +77,10 @@ export function canonicalFilterLabel(dataSource: number | undefined, type: numbe
 type GroupableOption = { value: string; label: string; disabled?: boolean; section?: string; field: { Type: number } }
 type GroupedItem = { value: string; label: string; disabled?: boolean }
 
+export function canSelectReportFilterField(type: number): boolean {
+  return type !== REPORT_FILTER_FIELD_TYPES.productManufacturer
+}
+
 const COUNTERPARTY_ROLES = [
   { key: 'buyer', label: 'Покупець' },
   { key: 'goods-supplier', label: 'Постачальник товару' },
@@ -88,7 +94,7 @@ export function counterpartyOptions<T extends GroupedItem>(items: ReadonlyArray<
 }
 
 export function groupCanonicalFilterOptions(dataSource: number | undefined, options: ReadonlyArray<GroupableOption>): Array<GroupedItem | { group: string; items: GroupedItem[] }> {
-  const described = options.map((option, index) => {
+  const described = options.filter(option => canSelectReportFilterField(option.field.Type)).map((option, index) => {
     const field = canonicalFilterField(dataSource, option.field.Type, option.label)
     return { option, index, field: option.section && field.section === 'Інше' ? { ...field, section: option.section } : field }
   })
