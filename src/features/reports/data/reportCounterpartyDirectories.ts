@@ -70,7 +70,14 @@ export async function searchReportCounterpartyDirectory(role: Exclude<ReportCoun
   const limit = REPORT_COUNTERPARTY_PAGE_SIZE + 1
   if (role === 'buyer') {
     const rows = await apiRequest<Client[]>('/clients/registry/all/filtered', {
-      query: { typeRoleFilter: '1', value: normalizeClientSearchValue(query), offset, limit }, signal,
+      query: {
+        filterSql: 'RegionCode.Value/Client.Name/Client.FullName/Client.USREOU/Client.SourceCode',
+        typeRoleFilter: '1',
+        value: normalizeClientSearchValue(query),
+        offset,
+        limit,
+      },
+      signal,
     })
     return { entries: rows.slice(0, REPORT_COUNTERPARTY_PAGE_SIZE).flatMap(row => {
       const entry = clientDirectoryEntry(row)

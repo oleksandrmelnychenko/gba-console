@@ -12,6 +12,7 @@ vi.mock('../../../shared/api/apiClient', async importOriginal => ({
 const api = vi.mocked(apiRequest)
 const registry = '/clients/suppliers/registry/manufacturers'
 const lookup = '/report/datasets/lookup'
+const buyerSearchColumns = 'RegionCode.Value/Client.Name/Client.FullName/Client.USREOU/Client.SourceCode'
 const view = (role: ReportCounterpartyRole | null, onClose = vi.fn()) => <MantineProvider env="test">
   <ReportCounterpartyDirectory role={role} onClose={onClose} />
 </MantineProvider>
@@ -51,7 +52,7 @@ it('cancels a stale buyer request and ignores its result after switching directo
   await waitFor(() => expect(api).toHaveBeenCalledTimes(1))
   const original = api.mock.calls[0][1]
   expect(api.mock.calls[0][0]).toBe('/clients/registry/all/filtered')
-  expect(original?.query).toEqual({ typeRoleFilter: '1', value: '', offset: 0, limit: 31 })
+  expect(original?.query).toEqual({ filterSql: buyerSearchColumns, typeRoleFilter: '1', value: '', offset: 0, limit: 31 })
 
   rendered.rerender(view('service-supplier', onClose))
   const dialog = screen.getByRole('dialog', { name: 'Постачальник послуг' })
@@ -67,19 +68,34 @@ it('cancels a stale buyer request and ignores its result after switching directo
   expect(api.mock.calls.every(([, options]) => !options?.method || options.method === 'GET')).toBe(true)
 })
 
-it('shows buyer registry codes with an exact source fallback and sends normalized code searches', async () => {
+it('searches buyers by displayed name, normalized region code and source code', async () => {
   api.mockResolvedValueOnce([
     { Id: 632374, Name: 'Покупець з кодом', RegionCode: { Value: 'BKI64901' }, SourceFenixCode: 6591 },
     { Id: 14, Name: 'Покупець з 1С', SourceAmgCode: 314 },
   ]).mockResolvedValueOnce([{ Id: 15, Name: 'Покупець XM', RegionCode: { Value: 'XM0001' } }])
+    .mockResolvedValueOnce([{ Id: 632374, Name: 'ТК С.В.С.-2006 ТОВ', RegionCode: { Value: 'BKI64901' } }])
+    .mockResolvedValueOnce([{ Id: 16, Name: 'Покупець без коду регіону', RegionCode: null, SourceFenixCode: 6106 }])
   render(view('buyer'))
   expect(await screen.findByText('BKI64901 — Покупець з кодом')).toBeTruthy()
   expect(screen.getByText('AMG 314 — Покупець з 1С')).toBeTruthy()
 
-  fireEvent.change(screen.getByRole('textbox', { name: 'Код або назва' }), { target: { value: ' хм0001 ' } })
+  const search = screen.getByRole('textbox', { name: 'Код або назва' })
+  fireEvent.change(search, { target: { value: ' хм0001 ' } })
   expect(await screen.findByText('XM0001 — Покупець XM')).toBeTruthy()
   expect(api).toHaveBeenLastCalledWith('/clients/registry/all/filtered', expect.objectContaining({
-    query: { typeRoleFilter: '1', value: 'XM0001', offset: 0, limit: 31 },
+    query: { filterSql: buyerSearchColumns, typeRoleFilter: '1', value: 'XM0001', offset: 0, limit: 31 },
+  }))
+
+  fireEvent.change(search, { target: { value: 'ТК С.В.С.-2006' } })
+  expect(await screen.findByText('BKI64901 — ТК С.В.С.-2006 ТОВ')).toBeTruthy()
+  expect(api).toHaveBeenLastCalledWith('/clients/registry/all/filtered', expect.objectContaining({
+    query: { filterSql: buyerSearchColumns, typeRoleFilter: '1', value: 'ТК С.В.С.-2006', offset: 0, limit: 31 },
+  }))
+
+  fireEvent.change(search, { target: { value: 'Fenix 6106' } })
+  expect(await screen.findByText('Fenix 6106 — Покупець без коду регіону')).toBeTruthy()
+  expect(api).toHaveBeenLastCalledWith('/clients/registry/all/filtered', expect.objectContaining({
+    query: { filterSql: buyerSearchColumns, typeRoleFilter: '1', value: 'Fenix 6106', offset: 0, limit: 31 },
   }))
 })
 
