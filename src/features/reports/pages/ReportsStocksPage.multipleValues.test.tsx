@@ -262,7 +262,7 @@ it('requires explicit application without a filter before dropping a counterpart
 
   const list = await openList()
   for (const row of rows) fireEvent.click(await list.findByRole('checkbox', { name: row.Name }))
-  fireEvent.click(list.getByRole('button', { name: 'Застосувати', exact: true }))
+  fireEvent.click(list.getByRole('button', { name: /^Застосувати$/ }))
   const exclusion = selected()
   expect(exclusion).toMatchObject({ IsChecked: true, FilterCondition: { Type: 4 },
     Values: rows.map(row => ({ Data: { Id: row.Id } })) })
@@ -270,7 +270,7 @@ it('requires explicit application without a filter before dropping a counterpart
   const pending = await openList()
   fireEvent.click(pending.getByRole('button', { name: 'Вибрати всі' }))
   expect(pending.getByText('Ця умова відбору не застосовуватиметься до звіту.')).toBeTruthy()
-  expect(pending.queryByRole('button', { name: 'Застосувати', exact: true })).toBeNull()
+  expect(pending.queryByRole('button', { name: /^Застосувати$/ })).toBeNull()
   expect(selected()).toEqual(exclusion)
   fireEvent.click(pending.getByRole('button', { name: 'Закрити' }))
   expect(selected()).toEqual(exclusion)
