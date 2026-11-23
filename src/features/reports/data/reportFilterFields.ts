@@ -87,8 +87,11 @@ export function reportFilterDirectoryRole(value: string | null): ReportCounterpa
 }
 
 export function counterpartyOptions<T extends GroupedItem>(items: ReadonlyArray<T>) {
-  return REPORT_COUNTERPARTY_ROLES.map(({ key, label }) => items.find(item => item.label === label && !item.disabled) ?? {
-    value: `directory:${key}`, label: `${label} (довідник)`,
+  return REPORT_COUNTERPARTY_ROLES.flatMap(({ key, label }) => {
+    const filter = items.find(item => item.label === label && !item.disabled)
+    const directory = { value: `directory:${key}`, label: `${label} (довідник)` }
+    if (!filter) return [directory]
+    return key === 'buyer' ? [filter, directory] : [filter]
   })
 }
 

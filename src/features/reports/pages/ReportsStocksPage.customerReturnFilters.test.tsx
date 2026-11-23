@@ -63,7 +63,7 @@ function fieldOptions(row: ReturnType<typeof within>) {
   }
 }
 
-const RETURN_DIRECTORIES = ['Постачальник товару (довідник)', 'Постачальник послуг (довідник)']
+const RETURN_DIRECTORIES = ['Покупець (довідник)', 'Постачальник товару (довідник)', 'Постачальник послуг (довідник)']
 
 it('lists the common return-line fields with shared labels and offers І/АБО groups', async () => {
   await openReturns(serverDataset(RETURN_FILTERS))

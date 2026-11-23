@@ -44,10 +44,13 @@ describe('one filter field list for every report', () => {
     expect(canonicalFilterLabel(2, 75, 'Виробник')).toBe('Виробник')
   })
 
-  it('offers the three counterparty roles as report filters or directory actions', () => {
+  it('offers a buyer directory alongside the buyer filter when available', () => {
     for (const [source, items] of listed) {
       const roles = items.filter(item => item.group === 'Контрагент')
-      expect(roles.map(item => item.label.split(' (')[0])).toEqual(['Покупець', 'Постачальник товару', 'Постачальник послуг'])
+      const buyers = roles.filter(item => item.label.startsWith('Покупець'))
+      const activeBuyer = roles.find(item => item.label === 'Покупець')
+      expect(buyers.map(item => item.label)).toEqual(activeBuyer ? ['Покупець', 'Покупець (довідник)'] : ['Покупець (довідник)'])
+      expect(roles.filter(item => !buyers.includes(item)).map(item => item.label.split(' (')[0])).toEqual(['Постачальник товару', 'Постачальник послуг'])
       const wireFields = datasetFilters(datasets.find(dataset => dataset.DataSource === source)).map(field => field.value)
       for (const role of roles) {
         expect(role.disabled).toBeFalsy()
@@ -57,6 +60,7 @@ describe('one filter field list for every report', () => {
     }
     const disabledBuyer = groupCanonicalFilterOptions(2, [{ value: '6', label: 'Покупець', disabled: true, field: { Type: 6 } }])
     expect(flatten(disabledBuyer)).toContainEqual({ value: 'directory:buyer', label: 'Покупець (довідник)', group: 'Контрагент' })
+    expect(flatten(disabledBuyer).some(item => item.value === '6')).toBe(false)
     expect(reportFilterDirectoryRole('directory:unknown')).toBeUndefined()
     expect(reportFilterDirectoryRole('17')).toBeUndefined()
   })

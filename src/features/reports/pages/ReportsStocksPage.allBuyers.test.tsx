@@ -201,6 +201,46 @@ it('preserves both sales filter IDs when opening the service directory on a sele
     selections: parties.map(party => ({ SelectedField: { Type: party.field }, Values: [{ Data: { Id: party.item.Id }, Name: party.item.Name }] })) })
 })
 
+it('saves a choice in the separate buyer directory without changing the active buyer filter', async () => {
+  const directoryBuyer = buyers[16]
+  vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+    if (path === '/report/datasets/lookup' && options?.query?.field === 6) return [buyer]
+    if (path === '/clients/registry/all/filtered' && options?.query?.value === directoryBuyer.RegionCode.Value) return [directoryBuyer]
+    return []
+  })
+  const { container } = await open('sales')
+  const row = await addBuyer({ Type: 6, Name: 'Покупець' })
+  fireEvent.click(row.getByRole('button', { name: 'Вибрати значення умови 1' }))
+  const active = within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  fireEvent.click(await active.findByRole('checkbox', { name: /ОК-АВТО ТОВ/ }))
+  fireEvent.click(active.getByRole('button', { name: 'Застосувати' }))
+
+  const field = row.getByRole('combobox', { name: 'Поле' })
+  const openDirectory = async () => {
+    fireEvent.click(field)
+    fireEvent.click(await screen.findByRole('option', { name: 'Покупець (довідник)' }))
+    return within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  }
+  const directory = await openDirectory()
+  const label = `${directoryBuyer.RegionCode.Value} — ${directoryBuyer.Name}`
+  fireEvent.change(directory.getByRole('textbox', { name: 'Код або назва' }), { target: { value: directoryBuyer.RegionCode.Value } })
+  fireEvent.click(await directory.findByRole('checkbox', { name: label }))
+  expect(vi.mocked(apiRequest)).toHaveBeenCalledWith('/clients/registry/all/filtered', expect.objectContaining({
+    query: expect.objectContaining({ typeRoleFilter: '1', value: directoryBuyer.RegionCode.Value }),
+  }))
+  fireEvent.click(directory.getByRole('button', { name: 'Зберегти вибір' }))
+  expect(field).toHaveProperty('value', 'Покупець')
+  const reopened = await openDirectory()
+  expect(reopened.getByText('Вибрано: 1')).toBeTruthy()
+  fireEvent.click(reopened.getByRole('button', { name: 'Закрити' }))
+
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0].selections).toMatchObject([
+    { IsChecked: true, SelectedField: { Type: 6 }, Values: [{ Data: { Id: buyer.Id } }] },
+  ])
+})
+
 it('opens the service directory in current-document settlements and leaves the new row empty', async () => {
   vi.mocked(getReportDatasets).mockResolvedValue(parseReportDatasets(serverCatalog))
   await open('settlements')
