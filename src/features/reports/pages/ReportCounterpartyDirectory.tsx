@@ -77,6 +77,8 @@ function DirectoryContents({ role, initial, multiple, onApply, searchPage }: {
   const current = !isDebouncing && result?.key === key ? result : null
   const page = current && ('goods' in current ? goodsSupplierDirectoryPage(current.goods, search, offset)
     : 'page' in current ? current.page : null)
+  const appliesWithoutFilter = Boolean(searchPage && choice.all)
+  const applyLabel = searchPage ? 'Застосувати' : 'Зберегти вибір'
 
   return <Stack gap="sm">
     {!searchPage && <Text size="sm" c="dimmed">Вибір у цьому довіднику зберігається окремо від умов звіту.</Text>}
@@ -86,8 +88,11 @@ function DirectoryContents({ role, initial, multiple, onApply, searchPage }: {
         {choice.all ? 'Скасувати вибір усіх' : 'Вибрати всі'}
       </Button>
       <Text size="sm" role="status">{choice.all ? 'Вибрано всі записи' : `Вибрано: ${choice.values.length}`}</Text>
-      <Button size="xs" onClick={() => onApply(choice)}>{searchPage ? 'Застосувати' : 'Зберегти вибір'}</Button>
+      <Button size="xs" onClick={() => onApply(choice)}>
+        {appliesWithoutFilter ? 'Застосувати без відбору' : applyLabel}
+      </Button>
     </Group>
+    {appliesWithoutFilter && <Text size="sm" c="dimmed">Ця умова відбору не застосовуватиметься до звіту.</Text>}
     <TextInput label="Код або назва" data-autofocus maxLength={120} value={search} onChange={event => {
       setSearch(event.currentTarget.value)
       setOffset(0)

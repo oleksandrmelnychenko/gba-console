@@ -233,7 +233,8 @@ it.each(partyLists)('applies one, several or all records from the $label list in
   }
   const list = await openList()
   fireEvent.click(list.getByRole('button', { name: 'Вибрати всі' }))
-  fireEvent.click(list.getByRole('button', { name: 'Застосувати' }))
+  expect(list.getByText('Ця умова відбору не застосовуватиметься до звіту.')).toBeTruthy()
+  fireEvent.click(list.getByRole('button', { name: 'Застосувати без відбору' }))
   expect(selected().IsChecked).toBe(false)
   const reopened = await openList()
   expect(await reopened.findByRole('checkbox', { name: rows[0].Name })).toHaveProperty('checked', true)
@@ -242,6 +243,42 @@ it.each(partyLists)('applies one, several or all records from the $label list in
   fireEvent.click(reopened.getByRole('button', { name: 'Застосувати' }))
   expect(selected().IsChecked).toBe(true)
   expect(selected().Values.map(value => value.Data.Id)).toEqual([rows[0].Id])
+})
+
+it('requires explicit application without a filter before dropping a counterparty exclusion', async () => {
+  const { label, source, field, rows } = partyLists[0]
+  vi.mocked(apiRequest).mockResolvedValue(rows)
+  const dataset: ReportDataset = { DataSource: source, Name: 'Звіт', Description: '', PeriodRequired: true, PeriodSupported: true,
+    Groupings: [], Measurements: [], Limitations: [], Filters: [{ Type: 0, Name: 'Організація' }, { Type: field, Name: label }] }
+  render(<Form source={source} dataset={dataset} />)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(await screen.findByRole('option', { name: label }))
+  fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
+  fireEvent.click(await screen.findByRole('option', { name: 'Не в списку' }))
+  const openList = async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Вибрати значення умови 1' }))
+    return within(await screen.findByRole('dialog', { name: label }))
+  }
+
+  const list = await openList()
+  for (const row of rows) fireEvent.click(await list.findByRole('checkbox', { name: row.Name }))
+  fireEvent.click(list.getByRole('button', { name: 'Застосувати', exact: true }))
+  const exclusion = selected()
+  expect(exclusion).toMatchObject({ IsChecked: true, FilterCondition: { Type: 4 },
+    Values: rows.map(row => ({ Data: { Id: row.Id } })) })
+
+  const pending = await openList()
+  fireEvent.click(pending.getByRole('button', { name: 'Вибрати всі' }))
+  expect(pending.getByText('Ця умова відбору не застосовуватиметься до звіту.')).toBeTruthy()
+  expect(pending.queryByRole('button', { name: 'Застосувати', exact: true })).toBeNull()
+  expect(selected()).toEqual(exclusion)
+  fireEvent.click(pending.getByRole('button', { name: 'Закрити' }))
+  expect(selected()).toEqual(exclusion)
+
+  const confirmed = await openList()
+  fireEvent.click(confirmed.getByRole('button', { name: 'Вибрати всі' }))
+  fireEvent.click(confirmed.getByRole('button', { name: 'Застосувати без відбору' }))
+  expect(selected()).toEqual({ ...exclusion, IsChecked: false })
 })
 
 it('saves individual buyers from the scoped list in the analysis condition editor', async () => {
