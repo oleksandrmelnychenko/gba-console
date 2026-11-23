@@ -197,3 +197,64 @@ it('retains native product IDs across successive remote searches', async () => {
   expect(selected().Values.map(value => value.Data.Id)).toEqual(rows.map(row => row.Id))
   expect(selected().FilterCondition.Type).toBe(2)
 })
+
+const partyLists = [
+  { label: 'Покупець', source: 2, field: 6, rows: [
+    { Id: 633176, Name: 'BKI68702 — ТРАК СПЕЙС СЕРВІС + ТОВ' },
+    { Id: 632826, Name: 'BKI68701 — ТРАК СПЕЙС СЕРВІС ТОВ' },
+  ] },
+  { label: 'Постачальник товару', source: 2, field: 17, rows: [
+    { Id: 631635, Name: 'Fenix 5434 / AMG 2157 — ПЛА-ТАН І К ТОВ' },
+    { Id: 635333, Name: 'Fenix 8095 — ПЛА-ТАН І К ТОВ (MARS+AYFAR)' },
+  ] },
+  { label: 'Постачальник послуг', source: 40, field: 17, rows: [
+    { Id: '32750', Name: 'Fenix 5918 — % банку' },
+    { Id: '32813', Name: 'Fenix 7764 — CEFA MAKINA SAN. VE TIC.A.S.' },
+  ] },
+]
+
+it.each(partyLists)('applies one, several or all records from the $label list in the filter row', async ({ label, source, field, rows }) => {
+  vi.mocked(apiRequest).mockResolvedValue(rows)
+  const dataset: ReportDataset = { DataSource: source, Name: 'Звіт', Description: '', PeriodRequired: true, PeriodSupported: true,
+    Groupings: [], Measurements: [], Limitations: [], Filters: [{ Type: 0, Name: 'Організація' }, { Type: field, Name: label }] }
+  render(<Form source={source} dataset={dataset} />)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(await screen.findByRole('option', { name: label }))
+  const openList = async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Вибрати значення умови 1' }))
+    return within(await screen.findByRole('dialog', { name: label }))
+  }
+  for (const [i, item] of rows.entries()) {
+    const list = await openList()
+    fireEvent.click(await list.findByRole('checkbox', { name: item.Name }))
+    fireEvent.click(list.getByRole('button', { name: 'Застосувати' }))
+    expect(selected()).toMatchObject({ IsChecked: true, SelectedField: { Type: field },
+      FilterCondition: { Type: i === 0 ? 0 : 2 }, Values: rows.slice(0, i + 1).map(row => ({ Data: { Id: row.Id }, Name: row.Name })) })
+  }
+  const list = await openList()
+  fireEvent.click(list.getByRole('button', { name: 'Вибрати всі' }))
+  fireEvent.click(list.getByRole('button', { name: 'Застосувати' }))
+  expect(selected().IsChecked).toBe(false)
+  const reopened = await openList()
+  expect(await reopened.findByRole('checkbox', { name: rows[0].Name })).toHaveProperty('checked', true)
+  fireEvent.click(reopened.getByRole('button', { name: 'Скасувати вибір усіх' }))
+  fireEvent.click(reopened.getByRole('checkbox', { name: rows[1].Name }))
+  fireEvent.click(reopened.getByRole('button', { name: 'Застосувати' }))
+  expect(selected().IsChecked).toBe(true)
+  expect(selected().Values.map(value => value.Data.Id)).toEqual([rows[0].Id])
+})
+
+it('saves individual buyers from the scoped list in the analysis condition editor', async () => {
+  const buyers = partyLists[0].rows
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/report/datasets/current-vparivanie/analysis/lookup'
+    ? buyers.map(row => ({ id: `id:${row.Id}`, name: row.Name, data: JSON.stringify({ Id: row.Id }) })) : [])
+  render(<Form mode="modal" source={39} field={5} dataset={analysisDataset} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Вибрати зі списку' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  for (const buyer of buyers) fireEvent.click(await directory.findByRole('checkbox', { name: buyer.Name }))
+  fireEvent.click(directory.getByRole('button', { name: 'Застосувати' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Зберегти' }))
+  expect(selected()).toMatchObject({ SelectedField: { Type: 5 }, FilterCondition: { Type: 2 },
+    Values: buyers.map(row => ({ Name: row.Name, Data: { Id: row.Id }, Value: 0 })) })
+})

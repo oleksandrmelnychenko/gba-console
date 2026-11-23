@@ -23,6 +23,6 @@ export function ReportFilterFieldSelect({ savedManufacturerValue, data, filter, 
         if (role) setDirectoryRole(role)
         else onChange?.(value, option)
       }} />
-    {directoryRole && <ReportCounterpartyDirectory role={directoryRole} onClose={() => setDirectoryRole(undefined)} />}
+    <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)} />
   </>
 }

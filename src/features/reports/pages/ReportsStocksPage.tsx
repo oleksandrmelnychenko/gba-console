@@ -2,7 +2,7 @@ import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
 import { ReportCounterpartyDirectory } from './ReportCounterpartyDirectory'
-import type { ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
+import { REPORT_COUNTERPARTY_ROLES, REPORT_COUNTERPARTY_PAGE_SIZE, REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET, type ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
@@ -44,7 +44,7 @@ import { ReportValuePicker } from './ReportValuePicker'
 import { REPORT_VALUE_LOOKUP_FAILED, REPORT_VALUE_SEARCH_DEBOUNCE_MS } from './reportValueSearch'
 import { WorkbookSectionActions } from './workbook-desk/WorkbookSectionActions'
 import type { ReportFilterCondition, ReportFilterNode } from '../types'
-import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
+import { currentVparivanieAnalysisCapability, requestCurrentVparivanieAnalysis, upgradeCurrentVparivanieAnalysis, analysisFilterConditions, analysisListCondition, analysisSelectionValueError, changeAnalysisSelectionCondition, changeAnalysisSelectionValues, analysisConditionUnavailableReason, analysisHierarchy, type AnalysisFieldDescriptor, type AnalysisHierarchyStatus } from '../data/currentVparivanieAnalysis'
 import { useAnalysisHierarchyStatus } from '../hooks/useAnalysisHierarchyStatus'
 import { datasetGroupConditionTypes, datasetGroupSelectionError, datasetHierarchyDescriptor, isDatasetGroupSelection, withDatasetGroupConditions } from '../data/reportHierarchyFilters'
 import type { AnalysisItemSearch } from './CurrentVparivanieAnalysisValuePicker'
@@ -155,6 +155,7 @@ import type {
   ReportRequestBody,
   ReportSelection,
   ReportSelectedValue,
+  ReportSearchParams,
   ReportTemplate } from '../types'
 import {
   getEntityDisplayName,
@@ -1731,6 +1732,8 @@ export function ReportSelectionsCard({
       : selections.map((selection, index) => (index === editorIndex ? draftSelection : selection))
     : selections
 
+  const draftPartyRole = draftSelection && counterpartyListRole(dataSource, draftSelection, filterFieldOptions, analysis)
+
   function closeEditor() {
     setDraftSelection(null)
     setEditorIndex(null)
@@ -1743,8 +1746,9 @@ export function ReportSelectionsCard({
     setDraftSelection(cloneReportSelection(selection, dataSource))
   }
 
+  const allCounterparties = !!draftPartyRole && draftSelection?.IsChecked === false
   function saveDraft() {
-    if (!draftSelection || editorIndex === null || !draftSelection.SelectedField.Name || !draftSelection.Values.length || draftValueError) {
+    if (!draftSelection || editorIndex === null || !draftSelection.SelectedField.Name || !allCounterparties && (!draftSelection.Values.length || draftValueError)) {
       return
     }
 
@@ -1927,12 +1931,15 @@ export function ReportSelectionsCard({
                 onChange={(values) => setDraftSelection((current) => current ? { ...current, Values: values } : current)}
               />}
             </div>
+            {draftPartyRole && draftSelection && <CounterpartyFilterAction role={draftPartyRole} selection={draftSelection}
+              dataSource={dataSource} dataset={dataset} request={request} onChange={setDraftSelection} from={from} to={to} analysisField={analysis && draftDescriptor}
+              lookupSourceWorld={lookupSourceWorld} lookupProfitReadMode={documentLookup.mode} disabled={documentLookup.unavailable} />}
             {draftValueError ? <Alert color="yellow">{draftValueError}</Alert> : null}
             <AppModalFooter>
               <Button color="gray" type="button" variant="default" onClick={closeEditor}>{t('Скасувати')}</Button>
               <Button
                 color={CREATE_ACTION_COLOR}
-                disabled={!draftSelection.SelectedField.Name || !draftSelection.Values.length || !!draftValueError}
+                disabled={!draftSelection.SelectedField.Name || !allCounterparties && (!draftSelection.Values.length || !!draftValueError)}
                 leftSection={<Save size={16} />}
                 type="button"
                 onClick={saveDraft}
@@ -1943,7 +1950,7 @@ export function ReportSelectionsCard({
           </Stack>
         ) : null}
       </ReportModal>
-      {directoryRole && <ReportCounterpartyDirectory role={directoryRole} onClose={() => setDirectoryRole(undefined)} />}
+      <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)} />
     </>
   )
 }
@@ -2017,6 +2024,11 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       ? null
       : valuePicker}
   </Stack> : valuePicker
+  const partyRole = counterpartyListRole(dataSource, selection, filterFieldOptions, analysis)
+  const partyListAction = partyRole && <CounterpartyFilterAction role={partyRole} selection={selection} dataSource={dataSource}
+    dataset={dataset} request={request} onChange={change} from={from} to={to} analysisField={analysis && descriptor} lookupSourceWorld={lookupSourceWorld}
+    lookupProfitReadMode={documentLookup.mode} disabled={documentLookup.unavailable}
+    actionLabel={variant === 'row' ? t('Вибрати значення умови {position}', { position: index + 1 }) : undefined} />
   if (variant === 'row' && request) {
     const rowConditions = conditions.filter(condition => condition.Type === selection.FilterCondition.Type || admittedConditions === null || admittedConditions.has(condition.Type))
     return <ReportFilterRow label={t('Умова відбору {position}', { position: index + 1 })}
@@ -2030,11 +2042,11 @@ export function InlineReportSelection({ dataset, request, selection, selections,
           disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
             || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
         value={String(selection.FilterCondition.Type)} onChange={changeCondition} />} value={displayedValuePicker} action={<>
-        <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
+        {partyListAction || <Tooltip label={t('Вибрати значення')}><ActionIcon type="button" variant="default" size={24} disabled={!selection.SelectedField.Name}
           aria-label={t('Вибрати значення умови {position}', { position: index + 1 })} onClick={event => {
             const input = event.currentTarget.closest('.constructor-selection-row')?.querySelector<HTMLInputElement>('.constructor-selection-row__value input:not([type="hidden"]):not([disabled])')
             input?.focus(); input?.click()
-          }}><Ellipsis size={14} /></ActionIcon></Tooltip>
+          }}><Ellipsis size={14} /></ActionIcon></Tooltip>}
         <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
       </>} error={selection.IsChecked !== false && (valueError || admittedConditions?.has(selection.FilterCondition.Type) === false)
         ? <Alert color="yellow" p="xs">{valueError ?? groupConditionsNotice(descriptor, selection.FilterCondition.Type)
@@ -2056,10 +2068,61 @@ export function InlineReportSelection({ dataset, request, selection, selections,
         disabled: admittedConditions !== null && !admittedConditions.has(condition.Type)
           || !!analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus) }))}
       value={String(selection.FilterCondition.Type)} onChange={changeCondition} /></div>
-    <div className="workbook-inline-selection__value">{displayedValuePicker}</div>
+    <div className="workbook-inline-selection__value">{displayedValuePicker}{partyListAction}</div>
     <TableRowAction action="delete" label={t('Видалити умову {position}', { position: index + 1 })} onClick={() => onChange({ kind: 'delete', index })} />
     {valueError && selection.IsChecked !== false ? <div className="workbook-inline-selection__error"><Alert color="yellow">{valueError}</Alert></div> : null}
   </section>
+}
+
+function counterpartyListRole(source: number, selection: ReportSelection, options: FilterFieldOption[],
+  analysis: ReturnType<typeof currentVparivanieAnalysisCapability>) {
+  const field = selection.SelectedField
+  const available = analysis
+    ? analysis.filters.some(item => item.type === field.Type && item.available !== false && item.conditions.includes(selection.FilterCondition.Type))
+    : options.some(option => option.field.Type === field.Type)
+  if (!field.Name || ![0, 1, 2, 4].includes(selection.FilterCondition.Type) || !available)
+    return undefined
+  const { section, label } = canonicalFilterField(source, field.Type, field.Name)
+  return section === COUNTERPARTY_FILTER_SECTION ? REPORT_COUNTERPARTY_ROLES.find(role => role.label === label)?.key : undefined
+}
+
+function CounterpartyFilterAction({ role, selection, dataSource, dataset, request, from, to, analysisField, lookupSourceWorld,
+  lookupProfitReadMode, disabled, actionLabel, onChange }: Pick<ReportSelectionsCardProps,
+  'dataSource' | 'dataset' | 'request' | 'from' | 'to' | 'lookupSourceWorld' | 'lookupProfitReadMode'> & {
+    analysisField?: AnalysisFieldDescriptor | null
+    role: ReportCounterpartyRole
+    selection: ReportSelection
+    disabled?: boolean
+    actionLabel?: string
+    onChange: (selection: ReportSelection) => void
+  }) {
+  const [open, setOpen] = useState(false)
+  const field = selection.SelectedField.Type
+  const listCondition = analysisField ? analysisListCondition(selection.FilterCondition.Type, analysisField)
+    : reportSelectionListCondition(dataSource, dataset, request, selection)
+  const searchPage = useCallback(async (value: string, offset: number, signal: AbortSignal) => {
+    if (analysisField) {
+      const rows = await searchAnalysisValues(analysisHierarchy(analysisField)?.itemField ?? field, value, from, to, undefined, signal, offset)
+      return { entries: rows.map(item => ({ Data: item.data, Name: item.name, Value: 0 })),
+        hasMore: rows.length === REPORT_COUNTERPARTY_PAGE_SIZE && offset + REPORT_COUNTERPARTY_PAGE_SIZE <= REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET }
+    }
+    const rows = await searchCounterpartyFilterValues(dataSource, field, { value, offset, limit: REPORT_COUNTERPARTY_PAGE_SIZE + 1 },
+      signal, lookupSourceWorld, lookupProfitReadMode)
+    return {
+      entries: rows.slice(0, REPORT_COUNTERPARTY_PAGE_SIZE).map(row => createSelectedValue(row, dataSource, field)),
+      hasMore: rows.length > REPORT_COUNTERPARTY_PAGE_SIZE && offset + REPORT_COUNTERPARTY_PAGE_SIZE <= REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET,
+    }
+  }, [analysisField, dataSource, field, from, to, lookupSourceWorld, lookupProfitReadMode])
+  return <>
+    {actionLabel ? <Tooltip label="Вибрати зі списку"><ActionIcon aria-label={actionLabel} type="button" variant="default"
+      size={24} disabled={disabled} onClick={() => setOpen(true)}><Ellipsis size={14} /></ActionIcon></Tooltip>
+      : <Button size="compact-xs" variant="subtle" disabled={disabled} onClick={() => setOpen(true)}>Вибрати зі списку</Button>}
+    {open && <ReportCounterpartyDirectory role={role} onClose={() => setOpen(false)} searchPage={searchPage}
+      choice={{ all: selection.IsChecked === false, values: selection.Values }}
+      multiple={!!listCondition || isMultiValueReportCondition(selection.FilterCondition.Type)}
+      onApply={({ all, values }) => onChange({ ...selection, IsChecked: !all, Values: values,
+        FilterCondition: values.length > 1 && listCondition ? listCondition : selection.FilterCondition })} />}
+  </>
 }
 
 function withCurrentGroupCondition(conditions: ReportFilterCondition[], selection: ReportSelection | null | undefined): ReportFilterCondition[] {
@@ -2726,6 +2789,16 @@ type SaleDocumentLookupFilters = {
   type: 'All' | 'Self'
 }
 
+function searchCounterpartyFilterValues(source: number, field: number, params: ReportSearchParams,
+  signal?: AbortSignal, sourceWorld?: number, profitReadMode?: 0 | 1) {
+  if (field === 6 && ![2, 44, 46].includes(source) && !usesNativeReportLookup(source))
+    return searchReportBuyers(params, signal)
+  if ((source === 35 || source === 38) && profitReadMode !== undefined)
+    return searchDatasetReportValues(source, field, params, signal, undefined, undefined, undefined, profitReadMode)
+  if ([23, 24, 25, 28].includes(source)) return searchDatasetReportValues(source, field, params, signal, sourceWorld)
+  return searchDatasetReportValues(source, field, params, signal)
+}
+
 async function loadSelectionLookupOptions(
   dataSource: number,
   fieldType: number,
@@ -2742,6 +2815,10 @@ async function loadSelectionLookupOptions(
   if (usesSharedProductTopLookup(dataSource, fieldType)) return getReportProductTop()
   if (nativeSalesDocument)
     return searchNativeSalesDocuments(fieldType, from, to, {limit: LOOKUP_SEARCH_LIMIT, offset: 0, value}, signal)
+  if (fieldType === REPORT_FILTER_FIELD_TYPES.customerName || fieldType === REPORT_FILTER_FIELD_TYPES.supplier
+    || dataSource === 39 && fieldType === REPORT_FILTER_FIELD_TYPES.customer)
+    return searchCounterpartyFilterValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value },
+      signal, lookupSourceWorld, lookupProfitReadMode)
   if (dataSource === 35 && fieldType === 60) {
     if (lookupProfitReadMode !== 0) throw new Error('Менеджери покупця доступні лише для поточного розрахунку GBA.')
     return searchCurrentFinancialBuyerManagers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
@@ -2750,13 +2827,12 @@ async function loadSelectionLookupOptions(
     if (lookupProfitReadMode !== 0) throw new Error('Документи доступні лише для поточного розрахунку GBA.')
     return searchCurrentFinancialDocuments(from, to, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   }
-  if (dataSource === 46 && [0,1,2,6,9,20].includes(fieldType))
+  if (dataSource === 46 && [0,1,2,9,20].includes(fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (fieldType === REPORT_FILTER_FIELD_TYPES.productManufacturer)
     return manufacturerSuppliers === NO_GOODS_SUPPLIERS ? []
       : searchReportManufacturers(dataSource, { limit: MANUFACTURER_PAGE_SIZE, offset: 0, value }, manufacturerSuppliers, signal)
-  if ((dataSource === 2 || dataSource === 44) && [6, 1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType)
-    || dataSource === 2 && fieldType === REPORT_FILTER_FIELD_TYPES.supplier)
+  if ((dataSource === 2 || dataSource === 44) && [1, 2, 21, 64].includes(fieldType) || usesSalesAgreementCatalogue(dataSource, fieldType))
     return searchDatasetReportValues(dataSource, fieldType, { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
   if (usesNativeReportLookup(dataSource) || usesPurchaseReceiptWarehouseLookup(dataSource, fieldType)) {
     const params = { limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }
@@ -2786,8 +2862,6 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.product:
     case REPORT_FILTER_FIELD_TYPES.productArticle:
       return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
-    case REPORT_FILTER_FIELD_TYPES.customerName:
-      return searchReportBuyers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
@@ -2799,7 +2873,6 @@ async function loadSelectionLookupOptions(
     // document can be of any date, which is why the catalogue is asked for whole rather than for the period.
     case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
       return loadSaleReturnDocumentCatalogue()
-    case REPORT_FILTER_FIELD_TYPES.supplier:
     case REPORT_FILTER_FIELD_TYPES.supplierContract:
     case REPORT_FILTER_FIELD_TYPES.purchaseDocument:
     case REPORT_FILTER_FIELD_TYPES.productMeasureUnit:

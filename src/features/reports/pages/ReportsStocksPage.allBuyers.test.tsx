@@ -215,3 +215,56 @@ it('opens the service directory in current-document settlements and leaves the n
   expect(row.getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', '')
   expect(previewStockReport).not.toHaveBeenCalled()
 })
+
+it('keeps service choices across pages of the gross profit directory without replacing the goods supplier filter', async () => {
+  const datasets = parseReportDatasets(serverCatalog)
+  datasets.find(dataset => dataset.DataSource === 2)!.Filters.push({ Type: 17, Name: 'Постачальник товару', Selectable: true })
+  vi.mocked(getReportDatasets).mockResolvedValue(datasets)
+  const bank = { Id: '32750', Name: 'Fenix 5918 — % банку' }
+  const next = { Id: '32755', Name: '20474912 — АТ "СК"ARX"' }
+  const goods = { Id: 635333, Name: 'Fenix 8095 — ПЛА-ТАН І К ТОВ (MARS+AYFAR)' }
+  const firstPage = [bank, ...Array.from({ length: 29 }, (_, index) => ({ Id: String(index + 1), Name: `Послуги ${index}` })), next]
+  vi.mocked(apiRequest).mockImplementation(async (path, options) => {
+    if (path !== '/report/datasets/lookup') return []
+    const query = options?.query
+    if (query?.dataSource === 2 && query.field === 17) return [goods]
+    if (query?.dataSource === 40 && query.field === 17) return query.offset === 30 ? [next] : firstPage
+    return []
+  })
+  const { container } = await open('grossProfit')
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  fireEvent.click(await screen.findByRole('button', { name: 'Додати відбір' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  const field = row.getByRole('combobox', { name: 'Поле' })
+  fireEvent.click(field)
+  fireEvent.click(await screen.findByRole('option', { name: 'Постачальник товару' }))
+  fireEvent.click(row.getByRole('button', { name: 'Вибрати значення умови 1' }))
+  const goodsList = within(await screen.findByRole('dialog', { name: 'Постачальник товару' }))
+  fireEvent.click(await goodsList.findByRole('checkbox', { name: goods.Name }))
+  fireEvent.click(goodsList.getByRole('button', { name: 'Застосувати' }))
+  const openService = async () => {
+    fireEvent.click(field)
+    fireEvent.click(await screen.findByRole('option', { name: 'Постачальник послуг (довідник)' }))
+    return within(await screen.findByRole('dialog', { name: 'Постачальник послуг' }))
+  }
+  let service = await openService()
+  fireEvent.click(await service.findByRole('checkbox', { name: bank.Name }))
+  fireEvent.click(service.getByRole('button', { name: 'Далі' }))
+  fireEvent.click(await service.findByRole('checkbox', { name: next.Name }))
+  expect(service.getByText('Вибрано: 2')).toBeTruthy()
+  fireEvent.click(service.getByRole('button', { name: 'Зберегти вибір' }))
+  service = await openService()
+  expect(await service.findByRole('checkbox', { name: bank.Name })).toHaveProperty('checked', true)
+  fireEvent.click(service.getByRole('button', { name: 'Вибрати всі' }))
+  fireEvent.click(service.getByRole('button', { name: 'Далі' }))
+  expect(await service.findByRole('checkbox', { name: next.Name })).toHaveProperty('checked', true)
+  fireEvent.click(service.getByRole('button', { name: 'Закрити' }))
+  service = await openService()
+  expect(service.getByText('Вибрано: 2')).toBeTruthy()
+  fireEvent.click(service.getByRole('button', { name: 'Закрити' }))
+  await act(async () => fireEvent.submit(container.querySelector('form')!))
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(previewStockReport).mock.calls[1][0]).toMatchObject({ dataSource: 2, reportProfile: 'grossProfit',
+    selections: [{ SelectedField: { Type: 17 }, Values: [{ Data: { Id: goods.Id }, Name: goods.Name }] }] })
+})
