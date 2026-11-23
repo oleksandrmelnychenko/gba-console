@@ -1443,9 +1443,7 @@ function getReturnUnavailableReason(row: SaleItemRow): { label: string; hint: st
   if (row.sale.IsAcceptedToPacking === false) {
     return {
       label: 'Не допущено до відвантаження',
-      hint: row.sale.IsVatSale === true
-        ? 'Накладну ще не допущено до відвантаження, тому товар за нею не списано зі складу. Оплатіть накладну або розблокуйте її для відвантаження у «Продажі» — після цього повернення стане доступним.'
-        : 'Накладну ще не допущено до відвантаження, тому товар за нею не списано зі складу. Повернення стане доступним після оплати накладної.',
+      hint: 'Перевірте стан відвантаження в розділі «Продажі». Повернення доступне після складського списання цієї позиції.',
     }
   }
 
@@ -1608,13 +1606,12 @@ function useSaleItemColumns({
 
           if (row.item.HasCompleteReturnMovement !== true) {
             const reason = getReturnUnavailableReason(row)
-            const remainingQty = (row.item.Qty || 0) - (row.item.ReturnedQty || 0)
 
             return (
               <Tooltip
                 multiline
                 w={340}
-                label={`${t('Накладна')} ${displayValue(row.sale.SaleNumber?.Value)}, ${t('до повернення')} ${formatAmount(remainingQty)}. ${t(reason.hint)}`}
+                label={`${t('Накладна')} ${displayValue(row.sale.SaleNumber?.Value)}, ${t('кількість у накладній')} ${formatAmount(row.item.Qty)}. ${t(reason.hint)}`}
               >
                 <Text size="xs" c="dimmed" tabIndex={0} className="new-sale-return-create-unavailable">{t(reason.label)}</Text>
               </Tooltip>

@@ -99,14 +99,12 @@ it('does not interpret missing stock readiness as permission to return', async (
 })
 
 it.each([
-  { name: 'VAT invoice not released for shipment', sale: { IsAcceptedToPacking: false, IsImported: false, IsVatSale: true },
-    label: 'Не допущено до відвантаження', hint: /Накладна КНо00002561, до повернення 1\. Накладну ще не допущено до відвантаження.*Оплатіть накладну або розблокуйте її для відвантаження у «Продажі»/ },
-  { name: 'non-VAT invoice not released for shipment', sale: { IsAcceptedToPacking: false, IsImported: false, IsVatSale: false },
-    label: 'Не допущено до відвантаження', hint: /Накладну ще не допущено до відвантаження.*Повернення стане доступним після оплати накладної\.$/ },
+  { name: 'invoice not released for shipment', sale: { IsAcceptedToPacking: false, IsImported: false },
+    label: 'Не допущено до відвантаження', hint: /Накладна КНо00002561, кількість у накладній 1\. Перевірте стан відвантаження в розділі «Продажі»\. Повернення доступне після складського списання цієї позиції\.$/ },
   { name: 'released but stock write-off incomplete', sale: { IsAcceptedToPacking: true, IsImported: false },
-    label: 'Складське проведення не завершено', hint: /Накладна КНо00002561, до повернення 1\. Складське списання цієї позиції ще не проведено повністю/ },
+    label: 'Складське проведення не завершено', hint: /Накладна КНо00002561, кількість у накладній 1\. Складське списання цієї позиції ще не проведено повністю/ },
   { name: 'imported from 1C without a complete write-off', sale: { IsAcceptedToPacking: true, IsImported: true },
-    label: 'Немає складського списання', hint: /Накладна КНо00002561, до повернення 1\. Накладну імпортовано з 1С/ },
+    label: 'Немає складського списання', hint: /Накладна КНо00002561, кількість у накладній 1\. Накладну імпортовано з 1С/ },
 ])('explains an unavailable row: $name', async ({ sale, label, hint }) => {
   childSale = sale
   const results = await search()
