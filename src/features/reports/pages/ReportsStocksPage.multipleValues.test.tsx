@@ -122,6 +122,23 @@ it('opens a supplier directory from the analysis field tree without replacing th
   expect(selected().SelectedField.Type).toBe(5)
 })
 
+it('applies a buyer from the directory to the analysis filter draft before saving', async () => {
+  const buyer = { Id: '632374', Name: 'Покупець з довідника' }
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/clients/registry/all/filtered' ? [buyer] : [])
+  render(<Form mode="modal" source={39} field={1} dataset={analysisDataset} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Редагувати' }))
+  const editor = within(screen.getByRole('dialog', { name: 'Редагувати умову відбору' }))
+  fireEvent.click(editor.getByRole('button', { name: 'Товар' }))
+  const picker = within(await screen.findByRole('dialog', { name: 'Поле відбору' }))
+  fireEvent.click(picker.getByRole('button', { name: 'Покупець (довідник)' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  fireEvent.click(await directory.findByRole('checkbox', { name: buyer.Name }))
+  fireEvent.click(directory.getByRole('button', { name: 'Застосувати' }))
+  expect(selected().SelectedField.Type).toBe(1)
+  fireEvent.click(editor.getByRole('button', { name: 'Зберегти' }))
+  expect(selected()).toMatchObject({ IsChecked: true, SelectedField: { Type: 5 }, Values: [{ Data: { Id: buyer.Id } }] })
+})
+
 it('loads the buyer role in a legacy workbook and searches by the directory code', async () => {
   const fields = [{ Type: 0, Name: 'Організація' }, { Type: 6, Name: 'Клієнт' }]
   const dataset: ReportDataset = { DataSource: 0, Name: 'Залишки та продажі', Description: '',

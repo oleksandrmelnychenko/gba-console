@@ -2,11 +2,15 @@ import { Select, defaultOptionsFilter, type SelectProps } from '@mantine/core'
 import { useState } from 'react'
 import type { ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
 import { reportFilterDirectoryRole } from '../data/reportFilterFields'
-import { ReportCounterpartyDirectory } from './ReportCounterpartyDirectory'
+import { ReportCounterpartyDirectory, type DirectoryFilter } from './ReportCounterpartyDirectory'
 
-type Props = Omit<SelectProps, 'value' | 'defaultValue'> & { value: string | null; savedManufacturerValue?: string }
+type Props = Omit<SelectProps, 'value' | 'defaultValue'> & {
+  value: string | null
+  savedManufacturerValue?: string
+  directoryFilter?: (role: ReportCounterpartyRole) => DirectoryFilter | undefined
+}
 
-export function ReportFilterFieldSelect({ savedManufacturerValue, data, filter, onChange, ...props }: Props) {
+export function ReportFilterFieldSelect({ savedManufacturerValue, data, filter, onChange, directoryFilter, ...props }: Props) {
   const [directoryRole, setDirectoryRole] = useState<ReportCounterpartyRole>()
   // Keep the saved field caption in the input while excluding it from the list of choices.
   const hideSavedManufacturer: SelectProps['filter'] = savedManufacturerValue
@@ -23,6 +27,7 @@ export function ReportFilterFieldSelect({ savedManufacturerValue, data, filter, 
         if (role) setDirectoryRole(role)
         else onChange?.(value, option)
       }} />
-    <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)} />
+    <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)}
+      {...(directoryRole && directoryFilter?.(directoryRole))} />
   </>
 }

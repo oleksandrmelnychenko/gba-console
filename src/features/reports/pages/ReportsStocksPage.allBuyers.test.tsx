@@ -201,7 +201,62 @@ it('preserves both sales filter IDs when opening the service directory on a sele
     selections: parties.map(party => ({ SelectedField: { Type: party.field }, Values: [{ Data: { Id: party.item.Id }, Name: party.item.Name }] })) })
 })
 
-it('saves a choice in the separate buyer directory without changing the active buyer filter', async () => {
+it.each(['sales', 'grossProfit'] as const)('enables generation in %s with buyers selected from the directory on a new filter row', async profile => {
+  const selected = buyers.slice(0, 2)
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/clients/registry/all/filtered' ? selected : [])
+  await open(profile)
+  fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
+  const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
+  const generate = screen.getAllByRole('button', { name: 'Сформувати' })[0]
+  expect(generate).toHaveProperty('disabled', true)
+  expect(screen.getByText('Умова відбору 1: оберіть поле або зніміть галочку')).toBeTruthy()
+  fireEvent.click(row.getByRole('combobox', { name: 'Поле' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Покупець (довідник)' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  for (const item of selected) {
+    fireEvent.click(await directory.findByRole('checkbox', { name: `${item.RegionCode.Value} — ${item.Name}` }))
+  }
+  fireEvent.click(directory.getByRole('button', { name: 'Застосувати' }))
+  expect(row.getByRole('combobox', { name: 'Поле' })).toHaveProperty('value', 'Покупець')
+  expect(screen.queryByText('Умова відбору 1: оберіть поле або зніміть галочку')).toBeNull()
+  expect(generate).toHaveProperty('disabled', false)
+  fireEvent.click(generate)
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0]).toMatchObject({ reportProfile: profile, selections: [
+    { IsChecked: true, SelectedField: { Type: 6 }, FilterCondition: { Type: 2 },
+      Values: selected.map(item => ({ Data: { Id: String(item.Id) } })) },
+  ] })
+})
+
+it('restores a missing buyer field caption when confirming a saved exclusion in the directory', async () => {
+  const dataset = parseReportDatasets(catalog).find(item => item.DataSource === 2)!
+  const data = defaultDatasetRequest(dataset, '2026-10-01', '2026-10-31')
+  data.reportProfile = 'grossProfit'
+  data.selections = [{ IsChecked: true, SelectedField: { Type: 6, Name: '' }, FilterCondition: { Type: 1, Name: 'Не дорівнює' },
+    Values: [{ Name: buyer.Name, Data: { Id: buyer.Id }, Value: buyer.Id }] }]
+  vi.mocked(getServerReportTemplates).mockResolvedValue([{ Id: 'buyers', Revision: 1, Name: 'Покупці', Data: data }])
+  vi.mocked(apiRequest).mockImplementation(async path => path === '/clients/registry/all/filtered' ? [buyer] : [])
+  await open('grossProfit')
+  fireEvent.click(screen.getByRole('button', { name: 'Шаблони' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Відкрити для редагування: Покупці' }))
+  const field = within(screen.getByRole('group', { name: 'Умова відбору 1' })).getByRole('combobox', { name: 'Поле' })
+  const generate = screen.getAllByRole('button', { name: 'Сформувати' })[0]
+  expect(generate).toHaveProperty('disabled', true)
+  fireEvent.click(field)
+  fireEvent.click(screen.getByRole('option', { name: 'Покупець (довідник)' }))
+  const directory = within(await screen.findByRole('dialog', { name: 'Покупець' }))
+  expect(await directory.findByRole('checkbox', { name: /ОК-АВТО ТОВ/ })).toHaveProperty('checked', true)
+  fireEvent.click(directory.getByRole('button', { name: 'Застосувати' }))
+  expect(field).toHaveProperty('value', 'Покупець')
+  expect(generate).toHaveProperty('disabled', false)
+  fireEvent.click(generate)
+  await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
+  expect(vi.mocked(previewStockReport).mock.calls[0][0].selections).toMatchObject([
+    { SelectedField: { Type: 6 }, FilterCondition: { Type: 1 }, Values: [{ Data: { Id: buyer.Id } }] },
+  ])
+})
+
+it('edits the active buyer filter in the directory and discards unconfirmed changes', async () => {
   const directoryBuyer = buyers[16]
   vi.mocked(apiRequest).mockImplementation(async (path, options) => {
     if (path === '/report/datasets/lookup' && options?.query?.field === 6) return [buyer]
@@ -228,16 +283,17 @@ it('saves a choice in the separate buyer directory without changing the active b
   expect(vi.mocked(apiRequest)).toHaveBeenCalledWith('/clients/registry/all/filtered', expect.objectContaining({
     query: expect.objectContaining({ typeRoleFilter: '1', value: directoryBuyer.RegionCode.Value }),
   }))
-  fireEvent.click(directory.getByRole('button', { name: 'Зберегти вибір' }))
+  fireEvent.click(directory.getByRole('button', { name: 'Застосувати' }))
   expect(field).toHaveProperty('value', 'Покупець')
   const reopened = await openDirectory()
-  expect(reopened.getByText('Вибрано: 1')).toBeTruthy()
+  expect(reopened.getByText('Вибрано: 2')).toBeTruthy()
+  fireEvent.click(reopened.getByRole('button', { name: 'Вибрати всі' }))
   fireEvent.click(reopened.getByRole('button', { name: 'Закрити' }))
 
   await act(async () => fireEvent.submit(container.querySelector('form')!))
   await waitFor(() => expect(previewStockReport).toHaveBeenCalledOnce())
   expect(vi.mocked(previewStockReport).mock.calls[0][0].selections).toMatchObject([
-    { IsChecked: true, SelectedField: { Type: 6 }, Values: [{ Data: { Id: buyer.Id } }] },
+    { IsChecked: true, SelectedField: { Type: 6 }, Values: [{ Data: { Id: buyer.Id } }, { Data: { Id: String(directoryBuyer.Id) } }] },
   ])
 })
 

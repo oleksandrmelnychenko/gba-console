@@ -1,7 +1,7 @@
 import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
-import { ReportCounterpartyDirectory } from './ReportCounterpartyDirectory'
+import { ReportCounterpartyDirectory, type DirectoryFilter } from './ReportCounterpartyDirectory'
 import { REPORT_COUNTERPARTY_ROLES, REPORT_COUNTERPARTY_PAGE_SIZE, REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET, type ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
@@ -1733,6 +1733,9 @@ export function ReportSelectionsCard({
     : selections
 
   const draftPartyRole = draftSelection && counterpartyListRole(dataSource, draftSelection, filterFieldOptions, analysis)
+  const directoryFilter = (role: ReportCounterpartyRole) => draftSelection
+    ? fieldDirectoryFilter(role, dataSource, dataset, request, filterFieldOptions, draftSelection, setDraftSelection)
+    : undefined
 
   function closeEditor() {
     setDraftSelection(null)
@@ -1875,6 +1878,7 @@ export function ReportSelectionsCard({
                     FilterCondition: analysisFilterConditions(dataset, field.type)[0], Values: [] } : current)
                   setFieldPickerOpen(false)
                 }} /></> : <ReportFilterFieldSelect
+              directoryFilter={directoryFilter}
               data={groupCanonicalFilterOptions(dataSource, filterFieldOptions)}
               label={t('Поле')}
               placeholder={t('Оберіть поле')}
@@ -1950,7 +1954,8 @@ export function ReportSelectionsCard({
           </Stack>
         ) : null}
       </ReportModal>
-      <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)} />
+      <ReportCounterpartyDirectory role={directoryRole ?? null} onClose={() => setDirectoryRole(undefined)}
+        {...(directoryRole && directoryFilter(directoryRole))} />
     </>
   )
 }
@@ -1972,6 +1977,8 @@ export function InlineReportSelection({ dataset, request, selection, selections,
         allowedConditions ?? REPORT_FILTER_CONDITIONS.map(condition => condition.Type)), selection)
   const admittedConditions = allowedConditions ? new Set([...allowedConditions, ...datasetGroupConditionTypes(dataset, selection.SelectedField.Type, allowedConditions)]) : null
   const change = (value: ReportSelection) => onChange({ kind: 'replace', index, selection: value })
+  const directoryFilter = (role: ReportCounterpartyRole) =>
+    fieldDirectoryFilter(role, dataSource, dataset, request, filterFieldOptions, selection, change)
   const descriptor = analysis ? analysis.filters.find(field => field.type === selection.SelectedField.Type)
     : datasetHierarchyDescriptor(dataset, selection.SelectedField.Type, selection.SelectedField.Name)
   const hierarchyStatus = useAnalysisHierarchyStatus(needsHierarchyStatus(descriptor))
@@ -2035,7 +2042,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       selected={selected} onSelect={onSelect} toggle={
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<ReportFilterFieldSelect size="xs" label={t('Поле')} searchable allowDeselect={false} data={fields}
-        savedManufacturerValue={savedManufacturerValue}
+        savedManufacturerValue={savedManufacturerValue} directoryFilter={directoryFilter}
         placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
         data={rowConditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
@@ -2056,7 +2063,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     <Checkbox aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
       onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />
     <div className="workbook-inline-selection__field"><ReportFilterFieldSelect label={t('Поле')} searchable allowDeselect={false}
-      savedManufacturerValue={savedManufacturerValue}
+      savedManufacturerValue={savedManufacturerValue} directoryFilter={directoryFilter}
       data={fields} placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null}
       renderOption={({ option }) => <span title={analysis?.filters.find(field => String(field.type) === option.value)?.unavailabilityReason ?? undefined}>{option.label}</span>}
       onChange={changeField} />
@@ -2082,8 +2089,44 @@ function counterpartyListRole(source: number, selection: ReportSelection, option
     : options.some(option => option.field.Type === field.Type)
   if (!field.Name || ![0, 1, 2, 4].includes(selection.FilterCondition.Type) || !available)
     return undefined
+  return counterpartyRoleForField(source, field)
+}
+
+function counterpartyRoleForField(source: number, field: ReportFilterField) {
   const { section, label } = canonicalFilterField(source, field.Type, field.Name)
   return section === COUNTERPARTY_FILTER_SECTION ? REPORT_COUNTERPARTY_ROLES.find(role => role.label === label)?.key : undefined
+}
+
+function fieldDirectoryFilter(role: ReportCounterpartyRole, source: number, dataset: ReportDataset | undefined,
+  request: ReportRequestBody | undefined, options: FilterFieldOption[],
+  selection: ReportSelection, onChange: (selection: ReportSelection) => void): DirectoryFilter | undefined {
+  const analysis = currentVparivanieAnalysisCapability(dataset)
+  const descriptor = analysis?.filters.find(item => item.available !== false
+    && counterpartyRoleForField(source, { Type: item.type, Name: item.name }) === role)
+  const field = analysis ? descriptor && { Type: descriptor.type, Name: descriptor.name }
+    : options.find(option => counterpartyRoleForField(source, option.field) === role)?.field
+  if (!field) return undefined
+  const allowed = descriptor ? new Set(descriptor.conditions) : reportSelectionConditions(source, dataset, request, field.Type)
+  const conditions = (source === 39 && !descriptor ? currentVparivanieFilterConditions(field.Type) : REPORT_FILTER_CONDITIONS)
+    .filter(condition => !allowed || allowed.has(condition.Type))
+  if (!conditions.length) return undefined
+  const sameFilter = selection.SelectedField.Type === field.Type && conditions.some(item => item.Type === selection.FilterCondition.Type)
+  const target = sameFilter
+    ? { ...selection, SelectedField: { ...selection.SelectedField, ...field } }
+    : { SelectedField: field, FilterCondition: conditions[0], Values: [], IsChecked: true }
+  const listCondition = descriptor ? analysisListCondition(target.FilterCondition.Type, descriptor)
+    : reportSelectionListCondition(source, dataset, request, target)
+  return counterpartyChoiceFilter(target, listCondition, onChange)
+}
+
+function counterpartyChoiceFilter(selection: ReportSelection, listCondition: ReportFilterCondition | undefined,
+  onChange: (selection: ReportSelection) => void): DirectoryFilter {
+  return {
+    choice: { all: selection.IsChecked === false, values: selection.Values },
+    multiple: !!listCondition || isMultiValueReportCondition(selection.FilterCondition.Type),
+    onApply: ({ all, values }) => onChange({ ...selection, IsChecked: !all, Values: values,
+      FilterCondition: values.length > 1 && listCondition ? listCondition : selection.FilterCondition }),
+  }
 }
 
 function CounterpartyFilterAction({ role, selection, dataSource, dataset, request, from, to, analysisField, lookupSourceWorld,
@@ -2118,10 +2161,7 @@ function CounterpartyFilterAction({ role, selection, dataSource, dataset, reques
       size={24} disabled={disabled} onClick={() => setOpen(true)}><Ellipsis size={14} /></ActionIcon></Tooltip>
       : <Button size="compact-xs" variant="subtle" disabled={disabled} onClick={() => setOpen(true)}>Вибрати зі списку</Button>}
     {open && <ReportCounterpartyDirectory role={role} onClose={() => setOpen(false)} searchPage={searchPage}
-      choice={{ all: selection.IsChecked === false, values: selection.Values }}
-      multiple={!!listCondition || isMultiValueReportCondition(selection.FilterCondition.Type)}
-      onApply={({ all, values }) => onChange({ ...selection, IsChecked: !all, Values: values,
-        FilterCondition: values.length > 1 && listCondition ? listCondition : selection.FilterCondition })} />}
+      {...counterpartyChoiceFilter(selection, listCondition, onChange)} />}
   </>
 }
 

@@ -16,6 +16,11 @@ type DirectoryResult = { key: string } & (
 )
 
 type Choice = { all: boolean; values: ReportSelectedValue[] }
+export type DirectoryFilter = {
+  choice: Choice
+  onApply: (choice: Choice) => void
+  multiple: boolean
+}
 type SearchPage = (query: string, offset: number, signal: AbortSignal) => Promise<ReportDirectoryPage>
 type Props = {
   role: ReportCounterpartyRole | null
@@ -34,6 +39,7 @@ export function ReportCounterpartyDirectory({ role, onClose, choice, onApply, se
   if (role === null) return null
   return <ReportModal opened onClose={onClose} title={REPORT_COUNTERPARTY_ROLES.find(item => item.key === role)?.label} size="lg">
     <DirectoryContents key={role} role={role} initial={choice ?? saved[role] ?? emptyChoice} searchPage={searchPage} multiple={multiple}
+      appliesToReport={!!onApply}
       onApply={next => {
         if (onApply) onApply(next)
         else setSaved(current => ({ ...current, [role]: next }))
@@ -42,10 +48,11 @@ export function ReportCounterpartyDirectory({ role, onClose, choice, onApply, se
   </ReportModal>
 }
 
-function DirectoryContents({ role, initial, multiple, onApply, searchPage }: {
+function DirectoryContents({ role, initial, multiple, onApply, searchPage, appliesToReport }: {
   role: ReportCounterpartyRole
   initial: Choice
   multiple: boolean
+  appliesToReport: boolean
   onApply: (choice: Choice) => void
   searchPage?: SearchPage
 }) {
@@ -77,11 +84,11 @@ function DirectoryContents({ role, initial, multiple, onApply, searchPage }: {
   const current = !isDebouncing && result?.key === key ? result : null
   const page = current && ('goods' in current ? goodsSupplierDirectoryPage(current.goods, search, offset)
     : 'page' in current ? current.page : null)
-  const appliesWithoutFilter = Boolean(searchPage && choice.all)
-  const applyLabel = searchPage ? 'Застосувати' : 'Зберегти вибір'
+  const appliesWithoutFilter = appliesToReport && choice.all
+  const applyLabel = appliesToReport ? 'Застосувати' : 'Зберегти вибір'
 
   return <Stack gap="sm">
-    {!searchPage && <Text size="sm" c="dimmed">Вибір у цьому довіднику зберігається окремо від умов звіту.</Text>}
+    {!appliesToReport && <Text size="sm" c="dimmed">Цей звіт не підтримує відбір за цим полем. Вибір зберігається лише в довіднику.</Text>}
     <Group justify="space-between">
       <Button size="xs" variant="default" aria-pressed={choice.all}
         onClick={() => setChoice(current => ({ ...current, all: !current.all }))}>
