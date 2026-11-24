@@ -63,6 +63,23 @@ it('selects every GBA card of a workbook supplier, including the separate AMG ca
   expect(SUPPLIER_WORKBOOK_FILTERS_NOTICE).toContain('35 постачальників')
 })
 
+it('resolves supplier directory codes from either or both worlds without changing the chosen identities', async () => {
+  const [dual, fenix, amg, ambiguous] = SUPPLIER_WORKBOOK_SUPPLIERS
+  const cards: ReportEntity[] = [
+    { Id: '11', Name: `Fenix 3950 / AMG 2047 — ${dual} [11]` },
+    { Id: '12', Name: `Fenix 1842 — ${fenix}` },
+    { Id: '13', Name: `AMG 118 — ${amg}` },
+    { Id: '14', Name: `Fenix 18 — ${ambiguous}` },
+    { Id: '15', Name: `AMG 19 — ${ambiguous}` },
+    { Id: '16', Name: `Legal name — ${dual}` },
+  ]
+  const resolved = await resolveBug1274WorkbookFilters(SUPPLIER_WORKBOOK_FILE, profitSupplierDataset,
+    async (_source, field) => field === 17 ? cards : [])
+  expect(resolved.selections.find(selection => selection.SelectedField.Type === 17)?.Values)
+    .toEqual(cards.slice(0, 3).map(entity => ({ Data: entity, Name: entity.Name, Value: 0 })))
+  expect(resolved.unresolved).toContain(ambiguous)
+})
+
 it('treats an ambiguous AMG name like any ambiguous name and keeps the resolved Fenix card', async () => {
   const lookup: WorkbookLookup = async (_source, field, value) => field !== 17 ? []
     : value === 'Aymeks Ic ve Dis Tic. Ltd. Sti.' ? [{ Id: '626338', Name: 'Aymeks Ic ve Dis Tic. Ltd. Sti. [626338]' }]

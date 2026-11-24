@@ -105,10 +105,14 @@ function searchText(name: string): string {
   return name.split('\t')[0].trim().slice(0, 120)
 }
 
-function exactMatch(entities: readonly ReportEntity[], name: string): ReportEntity | null {
+function exactMatch(entities: readonly ReportEntity[], name: string, field: number): ReportEntity | null {
   const wanted = workbookCaption(name)
-  const matches = entities.filter(entity => typeof entity.Name === 'string'
-    && [workbookCaption(entity.Name), workbookCaption(entity.Name).replace(/^\S+ — /, '')].includes(wanted))
+  const prefix = field === 17 ? /^(?:(?:Fenix|AMG) \d+(?: \/ (?:Fenix|AMG) \d+)?|\S+) — / : /^\S+ — /
+  const matches = entities.filter(entity => {
+    if (typeof entity.Name !== 'string') return false
+    const caption = workbookCaption(entity.Name)
+    return caption === wanted || caption.replace(prefix, '') === wanted
+  })
   return matches.length === 1 && matches[0].Id !== undefined && matches[0].Id !== null ? matches[0] : null
 }
 
@@ -152,11 +156,11 @@ export async function resolveBug1274WorkbookFilters(fileName: string, dataset: R
     }
     const found: ReportEntity[][] = target.listQuery !== undefined
       ? await lookup(dataset.DataSource, target.field, target.listQuery)
-        .then(entities => target.names.map(name => distinct(sourceNames(target, name).map(source => exactMatch(entities, source)))),
+        .then(entities => target.names.map(name => distinct(sourceNames(target, name).map(source => exactMatch(entities, source, target.field)))),
           () => target.names.map(() => []))
       : await mapLimited(target.names, LOOKUP_CONCURRENCY, async name => distinct(await Promise.all(sourceNames(target, name)
         .map(source => lookup(dataset.DataSource, target.field, searchText(source))
-          .then(entities => exactMatch(entities, source), () => null)))))
+          .then(entities => exactMatch(entities, source, target.field), () => null)))))
     const values = distinct(found.flat()).map(entity => ({ Data: entity, Name: String(entity.Name), Value: 0 }))
     unresolved.push(...target.names.filter((_, index) => !found[index].length).map(workbookCaption))
     if (values.length && (target.condition.Type === 2 || values.length === 1))
