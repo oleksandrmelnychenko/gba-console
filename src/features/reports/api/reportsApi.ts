@@ -14,6 +14,7 @@ import { dayOrganizationGrossProfitConfigurationError } from '../data/dayOrganiz
 import { currentVparivanieConfigurationError, currentVparivanieManagerReference, currentVparivanieFullScope, withCurrentVparivanieMovementScope, currentVparivanieScopeError } from '../data/currentVparivanie'
 import { cashPeriodConfigurationError } from '../data/cashPeriod'
 import { supplierBatchGrossProfitConfigurationError } from '../data/supplierBatchGrossProfit'
+import { MAX_MANUFACTURER_LOOKUP_SUPPLIERS } from '../data/manufacturerSupplierFilter'
 import { exactId } from '../data/exactId'
 import { apiRequest, ApiError } from '../../../shared/api/apiClient'
 import { getSaleManagers } from '../../clients/api/clientLookupsApi'
@@ -322,7 +323,7 @@ export async function searchDatasetReportValues(dataSource: number, field: numbe
   return result
 }
 
-export const MAX_MANUFACTURER_LOOKUP_SUPPLIERS = 100
+export { MAX_MANUFACTURER_LOOKUP_SUPPLIERS }
 
 export async function searchReportManufacturers(dataSource: number, params: ReportSearchParams, supplierIds: readonly number[] = [],
   signal?: AbortSignal): Promise<ManufacturerLookupChoice[]> {

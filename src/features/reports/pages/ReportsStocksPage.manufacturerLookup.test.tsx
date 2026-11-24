@@ -12,7 +12,8 @@ import catalog from '../data/reportCatalog.server-fixture.json'
 import { netDataset } from '../data/reportDatasets.test-fixtures'
 import { SALES_CONSTRUCTOR_WORKBOOK, salesConstructorRequest } from '../data/salesConstructorProfiles'
 import type { ReportDataset, ReportFilterNode, ReportSelection } from '../types'
-import { chosenGoodsSuppliers, NO_GOODS_SUPPLIERS, ReportsStocksPage, SelectionValuePicker } from './ReportsStocksPage'
+import { chosenGoodsSuppliers } from '../data/manufacturerSupplierFilter'
+import { ReportsStocksPage, SelectionValuePicker } from './ReportsStocksPage'
 
 vi.mock('../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 vi.mock('../../auth/useAuth', () => ({ useAuth: () => ({ user: null, hasPermission: () => true }) }))
@@ -71,6 +72,20 @@ it('narrows the manufacturers to the chosen goods suppliers', async () => {
   expect(await screen.findByRole('option', { name: 'AYFAR' })).toBeTruthy()
 })
 
+it('skips the manufacturer lookup for conflicting suppliers and resumes it when the conflict is removed', async () => {
+  const first = supplierRow(0, 631635)
+  const { rerender } = render(<Picker dataSource={3} others={[first, supplierRow(0, 635333)]} />)
+  fireEvent.click(screen.getByRole('combobox', { name: 'Виробник' }))
+  expect(await screen.findByText('Нічого не знайдено')).toBeTruthy()
+  expect(api).not.toHaveBeenCalled()
+
+  rerender(<Picker dataSource={3} others={[first]} />)
+  expect(await screen.findByRole('option', { name: 'MARSTECH' })).toBeTruthy()
+  expect(api).toHaveBeenCalledWith('/report/datasets/lookup', expect.objectContaining({
+    query: expect.objectContaining({ field: 75, supplierIds: '631635' }),
+  }))
+})
+
 it('loads every brand page instead of stopping at the first one', async () => {
   const page = (from: number, count: number) => Array.from({ length: count }, (_, index) => ({ Id: from + index, Name: `Бренд ${from + index}` }))
   api.mockReset()
@@ -84,7 +99,7 @@ it('loads every brand page instead of stopping at the first one', async () => {
 
 it('narrows by every active supplier condition together', () => {
   expect(chosenGoodsSuppliers([supplierRow(2, 1, 2, 3), supplierRow(2, 2, 3, 4), supplierRow(4, 3)])).toEqual([2])
-  expect(chosenGoodsSuppliers([supplierRow(2, 1), supplierRow(2, 2)])).toBe(NO_GOODS_SUPPLIERS)
+  expect(chosenGoodsSuppliers([supplierRow(2, 1), supplierRow(2, 2)])).toBeNull()
   expect(chosenGoodsSuppliers([supplierRow(4, 1)])).toEqual([])
 })
 
