@@ -51,7 +51,7 @@ it('opens both sales choices through the real report page and retains the suppli
   render(page())
   await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Звіт по продажам' }).getAttribute('aria-current')).toBe('true'))
   fireEvent.click(screen.getByRole('button', { name: 'Продажі' }))
-  expect((await screen.findAllByRole('menuitem')).map(item => item.textContent)).toEqual(['Звіт по продажам', 'Валовий прибуток'])
+  expect((await screen.findAllByRole('menuitem')).map(item => item.textContent)).toEqual(['Звіт по продажам', 'Валовий прибуток', 'Звірка продажів з 1С'])
   fireEvent.click(screen.getByRole('menuitem', { name: 'Звіт по продажам' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'Відкрити Звіт по продажам' }).getAttribute('aria-current')).toBe('true'))
   await waitFor(() => expect((screen.getByRole('button', { name: 'Продажі' }) as HTMLButtonElement).disabled).toBe(false))
