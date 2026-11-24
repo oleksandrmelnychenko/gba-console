@@ -36,6 +36,18 @@ beforeEach(() => {
   } })
 })
 const page = () => <MantineProvider env="test"><I18nProvider><ReportsStocksPage /></I18nProvider></MantineProvider>
+it('opens the source register inside the daily gross profit workbook and restores the document form', async () => {
+  render(page())
+  await findOpenedWorkbook('ВП.xls')
+  const yesterday = previousKyivDay(formatKyivBusinessDate())
+  fireEvent.click(screen.getByRole('radio', { name: 'Регістр 1С' }))
+  expect(screen.getByRole('heading', { name: 'Продажі й валовий прибуток за регістром 1С' })).toBeTruthy()
+  expect((screen.getByLabelText('Період з') as HTMLInputElement).value).toBe(yesterday.slice(0, 7) + '-01')
+  expect((screen.getByLabelText('Період до') as HTMLInputElement).value).toBe(yesterday)
+  fireEvent.click(screen.getByRole('radio', { name: 'Документи GBA' }))
+  expect(screen.queryByRole('combobox', { name: 'База 1С' })).toBeNull()
+  expect((readReportDateInput('До') as HTMLInputElement).value).toBe(yesterday)
+})
 async function openWorkbook(label: string) {
   const view = render(page())
   await findOpenedWorkbook('ВП.xls')

@@ -8,6 +8,24 @@ import { SalesRegisterDayPanel } from './SalesRegisterDayPanel'
 vi.mock('../../../../shared/api/apiClient', () => ({ apiRequest: vi.fn() }))
 afterEach(() => { cleanup(); vi.resetAllMocks() })
 
+it('scopes workbook returns to the chosen period and preserves it across worlds', async () => {
+  vi.mocked(apiRequest).mockResolvedValue({ From: '2026-11-19', Day: '2026-11-20', CapturedUtc: '2026-11-21T00:00:00Z',
+    Totals: [], Lines: [], World: 'Fenix', TotalLines: 0 })
+  render(<MantineProvider env="test"><I18nProvider><SalesRegisterDayPanel
+    workbook={{ from: '2026-01-19', to: '2026-01-20', returnsOnly: true }} /></I18nProvider></MantineProvider>)
+  const run = screen.getByRole('button', { name: 'Сформувати' })
+  for (const world of ['Fenix', 'AMG']) {
+    fireEvent.change(screen.getByLabelText('База 1С'), { target: { value: world } })
+    fireEvent.click(run)
+    expect(await screen.findByText('За обраний період рухів немає.')).toBeTruthy()
+    expect(apiRequest).toHaveBeenLastCalledWith('/report/datasets/sales-register-day', expect.objectContaining({
+      query: expect.objectContaining({ from: '2026-01-19', day: '2026-01-20', world, returnsOnly: true, offset: 0 }),
+    }))
+  }
+  fireEvent.change(screen.getByLabelText('Період з'), { target: { value: '2026-01-21' } })
+  expect((run as HTMLButtonElement).disabled).toBe(true)
+})
+
 it('shows only the selected register and clears the previous total when switching worlds', async () => {
   const amounts = { Net: 10, Vat: 2, Cost: 8, CostVat: 1, Profit: 2 }
   vi.mocked(apiRequest).mockResolvedValueOnce({ World: 'Fenix', Day: '2026-01-01', CapturedUtc: '2026-01-02T05:00:00Z',

@@ -1,4 +1,6 @@
 import { ReportComparisonSelect } from './ReportComparisonSelect'
+import { SalesRegisterDayPanel } from './workbook-desk/SalesRegisterDayPanel'
+import { CUSTOMER_RETURN_WORKBOOK } from '../data/customerReturnReport'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
 import { ReportCounterpartyDirectory, type DirectoryFilter } from './ReportCounterpartyDirectory'
@@ -28,7 +30,7 @@ import { CustomerGroupsPanel } from './CustomerGroupsPanel'
 import { customerGroupsError, type CustomerGroups } from '../data/customerGroups'
 import { ConstructorPresentationPanel } from './ConstructorPresentationPanel'
 import { requestConstructorPresentation } from '../data/constructorPresentation'
-import { readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
+import { profileForWorkbook, readReportProfile, requestReportProfile, salesConstructorDataset, salesConstructorTitle, salesConstructorWorkbook } from '../data/salesConstructorProfiles'
 import { searchCurrentFinancialBuyerManagers } from '../api/currentFinancialBuyerManagerLookup'
 import { financialBuyerManagerReference, financialBuyerManagerEntityReference, financialBuyerManagerSelectedEntity, financialBuyerManagerLookupPolicy } from '../data/currentFinancialBuyerManagerFilter'
 import { searchCurrentFinancialDocuments } from '../api/currentFinancialDocumentLookup'
@@ -395,6 +397,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   const [templateNotice, setTemplateNotice] = useValueState<string | null>(null)
   const [catalogueNotice, setCatalogueNotice] = useState<{ text: string; failed: boolean; title?: string; warning?: string } | null>(null)
   const [activeWorkbook, setActiveWorkbook] = useState<string | null>(null)
+  const [useRegister, setUseRegister] = useState(false)
   const [workbookResolving, setWorkbookResolving] = useState(false)
   const [handoff] = useState(() => peekReportHandoff())
   const historyRun = useRef(handoff.history)
@@ -851,6 +854,7 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   }, [canGenerateReport, datasetStorage.loaded, datasetStorage.error])
 
   function applyConfiguration(template: ReportTemplate, nextDataset: ReportDataset) {
+    setUseRegister(false)
     setSettingsRevision(value => value + 1)
     workbookLaunchToken.current += 1
     setWorkbookResolving(false)
@@ -1202,6 +1206,9 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       onDiscard={() => { const discarded = workspaceDraft.discardRecovery(); if (discarded) setDraftRestoreError(null); return discarded }} /> : <ReportsSubmenu {...submenuProps} />}
   </>
   const navigationDisabled = isLoading || workbookResolving || !canGenerateReport || publishedBusy
+  const registerAvailable = activeWorkbook === CUSTOMER_RETURN_WORKBOOK || activeWorkbook === 'ВП.xls'
+    || Boolean(profileForWorkbook(activeWorkbook))
+  const workbookRegister = registerAvailable && useRegister
   const openNavigationWorkbook = (item: WorkbookLaunch) => {
     setPublishedTab(null)
     if (item.fileName !== activeWorkbook) openWorkbook(item)
@@ -1223,13 +1230,17 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
         title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}
         withCloseButton closeButtonLabel={t('Закрити повідомлення')} onClose={() => setCatalogueNotice(null)}>{catalogueNotice.text}</Alert> : null}
       <WorkbookSwitcher compact launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} disabled={navigationDisabled}
-        published={publishedTab} onOpenPublished={openPublishedReport} extra={quietActions} onOpen={openNavigationWorkbook} />
+        published={publishedTab} onOpenPublished={openPublishedReport} extra={workbookRegister && !publishedTab ? undefined : quietActions} onOpen={openNavigationWorkbook} />
       {canGenerateReport && ownerId ? visitedPublished.map(tab => <div key={tab} style={{ display: publishedTab === tab ? undefined : 'none' }}>
         <Suspense fallback={<Group role="status" gap="xs"><Loader size="sm" /><Text>{t('Завантаження звіту…')}</Text></Group>}>
           <PublishedReportWorkspace tab={tab} callerKey={ownerId} onBusyChange={setPublishedBusy} history={movementHistory} />
         </Suspense>
       </div>) : null}
       <div style={{ display: publishedTab && canGenerateReport ? 'none' : undefined }}>
+      {registerAvailable && canGenerateReport && !datasetHidden && datasetStorage.loaded && !datasetStorage.error &&
+        <SegmentedControl mb="sm" aria-label={t('Джерело даних звіту')} disabled={navigationDisabled}
+          value={workbookRegister ? 'register' : 'gba'} onChange={value => setUseRegister(value === 'register')}
+          data={[{ value: 'gba', label: t('Документи GBA') }, { value: 'register', label: t('Регістр 1С') }]} />}
       {!canGenerateReport ? <Alert color="yellow" icon={<CircleAlert size={18} />} title={t('Немає доступу до звітів')}>
         {t('Ваша роль не дозволяє формувати звіти. Зверніться до адміністратора.')}
       </Alert> : datasetStorage.error ? <Alert color="red" icon={<CircleAlert size={18} />} title={t('Не вдалося завантажити список звітів')}>
@@ -1240,7 +1251,9 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
       </Group> : datasetHidden ? <Alert color="gray" icon={<CircleAlert size={18} />} title={t('Звіти зараз недоступні')}>
         {t('Оберіть доступний звіт у вкладках або спробуйте оновити список.')}
         <Button variant="default" size="xs" mt="xs" onClick={datasetStorage.retry}>{t('Оновити')}</Button>
-      </Alert> : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
+      </Alert> : workbookRegister ? <SalesRegisterDayPanel key={activeWorkbook}
+        workbook={{ from, to, returnsOnly: activeWorkbook === CUSTOMER_RETURN_WORKBOOK }} />
+        : <form className="reports-stocks-form workbook-desk__form" onSubmit={submitReport}>
           {isLoading && jobProgress ? <ReportJobProgressNotice progress={jobProgress} onCancel={() => jobAbort.current?.abort()} /> : null}
           {constructorContent ? <ConstructorDesk title={activeProfile ? deskTitle : workbookLaunches.find(item => item.fileName === activeWorkbook)?.label ?? dataset?.Name ?? deskTitle} templateName={activeTemplate?.Name ?? ''} resolving={workbookResolving}
             warning={catalogueNotice?.warning ?? null} disabled={comparisonSettingsDisabled}
