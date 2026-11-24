@@ -1062,6 +1062,7 @@ export function NewUkraineSaleReturnPage() {
                 allowDecimal
                 decimalScale={3}
                 label={t('Кількість')}
+                description={editor.row.item.Qty != null ? t('Доступно до повернення: {qty}', { qty: formatAmount(editor.row.item.Qty) }) : undefined}
                 max={readNumber(editor.row.item.Qty)}
                 min={0}
                 onChange={(value) => setEditorQty(typeof value === 'number' ? value : '')}
@@ -1425,11 +1426,24 @@ function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
   return user?.FullName?.trim() || [user?.LastName, user?.Name].filter(Boolean).join(' ').trim()
 }
 
+function invoicedQuantity(item: SalesReturnOrderItem): number | undefined {
+  // The return search deducts previous returns from Qty.
+  const remaining = readNumber(item.Qty)
+  return remaining === undefined ? undefined : remaining + (readNumber(item.ReturnedQty) ?? 0)
+}
+
 function getReturnUnavailableReason(row: SaleItemRow): { label: string; hint: string } {
   if (row.item.HasCompleteReturnMovement !== false) {
     return {
       label: 'Складську готовність не підтверджено',
       hint: 'Сервер не повідомив, чи проведено накладну по складу. Оновіть пошук; до підтвердження повернення недоступне.',
+    }
+  }
+
+  if (row.item.Qty === 0 && (row.item.ReturnedQty ?? 0) > 0) {
+    return {
+      label: 'Повністю повернено',
+      hint: 'Усю кількість за цією позицією вже повернено. Залишок до повернення — 0.',
     }
   }
 
@@ -1562,9 +1576,9 @@ function useSaleItemColumns({
       },
       {
         id: 'soldQty',
-        header: t('К-сть'),
-        accessor: (row) => row.item.Qty,
-        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(row.item.Qty)}</span>,
+        header: t('У накладній'),
+        accessor: (row) => invoicedQuantity(row.item),
+        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(invoicedQuantity(row.item))}</span>,
         align: 'right',
         width: 90,
         minWidth: 90,
@@ -1572,8 +1586,8 @@ function useSaleItemColumns({
       {
         id: 'returnedQty',
         header: t('Повернено'),
-        accessor: (row) => row.item.ReturnItemQty,
-        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(row.item.ReturnItemQty)}</span>,
+        accessor: (row) => row.item.ReturnedQty,
+        cell: (row) => <span className="new-sale-return-create-number">{formatAmount(row.item.ReturnedQty)}</span>,
         align: 'right',
         width: 120,
         minWidth: 120,
@@ -1611,7 +1625,7 @@ function useSaleItemColumns({
               <Tooltip
                 multiline
                 w={340}
-                label={`${t('Накладна')} ${displayValue(row.sale.SaleNumber?.Value)}, ${t('кількість у накладній')} ${formatAmount(row.item.Qty)}. ${t(reason.hint)}`}
+                label={`${t('Накладна')} ${displayValue(row.sale.SaleNumber?.Value)}, ${t('кількість у накладній')} ${formatAmount(invoicedQuantity(row.item))}. ${t(reason.hint)}`}
               >
                 <Text size="xs" c="dimmed" tabIndex={0} className="new-sale-return-create-unavailable">{t(reason.label)}</Text>
               </Tooltip>

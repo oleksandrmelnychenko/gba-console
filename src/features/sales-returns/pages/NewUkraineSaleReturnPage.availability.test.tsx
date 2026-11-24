@@ -15,12 +15,14 @@ vi.mock('../../sales-ukraine/persistentSalesMutation', () => ({
 
 const apiMock = vi.mocked(apiRequest)
 let childReady: boolean | undefined
+let childQuantities: { Qty: number; ReturnedQty: number }
 let childSale: { IsAcceptedToPacking?: boolean; IsImported?: boolean; IsVatSale?: boolean }
 
 beforeEach(() => {
   vi.clearAllMocks()
   childReady = false
   childSale = {}
+  childQuantities = { Qty: 1, ReturnedQty: 0 }
   apiMock.mockImplementation(async (path) => {
     if (path === '/sales/all/returns/search') return [
       ['1176741e-9e17-45fb-9ac9-7ac61c1111d5', 'КНо00002560', 'aa43cf38-f8c1-4b9d-807e-cfe8cff78b3e', true],
@@ -35,8 +37,7 @@ beforeEach(() => {
       },
       Order: { OrderItems: [{
         NetUid: itemNetUid,
-        Qty: 1,
-        ReturnedQty: 0,
+        ...(number === 'КНо00002561' ? childQuantities : { Qty: 1, ReturnedQty: 0 }),
         HasCompleteReturnMovement: ready,
         TotalAmountLocal: 3552.824,
         Product: { NetUid: 'b49814ee-f717-4749-bae6-43f46f016c80', VendorCode: 'SEM8059', Name: 'Тяга стабілізатора' },
@@ -113,4 +114,36 @@ it.each([
   fireEvent.mouseEnter(status)
   expect(await screen.findByText(hint)).toBeTruthy()
   expect((results.getAllByText('Додати', { exact: true }).map((item) => item.closest('button')!)[1] as HTMLButtonElement).disabled).toBe(true)
+})
+
+it('shows both returned units on an exhausted imported invoice', async () => {
+  childQuantities = { Qty: 0, ReturnedQty: 2 }
+  childSale = { IsImported: true }
+  const results = await search()
+  const row = results.getByText('КНо00002561').closest('tr')!
+  expect(row.querySelector('[data-column-id="soldQty"]')?.textContent).toBe('2')
+  expect(row.querySelector('[data-column-id="returnedQty"]')?.textContent).toBe('2')
+  const status = within(row).getByText('Повністю повернено')
+  fireEvent.mouseEnter(status)
+  expect(await screen.findByText(/кількість у накладній 2.*Залишок до повернення — 0/)).toBeTruthy()
+  expect(within(row).getByText('Додати').closest('button')!).toHaveProperty('disabled', true)
+})
+
+it('keeps the remaining quantity available after a partial return', async () => {
+  childQuantities = { Qty: 3, ReturnedQty: 2 }
+  childReady = true
+  const results = await search()
+  const row = results.getByText('КНо00002561').closest('tr')!
+  expect(row.querySelector('[data-column-id="soldQty"]')?.textContent).toBe('5')
+  expect(row.querySelector('[data-column-id="returnedQty"]')?.textContent).toBe('2')
+  fireEvent.click(within(row).getByText('Додати').closest('button')!)
+  const qty = await screen.findByLabelText('Кількість')
+  expect(screen.getByText('Доступно до повернення: 3')).toBeTruthy()
+  const editor = within(qty.closest('[role="dialog"]')!)
+  fireEvent.change(qty, { target: { value: '4' } })
+  fireEvent.click(editor.getByRole('button', { name: 'Додати' }))
+  expect(await editor.findByText('Кількість повернення не може перевищувати кількість у продажу')).toBeTruthy()
+  fireEvent.change(qty, { target: { value: '3' } })
+  fireEvent.click(editor.getByRole('button', { name: 'Додати' }))
+  expect(await editor.findByText('Оберіть причину повернення')).toBeTruthy()
 })
