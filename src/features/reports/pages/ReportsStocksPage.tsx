@@ -1215,8 +1215,9 @@ function ReportsStocksWorkspace({ ownerId }: { ownerId: string | null }) {
   return (
     <Stack className="reports-stocks-page workbook-desk" gap={8}>
       <PageSubmenuActions>
-        <ReportsNavigation launches={workbookLaunches} active={activeWorkbook} movement={publishedTab === 'movement'}
-          disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')} />
+        <ReportsNavigation launches={workbookLaunches} active={publishedTab ? null : activeWorkbook} movement={publishedTab === 'movement'}
+          disabled={navigationDisabled} onOpen={openNavigationWorkbook} onStocks={() => openPublishedReport('movement')}
+          salesRegisterActive={publishedTab === 'sales-register'} onSalesRegister={() => openPublishedReport('sales-register')} />
       </PageSubmenuActions>
       {canGenerateReport && catalogueNotice?.failed ? <Alert color="red" className="workbook-desk__notice" icon={<CircleAlert size={18} />}
         title={catalogueNotice.title ?? t('Не вдалося відкрити звіт')}

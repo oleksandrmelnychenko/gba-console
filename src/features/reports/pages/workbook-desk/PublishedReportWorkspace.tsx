@@ -1,4 +1,5 @@
 import { publishedReportTabs, type PublishedReportTab } from './publishedReportTabs'
+import { SalesRegisterDayPanel } from './SalesRegisterDayPanel'
 import { Stack } from '@mantine/core'
 import { memo } from 'react'
 import { WarehouseStockMovementPanel, type MovementHistoryRun } from '../WarehouseStockMovementPanel'
@@ -9,7 +10,8 @@ export const PublishedReportWorkspace = memo(function PublishedReportWorkspace({
   const title = publishedReportTabs.find(item => item.key === tab)?.title ?? 'Звіт'
   return <section className="published-report-workspace" aria-label={title}>
     <Stack gap="md">
-      <WarehouseStockMovementPanel callerKey={callerKey} canGenerate onBusyChange={onBusyChange} history={history} />
+      {tab === 'sales-register' ? <SalesRegisterDayPanel key={callerKey} />
+        : <WarehouseStockMovementPanel callerKey={callerKey} canGenerate onBusyChange={onBusyChange} history={history} />}
     </Stack>
   </section>
 })
