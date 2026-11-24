@@ -46,3 +46,18 @@ it('shows only the selected register and clears the previous total when switchin
     { day: '2026-01-01', world: 'Fenix', offset: 0 }, { day: '2026-01-01', world: 'AMG', offset: 0 },
   ])
 })
+
+it('shows historical UAH turnover alongside EUR profit and costs', async () => {
+  const amounts = { Net: 2.18, Vat: 0.10, Cost: 1, CostVat: 0, Profit: 1.18, OriginalNetUah: 96, OriginalVatUah: 4 }
+  vi.mocked(apiRequest).mockResolvedValue({ World: 'AMG', Day: '2025-02-03', CapturedUtc: '2026-11-24T18:00:00Z',
+    GrandTotal: amounts, Totals: [{ ...amounts, Organization: 'АМГ', RecorderType: 345, Lines: 1 }],
+    Lines: [], TotalLines: 1 })
+  render(<MantineProvider env="test"><I18nProvider><SalesRegisterDayPanel /></I18nProvider></MantineProvider>)
+  fireEvent.change(screen.getByLabelText('База 1С'), { target: { value: 'AMG' } })
+  fireEvent.change(screen.getByLabelText('Дата рухів'), { target: { value: '2025-02-03' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Сформувати' }))
+  expect((await screen.findAllByRole('columnheader', { name: 'Валовий прибуток (€)' })).length).toBe(2)
+  expect(screen.getAllByRole('columnheader', { name: 'Продаж без ПДВ у регістрі (₴)' })).toHaveLength(2)
+  expect(screen.getAllByText('96,00')).toHaveLength(2)
+  expect(screen.getAllByText('1,18')).toHaveLength(2)
+})

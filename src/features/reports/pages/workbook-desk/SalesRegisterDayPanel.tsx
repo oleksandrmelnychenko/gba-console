@@ -5,7 +5,7 @@ import { formatKyivBusinessDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { previousKyivDay } from '../../data/cashPeriod'
 
-type Amounts = { Net: number; Vat: number; Cost: number; CostVat: number; Profit: number }
+type Amounts = { Net: number; Vat: number; Cost: number; CostVat: number; Profit: number; OriginalNetUah?: number | null; OriginalVatUah?: number | null }
 type Summary = Amounts & { Organization: string; RecorderType: number; Lines: number }
 type Detail = Amounts & { BusinessDay: string; Organization: string; RecorderType: number; DocumentId: string; DocumentNumber: string | null
   ProductId: string; Article: string | null; Quantity: number }
@@ -14,7 +14,13 @@ const money = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximum
 const quantity = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const fields = ['Net', 'Vat', 'Cost', 'CostVat', 'Profit'] as const
 const headings = ['Продаж без ПДВ', 'ПДВ продажу', 'Собівартість без ПДВ', 'ПДВ собівартості', 'Валовий прибуток']
-const amountCells = (row: Amounts) => fields.map(field => <Table.Td key={field} ta="right">{money.format(row[field])}</Table.Td>)
+const originalFields = ['OriginalNetUah', 'OriginalVatUah'] as const
+function amountCells(row: Amounts, showOriginal: boolean) {
+  return <>
+    {fields.map(field => <Table.Td key={field} ta="right">{money.format(row[field])}</Table.Td>)}
+    {showOriginal && originalFields.map(field => <Table.Td key={field} ta="right">{row[field] == null ? '—' : money.format(row[field])}</Table.Td>)}
+  </>
+}
 const kind = (recorder: number) => recorder === 290 || recorder === 345 ? 'Реалізація' : 'Повернення'
 
 type WorkbookRegister = { from: string; to: string; returnsOnly: boolean }
@@ -80,18 +86,23 @@ function RegisterResult({ result, workbook, search, page, onPageChange }: {
   result: Result; workbook?: WorkbookRegister; search: string; page: number; onPageChange: (page: number) => void
 }) {
   const { t } = useI18n()
-  const moneyHeaders = headings.map(label => <Table.Th key={label} ta="right">{t(label)}</Table.Th>)
+  const showOriginal = result?.GrandTotal?.OriginalNetUah != null
+  const moneyHeaders = <>
+    {headings.map(label => <Table.Th key={label} ta="right">{t(label)}{showOriginal && ' (€)'}</Table.Th>)}
+    {showOriginal && ['Продаж без ПДВ у регістрі', 'ПДВ продажу в регістрі'].map(label =>
+      <Table.Th key={label} ta="right">{t(label)} (₴)</Table.Th>)}
+  </>
   const range = Boolean(result.From && result.From !== result.Day)
   return <>
-      <Text>{t(workbook?.returnsOnly ? 'Повернення у валюті управлінського обліку' : 'Рухи реалізацій і повернень у валюті управлінського обліку')} · {result.World} · {range ? result.From + ' — ' : ''}{result.Day}</Text>
+      <Text>{t(showOriginal ? 'Рухи в євро та первинні суми регістру в гривнях' : workbook?.returnsOnly ? 'Повернення у валюті управлінського обліку' : 'Рухи реалізацій і повернень у валюті управлінського обліку')} · {result.World} · {range ? result.From + ' — ' : ''}{result.Day}</Text>
       <Text size="sm" c="dimmed">{t(range ? 'Найраніша звірка за період' : 'Звірено')} {new Date(result.CapturedUtc).toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' })} ({t('Київ')})</Text>
       {result.Totals.length === 0 ? <Text>{t(search.trim() ? 'Рухів за цим артикулом або номером немає.' : workbook ? 'За обраний період рухів немає.' : 'За цю дату рухів немає.')}</Text> : <>
         <Table.ScrollContainer minWidth={850}><Table striped>
           <Table.Thead><Table.Tr><Table.Th>{t('Організація')}</Table.Th><Table.Th>{t('Документ')}</Table.Th>{moneyHeaders}</Table.Tr></Table.Thead>
           <Table.Tbody>{result.Totals.map((row, index) => <Table.Tr key={index}>
-            <Table.Td>{row.Organization}</Table.Td><Table.Td>{t(kind(row.RecorderType))}</Table.Td>{amountCells(row)}
+            <Table.Td>{row.Organization}</Table.Td><Table.Td>{t(kind(row.RecorderType))}</Table.Td>{amountCells(row, showOriginal)}
           </Table.Tr>)}</Table.Tbody>
-          <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{amountCells(result.GrandTotal)}</Table.Tr></Table.Tfoot>
+          <Table.Tfoot><Table.Tr><Table.Th colSpan={2}>{t('Разом')}</Table.Th>{amountCells(result.GrandTotal, showOriginal)}</Table.Tr></Table.Tfoot>
         </Table></Table.ScrollContainer>
         <Title order={4}>{t('Рядки документів')} ({result.TotalLines})</Title>
         <Table.ScrollContainer minWidth={1050}><Table striped>
@@ -100,7 +111,7 @@ function RegisterResult({ result, workbook, search, page, onPageChange }: {
             {workbook && <Table.Td>{row.BusinessDay}</Table.Td>}
             <Table.Td>{t(kind(row.RecorderType))} {row.DocumentNumber || row.DocumentId}</Table.Td>
             <Table.Td>{row.Organization}</Table.Td><Table.Td>{row.Article || '—'}</Table.Td>
-            <Table.Td ta="right">{quantity.format(row.Quantity)}</Table.Td>{amountCells(row)}
+            <Table.Td ta="right">{quantity.format(row.Quantity)}</Table.Td>{amountCells(row, showOriginal)}
           </Table.Tr>)}</Table.Tbody>
         </Table></Table.ScrollContainer>
         {result.TotalLines > 100 && <Pagination value={page} total={Math.ceil(result.TotalLines / 100)} onChange={onPageChange} />}
