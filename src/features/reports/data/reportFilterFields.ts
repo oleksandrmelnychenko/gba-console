@@ -1,5 +1,4 @@
 import { REPORT_FILTER_FIELD_TYPES } from './reportOptions'
-import { REPORT_COUNTERPARTY_ROLES, type ReportCounterpartyRole } from './reportCounterpartyDirectories'
 
 export type CanonicalFilterField = { label: string; section?: string; order: number }
 
@@ -86,13 +85,23 @@ export function reportFilterDirectoryRole(value: string | null): ReportCounterpa
   return REPORT_COUNTERPARTY_ROLES.find(role => `directory:${role.key}` === value)?.key
 }
 
-export function counterpartyOptions<T extends GroupedItem>(items: ReadonlyArray<T>) {
-  return REPORT_COUNTERPARTY_ROLES.flatMap(({ key, label }) => {
-    const filter = items.find(item => item.label === label && !item.disabled)
-    const directory = { value: `directory:${key}`, label: `${label} (довідник)` }
-    if (!filter) return [directory]
-    return key === 'buyer' ? [filter, directory] : [filter]
-  })
+export type ReportCounterpartyRole = 'buyer' | 'goods-supplier' | 'service-supplier'
+
+export const REPORT_COUNTERPARTY_ROLES: ReadonlyArray<{ key: ReportCounterpartyRole; label: string }> = [
+  { key: 'buyer', label: 'Покупець' },
+  { key: 'goods-supplier', label: 'Постачальник товару' },
+  { key: 'service-supplier', label: 'Постачальник послуг' },
+]
+
+export const COUNTERPARTY_DIRECTORY_OPTIONS = REPORT_COUNTERPARTY_ROLES.map(({ key, label }) => ({
+  value: `directory:${key}`, label: `${label} (довідник)`,
+}))
+
+export function retainedFilterOption(dataSource: number | undefined, field: { Type: number; Name: string }) {
+  if (!field.Name) return undefined
+  const { label, section } = canonicalFilterField(dataSource, field.Type, field.Name)
+  if (section === COUNTERPARTY_FILTER_SECTION) return { value: String(field.Type), label }
+  if (!canSelectReportFilterField(field.Type)) return { value: String(field.Type), label: 'Виробник' }
 }
 
 export function groupCanonicalFilterOptions(dataSource: number | undefined, options: ReadonlyArray<GroupableOption>): Array<GroupedItem | { group: string; items: GroupedItem[] }> {
@@ -106,8 +115,8 @@ export function groupCanonicalFilterOptions(dataSource: number | undefined, opti
   const plain = described.filter(entry => !entry.field.section).map(item)
   const sections = [...REPORT_FILTER_SECTIONS, ...new Set(described.flatMap(entry => entry.field.section && !(REPORT_FILTER_SECTIONS as readonly string[]).includes(entry.field.section) ? [entry.field.section] : []))]
   return [...plain, ...sections.flatMap(group => {
+    if (group === COUNTERPARTY_FILTER_SECTION) return [{ group, items: COUNTERPARTY_DIRECTORY_OPTIONS }]
     const items = described.filter(entry => entry.field.section === group).map(item)
-    if (group === COUNTERPARTY_FILTER_SECTION) return [{ group, items: counterpartyOptions(items) }]
     return items.length ? [{ group: SECTION_TITLES[group] ?? group, items }] : []
   })]
 }

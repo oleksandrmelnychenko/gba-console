@@ -95,7 +95,8 @@ it('edits a settlement filter using the exact service-supplier ID and the direct
   fireEvent.click(within(directory).getByRole('button', { name: 'Закрити' }))
   expect(field).toHaveProperty('value', 'Організація')
   fireEvent.click(field)
-  fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Постачальник послуг (довідник)' }))
+  fireEvent.click(within(await screen.findByRole('dialog', { name: 'Постачальник послуг' })).getByRole('button', { name: 'Застосувати' }))
   const search = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(search)
   fireEvent.change(search, { target: { value: '5918' } })
@@ -150,7 +151,8 @@ it('loads the buyer role in a legacy workbook and searches by the directory code
   })
   render(<Form mode="card" source={0} dataset={dataset} />)
   fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(screen.getByRole('option', { name: 'Покупець' }))
+  fireEvent.click(screen.getByRole('option', { name: 'Покупець (довідник)' }))
+  fireEvent.click(within(await screen.findByRole('dialog', { name: 'Покупець' })).getByRole('button', { name: 'Застосувати' }))
   const search = screen.getByRole('combobox', { name: 'Значення' })
   fireEvent.click(search)
   expect(await screen.findByRole('option', { name: 'BCK02805 — ОК-АВТО ТОВ' })).toBeTruthy()
@@ -231,22 +233,26 @@ const partyLists = [
 ]
 
 it.each(partyLists)('applies one, several or all records from the $label list in the filter row', async ({ label, source, field, rows }) => {
-  vi.mocked(apiRequest).mockResolvedValue(rows)
+  vi.mocked(apiRequest).mockImplementation(async path => path.endsWith('/total') ? rows.length : rows)
   const dataset: ReportDataset = { DataSource: source, Name: 'Звіт', Description: '', PeriodRequired: true, PeriodSupported: true,
     Groupings: [], Measurements: [], Limitations: [], Filters: [{ Type: 0, Name: 'Організація' }, { Type: field, Name: label }] }
   render(<Form source={source} dataset={dataset} />)
-  fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: label }))
+  const fieldInput = screen.getByRole('combobox', { name: 'Поле' })
   const openList = async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Вибрати значення умови 1' }))
+    fireEvent.click(fieldInput)
+    const menu = within(await screen.findByRole('group', { name: 'Контрагент' }))
+    expect(menu.getAllByRole('option')).toHaveLength(3)
+    expect(screen.queryByRole('option', { name: label })).toBeNull()
+    fireEvent.click(menu.getByRole('option', { name: label + ' (довідник)' }))
     return within(await screen.findByRole('dialog', { name: label }))
   }
   for (const [i, item] of rows.entries()) {
     const list = await openList()
     fireEvent.click(await list.findByRole('checkbox', { name: item.Name }))
     fireEvent.click(list.getByRole('button', { name: 'Застосувати' }))
+    expect(fieldInput).toHaveProperty('value', label)
     expect(selected()).toMatchObject({ IsChecked: true, SelectedField: { Type: field },
-      FilterCondition: { Type: i === 0 ? 0 : 2 }, Values: rows.slice(0, i + 1).map(row => ({ Data: { Id: row.Id }, Name: row.Name })) })
+      FilterCondition: { Type: i === 0 ? 0 : 2 }, Values: rows.slice(0, i + 1).map(row => ({ Data: { Id: String(row.Id) }, Name: row.Name })) })
   }
   const list = await openList()
   fireEvent.click(list.getByRole('button', { name: 'Вибрати всі' }))
@@ -259,7 +265,7 @@ it.each(partyLists)('applies one, several or all records from the $label list in
   fireEvent.click(reopened.getByRole('checkbox', { name: rows[1].Name }))
   fireEvent.click(reopened.getByRole('button', { name: 'Застосувати' }))
   expect(selected().IsChecked).toBe(true)
-  expect(selected().Values.map(value => value.Data.Id)).toEqual([rows[0].Id])
+  expect(selected().Values.map(value => value.Data.Id)).toEqual([String(rows[0].Id)])
 })
 
 it('requires explicit application without a filter before dropping a counterparty exclusion', async () => {
@@ -269,7 +275,8 @@ it('requires explicit application without a filter before dropping a counterpart
     Groupings: [], Measurements: [], Limitations: [], Filters: [{ Type: 0, Name: 'Організація' }, { Type: field, Name: label }] }
   render(<Form source={source} dataset={dataset} />)
   fireEvent.click(screen.getByRole('combobox', { name: 'Поле' }))
-  fireEvent.click(await screen.findByRole('option', { name: label }))
+  fireEvent.click(await screen.findByRole('option', { name: label + ' (довідник)' }))
+  fireEvent.click(within(await screen.findByRole('dialog', { name: label })).getByRole('button', { name: 'Застосувати' }))
   fireEvent.click(screen.getByRole('combobox', { name: 'Тип порівняння' }))
   fireEvent.click(await screen.findByRole('option', { name: 'Не в списку' }))
   const openList = async () => {

@@ -19,7 +19,7 @@ describe('one filter field list for every report', () => {
     expect(sales.map(item => [item.group, item.label])).toEqual([
       ['', 'Організація'],
       ['Товари', 'Товар'], ['Товари', 'Артикул'], ['Товари', 'Топ'], ['Товари', 'Товарна група'], ['Товари', 'Одиниця виміру'],
-      ['Контрагент', 'Покупець'], ['Покупці', 'Регіон'], ['Покупці', 'Код по регіону'], ['Покупці', 'Договір'],
+      ['Покупці', 'Регіон'], ['Покупці', 'Код по регіону'], ['Покупці', 'Договір'],
       ['Покупці', 'Відповідальний менеджер покупця'], ['Покупці', 'Тип цін покупця'],
       ['Документи продажу', 'Документ продажу'], ['Документи продажу', 'Повернення від клієнта'],
       ['Документи продажу', 'Відповідальний менеджер що забив товар'], ['Документи продажу', 'Відповідальний менеджер що перевів в статус накладної'],
@@ -37,26 +37,21 @@ describe('one filter field list for every report', () => {
 
   it('groups the supplier by its registry and omits the manufacturer from field choices', () => {
     const options = [6, 17, 75].map(Type => ({ value: String(Type), label: Type === 75 ? 'Виробник' : 'Поле', field: { Type } }))
-    const parties = (source: number) => flatten(groupCanonicalFilterOptions(source, options)).filter(item => item.group === 'Контрагент')
-    expect(parties(2).filter(isActiveFilter).map(item => item.label)).toEqual(['Покупець', 'Постачальник товару'])
-    expect(parties(41).filter(isActiveFilter).map(item => item.label)).toEqual(['Покупець', 'Постачальник послуг'])
+    expect(canonicalFilterLabel(2, 17, 'Supplier')).toBe('Постачальник товару')
+    expect(canonicalFilterLabel(41, 17, 'Supplier')).toBe('Постачальник послуг')
     expect(flatten(groupCanonicalFilterOptions(2, options)).some(item => item.value === '75')).toBe(false)
     expect(canonicalFilterLabel(2, 75, 'Виробник')).toBe('Виробник')
   })
 
-  it('offers a buyer directory alongside the buyer filter when available', () => {
+  it('shows exactly one directory per counterparty role in every report', () => {
     for (const [source, items] of listed) {
       const roles = items.filter(item => item.group === 'Контрагент')
-      const buyers = roles.filter(item => item.label.startsWith('Покупець'))
-      const activeBuyer = roles.find(item => item.label === 'Покупець')
-      expect(buyers.map(item => item.label)).toEqual(activeBuyer ? ['Покупець', 'Покупець (довідник)'] : ['Покупець (довідник)'])
-      expect(roles.filter(item => !buyers.includes(item)).map(item => item.label.split(' (')[0])).toEqual(['Постачальник товару', 'Постачальник послуг'])
-      const wireFields = datasetFilters(datasets.find(dataset => dataset.DataSource === source)).map(field => field.value)
-      for (const role of roles) {
-        expect(role.disabled).toBeFalsy()
-        if (role.label.endsWith('(довідник)')) expect(reportFilterDirectoryRole(role.value)).toBeTruthy()
-        else expect(wireFields).toContain(role.value)
-      }
+      expect(roles.map(item => [reportFilterDirectoryRole(item.value), item.label]), `source ${source}`).toEqual([
+        ['buyer', 'Покупець (довідник)'],
+        ['goods-supplier', 'Постачальник товару (довідник)'],
+        ['service-supplier', 'Постачальник послуг (довідник)'],
+      ])
+      expect(roles.every(role => !role.disabled)).toBe(true)
     }
     const disabledBuyer = groupCanonicalFilterOptions(2, [{ value: '6', label: 'Покупець', disabled: true, field: { Type: 6 } }])
     expect(flatten(disabledBuyer)).toContainEqual({ value: 'directory:buyer', label: 'Покупець (довідник)', group: 'Контрагент' })
@@ -67,7 +62,7 @@ describe('one filter field list for every report', () => {
 
   it('keeps source-only fields in their own sections after the shared ones', () => {
     expect(listed.get(3)!.filter(isActiveFilter).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
-      'Постачальник товару', 'Договір постачальника', 'Документ надходження', 'Склад'])
+      'Договір постачальника', 'Документ надходження', 'Склад'])
     expect(listed.get(45)!.filter(isActiveFilter).map(item => item.label)).toEqual(['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
       'Документ надходження', 'Склад', 'Поточна організація складу'])
   })

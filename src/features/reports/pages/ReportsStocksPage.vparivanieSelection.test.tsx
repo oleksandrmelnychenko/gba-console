@@ -60,7 +60,7 @@ it("shows only selection settings on the exact special-report menu launch and af
   for (const name of ["Показники", "Групування"]) expect(screen.queryByRole("group", { name })).toBeNull()
   fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
   fireEvent.click(within(screen.getByRole("group", { name: "Умова відбору 1" })).getByRole("combobox", { name: "Поле" }))
-  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець", "Покупець (довідник)",
+  expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Товар", "Покупець (довідник)",
     "Постачальник товару (довідник)", "Постачальник послуг (довідник)", "Відповідальний менеджер покупця", "Склад"])
 })
 it("submits all four selected identities through the existing inline sales-style controls", async () => {
@@ -70,7 +70,8 @@ it("submits all four selected identities through the existing inline sales-style
     fireEvent.click(screen.getByRole("button", { name: "Додати відбір" }))
     const row = within(screen.getByRole("group", { name: `Умова відбору ${index + 1}` }))
     fireEvent.click(row.getByRole("combobox", { name: "Поле" }))
-    fireEvent.click(await screen.findByRole("option", { name: choice.label }))
+    fireEvent.click(await screen.findByRole("option", { name: choice.field === 5 ? "Покупець (довідник)" : choice.label }))
+    if (choice.field === 5) fireEvent.click(within(await screen.findByRole("dialog", { name: choice.label })).getByRole("button", { name: "Застосувати" }))
     // The date fields update before their debounced lookup scope. Do not select
     // an option from the previous period while its replacement is arriving.
     await waitFor(() => expect(searchAnalysisValues).toHaveBeenCalledWith(choice.field, "", "2026-10-01", "2026-10-27",

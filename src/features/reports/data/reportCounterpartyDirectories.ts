@@ -3,15 +3,8 @@ import { normalizeClientSearchValue } from '../../clients/api/clientsApi'
 import type { Client } from '../../clients/types'
 import { searchDatasetReportValues } from '../api/reportsApi'
 import type { ReportSelectedValue } from '../types'
+import type { ReportCounterpartyRole } from './reportFilterFields'
 import { exactId } from './exactId'
-
-export type ReportCounterpartyRole = 'buyer' | 'goods-supplier' | 'service-supplier'
-
-export const REPORT_COUNTERPARTY_ROLES: ReadonlyArray<{ key: ReportCounterpartyRole; label: string }> = [
-  { key: 'buyer', label: 'Покупець' },
-  { key: 'goods-supplier', label: 'Постачальник товару' },
-  { key: 'service-supplier', label: 'Постачальник послуг' },
-]
 
 export const REPORT_COUNTERPARTY_PAGE_SIZE = 30
 export const REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET = 10000
@@ -19,7 +12,7 @@ export const REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET = 10000
 const GOODS_SUPPLIER_REGISTRY = '/clients/suppliers/registry/manufacturers'
 const REGISTRY_PAGE_SIZE = 100
 
-type GoodsSupplier = ReportSelectedValue & { searchable: string }
+type GoodsSupplier = { entry: ReportSelectedValue; searchable: string }
 export type ReportDirectoryPage = { entries: ReportSelectedValue[]; hasMore: boolean }
 
 const searchableText = (value: string) => value.normalize('NFKC').trim().toLocaleLowerCase('uk')
@@ -31,7 +24,7 @@ function clientDirectoryEntry(client: Client, supplierCode?: string) {
   const sourceCodes = [client.SourceFenixCode && `Fenix ${client.SourceFenixCode}`,
     client.SourceAmgCode && `AMG ${client.SourceAmgCode}`].filter(Boolean).join(' / ')
   const code = supplierCode?.trim() || client.RegionCode?.Value?.trim() || sourceCodes
-  return { Data: { Id: id }, Name: [code, name].filter(Boolean).join(' — '), Value: 0, sourceCodes }
+  return { entry: { Data: { Id: id }, Name: [code, name].filter(Boolean).join(' — '), Value: 0 }, sourceCodes }
 }
 
 export async function readGoodsSupplierDirectory(signal: AbortSignal): Promise<GoodsSupplier[]> {
@@ -49,8 +42,8 @@ export async function readGoodsSupplierDirectory(signal: AbortSignal): Promise<G
     for (const supplier of page) {
       const parsed = clientDirectoryEntry(supplier, supplier.SupplierCode)
       if (!parsed) continue
-      const { sourceCodes, ...entry } = parsed
-      entries.set(entry.Data.Id, { ...entry, searchable: searchableText([entry.Name, supplier.FullName, supplier.USREOU,
+      const { sourceCodes, entry } = parsed
+      entries.set(entry.Data.Id, { entry, searchable: searchableText([entry.Name, supplier.FullName, supplier.USREOU,
         supplier.TIN, supplier.RegionCode?.Value, sourceCodes].filter(Boolean).join(' ')) })
     }
     if (page.length < REGISTRY_PAGE_SIZE) break
@@ -61,7 +54,7 @@ export async function readGoodsSupplierDirectory(signal: AbortSignal): Promise<G
 export function goodsSupplierDirectoryPage(entries: GoodsSupplier[], query: string, offset: number): ReportDirectoryPage {
   const term = searchableText(normalizeClientSearchValue(query))
   const matching = term ? entries.filter(entry => entry.searchable.includes(term)) : entries
-  return { entries: matching.slice(offset, offset + REPORT_COUNTERPARTY_PAGE_SIZE),
+  return { entries: matching.slice(offset, offset + REPORT_COUNTERPARTY_PAGE_SIZE).map(item => item.entry),
     hasMore: offset + REPORT_COUNTERPARTY_PAGE_SIZE < matching.length }
 }
 
@@ -80,8 +73,8 @@ export async function searchReportCounterpartyDirectory(role: Exclude<ReportCoun
       signal,
     })
     return { entries: rows.slice(0, REPORT_COUNTERPARTY_PAGE_SIZE).flatMap(row => {
-      const entry = clientDirectoryEntry(row)
-      return entry ? [entry] : []
+      const parsed = clientDirectoryEntry(row)
+      return parsed ? [parsed.entry] : []
     }), hasMore: rows.length > REPORT_COUNTERPARTY_PAGE_SIZE }
   }
   const rows = await searchDatasetReportValues(40, 17, { value: query.trim(), offset, limit }, signal)

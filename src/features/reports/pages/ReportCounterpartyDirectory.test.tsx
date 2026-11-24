@@ -2,7 +2,7 @@ import { MantineProvider } from '@mantine/core'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
+import type { ReportCounterpartyRole } from '../data/reportFilterFields'
 import { ReportCounterpartyDirectory } from './ReportCounterpartyDirectory'
 
 vi.mock('../../../shared/api/apiClient', async importOriginal => ({

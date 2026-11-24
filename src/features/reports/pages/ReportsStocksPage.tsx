@@ -2,7 +2,7 @@ import { ReportComparisonSelect } from './ReportComparisonSelect'
 import { ReportFilterRow } from './ReportFilterRow'
 import { ReportFilterFieldSelect } from './ReportFilterFieldSelect'
 import { ReportCounterpartyDirectory, type DirectoryFilter } from './ReportCounterpartyDirectory'
-import { REPORT_COUNTERPARTY_ROLES, REPORT_COUNTERPARTY_PAGE_SIZE, REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET, type ReportCounterpartyRole } from '../data/reportCounterpartyDirectories'
+import { REPORT_COUNTERPARTY_PAGE_SIZE, REPORT_COUNTERPARTY_LOOKUP_MAX_OFFSET } from '../data/reportCounterpartyDirectories'
 import { NativePriceFilterValuePicker } from './NativePriceFilterValuePicker'
 import { isNativePriceFilterField, nativePriceFilterSelectionError } from '../data/nativePriceFilterLookup'
 import { productLookupBinding, productLookupCapability } from '../data/productLookupCapability'
@@ -191,7 +191,10 @@ import { ConstructorDesk } from './constructor-desk/ConstructorDesk'
 import { ConstructorGroupingPanels } from './constructor-desk/ConstructorGrouping'
 import { ConstructorMeasures } from './constructor-desk/ConstructorMeasures'
 import { ConstructorFilters } from './constructor-desk/ConstructorFilters'
-import { COUNTERPARTY_FILTER_SECTION, canSelectReportFilterField, canonicalFilterField, counterpartyOptions, groupCanonicalFilterOptions, reportFilterDirectoryRole } from '../data/reportFilterFields'
+import {
+  COUNTERPARTY_DIRECTORY_OPTIONS, COUNTERPARTY_FILTER_SECTION, REPORT_COUNTERPARTY_ROLES, canSelectReportFilterField,
+  canonicalFilterField, groupCanonicalFilterOptions, reportFilterDirectoryRole, retainedFilterOption, type ReportCounterpartyRole,
+} from '../data/reportFilterFields'
 import { defaultConstructorPresentation, readConstructorPresentation, type ConstructorPresentation } from '../data/constructorPresentation'
 import { reorderReportGrouping, transferReportGrouping, type ReportGroupingAxis } from '../data/reportGroupingLayout'
 
@@ -1863,7 +1866,7 @@ export function ReportSelectionsCard({
               {selectedAnalysisField?.label ?? 'Оберіть поле'}</Button>
               <ReportFieldPicker opened={fieldPickerOpen} title="Поле відбору" options={[
                 ...selectableAnalysisFields.filter(option => !isCounterpartyOption(option)),
-                ...counterpartyOptions(selectableAnalysisFields.filter(isCounterpartyOption)).map(option => ({ ...option, path: [COUNTERPARTY_FILTER_SECTION] })),
+                ...COUNTERPARTY_DIRECTORY_OPTIONS.map(option => ({ ...option, path: [COUNTERPARTY_FILTER_SECTION] })),
               ]}
                 onClose={() => setFieldPickerOpen(false)} onSelect={value => {
                   const role = reportFilterDirectoryRole(value)
@@ -1884,7 +1887,7 @@ export function ReportSelectionsCard({
               placeholder={t('Оберіть поле')}
               searchable
               value={draftSelection.SelectedField.Name ? String(draftSelection.SelectedField.Type) : null}
-              savedManufacturerValue={draftField === REPORT_FILTER_FIELD_TYPES.productManufacturer ? String(draftField) : undefined}
+              retainedOption={retainedFilterOption(dataSource, draftSelection.SelectedField)}
               onChange={(value) => {
                 const option = filterFieldOptions.find((item) => item.value === value)
                 if (value !== null && (!option || !canSelectReportFilterField(option.field.Type))) return
@@ -1987,8 +1990,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     : scopedSelectionValueError(dataSource, selection, dataset) ?? hierarchyStatusError(descriptor, selection.FilterCondition.Type, hierarchyStatus) ?? reportSelectionEditorCardinalityError(dataSource, request, selection) ?? datasetGroupSelectionError(dataset, selection))
   const fields = groupCanonicalFilterOptions(dataSource, analysis ? analysis.filters.map(field => ({ value: String(field.type), label: field.name,
     disabled: field.available === false, field: { Type: field.type } })) : filterFieldOptions)
-  const savedManufacturerValue = selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.productManufacturer
-    ? String(selection.SelectedField.Type) : undefined
+  const retainedOption = retainedFilterOption(dataSource, selection.SelectedField)
   const changeField = (value: string | null) => {
     const field = analysis ? analysis.filters.find(item => String(item.type) === value) : null
     const option = filterFieldOptions.find(item => item.value === value)
@@ -2042,7 +2044,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
       selected={selected} onSelect={onSelect} toggle={
 <Checkbox size="xs" aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
         onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />} field={<ReportFilterFieldSelect size="xs" label={t('Поле')} searchable allowDeselect={false} data={fields}
-        savedManufacturerValue={savedManufacturerValue} directoryFilter={directoryFilter}
+        retainedOption={retainedOption} directoryFilter={directoryFilter}
         placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null} onChange={changeField} />} condition={<ReportComparisonSelect size="xs" label="Тип порівняння" allowDeselect={false}
         description={groupConditionsNotice(descriptor, selection.FilterCondition.Type)}
         data={rowConditions.filter(condition => condition.Type === selection.FilterCondition.Type || !analysisConditionUnavailableReason(descriptor, condition.Type, hierarchyStatus)).map(condition => ({ value: String(condition.Type), label: constructorConditionLabel(condition.Type, condition.Name),
@@ -2063,7 +2065,7 @@ export function InlineReportSelection({ dataset, request, selection, selections,
     <Checkbox aria-label={t('Увімкнути умову {position}', { position: index + 1 })} checked={selection.IsChecked !== false}
       onChange={event => change({ ...selection, IsChecked: event.currentTarget.checked })} />
     <div className="workbook-inline-selection__field"><ReportFilterFieldSelect label={t('Поле')} searchable allowDeselect={false}
-      savedManufacturerValue={savedManufacturerValue} directoryFilter={directoryFilter}
+      retainedOption={retainedOption} directoryFilter={directoryFilter}
       data={fields} placeholder={t('Оберіть поле')} value={selection.SelectedField.Name ? String(selection.SelectedField.Type) : null}
       renderOption={({ option }) => <span title={analysis?.filters.find(field => String(field.type) === option.value)?.unavailabilityReason ?? undefined}>{option.label}</span>}
       onChange={changeField} />

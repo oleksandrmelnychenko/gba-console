@@ -1,9 +1,10 @@
 import { Alert, Button, Checkbox, Group, Stack, Table, Text, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import {
-  goodsSupplierDirectoryPage, readGoodsSupplierDirectory, REPORT_COUNTERPARTY_PAGE_SIZE, REPORT_COUNTERPARTY_ROLES,
-  searchReportCounterpartyDirectory, type ReportCounterpartyRole, type ReportDirectoryPage,
+  goodsSupplierDirectoryPage, readGoodsSupplierDirectory, REPORT_COUNTERPARTY_PAGE_SIZE,
+  searchReportCounterpartyDirectory, type ReportDirectoryPage,
 } from '../data/reportCounterpartyDirectories'
+import { REPORT_COUNTERPARTY_ROLES, type ReportCounterpartyRole } from '../data/reportFilterFields'
 import type { ReportSelectedValue } from '../types'
 import { exactId } from '../data/exactId'
 import { ReportModal } from './ReportModal'

@@ -70,7 +70,7 @@ it('lists the common return-line fields with shared labels and offers І/АБО 
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
   expect(fieldOptions(row)).toEqual({
-    filters: ['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру', 'Покупець',
+    filters: ['Організація', 'Товар', 'Артикул', 'Топ', 'Товарна група', 'Одиниця виміру',
       'Регіон', 'Код по регіону', 'Договір', 'Відповідальний менеджер покупця',
       'Повернення від клієнта', 'Причина повернення', 'Склад'],
     directories: RETURN_DIRECTORIES,
@@ -91,7 +91,7 @@ it('keeps the original five fields and no І/АБО panel on a server that has n
   fireEvent.click(screen.getByRole('button', { name: 'Додати відбір' }))
   const row = within(screen.getByRole('group', { name: 'Умова відбору 1' }))
   expect(fieldOptions(row)).toEqual({
-    filters: ['Товар', 'Артикул', 'Покупець', 'Причина повернення', 'Склад'],
+    filters: ['Товар', 'Артикул', 'Причина повернення', 'Склад'],
     directories: RETURN_DIRECTORIES,
   })
   expect(screen.queryByRole('region', { name: 'Логіка умов відбору' })).toBeNull()

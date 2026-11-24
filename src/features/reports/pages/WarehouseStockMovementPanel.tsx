@@ -463,7 +463,7 @@ export function WarehouseStockMovementPanel({ callerKey, canGenerate, onBusyChan
                     onChange={event => setRow(index, { enabled: event.currentTarget.checked })} />}
                   field={<ReportFilterFieldSelect size="xs" label="Поле" searchable allowDeselect={false} disabled={locked} placeholder="Оберіть поле"
                     data={movementFieldOptions(used)} value={row.field}
-                    savedManufacturerValue={row.field === 'manufacturer' ? row.field : undefined}
+                    retainedOption={row.field === 'manufacturer' ? { value: row.field, label: 'Виробник' } : undefined}
                     onChange={value => changeRowField(index, value)} />}
                   condition={row.field === 'article'
                     ? <Select size="xs" label="Тип порівняння" disabled={locked} allowDeselect={false} value={row.articleMatch ?? 'equals'}
